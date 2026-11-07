@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="color-scheme" content="light dark">
+  <title>答题挑战</title>
+  <link rel="stylesheet" href="quiz.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <p class="eyebrow" data-i18n="eyebrow"></p>
+      <h1 data-i18n="title"></h1>
+    </div>
+    <select id="langSelect" class="lang-select" data-i18n-aria="languageLabel">
+      <option value="zh">中文</option>
+      <option value="en">English</option>
+      <option value="ru">Русский</option>
+      <option value="uk">Українська</option>
+      <option value="kk">Қазақша</option>
+    </select>
+  </header>
+
+  <main>
+    <section id="gateCard" class="gate card">
+      <h2 id="gateTitle">—</h2>
+      <p id="gateText" class="muted"></p>
+      <form id="pinForm" class="pin-form hidden">
+        <label for="pin" data-i18n="pinLabel"></label>
+        <input id="pin" name="pin" type="password" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" required>
+        <button id="pinBtn" class="btn primary" type="submit" data-i18n="pinButton"></button>
+      </form>
+      <p id="gateError" class="error" role="alert"></p>
+      <p class="fineprint" data-i18n="securityNote"></p>
+    </section>
+
+    <section id="editor" class="hidden">
+      <section id="view-generate" class="view">
+        <section id="generateHome">
+          <header class="home-head">
+            <h1 data-i18n="tabGenerate"></h1>
+            <span id="sourcePill" class="source-pill" aria-live="polite">
+              <span id="sourceDot" class="dot"></span>
+              <span id="sourceTitle">—</span>
+            </span>
+            <span id="sourceDetail" class="hidden"></span>
+          </header>
+
+          <button id="openGenConfig" class="card cfg-card" type="button">
+            <span class="card-head">
+              <span class="eyebrow" data-i18n="genConfigTitle"></span>
+              <span class="edit">
+                <span data-i18n="editRange"></span>
+                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+              </span>
+            </span>
+            <span id="homeGenMain" class="main-line"></span>
+            <span id="homeGenSub" class="sub-line"></span>
+          </button>
+
+          <button id="openAnswerConfig" class="card cfg-card" type="button">
+            <span class="card-head">
+              <span class="card-title">
+                <span class="eyebrow" data-i18n="answerConfigTitle"></span>
+                <span id="homeAnswerScopeMode" class="scope-mode-label" aria-live="polite"></span>
+              </span>
+              <span class="edit">
+                <span data-i18n="editRange"></span>
+                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+              </span>
+            </span>
+            <span id="homeAnswerMain" class="main-line"></span>
+            <span id="homeAnswerSub" class="sub-line"></span>
+            <span id="homeAnswerWarning" class="home-warning hidden" role="status" aria-live="polite"></span>
+          </button>
+
+          <section class="card gen-card">
+            <div class="card-head">
+              <span class="eyebrow" data-i18n="generateCardTitle"></span>
+              <span id="genCountPill" class="count-pill"></span>
+            </div>
+
+            <div id="generateIdle">
+              <button id="generate" class="btn primary block" type="button" data-i18n="generateStart"></button>
+              <p id="generateSetupHint" class="hint hidden" role="status"></p>
+            </div>
+
+            <div id="generateRunning" class="hidden">
+              <div class="progress-track" aria-hidden="true"><div id="progressFill" class="progress-fill"></div></div>
+              <div class="progress-row">
+                <span id="generateProgress" role="status"></span>
+                <button id="cancelGenerate" class="link-btn" type="button" data-i18n="generateStop"></button>
+              </div>
+            </div>
+
+            <div id="generateDone" class="hidden">
+              <div class="done-row">
+                <span class="done-icon" aria-hidden="true">✓</span>
+                <span id="generatedCount"></span>
+              </div>
+              <button id="openQuestions" class="list-row" type="button">
+                <span data-i18n="viewQuestionList"></span>
+                <span id="listCount" class="list-count"></span>
+                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+              </button>
+            </div>
+
+            <p id="generateError" class="error" role="alert"></p>
+            <p id="generateOk" class="ok" role="status"></p>
+            <p id="bankMeta" class="bank-meta"></p>
+            <p id="stockNotice" class="hint hidden"></p>
+          </section>
+        </section>
+
+        <section id="genConfigPage" class="subpage hidden">
+          <header class="page-head">
+            <button id="backFromGen" class="back-btn" type="button" data-i18n-aria="back">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <h1 data-i18n="genConfigTitle"></h1>
+          </header>
+
+          <div class="field">
+            <span class="field-label" data-i18n="genGradeLabel"></span>
+            <div id="genGradeChips" class="chip-row" role="group" data-i18n-aria="genGradeLabel"></div>
+          </div>
+
+          <div class="field">
+            <span class="field-label" data-i18n="scopeSemester"></span>
+            <div id="genSemester" class="chip-row" role="group" data-i18n-aria="scopeSemester"></div>
+          </div>
+
+          <div class="field">
+            <span class="field-label" data-i18n="genSubjectLabel"></span>
+            <div id="genSubjects" class="chip-row" role="group" data-i18n-aria="genSubjectLabel">
+              <button class="choice-chip" type="button" data-subject="chinese" aria-pressed="false" data-i18n="subjectChinese"></button>
+              <button class="choice-chip" type="button" data-subject="math" aria-pressed="true" data-i18n="subjectMath"></button>
+              <button class="choice-chip" type="button" data-subject="english" aria-pressed="false" data-i18n="subjectEnglish"></button>
+              <button class="choice-chip" type="button" data-subject="science" aria-pressed="false" data-i18n="subjectScience"></button>
+              <button class="choice-chip" type="button" data-subject="all" aria-pressed="false" data-i18n="subjectAll"></button>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="field-label" id="genTextbookLabel" data-i18n="genTextbookLabel"></span>
+            <div id="genTextbook" class="chip-row" role="group" aria-labelledby="genTextbookLabel"></div>
+          </div>
+
+          <div class="field">
+            <span class="field-label" id="genRequirementLabel" data-i18n="genRequirementLabel"></span>
+            <div id="genRequirementSamples" class="chip-row sample-row" role="group"
+              aria-labelledby="genRequirementLabel" data-i18n-aria="genRequirementSamples"></div>
+            <input id="genRequirement" type="text" maxlength="30" autocomplete="off"
+              aria-labelledby="genRequirementLabel" data-i18n-placeholder="genRequirementPlaceholder">
+            <p id="genRequirementScope" class="hint requirement-hint"></p>
+          </div>
+
+          <div class="field">
+            <span class="field-label" data-i18n="genDifficulty"></span>
+            <div id="genDifficultyChips" class="chip-row" role="group" data-i18n-aria="genDifficulty"></div>
+          </div>
+
+          <div class="field">
+            <span class="field-label" data-i18n="genCount"></span>
+            <div id="targetCounts" class="chip-row" role="group" data-i18n-aria="genCount">
+              <button class="choice-chip target-chip" type="button" data-target="20" aria-pressed="true">20</button>
+              <button class="choice-chip target-chip" type="button" data-target="30" aria-pressed="false">30</button>
+              <button class="choice-chip target-chip" type="button" data-target="50" aria-pressed="false">50</button>
+            </div>
+          </div>
+
+          <details id="genAdvanced" class="gen-advanced">
+            <summary>
+              <span data-i18n="genAdvanced"></span>
+              <span id="genAdvancedSummary" class="gen-summary"></span>
+              <span class="chevron" aria-hidden="true">›</span>
+            </summary>
+            <div class="gen-advanced-body">
+              <span class="field-label" id="genOptionsLabel" data-i18n="genOptions"></span>
+              <div id="genOptionsChips" class="chip-row" role="group" aria-labelledby="genOptionsLabel"></div>
+              <div class="gen-prompt-head">
+                <label for="genPrompt" data-i18n="genPromptLabel"></label>
+                <span id="genPromptBadge" class="gen-badge"></span>
+              </div>
+              <textarea id="genPrompt" class="gen-prompt" rows="3" maxlength="400"
+                data-i18n-placeholder="genPromptPlaceholder"></textarea>
+            </div>
+          </details>
+
+          <label class="toggle-row" for="genAutoAdd">
+            <span class="toggle-copy">
+              <span class="toggle-title" data-i18n="genAutoAdd"></span>
+              <span class="toggle-hint" data-i18n="genAutoAddHint"></span>
+            </span>
+            <span class="switch">
+              <input id="genAutoAdd" type="checkbox" checked>
+              <span class="switch-track" aria-hidden="true"></span>
+            </span>
+          </label>
+
+          <p id="rangeError" class="error" role="alert"></p>
+          <div class="sticky-bar">
+            <button id="saveRange" class="btn primary" type="button" data-i18n="saveConfig"></button>
+          </div>
+        </section>
+
+        <section id="answerConfigPage" class="subpage hidden">
+          <header class="page-head">
+            <button id="backFromAnswer" class="back-btn" type="button" data-i18n-aria="back">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <h1 data-i18n="answerConfigTitle"></h1>
+          </header>
+
+          <div id="answerTabs" class="page-tabs" role="tablist">
+            <button type="button" role="tab" data-answer-tab="scope" aria-selected="true" data-i18n="answerScopeTitle"></button>
+            <button type="button" role="tab" data-answer-tab="rules" aria-selected="false" data-i18n="answerRulesTitle"></button>
+          </div>
+
+          <div id="answerPaneScope">
+            <div id="scopeMode" class="segmented" role="group" data-i18n-aria="answerScopeTitle">
+              <button type="button" data-scope-mode="bound" data-i18n="scopeBound"></button>
+              <button type="button" data-scope-mode="custom" data-i18n="scopeCustom"></button>
+            </div>
+
+            <div id="scopeFollow" class="follow-box">
+              <p id="followMain" class="main-line"></p>
+              <p id="followSub" class="sub-line"></p>
+              <span id="followAvailable" class="available"></span>
+            </div>
+
+            <div id="scopeCustom" class="hidden">
+              <div id="scopeStepGrade" class="field scope-step">
+                <span class="field-label" data-i18n="scopeGrade"></span>
+                <div id="scopeGradeChips" class="chip-row" role="group" data-i18n-aria="scopeGrade"></div>
+              </div>
+
+              <div id="scopeStepSemester" class="field scope-step hidden">
+                <span class="field-label" data-i18n="scopeSemester"></span>
+                <div id="scopeSemesterChips" class="chip-row" role="group" data-i18n-aria="scopeSemester"></div>
+              </div>
+
+              <div id="scopeStepSubject" class="field scope-step hidden">
+                <span class="field-label" data-i18n="scopeSubject"></span>
+                <div id="scopeSubjectChips" class="chip-row" role="group" data-i18n-aria="scopeSubject"></div>
+              </div>
+
+              <div id="scopeStepTextbook" class="field scope-step hidden">
+                <span class="field-label" data-i18n="scopeTextbook"></span>
+                <div id="scopeTextbookChips" class="chip-row" role="group" data-i18n-aria="scopeTextbook"></div>
+              </div>
+
+              <div id="scopeStepTopic" class="field scope-step hidden">
+                <span class="field-label" data-i18n="scopeTopic"></span>
+                <div id="scopeTopicChips" class="chip-row" role="group" data-i18n-aria="scopeTopic"></div>
+              </div>
+
+              <div id="scopeStepDifficulty" class="field scope-step hidden">
+                <span class="field-label" data-i18n="scopeDifficulty"></span>
+                <div id="scopeDifficultyChips" class="chip-row" role="group" data-i18n-aria="scopeDifficulty"></div>
+              </div>
+
+              <span id="scopeAvailable" class="available"></span>
+
+              <div id="scopeEmpty" class="empty-state hidden">
+                <p id="scopeEmptyTitle"></p>
+                <p id="scopeEmptyText" class="muted"></p>
+                <div class="inline-actions">
+                  <button id="scopeEmptyGen" class="btn secondary small" type="button" data-i18n="goGenerate"></button>
+                  <button id="scopeEmptyConfig" class="btn text small" type="button" data-i18n="goGenerationConfig"></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="answerPaneRules" class="hidden">
+            <div class="rules-scope">
+              <span id="ruleScope" class="available"></span>
+            </div>
+
+            <div class="field">
+              <span class="field-label" data-i18n="settingsRound"></span>
+              <div id="roundCounts" class="chip-row" role="group" data-i18n-aria="settingsRound"></div>
+            </div>
+
+            <div class="field">
+              <span class="field-label" data-i18n="settingsCountdown"></span>
+              <div id="timeCounts" class="chip-row" role="group" data-i18n-aria="settingsCountdown"></div>
+            </div>
+
+            <div class="field">
+              <span class="field-label" data-i18n="rewardMinutes"></span>
+              <div id="rewardCounts" class="chip-row" role="group" data-i18n-aria="rewardMinutes"></div>
+            </div>
+
+            <details id="answerAdvanced" class="gen-advanced">
+              <summary>
+                <span data-i18n="genAdvanced"></span>
+                <span class="chevron" aria-hidden="true">›</span>
+              </summary>
+              <div class="gen-advanced-body">
+                <p id="settingsActiveHint" class="hint hidden" data-i18n="settingsActiveHint"></p>
+                <div class="row">
+                  <div>
+                    <label for="answerDisplay" data-i18n="answerDisplay"></label>
+                    <input id="answerDisplay" type="number" min="5" max="120" value="30">
+                  </div>
+                  <div>
+                    <label class="check" for="shuffle">
+                      <input id="shuffle" type="checkbox" checked>
+                      <span data-i18n="shuffle"></span>
+                    </label>
+                  </div>
+                </div>
+                <div class="row single">
+                  <div>
+                    <label for="maxEarned" data-i18n="maxEarned"></label>
+                    <input id="maxEarned" type="number" min="1" max="180" value="60">
+                  </div>
+                </div>
+                <span class="field-label" data-i18n="settingsMinCorrect"></span>
+                <div id="minCounts" class="chip-row" role="group" data-i18n-aria="settingsMinCorrect"></div>
+                <p class="hint" data-i18n="settingsMinCorrectLocal"></p>
+                <div class="fold-section">
+                  <p class="section-label" data-i18n="syncTitle"></p>
+                  <p id="syncSummary" class="muted"></p>
+                  <div class="inline-actions">
+                    <button id="syncRetry" class="btn secondary small hidden" type="button" data-i18n="syncRetry"></button>
+                    <button id="syncUseRemote" class="btn text small hidden" type="button" data-i18n="syncUseRemote"></button>
+                  </div>
+                </div>
+              </div>
+            </details>
+          </div>
+
+          <p id="settingsState" class="ok fold-status" role="status"></p>
+          <p id="settingsError" class="error fold-status" role="alert"></p>
+          <div class="sticky-bar">
+            <button id="saveAnswer" class="btn primary" type="button" data-i18n="saveConfig"></button>
+          </div>
+        </section>
+
+        <section id="questionsPage" class="subpage hidden">
+          <header class="page-head">
+            <button id="backFromQuestions" class="back-btn" type="button" data-i18n-aria="back">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <h1 data-i18n="questionListTitle"></h1>
+            <button id="selectAll" class="head-action" type="button" data-i18n="selectAll"></button>
+          </header>
+
+          <p id="questionMeta" class="list-meta"></p>
+          <div id="questionList"></div>
+          <p id="questionEmpty" class="empty hidden" data-i18n="generateNoQuestions"></p>
+          <p id="questionError" class="error" role="alert"></p>
+
+          <div class="sticky-bar split">
+            <span id="stickySelected"></span>
+            <button id="addSelected" class="btn primary" type="button" data-i18n="addToBank"></button>
+          </div>
+        </section>
+      </section>
+
+      <section id="view-bank" class="view hidden">
+        <div class="section-head">
+          <div>
+            <h2 data-i18n="tabBank"></h2>
+            <p id="bankCounts" class="muted"></p>
+          </div>
+          <button id="refreshBank" class="btn text small" type="button" data-i18n="refresh"></button>
+        </div>
+        <div id="bankFilters" class="segmented" role="group" aria-labelledby="bankFiltersLabel">
+          <span id="bankFiltersLabel" class="hidden" data-i18n="tabBank"></span>
+          <button type="button" data-filter="all" aria-pressed="true" data-i18n="bankFilterAll"></button>
+          <button type="button" data-filter="unused" aria-pressed="false" data-i18n="bankFilterUnused"></button>
+          <button type="button" data-filter="wrong" aria-pressed="false" data-i18n="bankFilterWrong"></button>
+        </div>
+        <p id="bankInRoundNotice" class="hint hidden" data-i18n="inRoundNotice"></p>
+        <div id="bankList" class="bank-list"></div>
+        <button id="bankMore" class="btn secondary block hidden" type="button" data-i18n="loadMore"></button>
+        <p id="bankError" class="error" role="alert"></p>
+      </section>
+
+      <section id="view-me" class="view hidden">
+        <section class="card">
+          <h2 data-i18n="tabMe"></h2>
+          <div class="settings-list">
+            <button id="meAi" class="setting-row" type="button">
+              <span class="setting-main">
+                <span data-i18n="aiTitle"></span>
+                <span id="providerBadge" class="setting-value">—</span>
+              </span>
+              <span class="chevron" aria-hidden="true">›</span>
+            </button>
+
+            <details id="maintenanceFold" class="setting-fold">
+              <summary class="setting-row">
+                <span class="setting-main">
+                  <span data-i18n="meMaintenance"></span>
+                  <span id="maintenanceCounts" class="setting-value">—</span>
+                </span>
+                <span class="chevron" aria-hidden="true">›</span>
+              </summary>
+              <div class="fold-body">
+                <div class="maintenance-grid">
+                  <button id="clearUnused" class="btn secondary" type="button" data-i18n="clearUnused"></button>
+                  <button id="clearAnswered" class="btn secondary" type="button" data-i18n="clearAnswered"></button>
+                  <button id="clearWrong" class="btn secondary" type="button" data-i18n="clearWrong"></button>
+                  <button id="clearAll" class="btn danger" type="button" data-i18n="clearAll"></button>
+                </div>
+              </div>
+            </details>
+            <p id="maintenanceState" class="ok fold-status" role="status"></p>
+            <p id="maintenanceError" class="error fold-status" role="alert"></p>
+
+            <label class="setting-row switch-row" for="toggleEnabled">
+              <span class="setting-main"><span data-i18n="challengeToggle"></span></span>
+              <span class="switch">
+                <input id="toggleEnabled" type="checkbox">
+                <span class="switch-track" aria-hidden="true"></span>
+              </span>
+            </label>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="settings-list">
+            <button id="logout" class="setting-row" type="button" data-i18n="logout"></button>
+            <button id="mePrivacy" class="setting-row" type="button">
+              <span class="setting-main"><span data-i18n="privacyInfo"></span></span>
+              <span class="chevron" aria-hidden="true">›</span>
+            </button>
+          </div>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <nav id="bottomNav" class="bottom-nav hidden" data-i18n-aria="navLabel">
+    <button class="nav-item" type="button" data-tab="generate" aria-pressed="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M12 4v16M4 12h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <span data-i18n="tabGenerate"></span>
+    </button>
+    <button class="nav-item" type="button" data-tab="bank" aria-pressed="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M5 6.5h14M5 12h14M5 17.5h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <span data-i18n="tabBank"></span>
+    </button>
+    <button class="nav-item" type="button" data-tab="me" aria-pressed="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <circle cx="12" cy="8.5" r="3.5" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M5.5 19a6.5 6.5 0 0 1 13 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <span data-i18n="tabMe"></span>
+    </button>
+  </nav>
+
+  <div id="modalRoot" class="modal-root hidden">
+    <div class="modal-backdrop" data-close-modal></div>
+
+    <section id="consentDialog" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="privacyTitle" data-static-modal="true">
+      <div class="modal-head">
+        <h2 id="privacyTitle" data-i18n="privacyTitle"></h2>
+      </div>
+      <p class="muted" data-i18n="privacyIntro"></p>
+      <ul class="privacy-list">
+        <li><strong data-i18n="privacyLocalTitle"></strong><span data-i18n="privacyLocal"></span></li>
+        <li><strong data-i18n="privacyAiTitle"></strong><span data-i18n="privacyAi"></span></li>
+        <li><strong data-i18n="privacyKeyTitle"></strong><span data-i18n="privacyKey"></span></li>
+      </ul>
+      <p id="consentError" class="error" role="alert"></p>
+      <div class="modal-actions">
+        <button id="acceptConsent" class="btn primary" type="button" data-i18n="acceptAndContinue"></button>
+        <button id="declineConsent" class="btn text" type="button" data-i18n="exit"></button>
+      </div>
+    </section>
+
+    <section id="providerDialog" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="providerTitle">
+      <div class="modal-head">
+        <h2 id="providerTitle" data-i18n="aiTitle"></h2>
+        <button class="icon-btn close" type="button" data-close-modal data-i18n-aria="close">×</button>
+      </div>
+      <p class="muted" data-i18n="aiIntro"></p>
+      <p class="hint" data-i18n="setupAiHint"></p>
+      <div class="field-stack">
+        <div>
+          <label for="baseUrl" data-i18n="baseUrl"></label>
+          <input id="baseUrl" type="url" autocomplete="off" spellcheck="false">
+        </div>
+        <div>
+          <label for="model" data-i18n="model"></label>
+          <input id="model" type="text" autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+      <label for="apiKey" data-i18n="apiKey"></label>
+      <input id="apiKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-...">
+      <p id="keyHint" class="hint"></p>
+      <div class="modal-actions">
+        <button id="saveProvider" class="btn primary" type="button" data-i18n="saveProvider"></button>
+        <button id="testProvider" class="btn secondary" type="button" data-i18n="testProvider"></button>
+        <button class="btn text" type="button" data-close-modal data-i18n="close"></button>
+      </div>
+      <p id="providerError" class="error" role="alert"></p>
+      <p id="providerOk" class="ok" role="status"></p>
+    </section>
+
+    <section id="privacyInfoDialog" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="privacyInfoTitle">
+      <div class="modal-head">
+        <h2 id="privacyInfoTitle" data-i18n="privacyInfo"></h2>
+        <button class="icon-btn close" type="button" data-close-modal data-i18n-aria="close">×</button>
+      </div>
+      <p class="muted" data-i18n="privacyIntro"></p>
+      <ul class="privacy-list">
+        <li><strong data-i18n="privacyLocalTitle"></strong><span data-i18n="privacyLocal"></span></li>
+        <li><strong data-i18n="privacyAiTitle"></strong><span data-i18n="privacyAi"></span></li>
+        <li><strong data-i18n="privacyKeyTitle"></strong><span data-i18n="privacyKey"></span></li>
+      </ul>
+      <div class="modal-actions">
+        <button class="btn secondary" type="button" data-close-modal data-i18n="close"></button>
+      </div>
+    </section>
+  </div>
+
+  <script src="quiz.js"></script>
+</body>
+</html>

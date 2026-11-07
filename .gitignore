@@ -1,0 +1,39 @@
+# Gradle and Android build output
+.gradle/
+build/
+**/build/
+.kotlin/
+captures/
+*.apk
+*.aab
+*.ap_
+*.dex
+output-metadata.json
+
+# Local SDK and IDE configuration
+local.properties
+.idea/
+*.iml
+.DS_Store
+
+# Signing keys and build secrets (never commit these)
+local/
+*.jks
+*.keystore
+*.p12
+*.pfx
+signing.properties
+mqtt.properties
+secrets.properties
+.env
+.env.*
+
+# Logs and temporary files
+*.log
+*.hprof
+*.tmp
+
+# Local device notes and generated release folders
+local-data/
+release/
+dist/

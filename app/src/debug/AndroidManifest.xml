@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- Debug-only test bridge. Not present in release builds. -->
+        <receiver
+            android:name="com.planyourtv.policy.PolicyDebugReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.planyourtv.policy.DEBUG_PENDING" />
+                <action android:name="com.planyourtv.policy.DEBUG_ACTIVE" />
+                <action android:name="com.planyourtv.policy.DEBUG_LOCKED" />
+                <action android:name="com.planyourtv.policy.DEBUG_SCREEN_OFF" />
+                <action android:name="com.planyourtv.policy.DEBUG_UNBIND" />
+                <action android:name="com.planyourtv.policy.DEBUG_SET_PIN" />
+                <action android:name="com.planyourtv.policy.DEBUG_STATUS" />
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name="app.orchard.tv.policy.PolicyLocalDebugReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="app.orchard.tv.policy.DEBUG_FORCE_NONE" />
+                <action android:name="app.orchard.tv.policy.DEBUG_FORCE_LOCAL" />
+                <action android:name="app.orchard.tv.policy.DEBUG_FORCE_CLOUD" />
+                <action android:name="app.orchard.tv.policy.DEBUG_CLOUD_UNBOUND" />
+                <action android:name="app.orchard.tv.policy.DEBUG_LOCAL_SETUP" />
+                <action android:name="app.orchard.tv.policy.DEBUG_LOCAL_RULES" />
+                <action android:name="app.orchard.tv.policy.DEBUG_LOCAL_RELOCK" />
+                <action android:name="app.orchard.tv.policy.DEBUG_LOCAL_ACTIVE" />
+                <action android:name="app.orchard.tv.policy.DEBUG_LOCAL_CLEAR_SESSION" />
+                <action android:name="app.orchard.tv.policy.DEBUG_LOCAL_END_USER" />
+                <action android:name="app.orchard.tv.policy.DEBUG_LOCAL_RESTORE_USAGE" />
+                <action android:name="app.orchard.tv.policy.DEBUG_LOCAL_EXPIRE_REST" />
+                <action android:name="app.orchard.tv.policy.DEBUG_LOCAL_ACTIVATION" />
+                <action android:name="app.orchard.tv.policy.DEBUG_LOCAL_SETUP_DEFAULT" />
+                <action android:name="app.orchard.tv.policy.DEBUG_LOCAL_CLEAR" />
+                <action android:name="app.orchard.tv.policy.DEBUG_OPEN_PARENT" />
+                <action android:name="app.orchard.tv.policy.DEBUG_CLOSE_PARENT" />
+                <action android:name="app.orchard.tv.policy.DEBUG_LOCAL_STATUS" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

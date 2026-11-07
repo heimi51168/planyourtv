@@ -1,0 +1,95 @@
+<resources>
+    <string name="policy_v6_remote_manage">Віддалене керування</string>
+    <string name="policy_v6_remote_unbound">Скануйте, щоб прив’язати телефон</string>
+    <string name="policy_v6_remote_pending">Синхронізація локальних налаштувань</string>
+    <string name="policy_v6_remote_done">Керування з телефона</string>
+    <string name="policy_v6_pin_local_only">Лише цей телевізор</string>
+    <string name="policy_v6_pin_migrating">Синхронізація; можна повторити</string>
+    <string name="policy_v6_password_pending">Пароль не синхронізовано</string>
+    <string name="policy_v6_remote_need_pin">Введіть батьківський пароль, щоб почати дистанційне керування.</string>
+
+    <string name="policy_v6_status_off">Вимкнено</string>
+    <string name="policy_v6_status_local">Діють локальні правила</string>
+    <string name="policy_v6_status_readonly">Прив’язано · Лише читання</string>
+    <string name="policy_v6_status_pending">Прив’язано · Синхронізація</string>
+    <string name="policy_v6_status_wait_config">Прив’язано · Очікування конфігурації</string>
+    <string name="policy_v6_status_rule">Прив’язано · Режим правил</string>
+    <string name="policy_v6_status_redeem">Прив’язано · Режим обміну</string>
+
+    <string name="policy_v6_off_title">Дитячий режим вимкнено</string>
+    <string name="policy_v6_off_body">Натисніть OK, щоб увімкнути. Налаштуйте локальні правила або прив’яжіть телефон.</string>
+
+    <string name="policy_v6_local_title">Локальні правила</string>
+    <string name="policy_v6_local_note">Після прив’язки правила перейдуть у хмару, а налаштування на телевізорі стануть лише для читання.</string>
+    <string name="policy_v6_edit_hint">Вліво/вправо — змінити; OK/Назад — готово</string>
+    <string name="policy_v6_nav_hint">Вгору/вниз — вибір, OK — змінити, вліво — назад</string>
+    <string name="policy_v6_rail_hint">Вгору/вниз — вибір · OK — підтвердити · → — відкрити</string>
+    <string name="policy_v6_save_failed">Не вдалося зберегти. Повторіть.</string>
+    <string name="policy_v6_readonly_hint">Лише читання. Змінюйте правила на телефоні.</string>
+
+    <string name="policy_v6_migrate_title">Завантаження локальних налаштувань…</string>
+    <string name="policy_v6_migrate_body">Телевізор автоматично завантажує локальні правила й налаштування часу. Дій не потрібно. Після завершення правила на телевізорі стануть лише для читання.</string>
+    <string name="policy_v6_migrate_retry">Повторити завантаження</string>
+    <string name="policy_v6_migrate_step_bind">Прив’язано</string>
+    <string name="policy_v6_migrate_step_upload">Завантаження локальних налаштувань</string>
+    <string name="policy_v6_migrate_step_done">Готово</string>
+    <string name="policy_v6_migrate_failed">Завантаження не вдалося. Перевірте мережу й повторіть.</string>
+    <string name="policy_v6_migrate_need_pin">Введіть батьківський пароль, щоб завершити завантаження.</string>
+    <string name="policy_v6_migrate_no_rules">Локальні правила неповні. Завантаження не може початися.</string>
+
+    <string name="policy_v6_wait_config">Прив’язано, очікування хмарної конфігурації</string>
+    <string name="policy_v6_wait_config_body">Телевізор досі захищений поточними правилами. Повторіть, коли з’явиться мережа.</string>
+    <string name="policy_v6_retry">Повторити</string>
+    <string name="policy_v6_retry_failed">Конфігурація з хмари недоступна. Перевірте мережу й повторіть.</string>
+
+    <string name="policy_v6_summary_title">Хмарний захист</string>
+    <string name="policy_v6_summary_managed">Прив’язано · Керування з телефона</string>
+    <string name="policy_v6_mode">Режим захисту</string>
+    <string name="policy_v6_mode_rule">Режим правил</string>
+    <string name="policy_v6_mode_redeem">Режим обміну</string>
+    <string name="policy_v6_today_usage">Сьогодні</string>
+    <string name="policy_v6_usage_value">%1$d / %2$d хв</string>
+    <string name="policy_v6_remaining">Залишилось %1$d хв</string>
+    <string name="policy_v6_rule_time">Години правил</string>
+    <string name="policy_v6_session_rest">Сеанс / відпочинок</string>
+    <string name="policy_v6_apps">Розважальні застосунки</string>
+    <string name="policy_v6_apps_all">Усі застосунки</string>
+    <string name="policy_v6_apps_count">Вибрано застосунків: %1$d</string>
+    <string name="policy_v6_last_sync">Остання синхронізація</string>
+    <string name="policy_v6_offline">Не в мережі · остання синхронізація %1$s</string>
+    <string name="policy_v6_wait_apply">Очікування телевізора</string>
+    <string name="policy_v6_wait_apply_body">Налаштування телефона змінено. Телевізор застосує їх після підключення до мережі; поки діють попередні налаштування.</string>
+    <string name="policy_v6_redeem_none">Немає активного обміну</string>
+    <string name="policy_v6_redeem_active">В обміні залишилось %1$d хв</string>
+    <string name="policy_v6_today_redeemed">Обміняно сьогодні</string>
+    <string name="policy_v6_rule_template_saved">Шаблон правил збережено; зараз не виконується</string>
+    <string name="policy_v6_phone_only">Змінюйте правила й обмін у застосунку PlanYourTV.</string>
+
+    <string name="policy_v6_activation_section">Режим обліку</string>
+    <string name="policy_v6_activation">Режим</string>
+    <string name="policy_v6_activation_auto">Автоматичний</string>
+    <string name="policy_v6_activation_auto_hint">Запускається за розкладом при увімкненому екрані; після перерви натисніть «Почати відлік».</string>
+    <string name="policy_v6_activation_manual">Ручний</string>
+    <string name="policy_v6_activation_manual_hint">Розблокування квізом або разовим запуском від батьків; тривалість сеансу задає батько.</string>
+    <string name="policy_v6_activation_tab_hint">Кожен режим зберігає власний розклад, ліміти, відпочинок і буфер вимкнення екрана. Виберіть вкладку — параметри нижче стосуються лише неї.</string>
+    <string name="policy_v6_quiz_challenge">Вікторина</string>
+    <string name="policy_v6_quiz_hint">У ручному режимі правильні відповіді дають час на телевізорі. Якщо вимкнено, екран блокування більше не показує вхід у вікторину.</string>
+    <string name="policy_v6_quiz_busy">Триває раунд вікторини. Змініть це після його завершення.</string>
+    <string name="policy_v6_study_apps">Навчальні застосунки</string>
+    <string name="policy_v6_study_none">Немає</string>
+    <string name="policy_v6_study_hint">Навчальні застосунки не обліковуються і відкриваються лише в режимі навчання.</string>
+    <string name="policy_v6_apps_shared_hint">Розважальні та навчальні застосунки спільні для автоматичного й ручного режимів; зміна режиму їх не змінює.</string>
+    <string name="policy_v6_study_saved">Навчальні застосунки збережено</string>
+    <string name="policy_v6_apps_in_study">Цей застосунок уже навчальний. Спершу приберіть його з навчальних.</string>
+
+    <string name="policy_v6_switch_off_confirm">Натисніть OK ще раз, щоб вимкнути</string>
+    <string name="policy_v6_switch_off_migrating">Перенесення не завершено. Увімкніть знову, щоб продовжити.</string>
+    <string name="policy_v6_remove_confirm">Натисніть OK ще раз, щоб видалити інтервал</string>
+    <string name="policy_v6_bind_note">Після прив’язки локальні правила копіюються на телефон; правила й пароль на телевізорі стануть лише для читання.</string>
+    <string name="policy_v6_upload_done">Локальні налаштування завантажено. Тепер на телевізорі доступний лише перегляд.</string>
+
+    <string name="policy_v6_consent_title">Дистанційне керування та конфіденційність</string>
+    <string name="policy_v6_consent_body">Коли дистанційне керування ввімкнено, телевізор завантажує в хмару PlanYourTV налаштування батьківського центру (зокрема контрольне значення батьківського пароля), перебіг часу та записи вікторин для дистанційного керування й перегляду записів на телефоні, не для реклами чи інших цілей. Ключ моделі ШІ (API Key), збережений на телевізорі, не завантажується. Ви можете відв’язати пристрій у будь-який момент; завантаження припиниться, а локальні налаштування залишаться. Продовжуючи, ви підтверджуєте право керувати цим телевізором.</string>
+    <string name="policy_v6_consent_agree">Погодитися й показати QR-код</string>
+    <string name="policy_v6_consent_cancel">Не зараз</string>
+</resources>

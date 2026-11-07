@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<title>PlanYourTV</title>
+<style>
+  :root {
+    --bg: #f2f2f7; --card: #fff; --label: #000; --secondary: rgba(60,60,67,.62); --tertiary: rgba(60,60,67,.3);
+    --sep: rgba(60,60,67,.18); --tint: #007aff; --fill: rgba(118,118,128,.12);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000; --card: #1c1c1e; --label: #fff; --secondary: rgba(235,235,245,.62); --tertiary: rgba(235,235,245,.3);
+      --sep: rgba(84,84,88,.6); --tint: #0a84ff; --fill: rgba(118,118,128,.24);
+    }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--label);
+    font: 17px/1.38 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "HarmonyOS Sans SC", "MiSans", system-ui, sans-serif;
+  }
+  main { max-width: 680px; margin: 0 auto; padding: max(24px, env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom)); }
+  h1 { font-size: 30px; line-height: 1.16; letter-spacing: -.02em; margin: 0 4px 8px; }
+  .lead { margin: 0 4px 18px; color: var(--secondary); font-size: 15px; }
+  h2 { font-size: 20px; line-height: 1.2; letter-spacing: -.01em; margin: 24px 4px 8px; }
+  .hint { margin: 0 4px 9px; color: var(--secondary); font-size: 14px; }
+  .card { background: var(--card); border-radius: 16px; padding: 14px; }
+  pre {
+    margin: 0; padding: 12px; border-radius: 11px; background: var(--fill); color: var(--label);
+    font: 13px/1.5 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; word-break: break-word;
+    -webkit-user-select: text; user-select: text;
+  }
+  #prompt { max-height: 300px; overflow: auto; -webkit-overflow-scrolling: touch; }
+  button.copy {
+    width: 100%; margin-top: 10px; padding: 13px 14px; border: 0; border-radius: 12px;
+    background: var(--tint); color: #fff; font-family: inherit; font-size: 16px; font-weight: 600;
+    line-height: 1.2; cursor: pointer;
+  }
+  button.copy:active { opacity: .8; }
+  .after { margin: 24px 4px 0; color: var(--secondary); font-size: 14px; }
+  .doc { display: inline-block; margin: 10px 4px 0; color: var(--tint); font-size: 14px; text-decoration: none; }
+  a { color: var(--tint); }
+</style>
+</head>
+<body>
+<main>
+  <h1 data-i18n="title"></h1>
+  <p class="lead" data-i18n="lead"></p>
+
+  <h2 data-i18n="promptHead"></h2>
+  <p class="hint" data-i18n="promptHint"></p>
+  <div class="card">
+    <pre id="prompt"></pre>
+    <button class="copy" data-copy="prompt" data-i18n="copyPrompt"></button>
+  </div>
+
+  <p class="after" data-i18n="after"></p>
+  <a class="doc" href="https://github.com/planyourtv/planyourtv/blob/main/docs/INSTALL.md" target="_blank" rel="noopener" data-i18n="doc"></a>
+</main>
+<script>
+const TEXTS = {
+  zh: {
+    title: '让电脑上的 AI 完成修复',
+    lead: '状态检查发现部分服务还没有开启。请在电脑上打开能执行命令的 AI 助手（豆包电脑版、WorkBuddy、千问电脑版、Trae、Claude Code、Codex 等），把下面这段提示词交给它。标准化脚本只会安装或修复 PlanYourTV 本身。',
+    promptHead: '把这段提示词交给电脑上的 AI',
+    promptHint: '提示词已包含这台电视的 IP、官方安装说明和安装命令：',
+    copyPrompt: '复制提示词', copied: '已复制',
+    after: '脚本完成后回到电视，点「重新检查」。电脑和电视需要连接同一个局域网。',
+    doc: '查看安装说明',
+    prompt: ip => `请帮我在电视上安装或修复 PlanYourTV，并启动所有必要的服务。
+电视 IP：${ip}
+
+请先阅读官方安装说明：
+https://github.com/planyourtv/planyourtv/blob/main/docs/INSTALL.md
+（打不开时：https://raw.githubusercontent.com/planyourtv/planyourtv/main/docs/INSTALL.md）
+
+然后在我这台电脑上亲自运行下面的标准化安装/修复命令，不要只把步骤告诉我：
+curl -fsSL https://raw.githubusercontent.com/planyourtv/planyourtv/main/tools/get.sh | KEEP_ADB=1 TV=${ip} bash
+
+如果提示应用签名不一致，先停下来问我，不要直接卸载电视上的应用。
+需要我在电视上操作时提醒我。完成后把命令的原始输出贴给我。`,
+  },
+  en: {
+    title: 'Finish setup with an AI on a computer',
+    lead: 'Status Check found services that are not on yet. Open an AI agent that can run commands on your computer (Doubao Desktop, WorkBuddy, Qwen Desktop, Trae, Claude Code, Codex, and similar) and give it the prompt below. The standard script only installs or repairs PlanYourTV itself.',
+    promptHead: 'Give this prompt to the AI on the computer',
+    promptHint: 'The prompt already contains this TV’s address, the official install guide, and the command:',
+    copyPrompt: 'Copy prompt', copied: 'Copied',
+    after: 'When the script finishes, return to the TV and choose Check again. The computer and TV must be on the same network.',
+    doc: 'Read the install guide',
+    prompt: ip => `Please install or repair PlanYourTV on my TV and start all the services it needs.
+TV IP: ${ip}
+
+Read the official install guide first:
+https://github.com/planyourtv/planyourtv/blob/main/docs/INSTALL.md
+(If it does not open: https://raw.githubusercontent.com/planyourtv/planyourtv/main/docs/INSTALL.md)
+
+Then run this standard install/repair command on my computer yourself, instead of only telling me the steps:
+curl -fsSL https://raw.githubusercontent.com/planyourtv/planyourtv/main/tools/get.sh | KEEP_ADB=1 TV=${ip} bash
+
+If it reports a signature mismatch, stop and ask me before uninstalling anything from the TV.
+Tell me when I need to do something on the TV. When done, paste the raw output of the commands.`,
+  },
+  ru: {
+    title: 'Завершите настройку с помощью ИИ на компьютере',
+    lead: 'Проверка состояния нашла службы, которые ещё не включены. Откройте на компьютере ИИ-агента, умеющего выполнять команды (Doubao для компьютера, WorkBuddy, Qwen для компьютера, Trae, Claude Code, Codex и т. п.), и передайте ему запрос ниже. Стандартный скрипт устанавливает или исправляет только сам PlanYourTV.',
+    promptHead: 'Передайте этот запрос ИИ на компьютере',
+    promptHint: 'В запросе уже есть адрес телевизора, официальная инструкция и команда:',
+    copyPrompt: 'Копировать запрос', copied: 'Скопировано',
+    after: 'Когда скрипт закончит, вернитесь к телевизору и нажмите «Проверить снова». Компьютер и телевизор должны быть в одной сети.',
+    doc: 'Открыть инструкцию',
+    prompt: ip => `Пожалуйста, установи или восстанови PlanYourTV на моём телевизоре и запусти все необходимые службы.
+IP телевизора: ${ip}
+
+Сначала прочитай официальную инструкцию по установке:
+https://github.com/planyourtv/planyourtv/blob/main/docs/INSTALL.md
+(если не открывается: https://raw.githubusercontent.com/planyourtv/planyourtv/main/docs/INSTALL.md)
+
+Затем сам выполни на этом компьютере стандартную команду установки/восстановления, а не просто пересказывай шаги:
+curl -fsSL https://raw.githubusercontent.com/planyourtv/planyourtv/main/tools/get.sh | KEEP_ADB=1 TV=${ip} bash
+
+Если появится сообщение о несовпадении подписи, остановись и спроси меня, прежде чем что-либо удалять с телевизора.
+Скажи, когда нужно что-то сделать на телевизоре. В конце пришли необработанный вывод команд.`,
+  },
+  uk: {
+    title: 'Завершіть налаштування за допомогою ШІ на комп’ютері',
+    lead: 'Перевірка стану виявила служби, які ще не ввімкнено. Відкрийте на комп’ютері ШІ-агента, який уміє виконувати команди (Doubao для комп’ютера, WorkBuddy, Qwen для комп’ютера, Trae, Claude Code, Codex тощо), і передайте йому запит нижче. Стандартний скрипт встановлює або виправляє лише сам PlanYourTV.',
+    promptHead: 'Передайте цей запит ШІ на комп’ютері',
+    promptHint: 'У запиті вже є адреса телевізора, офіційна інструкція та команда:',
+    copyPrompt: 'Копіювати запит', copied: 'Скопійовано',
+    after: 'Коли скрипт завершиться, поверніться до телевізора й натисніть «Перевірити знову». Комп’ютер і телевізор мають бути в одній мережі.',
+    doc: 'Відкрити інструкцію',
+    prompt: ip => `Будь ласка, встанови або віднови PlanYourTV на моєму телевізорі й запусти всі потрібні служби.
+IP телевізора: ${ip}
+
+Спочатку прочитай офіційну інструкцію зі встановлення:
+https://github.com/planyourtv/planyourtv/blob/main/docs/INSTALL.md
+(якщо не відкривається: https://raw.githubusercontent.com/planyourtv/planyourtv/main/docs/INSTALL.md)
+
+Потім сам виконай на цьому комп’ютері стандартну команду встановлення/відновлення, а не просто переказуй кроки:
+curl -fsSL https://raw.githubusercontent.com/planyourtv/planyourtv/main/tools/get.sh | KEEP_ADB=1 TV=${ip} bash
+
+Якщо з’явиться повідомлення про невідповідність підпису, зупинися й запитай мене, перш ніж щось видаляти з телевізора.
+Скажи, коли потрібно щось зробити на телевізорі. Наприкінці надішли необроблений вивід команд.`,
+  },
+  kk: {
+    title: 'Компьютердегі ЖИ көмегімен баптауды аяқтаңыз',
+    lead: 'Күй тексеруі әлі қосылмаған қызметтерді тапты. Компьютерде пәрмендерді орындай алатын ЖИ агентін ашып (Doubao компьютерлік нұсқасы, WorkBuddy, Qwen компьютерлік нұсқасы, Trae, Claude Code, Codex және т. б.), оған төмендегі нұсқауды беріңіз. Стандартты скрипт тек PlanYourTV-нің өзін орнатады немесе жөндейді.',
+    promptHead: 'Бұл нұсқауды компьютердегі ЖИ-ге беріңіз',
+    promptHint: 'Нұсқауда теледидар мекенжайы, ресми орнату нұсқаулығы және пәрмен бар:',
+    copyPrompt: 'Нұсқауды көшіру', copied: 'Көшірілді',
+    after: 'Скрипт аяқталған соң теледидарға оралып, «Қайта тексеру» түймесін басыңыз. Компьютер мен теледидар бір желіде болуы керек.',
+    doc: 'Орнату нұсқаулығын ашу',
+    prompt: ip => `Теледидарыма PlanYourTV орнатып немесе жөндеп, барлық қажетті қызметті іске қосып берші.
+Теледидар IP: ${ip}
+
+Алдымен ресми орнату нұсқаулығын оқы:
+https://github.com/planyourtv/planyourtv/blob/main/docs/INSTALL.md
+(ашылмаса: https://raw.githubusercontent.com/planyourtv/planyourtv/main/docs/INSTALL.md)
+
+Содан кейін қадамдарды айтып қана қоймай, мына стандартты орнату/жөндеу пәрменін осы компьютерде өзің орында:
+curl -fsSL https://raw.githubusercontent.com/planyourtv/planyourtv/main/tools/get.sh | KEEP_ADB=1 TV=${ip} bash
+
+Егер қолтаңба сәйкес емес деп хабарласа, тоқтап, теледидардан бірдеңе жоюдың алдында менен сұра.
+Теледидарда бірдеңе істеу керек болса, айт. Соңында пәрмендердің өңделмеген шығысын жібер.`,
+  },
+};
+
+const LANG_ORDER = ['zh', 'en', 'ru', 'uk', 'kk'];
+function pickLang() {
+  const asked = new URLSearchParams(location.search).get('lang');
+  const prefs = [asked, ...(navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ''])];
+  for (const value of prefs) {
+    const lang = String(value || '').toLowerCase().split('-')[0];
+    if (TEXTS[lang]) return lang;
+  }
+  return 'en';
+}
+
+const lang = pickLang();
+const t = TEXTS[lang];
+const host = location.hostname;
+const ip = /^[0-9.]{7,15}$/.test(host) ? host : '<TV-IP>';
+
+document.documentElement.lang = lang === 'zh' ? 'zh-CN' : lang;
+document.title = t.title;
+document.querySelectorAll('[data-i18n]').forEach(e => { e.textContent = t[e.dataset.i18n]; });
+document.getElementById('prompt').textContent = t.prompt(ip);
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (_) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (_) {}
+    textarea.remove();
+    return ok;
+  }
+}
+
+document.querySelectorAll('[data-copy]').forEach(button => {
+  button.addEventListener('click', async () => {
+    const target = document.getElementById(button.dataset.copy);
+    const original = t.copyPrompt;
+    const ok = await copyText(target.textContent || '');
+    button.textContent = ok ? t.copied : original;
+    clearTimeout(button.timer);
+    button.timer = setTimeout(() => { button.textContent = original; }, 1600);
+  });
+});
+</script>
+</body>
+</html>

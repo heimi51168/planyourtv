@@ -1,0 +1,95 @@
+<resources>
+    <string name="policy_v6_remote_manage">远程管理</string>
+    <string name="policy_v6_remote_unbound">扫码绑定手机</string>
+    <string name="policy_v6_remote_pending">正在同步本地配置</string>
+    <string name="policy_v6_remote_done">手机端管理</string>
+    <string name="policy_v6_pin_local_only">仅本机有效</string>
+    <string name="policy_v6_pin_migrating">同步中，可重试</string>
+    <string name="policy_v6_password_pending">密码待同步</string>
+    <string name="policy_v6_remote_need_pin">请输入家长密码以开始远程管理</string>
+
+    <string name="policy_v6_status_off">未开启</string>
+    <string name="policy_v6_status_local">本地规则守护中</string>
+    <string name="policy_v6_status_readonly">已绑定 · 只读</string>
+    <string name="policy_v6_status_pending">已绑定 · 正在同步</string>
+    <string name="policy_v6_status_wait_config">已绑定 · 等待配置</string>
+    <string name="policy_v6_status_rule">已绑定 · 规则模式</string>
+    <string name="policy_v6_status_redeem">已绑定 · 兑换模式</string>
+
+    <string name="policy_v6_off_title">儿童模式已关闭</string>
+    <string name="policy_v6_off_body">按 OK 开启儿童模式。开启后可设置本地规则，或绑定手机远程管理。</string>
+
+    <string name="policy_v6_local_title">本地规则</string>
+    <string name="policy_v6_local_note">绑定手机后，本地规则会迁移到云端，电视上的设置将变为只读。</string>
+    <string name="policy_v6_edit_hint">左右调整 · OK/返回完成</string>
+    <string name="policy_v6_nav_hint">上下选择 · OK 调整 · 左键返回</string>
+    <string name="policy_v6_rail_hint">上下选择 · OK 确认 · → 进入</string>
+    <string name="policy_v6_save_failed">保存失败，请重试</string>
+    <string name="policy_v6_readonly_hint">只读。请在手机端修改规则。</string>
+
+    <string name="policy_v6_migrate_title">正在上传本地配置…</string>
+    <string name="policy_v6_migrate_body">电视会自动上传本地规则和计时设置，无需操作。完成后，电视端规则变为只读。</string>
+    <string name="policy_v6_migrate_retry">重新上传</string>
+    <string name="policy_v6_migrate_step_bind">绑定成功</string>
+    <string name="policy_v6_migrate_step_upload">正在上传本地配置</string>
+    <string name="policy_v6_migrate_step_done">完成</string>
+    <string name="policy_v6_migrate_failed">上传失败，请检查网络后重试</string>
+    <string name="policy_v6_migrate_need_pin">请输入家长密码以完成上传</string>
+    <string name="policy_v6_migrate_no_rules">本地规则不完整，无法开始上传</string>
+
+    <string name="policy_v6_wait_config">已绑定，等待云端配置</string>
+    <string name="policy_v6_wait_config_body">电视仍按当前规则守护。网络恢复后请重试。</string>
+    <string name="policy_v6_retry">重试</string>
+    <string name="policy_v6_retry_failed">仍未获取到云端配置，请检查网络后重试</string>
+
+    <string name="policy_v6_summary_title">云端守护</string>
+    <string name="policy_v6_summary_managed">已绑定 · 手机管理</string>
+    <string name="policy_v6_mode">守护方式</string>
+    <string name="policy_v6_mode_rule">规则模式</string>
+    <string name="policy_v6_mode_redeem">兑换模式</string>
+    <string name="policy_v6_today_usage">今日使用</string>
+    <string name="policy_v6_usage_value">%1$d / %2$d 分钟</string>
+    <string name="policy_v6_remaining">剩余 %1$d 分钟</string>
+    <string name="policy_v6_rule_time">规则时段</string>
+    <string name="policy_v6_session_rest">单次 / 休息</string>
+    <string name="policy_v6_apps">娱乐应用</string>
+    <string name="policy_v6_apps_all">全部应用</string>
+    <string name="policy_v6_apps_count">已选 %1$d 个应用</string>
+    <string name="policy_v6_last_sync">最后同步</string>
+    <string name="policy_v6_offline">离线 · 上次同步 %1$s</string>
+    <string name="policy_v6_wait_apply">等待电视生效</string>
+    <string name="policy_v6_wait_apply_body">手机端配置已更新，电视联网后自动应用。当前仍按上一次配置显示。</string>
+    <string name="policy_v6_redeem_none">当前无进行中的兑换</string>
+    <string name="policy_v6_redeem_active">当前兑换剩余 %1$d 分钟</string>
+    <string name="policy_v6_today_redeemed">今日已兑换</string>
+    <string name="policy_v6_rule_template_saved">规则模板已保存，当前不执行</string>
+    <string name="policy_v6_phone_only">所有规则/兑换请在手机端「家庭打卡 → 设备」修改。</string>
+
+    <string name="policy_v6_activation_section">计时方式</string>
+    <string name="policy_v6_activation">计时方式</string>
+    <string name="policy_v6_activation_auto">自动</string>
+    <string name="policy_v6_activation_auto_hint">亮屏时按时段和规则自动开始；休息后按“开始计时”。</string>
+    <string name="policy_v6_activation_manual">手动</string>
+    <string name="policy_v6_activation_manual_hint">支持答题解锁和单次使用；每段时长由家长确认。</string>
+    <string name="policy_v6_activation_tab_hint">各模式单独保存时段、时长、休息和息屏缓冲；点选上方标签切换，下方参数只属于当前模式。</string>
+    <string name="policy_v6_quiz_challenge">答题挑战</string>
+    <string name="policy_v6_quiz_hint">手动模式下，答对题目可解锁电视时间；关闭后锁屏不再显示答题入口。</string>
+    <string name="policy_v6_quiz_busy">本轮答题进行中，结束后再修改。</string>
+    <string name="policy_v6_study_apps">学习应用</string>
+    <string name="policy_v6_study_none">无</string>
+    <string name="policy_v6_study_hint">学习应用不计时，仅在学习模式中打开。</string>
+    <string name="policy_v6_apps_shared_hint">娱乐与学习应用由自动和手动共用；切换计时方式不会改变应用范围。</string>
+    <string name="policy_v6_study_saved">学习应用已保存</string>
+    <string name="policy_v6_apps_in_study">该应用在学习名单中，请先在学习应用里移除。</string>
+
+    <string name="policy_v6_switch_off_confirm">再按 OK 关闭儿童模式</string>
+    <string name="policy_v6_switch_off_migrating">迁移尚未完成，关闭后需重新开启才能继续。</string>
+    <string name="policy_v6_remove_confirm">再按 OK 删除这个时段</string>
+    <string name="policy_v6_bind_note">绑定后，本地规则会复制到手机；电视上的规则和密码入口将变为只读。</string>
+    <string name="policy_v6_upload_done">本地配置已上传，电视端现已只读。</string>
+
+    <string name="policy_v6_consent_title">远程管理与隐私说明</string>
+    <string name="policy_v6_consent_body">启用远程管理后，本电视会上传家长中心配置（含家长密码校验值）、时间进度和答题记录至 PlanYourTV 云端，用于手机端远程管理与记录查看，不用于广告或其他用途。电视本地保存的 AI 模型密钥（API Key）不会上传。您可随时解绑，解绑后停止上传并保留本地设置；继续即表示您确认有权管理本电视。</string>
+    <string name="policy_v6_consent_agree">同意并显示二维码</string>
+    <string name="policy_v6_consent_cancel">暂不</string>
+</resources>

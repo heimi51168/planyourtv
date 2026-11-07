@@ -1,0 +1,95 @@
+<resources>
+    <string name="policy_v6_remote_manage">Қашықтан басқару</string>
+    <string name="policy_v6_remote_unbound">Телефонды байланыстыру үшін сканерлеңіз</string>
+    <string name="policy_v6_remote_pending">Жергілікті параметрлер синхрондалуда</string>
+    <string name="policy_v6_remote_done">Телефоннан басқару</string>
+    <string name="policy_v6_pin_local_only">Тек осы теледидар</string>
+    <string name="policy_v6_pin_migrating">Синхрондалуда; қайталауға болады</string>
+    <string name="policy_v6_password_pending">Құпия сөз синхрондалмаған</string>
+    <string name="policy_v6_remote_need_pin">Қашықтан басқаруды бастау үшін ата-ана құпиясөзін енгізіңіз.</string>
+
+    <string name="policy_v6_status_off">Өшірулі</string>
+    <string name="policy_v6_status_local">Жергілікті ережелер белсенді</string>
+    <string name="policy_v6_status_readonly">Байланысты · Тек оқу</string>
+    <string name="policy_v6_status_pending">Байланысты · Синхрондалуда</string>
+    <string name="policy_v6_status_wait_config">Байланысты · Конфигурацияны күту</string>
+    <string name="policy_v6_status_rule">Байланысты · Ереже режимі</string>
+    <string name="policy_v6_status_redeem">Байланысты · Айырбас режимі</string>
+
+    <string name="policy_v6_off_title">Балалар режимі өшірулі</string>
+    <string name="policy_v6_off_body">Қосу үшін OK басыңыз. Жергілікті ережелерді орнатыңыз немесе телефонды байланыстырыңыз.</string>
+
+    <string name="policy_v6_local_title">Жергілікті ережелер</string>
+    <string name="policy_v6_local_note">Байланыстырғаннан кейін ережелер бұлтқа көшеді, теледидардағы параметрлер тек оқуға болатын болады.</string>
+    <string name="policy_v6_edit_hint">Сол/оң — өзгерту; OK/Артқа — дайын</string>
+    <string name="policy_v6_nav_hint">Жоғары/төмен — таңдау, OK — өзгерту, солға — артқа</string>
+    <string name="policy_v6_rail_hint">Жоғары/төмен — таңдау · OK — растау · → — ашу</string>
+    <string name="policy_v6_save_failed">Сақталмады. Қайталаңыз.</string>
+    <string name="policy_v6_readonly_hint">Тек оқу. Ережелерді телефоннан өзгертіңіз.</string>
+
+    <string name="policy_v6_migrate_title">Жергілікті параметрлер жүктелуде…</string>
+    <string name="policy_v6_migrate_body">Теледидар жергілікті ережелерді және уақыт параметрлерін автоматты түрде жүктейді. Әрекет қажет емес. Аяқталғаннан кейін теледидардағы ережелер тек оқуға болады.</string>
+    <string name="policy_v6_migrate_retry">Жүктеуді қайталау</string>
+    <string name="policy_v6_migrate_step_bind">Байланысты</string>
+    <string name="policy_v6_migrate_step_upload">Жергілікті параметрлер жүктелуде</string>
+    <string name="policy_v6_migrate_step_done">Дайын</string>
+    <string name="policy_v6_migrate_failed">Жүктеу орындалмады. Желіні тексеріп, қайталаңыз.</string>
+    <string name="policy_v6_migrate_need_pin">Жүктеуді аяқтау үшін ата-ана құпиясөзін енгізіңіз.</string>
+    <string name="policy_v6_migrate_no_rules">Жергілікті ережелер толық емес. Жүктеу басталмайды.</string>
+
+    <string name="policy_v6_wait_config">Байланысты, бұлт конфигурациясын күту</string>
+    <string name="policy_v6_wait_config_body">Теледидар ағымдағы ережелермен қорғалуда. Желі қалпына келгенде қайталаңыз.</string>
+    <string name="policy_v6_retry">Қайталау</string>
+    <string name="policy_v6_retry_failed">Бұлт конфигурациясы әлі алынбады. Желіні тексеріп, қайталаңыз.</string>
+
+    <string name="policy_v6_summary_title">Бұлтты қорғау</string>
+    <string name="policy_v6_summary_managed">Байланысты · Телефоннан басқару</string>
+    <string name="policy_v6_mode">Қорғау режимі</string>
+    <string name="policy_v6_mode_rule">Ереже режимі</string>
+    <string name="policy_v6_mode_redeem">Айырбас режимі</string>
+    <string name="policy_v6_today_usage">Бүгін</string>
+    <string name="policy_v6_usage_value">%1$d / %2$d мин</string>
+    <string name="policy_v6_remaining">%1$d мин қалды</string>
+    <string name="policy_v6_rule_time">Ереже уақыты</string>
+    <string name="policy_v6_session_rest">Сеанс / демалыс</string>
+    <string name="policy_v6_apps">Ойын-сауық қолданбалары</string>
+    <string name="policy_v6_apps_all">Барлық қолданбалар</string>
+    <string name="policy_v6_apps_count">%1$d қолданба таңдалды</string>
+    <string name="policy_v6_last_sync">Соңғы синхрондау</string>
+    <string name="policy_v6_offline">Желіде емес · соңғы синхрондау %1$s</string>
+    <string name="policy_v6_wait_apply">Теледидарды күту</string>
+    <string name="policy_v6_wait_apply_body">Телефон параметрлері өзгерді. Теледидар желіге қосылғанда қолданады; әзірге алдыңғы параметрлер қолданылады.</string>
+    <string name="policy_v6_redeem_none">Белсенді айырбас жоқ</string>
+    <string name="policy_v6_redeem_active">Айырбаста %1$d мин қалды</string>
+    <string name="policy_v6_today_redeemed">Бүгін айырбасталды</string>
+    <string name="policy_v6_rule_template_saved">Ереже үлгісі сақталды; қазір орындалмайды</string>
+    <string name="policy_v6_phone_only">Ережелер мен айырбасты PlanYourTV қолданбасында өзгертіңіз.</string>
+
+    <string name="policy_v6_activation_section">Есеп режимі</string>
+    <string name="policy_v6_activation">Режим</string>
+    <string name="policy_v6_activation_auto">Автоматты</string>
+    <string name="policy_v6_activation_auto_hint">Экран қосулы кезде кесте бойынша басталады; демалыстан кейін «Таймерді бастау» түймесін басыңыз.</string>
+    <string name="policy_v6_activation_manual">Қолмен</string>
+    <string name="policy_v6_activation_manual_hint">Квизбен немесе ата-ананың бір реттік іске қосуымен ашу; әр сеанстың ұзақтығын ата-ана белгілейді.</string>
+    <string name="policy_v6_activation_tab_hint">Әр режим өз кестесін, шектеулерін, демалысын және экран сөну буферін бөлек сақтайды. Қойындыны таңдаңыз — төмендегі параметрлер тек сол режимге қатысты.</string>
+    <string name="policy_v6_quiz_challenge">Викторина</string>
+    <string name="policy_v6_quiz_hint">Қолмен режимде дұрыс жауаптар теледидар уақытын ашады. Өшірілсе, құлыптау экранында викторинаға кіру көрсетілмейді.</string>
+    <string name="policy_v6_quiz_busy">Викторина раунды жүріп жатыр. Ол аяқталғансоң өзгертіңіз.</string>
+    <string name="policy_v6_study_apps">Оқу қолданбалары</string>
+    <string name="policy_v6_study_none">Жоқ</string>
+    <string name="policy_v6_study_hint">Оқу қолданбалары есепке алынбайды және тек оқу режимінде ашылады.</string>
+    <string name="policy_v6_apps_shared_hint">Ойын-сауық және оқу қолданбалары автоматты және қолмен режимдеріне ортақ; режимді ауыстыру оларды өзгертпейді.</string>
+    <string name="policy_v6_study_saved">Оқу қолданбалары сақталды</string>
+    <string name="policy_v6_apps_in_study">Бұл қолданба оқу тізімінде. Алдымен оны оқу қолданбаларынан алып тастаңыз.</string>
+
+    <string name="policy_v6_switch_off_confirm">Өшіру үшін OK қайта басыңыз</string>
+    <string name="policy_v6_switch_off_migrating">Көшіру аяқталмады. Жалғастыру үшін қайта қосыңыз.</string>
+    <string name="policy_v6_remove_confirm">Аралықты жою үшін OK қайта басыңыз</string>
+    <string name="policy_v6_bind_note">Байланыстырғаннан кейін жергілікті ережелер телефонға көшіріледі; теледидардағы ережелер мен құпия сөз тек оқуға болады.</string>
+    <string name="policy_v6_upload_done">Жергілікті параметрлер жүктелді. Енді теледидарда тек оқуға болады.</string>
+
+    <string name="policy_v6_consent_title">Қашықтан басқару және құпиялық</string>
+    <string name="policy_v6_consent_body">Қашықтан басқару қосулы кезде теледидар PlanYourTV бұлтына ата-ана орталығының параметрлерін (ата-ана құпиясөзінің тексеру мәнін қоса), уақыт прогресін және викторина жазбаларын телефоннан қашықтан басқару және жазбаларды қарау үшін жүктейді, жарнама немесе басқа мақсаттар үшін емес. Теледидарда сақталған AI моделінің кілті (API Key) жүктелмейді. Құрылғыны кез келген уақытта телефоннан ажыратуға болады; жүктеу тоқтайды, жергілікті параметрлер сақталады. Жалғастыру арқылы сіз осы теледидарды басқаруға құқығыңыз бар екенін растайсыз.</string>
+    <string name="policy_v6_consent_agree">Келісемін және QR кодын көрсету</string>
+    <string name="policy_v6_consent_cancel">Қазір емес</string>
+</resources>

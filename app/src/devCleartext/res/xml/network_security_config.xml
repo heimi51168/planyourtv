@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Development builds only: every debug build, and any release build baked with a plain-HTTP
+     TV_API_BASE (tools/build_local_network.sh dev). The dev backend runs on the LAN over HTTP,
+     so cleartext must be allowed. Production release builds keep the main config (HTTPS
+     everywhere, with the Apple film and weather exceptions). -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">sylvan.apple.com</domain>
+        <trust-anchors>
+            <certificates src="@raw/apple_root_ca" />
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">api.open-meteo.com</domain>
+        <domain includeSubdomains="false">geocoding-api.open-meteo.com</domain>
+        <domain includeSubdomains="false">ipinfo.io</domain>
+    </domain-config>
+</network-security-config>

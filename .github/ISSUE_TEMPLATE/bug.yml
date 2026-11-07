@@ -1,0 +1,137 @@
+name: Bug report
+description: Report a problem with the TV app or its installation
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Please remove TV IP addresses, MAC addresses, pairing
+        tokens, account credentials, signing files, QR codes, household photos and personal
+        information from logs and screenshots before posting.
+
+        Do not report a security vulnerability here. Use the private advisory link on the new
+        issue page instead.
+
+        Remote control is a hosted service. The parent app and server source are not in this
+        repository, but TV-side pairing problems are still useful to report.
+
+  - type: dropdown
+    id: build
+    attributes:
+      label: Build
+      description: Which kind of build are you running?
+      options:
+        - Community release APK
+        - Self-built from this source
+        - Official hosted build
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: PlanYourTV version
+      description: Shown in the app and in diagnostics, for example 1.85.000.
+      placeholder: "1.85.000"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: flavor
+    attributes:
+      label: Build flavor
+      options:
+        - standard
+        - guard
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: TV model and Android version
+      description: Include the manufacturer, model number and Android version.
+      placeholder: "Xiaomi TV ..., Android ..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install
+    attributes:
+      label: How was it installed?
+      options:
+        - ADB commands from docs/INSTALL.md
+        - Another ADB installer or helper
+        - In-app update
+        - Preinstalled by someone else
+        - Other or not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Local child mode
+        - PIN, lock screen or temporary unlock
+        - Home screen or Home Guard
+        - Hosted remote control pairing
+        - Update or installation
+        - Visual or performance problem
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What did you press or run, and how often does it happen?
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include the exact error message if there is one.
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics (optional)
+      description: |
+        Paste the diagnostic report if the app can produce one. Redact the TV IP, MAC address,
+        per-run settings-page token, account details and any personal data. Do not paste a pairing
+        QR code.
+      render: text
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I have removed IP addresses, tokens, account credentials and personal data.
+          required: true
+        - label: I own this TV or am authorized to manage it.
+          required: true
+        - label: This is not a security vulnerability (those go through the private advisory link).
+          required: true

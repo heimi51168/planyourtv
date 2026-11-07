@@ -1,0 +1,96 @@
+<resources>
+    <!-- V6 parent center: one child switch, one remote entry, no local/remote mode picker. -->
+    <string name="policy_v6_remote_manage">Remote management</string>
+    <string name="policy_v6_remote_unbound">Scan to bind phone</string>
+    <string name="policy_v6_remote_pending">Syncing local settings</string>
+    <string name="policy_v6_remote_done">Managed on phone</string>
+    <string name="policy_v6_pin_local_only">This TV only</string>
+    <string name="policy_v6_pin_migrating">Syncing; retry available</string>
+    <string name="policy_v6_password_pending">Password not synced</string>
+    <string name="policy_v6_remote_need_pin">Enter the parent password to start remote management.</string>
+
+    <string name="policy_v6_status_off">Off</string>
+    <string name="policy_v6_status_local">Local rules active</string>
+    <string name="policy_v6_status_readonly">Bound · Read-only</string>
+    <string name="policy_v6_status_pending">Bound · Syncing</string>
+    <string name="policy_v6_status_wait_config">Bound · Waiting for config</string>
+    <string name="policy_v6_status_rule">Bound · Rule mode</string>
+    <string name="policy_v6_status_redeem">Bound · Redeem mode</string>
+
+    <string name="policy_v6_off_title">Child mode is off</string>
+    <string name="policy_v6_off_body">Press OK to turn on. Set local rules or bind a phone.</string>
+
+    <string name="policy_v6_local_title">Local rules</string>
+    <string name="policy_v6_local_note">After binding, rules move to the cloud and this TV becomes read-only.</string>
+    <string name="policy_v6_edit_hint">Left/right to adjust; OK/Back when done</string>
+    <string name="policy_v6_nav_hint">Up/down to select, OK to edit, Left to go back</string>
+    <string name="policy_v6_rail_hint">Up/down to select · OK to confirm · → to open</string>
+    <string name="policy_v6_save_failed">Save failed. Try again.</string>
+    <string name="policy_v6_readonly_hint">Read-only. Manage rules on the phone.</string>
+
+    <string name="policy_v6_migrate_title">Uploading local settings…</string>
+    <string name="policy_v6_migrate_body">The TV uploads your local rules and timing settings automatically. No action is needed. When it finishes, TV rules become read-only.</string>
+    <string name="policy_v6_migrate_retry">Retry upload</string>
+    <string name="policy_v6_migrate_step_bind">Bound</string>
+    <string name="policy_v6_migrate_step_upload">Uploading local settings</string>
+    <string name="policy_v6_migrate_step_done">Done</string>
+    <string name="policy_v6_migrate_failed">Upload failed. Check the network and try again.</string>
+    <string name="policy_v6_migrate_need_pin">Enter the parent password to finish the upload.</string>
+    <string name="policy_v6_migrate_no_rules">Local rules are incomplete. Upload cannot start.</string>
+
+    <string name="policy_v6_wait_config">Bound, waiting for cloud config</string>
+    <string name="policy_v6_wait_config_body">The TV is still protected by its current rules. Retry when the network is available.</string>
+    <string name="policy_v6_retry">Retry</string>
+    <string name="policy_v6_retry_failed">Cloud configuration is still unavailable. Check the network and retry.</string>
+
+    <string name="policy_v6_summary_title">Cloud Guard</string>
+    <string name="policy_v6_summary_managed">Bound · Managed on phone</string>
+    <string name="policy_v6_mode">Guard mode</string>
+    <string name="policy_v6_mode_rule">Rule mode</string>
+    <string name="policy_v6_mode_redeem">Redeem mode</string>
+    <string name="policy_v6_today_usage">Today</string>
+    <string name="policy_v6_usage_value">%1$d / %2$d min</string>
+    <string name="policy_v6_remaining">%1$d min left</string>
+    <string name="policy_v6_rule_time">Rule hours</string>
+    <string name="policy_v6_session_rest">Session / rest</string>
+    <string name="policy_v6_apps">Entertainment apps</string>
+    <string name="policy_v6_apps_all">All apps</string>
+    <string name="policy_v6_apps_count">%1$d apps selected</string>
+    <string name="policy_v6_last_sync">Last sync</string>
+    <string name="policy_v6_offline">Offline · last sync %1$s</string>
+    <string name="policy_v6_wait_apply">Waiting for TV</string>
+    <string name="policy_v6_wait_apply_body">Phone settings changed. This TV will apply them when it is online; it still uses the previous settings.</string>
+    <string name="policy_v6_redeem_none">No active redemption</string>
+    <string name="policy_v6_redeem_active">%1$d min left in redemption</string>
+    <string name="policy_v6_today_redeemed">Redeemed today</string>
+    <string name="policy_v6_rule_template_saved">Rule template saved; not running now</string>
+    <string name="policy_v6_phone_only">Manage rules and redemptions in the PlanYourTV app.</string>
+
+    <string name="policy_v6_activation_section">Timing mode</string>
+    <string name="policy_v6_activation">Timing</string>
+    <string name="policy_v6_activation_auto">Automatic</string>
+    <string name="policy_v6_activation_auto_hint">Starts automatically by schedule while the screen is on; after a rest, press Start timer.</string>
+    <string name="policy_v6_activation_manual">Manual</string>
+    <string name="policy_v6_activation_manual_hint">Quiz or single-use unlock; the parent sets each segment\'s length.</string>
+    <string name="policy_v6_activation_tab_hint">Each mode keeps its own schedule, limits, rest and screen-off buffer. Select a tab to switch; the settings below belong to that mode only.</string>
+    <string name="policy_v6_quiz_challenge">Quiz challenge</string>
+    <string name="policy_v6_quiz_hint">In Manual mode, correct answers unlock TV time. When off, the lock screen hides the quiz entry.</string>
+    <string name="policy_v6_quiz_busy">A quiz round is running. Change this after it ends.</string>
+    <string name="policy_v6_study_apps">Study apps</string>
+    <string name="policy_v6_study_none">None</string>
+    <string name="policy_v6_study_hint">Study apps are never timed and only open in study mode.</string>
+    <string name="policy_v6_apps_shared_hint">Entertainment and study apps are shared by automatic and manual modes; switching timing mode does not change them.</string>
+    <string name="policy_v6_study_saved">Study apps saved</string>
+    <string name="policy_v6_apps_in_study">This app is a study app. Remove it from Study apps first.</string>
+
+    <string name="policy_v6_switch_off_confirm">Press OK again to turn off</string>
+    <string name="policy_v6_switch_off_migrating">Migration is not finished. Turn it on again to continue.</string>
+    <string name="policy_v6_remove_confirm">Press OK again to remove this window</string>
+    <string name="policy_v6_bind_note">After binding, local rules are copied to the phone; TV rules and password become read-only.</string>
+    <string name="policy_v6_upload_done">Local settings uploaded. They are now read-only on the TV.</string>
+
+    <string name="policy_v6_consent_title">Remote management and privacy</string>
+    <string name="policy_v6_consent_body">With remote management on, this TV uploads its parent-center settings (including the parent password verifier), time progress and quiz records to the PlanYourTV cloud for remote management and record viewing on your phone, not for advertising or other purposes. The AI model key (API Key) stored on this TV is never uploaded. You can unbind on the phone at any time; uploading stops and the TV keeps its local settings. By continuing, you confirm that you are authorized to manage this TV.</string>
+    <string name="policy_v6_consent_agree">Agree and show QR code</string>
+    <string name="policy_v6_consent_cancel">Not now</string>
+</resources>

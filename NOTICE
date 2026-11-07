@@ -1,0 +1,17 @@
+PlanYourTV
+Copyright (c) 2026 PlanYourTV contributors
+
+This product is based on Aerial:
+  https://github.com/pengchujin/aerial-tv
+  Copyright (c) 2026 pengchujin
+  Licensed under the MIT License.
+
+The Aerial copyright notice and license text are preserved in LICENSE. Aerial's source namespace,
+`app.orchard.tv`, is retained for upstream compatibility; it is not the installed package identity
+of community builds, which is `com.planyourtv.tv`.
+
+PlanYourTV is an independent project. It is not affiliated with, endorsed by, or sponsored by
+Apple Inc., Xiaomi, TCL, the Aerial project, or any other device manufacturer.
+
+Apple, Apple TV and related marks are trademarks of Apple Inc. The community snapshot does not
+include Aerial's Apple-hosted film catalogue or any film files. See THIRD-PARTY-NOTICES.md.
