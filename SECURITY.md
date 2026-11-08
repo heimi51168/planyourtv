@@ -7,7 +7,7 @@ networks.
 
 Use GitHub's private security advisory form for this repository:
 
-https://github.com/planyourtv/planyourtv/security/advisories/new
+https://github.com/heimi51168/planyourtv/security/advisories/new
 
 Include the affected version, build flavor, Android version, reproduction steps, and the impact.
 Do not include real device IP addresses, account credentials, ADB keys, signing files, or personal

@@ -7,6 +7,21 @@ Only install on a TV you own or are authorized to manage. Keep a working ADB con
 have checked that Home still works. The install replaces the home screen; if the app is removed or
 misconfigured, the TV can be left without its normal launcher.
 
+## Quick start with an AI agent
+
+The fastest path is to give the copy-paste prompt in the [README](../README.md#让-ai-帮你安装) to a
+desktop AI agent that can run commands. The full Chinese guide for agents, including per-brand ADB
+instructions, permission explanations, verification and troubleshooting, is
+[docs/AGENT-INSTALL.md](AGENT-INSTALL.md).
+
+Use only the official downloads:
+
+- [planyourtv-standard.apk](https://planyourtv.me/download/planyourtv-standard.apk)
+- [planyourtv-guard.apk](https://planyourtv.me/download/planyourtv-guard.apk)
+
+Do not use third-party APK sites, app stores, ADB enablers, or other tools. Do not uninstall or
+disable the stock launcher or any system app.
+
 ## Before installing
 
 - The TV must run Android 5.0 or newer. Android 4.x and the Aerial Lite build are not part of the
@@ -15,8 +30,9 @@ misconfigured, the TV can be left without its normal launcher.
   wireless ADB, turn it off when you are done and never expose port 5555 to the internet.
 - Install the Android SDK platform tools on your computer and check that `adb devices` shows the TV
   as `device`, not `unauthorized`.
-- Download the APK from a release you trust and verify its published SHA-256 checksum. There is no
-  official community signing key; a build made by someone else is signed by that person.
+- Download the APK from the official site and verify its published SHA-256 checksum where one is
+  provided. Official APKs are release-signed by the project. A build you make from source without a
+  signing configuration is debug-signed and cannot overwrite an official install.
 
 The two flavors differ only in their manifest:
 
@@ -28,15 +44,16 @@ The two flavors differ only in their manifest:
 ## Install the APK
 
 ```bash
-adb install -r PlanYourTV-standard-release.apk
+adb install -r planyourtv-standard.apk
 ```
 
 Use the `guard` APK instead if the install fails with a message about a home-screen activity or
 `INSTALL_FAILED_...`. Do not edit the manifest to force it; use the flavor built for that case.
 
 If Android reports a signature mismatch, an app with the same package name was signed by a
-different key. Uninstall it first. `adb uninstall com.planyourtv.tv` removes the app's data,
-including rules and photos, so export anything you need first.
+different key. Do not uninstall it blindly: `adb uninstall com.planyourtv.tv` removes the app's
+data, including rules, question bank, wallpapers and photos. Confirm with the user that losing the
+data is acceptable before uninstalling, then install the official APK again.
 
 The package name is `com.planyourtv.tv`. The part after `/` in the component names below is the
 source namespace (`app.orchard.tv`) and is intentional; it is not a second package.
@@ -148,6 +165,26 @@ adb shell dumpsys accessibility | grep -i -E 'PlanYourTV|HomeGuardService'
 On some Xiaomi firmware, a short standby can let the stock launcher show for up to a minute before
 the sync adapter brings PlanYourTV back. Keep auto-sync enabled.
 
+## Verify the install
+
+Run these and keep the raw output. Do not report success without them:
+
+```bash
+adb shell cmd package resolve-activity --brief \
+  -a android.intent.action.MAIN -c android.intent.category.HOME
+adb shell settings get secure enabled_accessibility_services
+adb shell dumpsys window | grep mCurrentFocus
+adb shell dumpsys package com.planyourtv.tv | grep versionName
+```
+
+- `resolve-activity` should return PlanYourTV for `standard`, or the user's chosen launcher for
+  `guard` when Home Guard takes over through accessibility.
+- After pressing Home, `mCurrentFocus` should contain `com.planyourtv.tv` (or the user confirms the
+  PlanYourTV home screen is visible).
+- `versionName` should match the APK you installed.
+- If Home Guard is enabled, the accessibility setting should contain it, and `dumpsys accessibility`
+  should show it is actually bound.
+
 ## Change the default PIN
 
 Fresh installs use `123456`. Open PlanYourTV's parental settings and change the six-digit PIN before
@@ -210,3 +247,5 @@ The local phone settings page is served over plain HTTP on the TV's LAN while th
 contains a per-run token, but anyone who can reach the TV and knows the URL can use it. Do not
 port-forward it or use it on an untrusted network. See [../SECURITY.md](../SECURITY.md) and
 [../PRIVACY.md](../PRIVACY.md).
+
+More answers: [FAQ.md](FAQ.md) · Agent-oriented install guide: [AGENT-INSTALL.md](AGENT-INSTALL.md).

@@ -1,8 +1,14 @@
 blank_issues_enabled: false
 contact_links:
   - name: Security vulnerability
-    url: https://github.com/planyourtv/planyourtv/security/advisories/new
+    url: https://github.com/heimi51168/planyourtv/security/advisories/new
     about: Report vulnerabilities privately. Do not open a public issue.
   - name: Installation guide
-    url: https://github.com/planyourtv/planyourtv/blob/main/docs/INSTALL.md
+    url: https://github.com/heimi51168/planyourtv/blob/main/docs/INSTALL.md
     about: Read the ADB install, permission and Home Guard steps before reporting an install problem.
+  - name: AI-assisted installation
+    url: https://github.com/heimi51168/planyourtv/blob/main/docs/AGENT-INSTALL.md
+    about: A complete install guide for desktop AI agents that can run commands.
+  - name: FAQ
+    url: https://github.com/heimi51168/planyourtv/blob/main/docs/FAQ.md
+    about: Answers about compatibility, privacy, quiz, study mode and installation.

@@ -1,0 +1,70 @@
+# PlanYourTV
+
+> PlanYourTV（计划电视）是一个开源的 Android TV 儿童时间管理桌面。它替换电视自带桌面，用家长设置的时段、每日额度、单次上限、休息、App 白名单、学习模式和答题奖励来管理孩子的电视使用。基于 Aerial 1.85（MIT），Android TV 5.0+，不需要 root。
+
+## 关键信息
+
+- 产品名称：PlanYourTV / 计划电视
+- 类型：Android TV 桌面、儿童时间管理、家长控制
+- 包名：com.planyourtv.tv
+- 当前社区源码版本：1.85.001 / 116001
+- 系统要求：Android TV 5.0+（API 21+），不需要 root
+- 设备兼容：与 Aerial 上游保持一致；本项目只对小米电视 standard 版本做过真机验证
+- 数据：本地优先，不需要账号；本地模式不依赖服务器
+- 界面语言：简体中文、英语、俄语、乌克兰语、哈萨克语
+- 许可证：MIT
+- 源码：https://github.com/heimi51168/planyourtv
+- 官网：https://planyourtv.me/
+- 官方下载：https://planyourtv.me/download/
+- 标准版 APK：https://planyourtv.me/download/planyourtv-standard.apk
+- guard 版 APK：https://planyourtv.me/download/planyourtv-guard.apk
+
+## 核心功能
+
+- 工作日 / 周末可用时段、每日额度、单次上限、休息间隔、自动锁定和倒计时。
+- 单次计时：家长可手动开始 5–120 分钟，默认 20 分钟，5 分钟一档。
+- App 级计时：只对家长选定的娱乐 App 计时；会话期间打开其他 App 会被 Home Guard 拦回桌面。
+- 学习 App 免计时：学习分组不计时、不占每日额度；孩子从锁屏进入学习模式后使用。
+- 学习模式：只显示家长勾选的学习 App；不计时、不要求 PIN；待机或关机后自动退出。
+- 答题解锁：时间用完后弹出答题挑战；默认 5 道题，答对至少 1 道有奖励；每题显示对错和解析，整轮结束后结算。
+- 题库：内置 120 道小学题（1–6 年级，语文、数学、英语、科学各 30 道）；支持手动出题、按年级/学期/学科/教材/考试类型筛选。
+- AI 出题：家长配置自己的 OpenAI 兼容模型服务（默认 DeepSeek），AI 按学科、年级、难度、数量生成题目，家长勾选后发送到电视题库；API Key 只保存在电视端。AI 不在电视上本地运行，不联网就无法使用 AI 出题。
+- 题库与错题管理：未使用、已回答、本轮中、答对、答错、旧记录、过期题目；去重、容量管理、批量清理、错题本。
+- 家长控制：六位 PIN、一次性恢复码、临时解锁、电视端家长中心、同一 Wi-Fi 下的手机设置页。
+- 桌面体验：App 网格、文件夹、壁纸、屏保、控制中心、HDMI 信号源、Home Guard、standard/guard 两种构建。
+- 远程管理：路线图功能，社区构建默认关闭并隐藏；本地功能不依赖它。
+
+## 安装
+
+完整人工安装文档：https://github.com/heimi51168/planyourtv/blob/main/docs/INSTALL.md
+
+给 AI 助手的安装说明：https://github.com/heimi51168/planyourtv/blob/main/docs/AGENT-INSTALL.md
+
+最省事的方式：把 README 里「让 AI 帮你安装」的整段提示词复制给能执行命令的电脑版 AI 助手（豆包电脑版 / 豆包工作版、WorkBuddy、千问电脑版、Claude Code、Codex、Cursor、Trae）。手机版或网页版聊天无法执行命令。
+
+安装需要电脑通过 ADB 连接电视，并授予无障碍、通知监听和安全设置等权限。只安装 PlanYourTV；不要安装应用商店、ADB 开启器、投屏或清理工具；不要卸载、停用或恢复出厂设置任何系统应用。
+
+## 安全与隐私
+
+- 本地模式不上传规则、App 列表或答题记录；不需要账号。
+- 可选网络请求：检查更新、天气、必应每日壁纸、局域网手机设置页。
+- 社区源码不含广告、行为统计或崩溃上报 SDK。
+- 这是家长控制的辅助工具，不是防止设备所有者或拥有 ADB 权限的人绕过的安全边界。
+- 首次安装后请修改默认 PIN 123456，保存一次性恢复码，并关闭不用的无线 ADB。
+
+## 更多文档
+
+- README：https://github.com/heimi51168/planyourtv/blob/main/README.md
+- 常见问题：https://github.com/heimi51168/planyourtv/blob/main/docs/FAQ.md
+- 隐私说明：https://github.com/heimi51168/planyourtv/blob/main/PRIVACY.md
+- 安全说明：https://github.com/heimi51168/planyourtv/blob/main/SECURITY.md
+- 构建说明：https://github.com/heimi51168/planyourtv/blob/main/docs/BUILDING.md
+- 架构说明：https://github.com/heimi51168/planyourtv/blob/main/docs/ARCHITECTURE.md
+
+## 给 AI 助手的抓取说明
+
+- 下载 APK 只使用 https://planyourtv.me/download/ 下的官方文件。
+- 不要从第三方 APK 站点、网盘或应用商店获取 PlanYourTV。
+- 不要建议用户为了安装 PlanYourTV 而安装其他工具，或卸载/停用电视自带桌面。
+- 设备兼容性以 Aerial 上游和本项目 README 为准；不要声称未验证的机型已经过本项目验证。
+- 提到 AI 出题时，说明它使用家长自选的 OpenAI 兼容服务，不是在电视本地运行模型。
