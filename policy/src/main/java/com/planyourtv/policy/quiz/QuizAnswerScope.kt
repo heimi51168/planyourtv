@@ -41,10 +41,14 @@ data class QuizAnswerScope(
     companion object {
         const val FOLLOW_SIGNATURE = "FOLLOW"
 
-        private val SUBJECTS = setOf("CHINESE", "MATH", "ENGLISH", "SCIENCE")
+        /** 通配值：答题范围不限制学科 / 教材。 */
+        const val SUBJECT_ALL = "ALL"
+        const val TEXTBOOK_ALL = "ALL"
+
+        private val SUBJECTS = setOf("CHINESE", "MATH", "ENGLISH", "SCIENCE", SUBJECT_ALL)
         private val TEXTBOOKS = setOf(
             "BUBIAN", "RENJIAO", "SUJIAO", "BEISHIDA", "QINGDAO",
-            "PEP", "WAIYAN", "YILIN", "KEJIAO", "GENERAL",
+            "PEP", "WAIYAN", "YILIN", "KEJIAO", "GENERAL", TEXTBOOK_ALL,
         )
         private val SCOPE_TYPES = setOf("UNIT", "MIDTERM", "FINAL", "REVIEW")
         private val DIFFICULTIES = setOf("EASY", "MEDIUM", "HARD")

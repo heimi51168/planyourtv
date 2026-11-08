@@ -41,7 +41,8 @@
     <string name="policy_quiz_scan_hint">QR-код постоянный, его можно сохранить на телефоне. После проверки страница открывается без PIN до конца дня; после полуночи нужна повторная проверка.</string>
     <string name="policy_quiz_qr_loading">Подготовка QR-кода…</string>
     <string name="policy_quiz_offline">Телевизор не в локальной сети, QR-код недоступен.</string>
-    <string name="policy_quiz_bank_stock">Локальный банк · не использовано: %1$d</string>
+    <string name="policy_quiz_bank_stock">Источник: локальный банк · не использовано: %1$d</string>
+    <string name="policy_quiz_source_cloud">Источник: облачный банк</string>
     <string name="policy_quiz_bank_qr_hint">Родителю: отсканируйте код, чтобы добавить вопросы</string>
     <string name="policy_quiz_bank_empty_title">Попросите родителя добавить вопросы</string>
     <string name="policy_quiz_bank_empty_body">В локальном банке нет готовых вопросов. Отсканируйте код и создайте вопросы на странице телефона.</string>

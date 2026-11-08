@@ -134,6 +134,18 @@ class RemoteQuizConfigTest {
     }
 
     @Test
+    fun acceptsAllSubjectAndTextbookWildcards() {
+        val parsed = RemoteQuizConfig.parse(valid {
+            it.put("scope", scopeJson().put("subject", "ALL").put("textbook", "ALL"))
+        })
+        requireNotNull(parsed)
+        val scope = requireNotNull(parsed.scope)
+        assertEquals(QuizAnswerScope.SUBJECT_ALL, scope.subject)
+        assertEquals(QuizAnswerScope.TEXTBOOK_ALL, scope.textbook)
+        assertEquals("UNIT", scope.scopeType)
+    }
+
+    @Test
     fun difficultyCanBeAbsent() {
         val parsed = RemoteQuizConfig.parse(valid {
             it.put("scope", scopeJson(difficulty = null))
@@ -146,7 +158,7 @@ class RemoteQuizConfigTest {
     fun anInvalidScopeRejectsTheWholeRemoteNode() {
         // 不静默换成默认范围：整包拒绝，调用方保留上一份已应用配置。
         assertNull(RemoteQuizConfig.parse(valid {
-            it.put("scope", scopeJson().put("subject", "ALL"))
+            it.put("scope", scopeJson().put("subject", "HISTORY"))
         }))
         assertNull(RemoteQuizConfig.parse(valid {
             it.put("scope", scopeJson(unitNo = null))

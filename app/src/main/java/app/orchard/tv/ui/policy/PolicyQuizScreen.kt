@@ -549,10 +549,14 @@ private fun QuizBankStartScreen(
                 modifier = Modifier.widthIn(max = 404.dp),
             )
             Spacer(Modifier.height(8.dp))
-            BasicText(
-                stringResource(R.string.policy_quiz_bank_stock, state.bankUnused),
-                style = Type.Caption.copy(color = Palette.SecondaryLabel),
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                GlyphIcon(Glyph.Home, Palette.SecondaryLabel, 15.dp)
+                Spacer(Modifier.width(7.dp))
+                BasicText(
+                    stringResource(R.string.policy_quiz_bank_stock, state.bankUnused),
+                    style = Type.Caption.copy(color = Palette.SecondaryLabel),
+                )
+            }
             error?.let {
                 Spacer(Modifier.height(8.dp))
                 BasicText(
@@ -883,6 +887,15 @@ private fun QuizReadyScreen(
                 style = Type.Body.copy(color = Palette.SecondaryLabel),
                 modifier = Modifier.widthIn(max = 404.dp),
             )
+            Spacer(Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                GlyphIcon(Glyph.Cloud, Palette.SecondaryLabel, 15.dp)
+                Spacer(Modifier.width(7.dp))
+                BasicText(
+                    stringResource(R.string.policy_quiz_source_cloud),
+                    style = Type.Caption.copy(color = Palette.SecondaryLabel),
+                )
+            }
             error?.let {
                 Spacer(Modifier.height(8.dp))
                 BasicText(

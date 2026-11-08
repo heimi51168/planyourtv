@@ -104,6 +104,7 @@
       apiKey: "API 密钥",
       keyHintSaved: "已保存密钥，不会回显；留空表示沿用。",
       keyHintNew: "密钥只保存在电视本地（系统支持时加密）。",
+      deepseekKeyHint: "默认服务是 DeepSeek。没有 Key？可在 DeepSeek 开放平台创建（可选，费用由你与该平台结算）。",
       saveProvider: "保存 AI 设置",
       testProvider: "测试连接",
       providerReady: "AI 出题已配置",
@@ -135,6 +136,7 @@
       tbYilin: "译林版",
       tbKejiao: "教科版",
       tbGeneral: "综合",
+      tbAll: "全部教材",
       genSubjectLabel: "学科",
       subjectChinese: "语文",
       subjectMath: "数学",
@@ -379,6 +381,7 @@
       apiKey: "API key",
       keyHintSaved: "A key is saved and never shown; leave this blank to keep it.",
       keyHintNew: "The key is stored only on the TV, encrypted when the system supports it.",
+      deepseekKeyHint: "DeepSeek is the default. Need a key? Create one on the DeepSeek platform (optional; billed by DeepSeek).",
       saveProvider: "Save AI settings",
       testProvider: "Test connection",
       providerReady: "AI questions configured",
@@ -410,6 +413,7 @@
       tbYilin: "Yilin edition",
       tbKejiao: "Science edition",
       tbGeneral: "General",
+      tbAll: "All textbooks",
       genSubjectLabel: "Subject",
       subjectChinese: "Chinese",
       subjectMath: "Math",
@@ -654,6 +658,7 @@
       apiKey: "Ключ API",
       keyHintSaved: "Ключ сохранён и не показывается; оставьте поле пустым, чтобы сохранить его.",
       keyHintNew: "Ключ хранится только на телевизоре; шифрование используется, если система его поддерживает.",
+      deepseekKeyHint: "По умолчанию используется DeepSeek. Нет ключа? Создайте его на платформе DeepSeek (необязательно; оплачивается DeepSeek).",
       saveProvider: "Сохранить настройки ИИ",
       testProvider: "Проверить подключение",
       providerReady: "ИИ-вопросы настроены",
@@ -685,6 +690,7 @@
       tbYilin: "Илинь",
       tbKejiao: "Кэцзяо",
       tbGeneral: "Общий",
+      tbAll: "Все учебники",
       genSubjectLabel: "Предмет",
       subjectChinese: "Китайский язык",
       subjectMath: "Математика",
@@ -929,6 +935,7 @@
       apiKey: "Ключ API",
       keyHintSaved: "Ключ збережено і не показується; залиште поле порожнім, щоб зберегти його.",
       keyHintNew: "Ключ зберігається лише на телевізорі; шифрування використовується, якщо система його підтримує.",
+      deepseekKeyHint: "Типово використовується DeepSeek. Немає ключа? Створіть його на платформі DeepSeek (необов’язково; оплачується DeepSeek).",
       saveProvider: "Зберегти налаштування ШІ",
       testProvider: "Перевірити з'єднання",
       providerReady: "ШІ-питання налаштовано",
@@ -960,6 +967,7 @@
       tbYilin: "Ілінь",
       tbKejiao: "Кецзяо",
       tbGeneral: "Загальний",
+      tbAll: "Усі підручники",
       genSubjectLabel: "Предмет",
       subjectChinese: "Китайська мова",
       subjectMath: "Математика",
@@ -1204,6 +1212,7 @@
       apiKey: "API кілті",
       keyHintSaved: "Кілт сақталған және көрсетілмейді; сақтау үшін өрісті бос қалдырыңыз.",
       keyHintNew: "Кілт тек теледидарда сақталады; жүйе қолдаса, шифрланады.",
+      deepseekKeyHint: "Әдепкіде DeepSeek қолданылады. Кілт жоқ па? Оны DeepSeek платформасында жасаңыз (міндетті емес; төлемді DeepSeek алады).",
       saveProvider: "AI баптауын сақтау",
       testProvider: "Қосылымды тексеру",
       providerReady: "AI сұрақтары бапталған",
@@ -1235,6 +1244,7 @@
       tbYilin: "Илинь",
       tbKejiao: "Кэцзяо",
       tbGeneral: "Жалпы",
+      tbAll: "Барлық оқулықтар",
       genSubjectLabel: "Пән",
       subjectChinese: "Қытай тілі",
       subjectMath: "Математика",
@@ -1388,14 +1398,6 @@
       tabWrong: "错题",
       tabMe: "我的",
       navLabel: "主导航",
-      sourceBoundTitle: "已绑定 · 电视使用远程题库",
-      sourceBoundDetail: "本页管理本地题库，解绑后自动启用",
-      sourceLocalTitle: "未绑定 · 电视使用本地题库",
-      sourceLocalDetail: "本页生成和管理的题目会参与答题",
-      sourceDisabledTitle: "答题未启用",
-      sourceDisabledDetail: "在「我的」中开启答题挑战",
-      sourceUnavailableTitle: "暂时无法连接电视",
-      sourceUnavailableDetail: "请检查手机与电视是否在同一局域网",
       sourceValueLocal: "本地题库",
       sourceValueCloud: "远程题库",
       generateLead: "选好范围，AI 会按目标数量分批把题目加入本地题库。",
@@ -1491,14 +1493,6 @@
       tabWrong: "Mistakes",
       tabMe: "Mine",
       navLabel: "Main navigation",
-      sourceBoundTitle: "Bound · TV uses the remote bank",
-      sourceBoundDetail: "This page manages the local bank; it turns on after unbinding",
-      sourceLocalTitle: "Not bound · TV uses the local bank",
-      sourceLocalDetail: "Questions generated and managed here take part in the quiz",
-      sourceDisabledTitle: "Quiz is off",
-      sourceDisabledDetail: "Turn it on under Mine",
-      sourceUnavailableTitle: "Cannot reach the TV",
-      sourceUnavailableDetail: "Check that the phone and TV are on the same network",
       sourceValueLocal: "Local bank",
       sourceValueCloud: "Remote bank",
       generateLead: "Choose a range; AI adds questions to the local bank in batches.",
@@ -1594,14 +1588,6 @@
       tabWrong: "Ошибки",
       tabMe: "Моё",
       navLabel: "Основная навигация",
-      sourceBoundTitle: "Привязан · ТВ использует облачный банк",
-      sourceBoundDetail: "Здесь локальный банк; он включится после отвязки",
-      sourceLocalTitle: "Не привязан · ТВ использует локальный банк",
-      sourceLocalDetail: "Вопросы, созданные здесь, участвуют в викторине",
-      sourceDisabledTitle: "Викторина выключена",
-      sourceDisabledDetail: "Включите её в разделе «Моё»",
-      sourceUnavailableTitle: "Нет связи с телевизором",
-      sourceUnavailableDetail: "Проверьте, что телефон и ТВ в одной сети",
       sourceValueLocal: "Локальный банк",
       sourceValueCloud: "Облачный банк",
       generateLead: "Выберите диапазон: ИИ добавит вопросы в локальный банк партиями.",
@@ -1697,14 +1683,6 @@
       tabWrong: "Помилки",
       tabMe: "Моє",
       navLabel: "Основна навігація",
-      sourceBoundTitle: "Прив'язано · ТВ використовує хмарний банк",
-      sourceBoundDetail: "Тут локальний банк; він увімкнеться після відв'язки",
-      sourceLocalTitle: "Не прив'язано · ТВ використовує локальний банк",
-      sourceLocalDetail: "Питання, створені тут, беруть участь у вікторині",
-      sourceDisabledTitle: "Вікторину вимкнено",
-      sourceDisabledDetail: "Увімкніть її в розділі «Моє»",
-      sourceUnavailableTitle: "Немає зв'язку з телевізором",
-      sourceUnavailableDetail: "Перевірте, що телефон і ТВ в одній мережі",
       sourceValueLocal: "Локальний банк",
       sourceValueCloud: "Хмарний банк",
       generateLead: "Виберіть діапазон: ШІ додасть питання до локального банку партіями.",
@@ -1800,14 +1778,6 @@
       tabWrong: "Қателер",
       tabMe: "Менің",
       navLabel: "Негізгі навигация",
-      sourceBoundTitle: "Байланған · ТВ бұлттық банкті пайдаланады",
-      sourceBoundDetail: "Мұнда жергілікті банк; ол ажыратқаннан кейін қосылады",
-      sourceLocalTitle: "Байланбаған · ТВ жергілікті банкті пайдаланады",
-      sourceLocalDetail: "Осында жасалған сұрақтар викторинаға қатысады",
-      sourceDisabledTitle: "Викторина өшірілген",
-      sourceDisabledDetail: "Оны «Менің» бөлімінде қосыңыз",
-      sourceUnavailableTitle: "Теледидармен байланыс жоқ",
-      sourceUnavailableDetail: "Телефон мен ТВ бір желіде екенін тексеріңіз",
       sourceValueLocal: "Жергілікті банк",
       sourceValueCloud: "Бұлттық банк",
       generateLead: "Ауқымды таңдаңыз: AI сұрақтарды жергілікті банкке партиялап қосады.",
@@ -2267,6 +2237,7 @@
     yilin: "tbYilin",
     kejiao: "tbKejiao",
     general: "tbGeneral",
+    all: "tbAll",
   };
   const TEXTBOOKS = {
     chinese: ["bubian", "renjiao", "sujiao", "beishida"],
@@ -2302,7 +2273,9 @@
   };
   // 答题范围是答题配置的一部分（与 PTV 同一套规范字段）。难度属于范围；
   // 范围为空 = 绑定出题范围（由出题配置实时推导），此时没有难度过滤。
-  const SCOPE_SUBJECTS = ["chinese", "math", "english", "science"];
+  const SCOPE_SUBJECTS = ["chinese", "math", "english", "science", "all"];
+  const SUBJECT_ALL = "all";
+  const TEXTBOOK_ALL = "all";
   const SCOPE_TOPIC_VALUES = ["unit", "midterm", "final", "all"];
   const SCOPE_TOPIC_TO_CANONICAL = {
     unit: "UNIT",
@@ -2356,7 +2329,6 @@
   let adminToken = null;
   let adminExpiresAt = 0;
   let publicState = null;
-  let statusError = false;
   let adminSession = null;
   let challengeConfig = null;
   let syncState = null;
@@ -2545,6 +2517,12 @@
     }
   }
 
+  function applyLanguage(value) {
+    lang = LANGS.includes(value) ? value : "en";
+    try { localStorage.setItem("quiz.lang", lang); } catch (_) { /* ignore */ }
+    applyI18n();
+  }
+
   function applyI18n() {
     document.documentElement.lang = lang;
     document.title = t("title");
@@ -2558,12 +2536,12 @@
       el.setAttribute("aria-label", t(el.dataset.i18nAria));
     });
     $("langSelect").value = lang;
+    $("langSelectMe").value = lang;
     if (!$("gateCard").classList.contains("hidden")) {
       $("gateTitle").textContent = t("gate_pair_title");
       $("gateText").textContent = t("gate_pair_text");
     }
     syncGenerateComposer(true);
-    renderSource();
     renderStock();
     renderHome();
     renderGenerate();
@@ -2577,38 +2555,6 @@
     if (genPage === "answer") renderAnswerPage();
     if (genPage === "questions") renderQuestions();
     updateToggleState();
-  }
-
-  function renderSource() {
-    const title = $("sourceTitle");
-    if (!title) return;
-    const dot = $("sourceDot");
-    let titleText;
-    let detailText;
-    let dotClass = "dot";
-    if (!publicState) {
-      titleText = statusError ? t("sourceUnavailableTitle") : t("status_loading");
-      detailText = statusError ? t("sourceUnavailableDetail") : "";
-      dotClass = statusError ? "dot bad" : "dot";
-    } else if (publicState.enabled === false) {
-      titleText = t("sourceDisabledTitle");
-      detailText = t("sourceDisabledDetail");
-      dotClass = "dot off";
-    } else if (publicState.source === "CLOUD") {
-      titleText = t("sourceBoundTitle");
-      detailText = t("sourceBoundDetail");
-      dotClass = "dot bound";
-    } else {
-      titleText = t("sourceLocalTitle");
-      detailText = t("sourceLocalDetail");
-      dotClass = "dot local";
-    }
-    title.textContent = titleText;
-    const detail = $("sourceDetail");
-    if (detail) detail.textContent = detailText;
-    const pill = $("sourcePill");
-    if (pill) pill.title = detailText;
-    dot.className = dotClass;
   }
 
   function renderStock() {
@@ -3401,12 +3347,14 @@
   function showPinGate() {
     if (activeModal) closeModal();
     resetSessionState();
+    document.body.classList.remove("editor-open");
     $("editor").classList.add("hidden");
     $("bottomNav").classList.add("hidden");
     setGate("gate_pair_title", "gate_pair_text", true);
   }
 
   function showEditor() {
+    document.body.classList.add("editor-open");
     $("gateCard").classList.add("hidden");
     $("editor").classList.remove("hidden");
     $("bottomNav").classList.remove("hidden");
@@ -3966,7 +3914,10 @@
     const grade = Number(raw.grade);
     const semester = Number(raw.semester);
     const subject = String(raw.subject || "").toLowerCase();
-    const textbook = String(raw.textbook || "").toLowerCase();
+    // 全科没有单一教材：教材维度跟随通配，避免显示成某一科的教材。
+    const textbook = subject === SUBJECT_ALL
+      ? TEXTBOOK_ALL
+      : String(raw.textbook || "").toLowerCase();
     const topic = raw.topic
       ? String(raw.topic).toLowerCase()
       : SCOPE_TOPIC_FROM_CANONICAL[String(raw.scopeType || "").toUpperCase()];
@@ -4122,6 +4073,7 @@
     if (!Number.isInteger(grade) || grade < 1 || grade > 6) return false;
     if (semester !== 1 && semester !== 2) return false;
     if (!SCOPE_SUBJECTS.includes(draft.subject)) return false;
+    if (draft.subject === SUBJECT_ALL && draft.textbook !== TEXTBOOK_ALL) return false;
     if (!Object.prototype.hasOwnProperty.call(TEXTBOOK_LABEL_KEYS, draft.textbook)) return false;
     if (!SCOPE_TOPIC_VALUES.includes(draft.topic)) return false;
     if (draft.topic === "unit" && (!Number.isInteger(unitNo) || unitNo < 1 || unitNo > 8)) return false;
@@ -4135,8 +4087,11 @@
     if (!draft.semester) return visible;
     visible.push("subject");
     if (!draft.subject) return visible;
-    visible.push("textbook");
-    if (!draft.textbook) return visible;
+    // 全科的教材固定为通配，不再让家长在无意义的教材维度上做选择。
+    if (draft.subject !== SUBJECT_ALL) {
+      visible.push("textbook");
+      if (!draft.textbook) return visible;
+    }
     visible.push("topic");
     if (!draft.topic) return visible;
     visible.push("difficulty");
@@ -4170,11 +4125,13 @@
     if (step === "semester") return ["1", "2"];
     if (step === "subject") return SCOPE_SUBJECTS.slice();
     if (step === "textbook") {
+      if (draft && draft.subject === SUBJECT_ALL) return [TEXTBOOK_ALL];
       const known = (TEXTBOOKS[draft && draft.subject] || ["general"]).slice();
       const extra = Object.keys(counts || {})
         .map((key) => String(key).toLowerCase())
         .filter((key) => Object.prototype.hasOwnProperty.call(TEXTBOOK_LABEL_KEYS, key));
-      return Array.from(new Set(known.concat(extra)));
+      // 具体学科也可以跨教材出题；“全部教材”放在第一位。
+      return Array.from(new Set([TEXTBOOK_ALL].concat(known, extra)));
     }
     if (step === "topic") {
       // List the bank's real topic values: every unit separately, then the
@@ -4203,7 +4160,22 @@
     if (step === "difficulty") {
       return value === "" ? Number(data.unrestricted || 0) : Number(counts[value] || 0);
     }
-    if (step === "subject" || step === "textbook") {
+    if (step === "subject") {
+      if (String(value) === SUBJECT_ALL) {
+        // 题库按单题学科计数；全科范围是这些计数的总和（含识别不出学科的 ALL）。
+        return ["CHINESE", "MATH", "ENGLISH", "SCIENCE", "ALL"]
+          .reduce((sum, key) => sum + Number(counts[key] || 0), 0);
+      }
+      return Number(counts[String(value).toUpperCase()] || 0);
+    }
+    if (step === "textbook") {
+      if (String(value) === TEXTBOOK_ALL) {
+        return Object.keys(counts || {})
+          .filter((key) => Object.prototype.hasOwnProperty.call(
+            TEXTBOOK_LABEL_KEYS, String(key).toLowerCase(),
+          ))
+          .reduce((sum, key) => sum + Number(counts[key] || 0), 0);
+      }
       return Number(counts[String(value).toUpperCase()] || 0);
     }
     return Number(counts[String(value)] || 0);
@@ -4410,7 +4382,9 @@
       delete draft.difficulty;
     } else if (step === "subject") {
       draft.subject = value;
-      delete draft.textbook;
+      // 全科直接落到“全部教材”；具体学科重新选择教材。
+      if (value === SUBJECT_ALL) draft.textbook = TEXTBOOK_ALL;
+      else delete draft.textbook;
       delete draft.topic;
       delete draft.unitNo;
       delete draft.difficulty;
@@ -4671,16 +4645,14 @@
       prompt,
       difficulty: genDifficultyValue,
     };
-    // 六字段范围写进每道题，答题范围才能按题库数据做 facets；综合科目没有
-    // 单一学科，题目按“未标注范围”入库，绑定范围时仍可作为不过滤的题使用。
-    if (genSubjectValue !== "all") {
-      payload.subjectId = genSubjectValue;
-      payload.gradeNo = genGradeValue;
-      payload.semester = genSemesterValue;
-      payload.textbook = genTextbookId;
-      payload.scopeType = genScopeValue;
-      if (genScopeValue === "unit") payload.unitNo = genUnitValue;
-    }
+    // 六字段范围始终写进请求：全科用 subject=ALL / textbook=ALL 通配，
+    // 具体题目由电视按模型返回的学科补全，答题范围才能按题库数据做 facets。
+    payload.subjectId = genSubjectValue;
+    payload.gradeNo = genGradeValue;
+    payload.semester = genSemesterValue;
+    payload.textbook = genSubjectValue === SUBJECT_ALL ? TEXTBOOK_ALL : genTextbookId;
+    payload.scopeType = genScopeValue;
+    if (genScopeValue === "unit") payload.unitNo = genUnitValue;
     if (!validateGenerationPayload(payload)) {
       genState = idleGeneration();
       genState.phase = "failed";
@@ -4935,9 +4907,7 @@
     try {
       const previous = publicState;
       publicState = await api("/api/quiz/status");
-      statusError = false;
       applyBankCounts(publicState.bank);
-      renderSource();
       renderStock();
       renderGenerate();
       renderBankCounts();
@@ -4952,8 +4922,6 @@
         });
       }
     } catch (_) {
-      statusError = true;
-      renderSource();
       updateToggleState();
     }
   }
@@ -5206,11 +5174,8 @@
   }
 
   function bind() {
-    $("langSelect").addEventListener("change", () => {
-      lang = LANGS.includes($("langSelect").value) ? $("langSelect").value : "en";
-      try { localStorage.setItem("quiz.lang", lang); } catch (_) { /* ignore */ }
-      applyI18n();
-    });
+    $("langSelect").addEventListener("change", () => applyLanguage($("langSelect").value));
+    $("langSelectMe").addEventListener("change", () => applyLanguage($("langSelectMe").value));
     $("pinForm").addEventListener("submit", submitPin);
     $("pin").addEventListener("input", () => {
       $("pin").value = $("pin").value.replace(/\D/g, "").slice(0, 6);

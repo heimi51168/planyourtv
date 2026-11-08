@@ -31,7 +31,7 @@ object QuizStudyProfile {
     private val DIFFICULTIES = setOf("", "easy", "medium", "hard")
     private val TEXTBOOKS = setOf(
         "bubian", "renjiao", "sujiao", "beishida", "qingdao",
-        "pep", "waiyan", "yilin", "kejiao", "general",
+        "pep", "waiyan", "yilin", "kejiao", "general", "all",
     )
     private val SCOPES = setOf("unit", "midterm", "final", "review")
 

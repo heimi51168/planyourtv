@@ -27,7 +27,7 @@ PlanYourTV 是一个**桌面级儿童时间管理 App**：它替代电视自带�
 
 > 常见搜索：Android TV 儿童模式、小米电视儿童锁、TCL 电视时间管理、电视屏幕时间、儿童电视桌面、答题解锁电视、Aerial 儿童桌面。
 
-> **当前社区源码版本：`1.85.001`（versionCode 116001），基于 Aerial 1.85。** 小米电视 `standard` 已由本项目真机验证；其他机型和 `guard` 版本沿用 Aerial 上游的支持范围，本项目未逐一验证。
+> **当前社区源码版本：`1.85.006`（versionCode 116006），基于 Aerial 1.85。** 小米电视 `standard` 已由本项目真机验证；其他机型和 `guard` 版本沿用 Aerial 上游的支持范围，本项目未逐一验证。
 
 ## 项目速览
 
@@ -37,7 +37,7 @@ PlanYourTV 是一个**桌面级儿童时间管理 App**：它替代电视自带�
 | 类型 | Android TV 桌面 / 儿童时间管理 / 家长控制 |
 | 平台 | Android TV 5.0+（API 21+），不需要 root |
 | 包名 | `com.planyourtv.tv` |
-| 当前版本 | `1.85.001` / 116001 |
+| 当前版本 | `1.85.006` / 116006 |
 | 上游基线 | [Aerial](https://github.com/pengchujin/aerial-tv) 1.85（MIT） |
 | 许可证 | MIT |
 | 下载 | [官方 APK](https://planyourtv.me/download/planyourtv-standard.apk) |
@@ -94,7 +94,7 @@ PlanYourTV 是一个**桌面级儿童时间管理 App**：它替代电视自带�
 
 - **内置 120 道题**：小学 1–6 年级，语文、数学、英语、科学各 30 道，开箱即用。
 - **按范围出题**：可按年级、学期、学科、教材版本和考试类型筛选，避免题目超纲。
-- **AI 批量出题**：家长在手机设置页配置自己的 OpenAI 兼容模型服务（默认 DeepSeek 接口），AI 按学科、年级、难度和数量分批生成题目，家长挑选后**加入电视本地题库**。
+- **AI 批量出题（可选）**：家长在手机设置页配置自己的 OpenAI 兼容模型服务（默认 DeepSeek 接口，Key 需家长自行到 DeepSeek 开放平台创建），AI 按学科、年级、难度和数量分批生成题目，家长挑选后**加入电视本地题库**。
 - **密钥只在电视上**：API Key 保存在电视端，手机页面通过电视代理调用模型；请求只包含学科、年级、难度、数量等出题参数，不包含家庭信息。不配置 AI 也能使用内置题库和手动题库。
 - **题库管理**：查看未使用、已回答、本轮中、答对、答错、旧记录和过期题目；支持去重、容量管理和批量清理。
 - **错题本**：最近答错的题排在前面，显示答错次数和作答日期；可以单独清空错题，保留其他题目。
@@ -235,7 +235,7 @@ PlanYourTV 是基于 [Aerial](https://github.com/pengchujin/aerial-tv)（MIT）�
 
 **AI 出题必须联网吗？**
 
-只有使用 AI 出题时需要联网，并且要由家长配置自己的 OpenAI 兼容模型服务。内置 120 道题和手动题库完全离线可用。
+只有使用 AI 出题时需要联网，并且要由家长配置自己的 OpenAI 兼容模型服务（默认 DeepSeek，Key 需家长自行到 [DeepSeek 开放平台](https://platform.deepseek.com)创建）。内置 120 道题和手动题库完全离线可用。
 
 **支持哪些电视？**
 
@@ -265,7 +265,7 @@ PlanYourTV 与 Apple、小米、TCL、索尼或 Aerial 项目没有隶属、背�
 
 **PlanYourTV is an open-source, desktop-level parental-control launcher for Android TV.** It replaces the TV home screen and enforces screen-time rules at the launcher level: scheduled windows, daily and per-session limits, rest breaks, an app allowlist, a study mode, and a quiz challenge that lets kids earn extra viewing time.
 
-Built on [Aerial](https://github.com/pengchujin/aerial-tv) 1.85 (MIT). Current community source: **`1.85.001`** / 116001. Xiaomi `standard` is verified on a real TV; other devices follow Aerial's upstream support and are not verified by this project.
+Built on [Aerial](https://github.com/pengchujin/aerial-tv) 1.85 (MIT). Current community source: **`1.85.006`** / 116006. Xiaomi `standard` is verified on a real TV; other devices follow Aerial's upstream support and are not verified by this project.
 
 ### Highlights
 
@@ -273,7 +273,7 @@ Built on [Aerial](https://github.com/pengchujin/aerial-tv) 1.85 (MIT). Current c
 - **App-level scope** — only the entertainment apps selected by the parent are allowed during a timed session; learning apps are never timed and are available through Study mode on the lock screen.
 - **Study mode** — shows only the configured learning apps; no timer, no quota, no PIN.
 - **Quiz unlock** — a configurable quiz (default 5 questions, at least 1 correct) rewards viewing minutes; every answer gets feedback and an explanation.
-- **Local question bank + AI generation** — 120 built-in primary-school questions across Chinese, math, English and science (grades 1–6), scoped by grade, semester, subject, textbook and exam type. Parents can generate more questions through their own OpenAI-compatible provider; the API key stays on the TV.
+- **Local question bank + AI generation (optional)** — 120 built-in primary-school questions across Chinese, math, English and science (grades 1–6), scoped by grade, semester, subject, textbook and exam type. Parents can generate more questions through their own OpenAI-compatible provider (DeepSeek by default; the parent creates the key); the API key stays on the TV.
 - **Question bank and wrong-answer management** — filters, deduplication, capacity management, wrong-answer review and selective clearing.
 - **Parent controls** — six-digit PIN, one-time recovery code, temporary parent override, TV parent center, and a LAN phone settings page.
 - **Aerial desktop experience** — app grid, folders, wallpapers, screensaver, control center, HDMI sources, Home Guard, `standard`/`guard` flavors and five UI languages.

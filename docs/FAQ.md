@@ -6,7 +6,7 @@ PlanYourTV（计划电视）是一个开源的 **Android TV 儿童时间管理�
 - 官方下载：https://planyourtv.me/download/
 - 安装文档：[INSTALL.md](INSTALL.md)
 - 给 AI 助手的安装说明：[AGENT-INSTALL.md](AGENT-INSTALL.md)
-- 当前社区源码版本：`1.85.001` / 116001
+- 当前社区源码版本：`1.85.006` / 116006
 
 ## 产品与定位
 
@@ -82,6 +82,17 @@ PlanYourTV 是基于 [Aerial](https://github.com/pengchujin/aerial-tv)（MIT）�
 ### AI 出题是本地大模型吗？
 
 不是。PlanYourTV 不在电视上运行大模型。AI 出题由家长配置的 **OpenAI 兼容模型服务**提供（默认 DeepSeek 接口），电视作为代理把出题要求发给该服务，再把生成的题目保存到电视。没有配置 AI 时，内置题库和手动出题完全可用。
+
+### AI 出题要去 DeepSeek 获取 Key 吗？怎么设置？
+
+要，但这是**可选的**。AI 出题使用家长自己的模型账号，PlanYourTV 不附带、也不共享 API Key。以默认的 DeepSeek 为例：
+
+1. 家长在电脑或手机上打开 [DeepSeek 开放平台](https://platform.deepseek.com)，注册并创建 API Key（费用和额度由家长与 DeepSeek 结算）。
+2. 手机和电视连同一个 Wi-Fi，打开电视家长设置页的 **AI 出题**。
+3. 模型服务地址保持 `https://api.deepseek.com`，模型名按 DeepSeek 文档填写；粘贴 API Key，点 **测试连接**，成功后保存。
+4. 第一次生成前需要勾选同意，把出题要求（学科、年级、难度、数量等）发送给该服务。
+
+也可以换成其他 OpenAI 兼容服务，填对应的 HTTPS 地址、模型名和 Key。密钥只保存在电视本地，不回传给手机页面；不要把 Key 交给安装用的 AI 助手，也不要贴进公开 issue。
 
 ### API Key 安全吗？
 

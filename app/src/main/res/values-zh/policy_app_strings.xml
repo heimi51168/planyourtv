@@ -41,7 +41,8 @@
     <string name="policy_quiz_scan_hint">二维码固定不变，可在家长手机收藏；验证后当天内再次打开无需输入 PIN，次日 0 点后需重新验证。</string>
     <string name="policy_quiz_qr_loading">正在生成二维码…</string>
     <string name="policy_quiz_offline">电视当前不在局域网中，无法显示二维码。</string>
-    <string name="policy_quiz_bank_stock">本地题库 · 未使用 %1$d 道</string>
+    <string name="policy_quiz_bank_stock">题目来源：本地题库 · 未使用 %1$d 道</string>
+    <string name="policy_quiz_source_cloud">题目来源：云端题库</string>
     <string name="policy_quiz_bank_qr_hint">家长扫码可继续出题</string>
     <string name="policy_quiz_bank_empty_title">请家长先出题</string>
     <string name="policy_quiz_bank_empty_body">本地题库暂时没有可用的题目。请家长扫描二维码，在手机网页生成题目。</string>

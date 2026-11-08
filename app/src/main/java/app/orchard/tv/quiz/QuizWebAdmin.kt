@@ -15,7 +15,6 @@ import com.planyourtv.policy.quiz.QuizSessionCodec
 import com.planyourtv.policy.quiz.QuizSessionStatus
 import com.planyourtv.policy.quiz.QuizSessionValidation
 import org.json.JSONArray
-import java.util.WeakHashMap
 
 /**
  * The quiz page and its small JSON API. PhoneServer hands over only paths below
@@ -24,7 +23,15 @@ import java.util.WeakHashMap
  */
 object QuizWebAdmin {
     private const val MAX_JSON_BYTES = 256 * 1024
-    private val requestBodies = WeakHashMap<IHTTPSession, JSONObject?>()
+
+    /**
+     * NanoHTTPD keeps one [IHTTPSession] for the whole keep-alive connection,
+     * so caching bodies by session would return the first request's body for
+     * every later request on that connection. Scope the parsed body to the
+     * current request instead: [api] runs synchronously on the connection
+     * thread, so a ThreadLocal is request-local here.
+     */
+    private val requestBody = ThreadLocal<JSONObject?>()
 
     fun handle(context: Context, session: IHTTPSession, path: String): Response? {
         return when {
@@ -45,41 +52,45 @@ object QuizWebAdmin {
     private fun api(session: IHTTPSession, path: String): Response {
         // NanoHTTPD 2.3.1 leaves a POST body on the keep-alive stream when the
         // handler never reads it, so the next request would start with "{}POST"
-        // and fail with "HTTP verb {}POST unhandled". Read the body once here
-        // for every request; jsonBody() serves the cached value to the handler.
-        jsonBody(session)
-        if (!sameOrigin(session)) return error(Response.Status.FORBIDDEN, "ORIGIN")
-        return when {
-            session.method == Method.POST && path == "/api/quiz/pair" -> pair(session)
-            session.method == Method.POST && path == "/api/quiz/auth/pin" -> pin(session)
-            session.method == Method.POST && path == "/api/quiz/auth/logout" -> logout(session)
-            session.method == Method.GET && path == "/api/quiz/admin/session" -> readSession(session)
-            session.method == Method.PUT && path == "/api/quiz/admin/session" -> putSession(session)
-            session.method == Method.DELETE && path == "/api/quiz/admin/session" -> deleteSession(session)
-            session.method == Method.POST && path == "/api/quiz/admin/challenge-config" -> saveChallengeConfig(session)
-            session.method == Method.GET && path == "/api/quiz/admin/bank" -> readBank(session)
-            session.method == Method.GET && path == "/api/quiz/admin/bank/facets" -> readBankFacets(session)
-            session.method == Method.POST && path == "/api/quiz/admin/bank/clear" -> clearBank(session)
-            session.method == Method.GET && path == "/api/quiz/admin/cache" -> readCache(session)
-            session.method == Method.POST && path == "/api/quiz/admin/cache/clear" -> clearCache(session)
-            session.method == Method.POST && path == "/api/quiz/admin/cache/rebuild" -> rebuildCache(session)
-            session.method == Method.GET && path == "/api/quiz/admin/provider" -> readProvider(session)
-            session.method == Method.POST && path == "/api/quiz/admin/consent" -> setConsent(session)
-            session.method == Method.POST && path == "/api/quiz/admin/provider" -> saveProvider(session)
-            session.method == Method.POST && path == "/api/quiz/admin/provider/test" -> testProvider(session)
-            session.method == Method.GET && path == "/api/quiz/admin/generate/prefs" -> readGenerationPrefs(session)
-            session.method == Method.POST && path == "/api/quiz/admin/generate/prefs" -> saveGenerationPrefs(session)
-            session.method == Method.POST && path == "/api/quiz/admin/generate" -> startGeneration(session)
-            session.method == Method.GET && path == "/api/quiz/admin/generate/status" -> generationStatus(session)
-            session.method == Method.POST && path == "/api/quiz/admin/generate/cancel" -> cancelGeneration(session)
-            session.method == Method.POST && path == "/api/quiz/admin/generate/add" -> addGeneration(session)
-            session.method == Method.POST && path == "/api/quiz/admin/generate/discard" -> discardGeneration(session)
-            session.method == Method.POST && path == "/api/quiz/admin/enable" -> setEnabled(session, true)
-            session.method == Method.POST && path == "/api/quiz/admin/disable" -> setEnabled(session, false)
-            session.method == Method.GET && path == "/api/quiz/admin/sync" -> syncStatus(session)
-            session.method == Method.POST && path == "/api/quiz/admin/sync/retry" -> syncRetry(session)
-            session.method == Method.POST && path == "/api/quiz/admin/sync/use-remote" -> syncUseRemote(session)
-            else -> error(Response.Status.NOT_FOUND, "NOT_FOUND")
+        // and fail with "HTTP verb {}POST unhandled". Read the body once per
+        // request; jsonBody() serves it to the handler and clears it after.
+        requestBody.set(readJsonBody(session))
+        try {
+            if (!sameOrigin(session)) return error(Response.Status.FORBIDDEN, "ORIGIN")
+            return when {
+                session.method == Method.POST && path == "/api/quiz/pair" -> pair(session)
+                session.method == Method.POST && path == "/api/quiz/auth/pin" -> pin(session)
+                session.method == Method.POST && path == "/api/quiz/auth/logout" -> logout(session)
+                session.method == Method.GET && path == "/api/quiz/admin/session" -> readSession(session)
+                session.method == Method.PUT && path == "/api/quiz/admin/session" -> putSession(session)
+                session.method == Method.DELETE && path == "/api/quiz/admin/session" -> deleteSession(session)
+                session.method == Method.POST && path == "/api/quiz/admin/challenge-config" -> saveChallengeConfig(session)
+                session.method == Method.GET && path == "/api/quiz/admin/bank" -> readBank(session)
+                session.method == Method.GET && path == "/api/quiz/admin/bank/facets" -> readBankFacets(session)
+                session.method == Method.POST && path == "/api/quiz/admin/bank/clear" -> clearBank(session)
+                session.method == Method.GET && path == "/api/quiz/admin/cache" -> readCache(session)
+                session.method == Method.POST && path == "/api/quiz/admin/cache/clear" -> clearCache(session)
+                session.method == Method.POST && path == "/api/quiz/admin/cache/rebuild" -> rebuildCache(session)
+                session.method == Method.GET && path == "/api/quiz/admin/provider" -> readProvider(session)
+                session.method == Method.POST && path == "/api/quiz/admin/consent" -> setConsent(session)
+                session.method == Method.POST && path == "/api/quiz/admin/provider" -> saveProvider(session)
+                session.method == Method.POST && path == "/api/quiz/admin/provider/test" -> testProvider(session)
+                session.method == Method.GET && path == "/api/quiz/admin/generate/prefs" -> readGenerationPrefs(session)
+                session.method == Method.POST && path == "/api/quiz/admin/generate/prefs" -> saveGenerationPrefs(session)
+                session.method == Method.POST && path == "/api/quiz/admin/generate" -> startGeneration(session)
+                session.method == Method.GET && path == "/api/quiz/admin/generate/status" -> generationStatus(session)
+                session.method == Method.POST && path == "/api/quiz/admin/generate/cancel" -> cancelGeneration(session)
+                session.method == Method.POST && path == "/api/quiz/admin/generate/add" -> addGeneration(session)
+                session.method == Method.POST && path == "/api/quiz/admin/generate/discard" -> discardGeneration(session)
+                session.method == Method.POST && path == "/api/quiz/admin/enable" -> setEnabled(session, true)
+                session.method == Method.POST && path == "/api/quiz/admin/disable" -> setEnabled(session, false)
+                session.method == Method.GET && path == "/api/quiz/admin/sync" -> syncStatus(session)
+                session.method == Method.POST && path == "/api/quiz/admin/sync/retry" -> syncRetry(session)
+                session.method == Method.POST && path == "/api/quiz/admin/sync/use-remote" -> syncUseRemote(session)
+                else -> error(Response.Status.NOT_FOUND, "NOT_FOUND")
+            }
+        } finally {
+            requestBody.remove()
         }
     }
 
@@ -425,11 +436,13 @@ object QuizWebAdmin {
                 return false
             }
             if (skip != "subject" && filter.subject != null &&
+                !filter.subject.equals(QuizAnswerScope.SUBJECT_ALL, ignoreCase = true) &&
                 !item.scopeSubject.equals(filter.subject, ignoreCase = true)
             ) {
                 return false
             }
             if (skip != "textbook" && filter.textbook != null &&
+                !filter.textbook.equals(QuizAnswerScope.TEXTBOOK_ALL, ignoreCase = true) &&
                 !item.scopeTextbook.equals(filter.textbook, ignoreCase = true)
             ) {
                 return false
@@ -1072,14 +1085,8 @@ object QuizWebAdmin {
     private fun jsonRequest(session: IHTTPSession): Boolean =
         session.headers["content-type"]?.startsWith("application/json") == true
 
-    private fun jsonBody(session: IHTTPSession): JSONObject? =
-        synchronized(requestBodies) {
-            if (requestBodies.containsKey(session)) {
-                requestBodies[session]
-            } else {
-                readJsonBody(session).also { requestBodies[session] = it }
-            }
-        }
+    @Suppress("UNUSED_PARAMETER")
+    private fun jsonBody(session: IHTTPSession): JSONObject? = requestBody.get()
 
     private fun readJsonBody(session: IHTTPSession): JSONObject? {
         // NanoHTTPD 2.3.1 only exposes parseBody() results for POST, so a PUT

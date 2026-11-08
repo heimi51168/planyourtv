@@ -377,7 +377,7 @@
   <pre class="diag" id="diag" hidden></pre>
   <div class="row" id="diagActions" hidden>
     <button class="btn" id="diagCopy" data-i18n="diag_copy"></button>
-    <a class="btn plain" id="diagGithub" href="https://github.com/planyourtv/planyourtv/issues/new?template=bug.yml" target="_blank" rel="noopener" data-i18n="diag_github"></a>
+    <a class="btn plain" id="diagGithub" href="https://github.com/heimi51168/planyourtv/issues/new?template=bug.yml" target="_blank" rel="noopener" data-i18n="diag_github"></a>
   </div>
   <p class="foot" data-i18n="feedback_hint"></p>
 </section>
@@ -1833,7 +1833,7 @@ $('#diagGithub').onclick = (e) => {
   const version = (text.match(/^PlanYourTV +(\S+) \(/m) || [])[1];
   if (model) q.set('title', '[Bug]: ' + model);
   if (version) q.set('version', version);
-  e.currentTarget.href = 'https://github.com/planyourtv/planyourtv/issues/new?' + q;
+  e.currentTarget.href = 'https://github.com/heimi51168/planyourtv/issues/new?' + q;
   toast(t(copyDiag() ? 'toast_diag_paste' : 'toast_copy_manual'));
 };
 function copyDiag() {

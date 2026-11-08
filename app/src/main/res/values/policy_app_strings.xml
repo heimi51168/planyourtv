@@ -41,7 +41,8 @@
     <string name="policy_quiz_scan_hint">The code is permanent; bookmark it on the parent phone. After verification it opens without a PIN for the rest of the day; re-verify after midnight.</string>
     <string name="policy_quiz_qr_loading">Preparing the QR code…</string>
     <string name="policy_quiz_offline">The TV is not on the local network, so the QR code is unavailable.</string>
-    <string name="policy_quiz_bank_stock">Local bank · %1$d unused</string>
+    <string name="policy_quiz_bank_stock">Source: local bank · %1$d unused</string>
+    <string name="policy_quiz_source_cloud">Source: cloud bank</string>
     <string name="policy_quiz_bank_qr_hint">Parent: scan to create more questions</string>
     <string name="policy_quiz_bank_empty_title">Ask a parent to create questions</string>
     <string name="policy_quiz_bank_empty_body">The local bank has no questions ready. Scan the code and create questions from the phone page.</string>

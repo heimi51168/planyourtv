@@ -877,8 +877,16 @@ object QuizQuestionCache {
     private fun matchesAnswerScope(item: QuizItem, scope: QuizAnswerScope?): Boolean {
         if (scope == null) return true
         if (item.scopeGrade != scope.grade || item.scopeSemester != scope.semester) return false
-        if (!item.scopeSubject.equals(scope.subject, ignoreCase = true)) return false
-        if (!item.scopeTextbook.equals(scope.textbook, ignoreCase = true)) return false
+        if (!scope.subject.equals(QuizAnswerScope.SUBJECT_ALL, ignoreCase = true) &&
+            !item.scopeSubject.equals(scope.subject, ignoreCase = true)
+        ) {
+            return false
+        }
+        if (!scope.textbook.equals(QuizAnswerScope.TEXTBOOK_ALL, ignoreCase = true) &&
+            !item.scopeTextbook.equals(scope.textbook, ignoreCase = true)
+        ) {
+            return false
+        }
         if (!item.scopeType.equals(scope.scopeType, ignoreCase = true)) return false
         if (scope.scopeType.equals("UNIT", ignoreCase = true)) {
             if (item.scopeUnitNo != scope.unitNo) return false

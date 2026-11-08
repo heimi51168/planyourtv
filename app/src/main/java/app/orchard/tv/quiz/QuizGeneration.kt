@@ -8,6 +8,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import java.util.Locale
 import java.util.UUID
 import kotlin.math.min
 
@@ -378,16 +379,43 @@ object QuizGeneration {
 
     private fun Request.stamp(item: QuizItem): QuizItem {
         val answerScope = scope() ?: return item
+        // 全科出题的公共范围仍然有效；单题学科尽量从模型返回的 subject 识别，
+        // 识别不了就保留 ALL，避免把题硬塞进某一科。
+        val perItem = if (answerScope.subject == QuizAnswerScope.SUBJECT_ALL) {
+            canonicalSubject(item.subject)?.let { subject -> subject to defaultTextbook(subject) }
+        } else {
+            null
+        }
         return item.copy(
             // 入题时以出题配置为准，避免模型自报难度导致答题范围统计漂移。
             difficulty = difficulty.ifBlank { item.difficulty },
             scopeGrade = answerScope.grade,
             scopeSemester = answerScope.semester,
-            scopeSubject = answerScope.subject,
-            scopeTextbook = answerScope.textbook,
+            scopeSubject = perItem?.first ?: answerScope.subject,
+            scopeTextbook = perItem?.second ?: answerScope.textbook,
             scopeType = answerScope.scopeType,
             scopeUnitNo = answerScope.unitNo,
         )
+    }
+
+    private fun canonicalSubject(raw: String): String? {
+        val value = raw.trim().lowercase(Locale.ROOT)
+        if (value.isBlank()) return null
+        return when {
+            value.contains("语文") || value.contains("chinese") ||
+                value.contains("language arts") -> "CHINESE"
+            value.contains("数学") || value.contains("math") -> "MATH"
+            value.contains("英语") || value.contains("english") -> "ENGLISH"
+            value.contains("科学") || value.contains("science") -> "SCIENCE"
+            else -> null
+        }
+    }
+
+    private fun defaultTextbook(subject: String): String = when (subject) {
+        "CHINESE" -> "BUBIAN"
+        "MATH" -> "RENJIAO"
+        "ENGLISH" -> "PEP"
+        else -> "KEJIAO"
     }
 
     fun parseRequest(root: JSONObject): ParseResult {
@@ -518,10 +546,7 @@ object QuizGeneration {
         }
         val valid = grade.matches(Regex("[1-6][ab]")) &&
             subject in setOf("chinese", "math", "english", "science", "all") &&
-            textbook in setOf(
-                "bubian", "renjiao", "sujiao", "beishida", "qingdao",
-                "pep", "waiyan", "yilin", "kejiao", "general",
-            ) &&
+            textbook in TEXTBOOKS &&
             scope in setOf("unit", "midterm", "final", "review") &&
             unit in 1..8 &&
             options in setOf(4, 6) &&
@@ -543,10 +568,10 @@ object QuizGeneration {
             .put("presetVersion", presetVersion)
     }
 
-    private val SCOPE_SUBJECTS = setOf("chinese", "math", "english", "science")
+    private val SCOPE_SUBJECTS = setOf("chinese", "math", "english", "science", "all")
     private val TEXTBOOKS = setOf(
         "bubian", "renjiao", "sujiao", "beishida", "qingdao",
-        "pep", "waiyan", "yilin", "kejiao", "general",
+        "pep", "waiyan", "yilin", "kejiao", "general", "all",
     )
     private val SCOPE_TYPES = setOf("unit", "midterm", "final", "review")
 }

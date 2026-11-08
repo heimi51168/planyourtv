@@ -1,5 +1,6 @@
 package app.orchard.tv.quiz
 
+import com.planyourtv.policy.quiz.QuizAnswerScope
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -71,6 +72,23 @@ class QuizGenerationRequestTest {
         assertEquals("UNIT", scope.scopeType)
         assertEquals(3, scope.unitNo)
         assertEquals("MEDIUM", scope.difficulty)
+    }
+
+    @Test fun acceptsAllSubjectScopeMetadata() {
+        val parsed = QuizGeneration.parseRequest(
+            JSONObject()
+                .put("subjectId", "all")
+                .put("gradeNo", 4)
+                .put("semester", 1)
+                .put("textbook", "all")
+                .put("scopeType", "review"),
+        )
+        assertTrue(parsed is QuizGeneration.ParseResult.Ok)
+        val scope = (parsed as QuizGeneration.ParseResult.Ok).request.scope()
+        assertNotNull(scope)
+        assertEquals(QuizAnswerScope.SUBJECT_ALL, scope!!.subject)
+        assertEquals(QuizAnswerScope.TEXTBOOK_ALL, scope.textbook)
+        assertEquals("REVIEW", scope.scopeType)
     }
 
     @Test fun rejectsIncompleteOrInconsistentScopeMetadata() {

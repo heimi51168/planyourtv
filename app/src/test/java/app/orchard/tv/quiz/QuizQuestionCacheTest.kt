@@ -188,6 +188,63 @@ class QuizQuestionCacheTest {
     }
 
     @Test
+    fun wildcardSubjectScopeMatchesEverySubjectWithinTheSameGrade() {
+        QuizQuestionCache.appendLocalQuestions(
+            "batch_all_subjects",
+            (1..2).map { scopedItem(it, grade = 4).copy(scopeSubject = "CHINESE") } +
+                (3..4).map { scopedItem(it, grade = 4).copy(scopeSubject = "MATH") } +
+                (5..6).map { scopedItem(it, grade = 5).copy(scopeSubject = "MATH") },
+            now,
+        )
+        val scope = QuizAnswerScope.create(
+            grade = 4,
+            semester = 1,
+            subject = QuizAnswerScope.SUBJECT_ALL,
+            textbook = QuizAnswerScope.TEXTBOOK_ALL,
+            scopeType = "UNIT",
+            unitNo = 3,
+            difficulty = null,
+        )!!
+        // Grade still filters; only subject/textbook are wildcards.
+        assertEquals(4, QuizQuestionCache.availableCount(answerScope = scope))
+        val reserved = QuizQuestionCache.reserveForRound(
+            count = 10,
+            sessionId = "sess_all_subjects",
+            scopeKey = QuizQuestionCache.LOCAL_SCOPE,
+            minRequired = 4,
+            nowMs = now,
+            answerScope = scope,
+        )
+        assertEquals(4, reserved.size)
+        assertTrue(reserved.all { it.question.scopeGrade == 4 })
+        assertEquals(
+            setOf("CHINESE", "MATH"),
+            reserved.map { it.question.scopeSubject }.toSet(),
+        )
+    }
+
+    @Test
+    fun wildcardTextbookScopeStillFiltersSubject() {
+        QuizQuestionCache.appendLocalQuestions(
+            "batch_all_books",
+            (1..2).map { scopedItem(it).copy(scopeSubject = "CHINESE", scopeTextbook = "BUBIAN") } +
+                (3..4).map { scopedItem(it).copy(scopeSubject = "CHINESE", scopeTextbook = "SUJIAO") } +
+                (5..6).map { scopedItem(it).copy(scopeSubject = "MATH", scopeTextbook = "RENJIAO") },
+            now,
+        )
+        val scope = QuizAnswerScope.create(
+            grade = 4,
+            semester = 1,
+            subject = "CHINESE",
+            textbook = QuizAnswerScope.TEXTBOOK_ALL,
+            scopeType = "UNIT",
+            unitNo = 3,
+            difficulty = null,
+        )!!
+        assertEquals(4, QuizQuestionCache.availableCount(answerScope = scope))
+    }
+
+    @Test
     fun duplicateFlagsMarkBankAndEarlierBatchRows() {
         QuizQuestionCache.appendLocalQuestions("batch_flags", listOf(item(1)), now)
         assertEquals(

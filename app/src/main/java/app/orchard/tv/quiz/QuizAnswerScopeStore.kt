@@ -57,16 +57,18 @@ object QuizAnswerScopeStore {
             return null
         }
         val subject = prefs.optString("subject", "").uppercase(Locale.ROOT)
-        if (subject == "ALL") {
-            Log.e(TAG, "generation prefs use ALL subjects; bound answer scope resolves to no filter")
-            return null
-        }
+        val allSubjects = subject == "ALL"
         val scopeType = prefs.optString("scope", "").uppercase(Locale.ROOT)
         val scope = QuizAnswerScope.create(
             grade = prefs.optInt("grade", 0),
             semester = prefs.optInt("semester", 0),
-            subject = subject,
-            textbook = prefs.optString("textbook", ""),
+            subject = if (allSubjects) QuizAnswerScope.SUBJECT_ALL else subject,
+            // 全科出题不带教材；绑定范围也不能悄悄按某一科教材过滤。
+            textbook = if (allSubjects) {
+                QuizAnswerScope.TEXTBOOK_ALL
+            } else {
+                prefs.optString("textbook", "")
+            },
             scopeType = scopeType,
             unitNo = if (scopeType == "UNIT") prefs.optInt("unit", 0) else null,
             difficulty = prefs.optString("difficulty", "").ifBlank { null },

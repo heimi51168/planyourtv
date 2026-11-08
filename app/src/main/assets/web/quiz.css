@@ -82,13 +82,11 @@ h1, h2, h3 { letter-spacing: -0.012em; }
 
 .top {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  align-items: center;
+  justify-content: flex-end;
   gap: 16px;
-  padding: max(22px, env(safe-area-inset-top)) 0 16px;
+  padding: max(18px, env(safe-area-inset-top)) 0 14px;
 }
-
-.brand { min-width: 0; }
 
 .eyebrow {
   margin: 0 0 4px;
@@ -483,6 +481,7 @@ details.solution p {
 }
 .setting-row:last-child { border-bottom: 0; }
 .setting-row.static { cursor: default; }
+.select-row .lang-select { flex: none; }
 
 .setting-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .setting-value { color: var(--muted); font-size: 12px; font-weight: 450; }
@@ -826,8 +825,10 @@ details.solution p {
 body.subpage-open {
   padding-bottom: calc(env(safe-area-inset-bottom) + 10px);
 }
+body.editor-open .top,
 body.subpage-open .top,
 body.subpage-open .bottom-nav { display: none; }
+body.editor-open:not(.subpage-open) main { padding-top: max(18px, env(safe-area-inset-top)); }
 body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
 
 .home-head {
@@ -838,28 +839,6 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
   padding: 2px 0 16px;
 }
 .home-head h1 { font-size: 27px; font-weight: 700; }
-
-.source-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  padding: 6px 10px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--muted);
-  font-size: 11.5px;
-  white-space: nowrap;
-}
-.source-pill .dot {
-  width: 6px;
-  height: 6px;
-  margin: 0;
-  box-shadow: 0 0 0 3px var(--accent-soft);
-}
-.source-pill .dot.off,
-.source-pill .dot.bad { box-shadow: none; }
 
 .cfg-card {
   display: block;
@@ -1264,7 +1243,6 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
 
 @media (max-width: 420px) {
   .home-head h1 { font-size: 25px; }
-  .source-pill { max-width: 46%; overflow: hidden; text-overflow: ellipsis; }
   .sticky-bar.split .btn { flex-basis: 150px; }
 }
 

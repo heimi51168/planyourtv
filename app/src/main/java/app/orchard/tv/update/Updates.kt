@@ -52,7 +52,7 @@ object Updates {
     // version.txt, notes.json and per-flavor APKs in both places, or override these constants in
     // your own fork.
     private const val SITE_BASE = "https://planyourtv.me/download"
-    private const val GITHUB_BASE = "https://github.com/planyourtv/planyourtv/releases/latest/download"
+    private const val GITHUB_BASE = "https://github.com/heimi51168/planyourtv/releases/latest/download"
     private val VERSION_URLS = listOf("$SITE_BASE/version.txt", "$GITHUB_BASE/version.txt")
     private val NOTES_URLS = listOf("$SITE_BASE/notes.json", "$GITHUB_BASE/notes.json")
 

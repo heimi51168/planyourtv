@@ -41,7 +41,8 @@
     <string name="policy_quiz_scan_hint">QR-код тұрақты, оны телефонға сақтауға болады. Тексеруден кейін бет күн соңына дейін PIN сұраусыз ашылады; түн ортасынан кейін қайта тексеру қажет.</string>
     <string name="policy_quiz_qr_loading">QR-код дайындалуда…</string>
     <string name="policy_quiz_offline">Теледидар жергілікті желіде емес, QR-код қолжетімсіз.</string>
-    <string name="policy_quiz_bank_stock">Жергілікті банк · пайдаланылмаған: %1$d</string>
+    <string name="policy_quiz_bank_stock">Дереккөз: жергілікті банк · пайдаланылмаған: %1$d</string>
+    <string name="policy_quiz_source_cloud">Дереккөз: бұлттық банк</string>
     <string name="policy_quiz_bank_qr_hint">Ата-ана: сұрақ қосу үшін кодты сканерлеңіз</string>
     <string name="policy_quiz_bank_empty_title">Ата-анадан сұрақ қосуды сұраңыз</string>
     <string name="policy_quiz_bank_empty_body">Жергілікті банкте дайын сұрақ жоқ. Кодты сканерлеп, телефон бетінде сұрақ жасаңыз.</string>

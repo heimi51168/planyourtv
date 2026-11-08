@@ -9,10 +9,6 @@
 </head>
 <body>
   <header class="top">
-    <div class="brand">
-      <p class="eyebrow" data-i18n="eyebrow"></p>
-      <h1 data-i18n="title"></h1>
-    </div>
     <select id="langSelect" class="lang-select" data-i18n-aria="languageLabel">
       <option value="zh">中文</option>
       <option value="en">English</option>
@@ -40,11 +36,6 @@
         <section id="generateHome">
           <header class="home-head">
             <h1 data-i18n="tabGenerate"></h1>
-            <span id="sourcePill" class="source-pill" aria-live="polite">
-              <span id="sourceDot" class="dot"></span>
-              <span id="sourceTitle">—</span>
-            </span>
-            <span id="sourceDetail" class="hidden"></span>
           </header>
 
           <button id="openGenConfig" class="card cfg-card" type="button">
@@ -426,6 +417,16 @@
 
         <section class="card">
           <div class="settings-list">
+            <label class="setting-row static select-row" for="langSelectMe">
+              <span class="setting-main"><span data-i18n="languageLabel"></span></span>
+              <select id="langSelectMe" class="lang-select" data-i18n-aria="languageLabel">
+                <option value="zh">中文</option>
+                <option value="en">English</option>
+                <option value="ru">Русский</option>
+                <option value="uk">Українська</option>
+                <option value="kk">Қазақша</option>
+              </select>
+            </label>
             <button id="logout" class="setting-row" type="button" data-i18n="logout"></button>
             <button id="mePrivacy" class="setting-row" type="button">
               <span class="setting-main"><span data-i18n="privacyInfo"></span></span>
@@ -440,7 +441,8 @@
   <nav id="bottomNav" class="bottom-nav hidden" data-i18n-aria="navLabel">
     <button class="nav-item" type="button" data-tab="generate" aria-pressed="true">
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M12 4v16M4 12h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M9.5 21v-5.5h5V21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
       <span data-i18n="tabGenerate"></span>
     </button>
@@ -490,6 +492,7 @@
         <div>
           <label for="baseUrl" data-i18n="baseUrl"></label>
           <input id="baseUrl" type="url" autocomplete="off" spellcheck="false">
+          <p class="hint"><a href="https://platform.deepseek.com" target="_blank" rel="noopener" data-i18n="deepseekKeyHint"></a></p>
         </div>
         <div>
           <label for="model" data-i18n="model"></label>

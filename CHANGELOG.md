@@ -3,6 +3,42 @@
 This changelog covers the community source snapshot. Official hosted builds may ship different
 artifacts with the same upstream Aerial base.
 
+## [1.85.006] - 2026-11-08
+
+Quiz and settings update, based on Aerial 1.85 / versionCode 116. Version code `116006`. This
+release rolls up the changes built since 1.85.001.
+
+### Added
+
+- AI question settings now link to the DeepSeek platform, where a parent can create the optional
+  API key. The key remains optional, is stored only on the TV and is billed by the parent's own
+  provider account.
+- Quiz answer scope can cover all subjects and all textbooks, in addition to a custom selection.
+- The TV's quiz start panel names the question bank in use, so it is clear whether questions come
+  from the bundled bank or the family's own bank.
+
+### Changed
+
+- The quiz bottom navigation uses the home icon.
+- The duplicate header after signing in was removed and the language picker moved into Me.
+- The phone-side quiz page no longer shows a separate question-bank source hint.
+
+### Fixed
+
+- Automatic question import now reads the POST body of the request, fixing imports that previously
+  failed even though the request was valid.
+
+### Documentation
+
+- Rewrote the public README, FAQ, AI installation guide and `llms.txt` around the child screen-time
+  positioning of PlanYourTV.
+- Documented that AI question generation is optional: the parent creates their own DeepSeek (or
+  other OpenAI-compatible) API key, and the key is never requested by the AI installer or included
+  in the public source.
+- The installer now tries the official site first, rejects Android 4.x explicitly and no longer
+  offers an Aerial Lite build. The public source pipeline adds an immutable release tag, gitleaks,
+  a secret/private-identifier scan and an isolated no-key build.
+
 ## [1.85.001] - 2026-11-08
 
 Maintenance release, based on Aerial 1.85 / versionCode 116. Version code `116001`.
