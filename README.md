@@ -9,7 +9,7 @@ server, or a cloud connection.
 [中文说明](README.zh-CN.md) · [Install](docs/INSTALL.md) · [Build from source](docs/BUILDING.md) ·
 [Architecture](docs/ARCHITECTURE.md)
 
-> **Project status:** first public source release. The current community baseline is `1.85.000`,
+> **Project status:** first public source release. The current community baseline is `1.85.001`,
 > following upstream Aerial 1.85. Xiaomi `standard` is the only configuration tested by this
 > project on a real TV. Other devices follow Aerial's upstream support and are not verified here.
 

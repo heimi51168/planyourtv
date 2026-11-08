@@ -6,7 +6,7 @@ PlanYourTV 增加了本地儿童模式：App 规则、学习与娱乐时长、�
 
 [English](README.md) · [安装](docs/INSTALL.md) · [从源码构建](docs/BUILDING.md) · [架构](docs/ARCHITECTURE.md)
 
-> **项目状态：** 首个公开源码版本。当前社区基线为 `1.85.000`，对应上游 Aerial 1.85。本项目只在小米电视 `standard` 配置上做过真机验证；其他机型沿用 Aerial 上游的支持范围，本项目未做验证。
+> **项目状态：** 首个公开源码版本。当前社区基线为 `1.85.001`，对应上游 Aerial 1.85。本项目只在小米电视 `standard` 配置上做过真机验证；其他机型沿用 Aerial 上游的支持范围，本项目未做验证。
 
 ## 功能
 

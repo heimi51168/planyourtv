@@ -3,6 +3,18 @@
 This changelog covers the community source snapshot. Official hosted builds may ship different
 artifacts with the same upstream Aerial base.
 
+## [1.85.001] - 2026-11-08
+
+Maintenance release, based on Aerial 1.85 / versionCode 116. Version code `116001`.
+
+### Changed
+
+- Re-encoded the bundled quiz intro video at the same visual quality, reducing the APK from
+  29.9 MB to 16.65 MB. Download and in-app updates are faster, and the APKs fit within the
+  per-file size limit of the project website's static hosting.
+- Published the 1.85.001 APKs on the project website so the in-app updater can find them
+  without going through GitHub.
+
 ## [1.85.000] - 2026-11-08
 
 First public source release, based on Aerial 1.85 / versionCode 116. Version code `116000`.

@@ -105,7 +105,7 @@ The version follows the Aerial base version:
 
 - `versionCode = Aerial versionCode * 1000 + productRevision`
 - `versionName = "<Aerial version>.<productRevision padded to 3>"`
-- The community baseline is `1.85.000` / `116000`, based on Aerial 1.85 / 116.
+- The community baseline is `1.85.001` / `116001`, based on Aerial 1.85 / 116.
 
 When rebasing on a newer Aerial release, update the Aerial version in `app/build.gradle.kts` and
 reset the revision to 0. For each later product release, increase the revision by one. Never reuse

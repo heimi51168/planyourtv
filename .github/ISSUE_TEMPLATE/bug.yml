@@ -32,8 +32,8 @@ body:
     id: version
     attributes:
       label: PlanYourTV version
-      description: Shown in the app and in diagnostics, for example 1.85.000.
-      placeholder: "1.85.000"
+      description: Shown in the app and in diagnostics, for example 1.85.001.
+      placeholder: "1.85.001"
     validations:
       required: true
 
