@@ -22,6 +22,10 @@
     <section id="gateCard" class="gate card">
       <h2 id="gateTitle">—</h2>
       <p id="gateText" class="muted"></p>
+      <div id="gateNotice" class="notice hidden" role="status">
+        <strong id="gateNoticeTitle"></strong>
+        <span id="gateNoticeText"></span>
+      </div>
       <form id="pinForm" class="pin-form hidden">
         <label for="pin" data-i18n="pinLabel"></label>
         <input id="pin" name="pin" type="password" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" required>
@@ -38,17 +42,65 @@
             <h1 data-i18n="tabGenerate"></h1>
           </header>
 
-          <button id="openGenConfig" class="card cfg-card" type="button">
-            <span class="card-head">
-              <span class="eyebrow" data-i18n="genConfigTitle"></span>
-              <span class="edit">
-                <span data-i18n="editRange"></span>
-                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+          <section class="card gen-card">
+            <button id="openGenConfig" class="gen-head" type="button">
+              <span class="card-head">
+                <span class="eyebrow" data-i18n="genConfigTitle"></span>
+                <span class="edit">
+                  <span data-i18n="editRange"></span>
+                  <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                </span>
               </span>
-            </span>
-            <span id="homeGenMain" class="main-line"></span>
-            <span id="homeGenSub" class="sub-line"></span>
-          </button>
+              <span id="homeGenMain" class="main-line"></span>
+              <span id="homeGenSub" class="sub-line"></span>
+            </button>
+
+            <div class="gen-action">
+              <div id="genScopeStatus" class="scope-status hidden" role="status" aria-live="polite">
+                <span id="genScopeStatusText" class="scope-status-text"></span>
+                <div id="genScopeStatusActions" class="scope-status-actions hidden">
+                  <button id="alignGenToAnswer" class="btn secondary small" type="button" data-i18n="alignToAnswerScope"></button>
+                  <button id="editGenScope" class="btn text small" type="button" data-i18n="editGenerationScope"></button>
+                </div>
+                <p id="genScopeStatusNote" class="scope-status-note hidden" data-i18n="alignReplacesRequirement"></p>
+              </div>
+
+              <div id="generateIdle">
+                <button id="generate" class="btn primary block" type="button" data-i18n="generateStart"></button>
+                <p class="hint gen-disclaimer" data-i18n="generateDisclaimer"></p>
+                <p id="generateSetupHint" class="hint hidden" role="status"></p>
+              </div>
+
+              <div id="generateRunning" class="hidden">
+                <div class="progress-track" aria-hidden="true"><div id="progressFill" class="progress-fill"></div></div>
+                <div class="progress-row">
+                  <span id="generateProgress" role="status"></span>
+                  <button id="cancelGenerate" class="link-btn" type="button" data-i18n="generateStop"></button>
+                </div>
+                <p class="gen-refresh-note" role="note">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16h.01"/></svg>
+                  <span data-i18n="generateDoNotRefresh"></span>
+                </p>
+              </div>
+
+              <div id="generateDone" class="hidden">
+                <div class="done-row">
+                  <span class="done-icon" aria-hidden="true">✓</span>
+                  <span id="generatedCount"></span>
+                </div>
+                <button id="openQuestions" class="list-row" type="button">
+                  <span data-i18n="viewQuestionList"></span>
+                  <span id="listCount" class="list-count"></span>
+                  <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                </button>
+              </div>
+
+              <p id="generateError" class="error" role="alert"></p>
+              <p id="generateOk" class="ok" role="status"></p>
+              <p id="bankMeta" class="bank-meta"></p>
+              <p id="stockNotice" class="hint hidden"></p>
+            </div>
+          </section>
 
           <button id="openAnswerConfig" class="card cfg-card" type="button">
             <span class="card-head">
@@ -61,47 +113,11 @@
                 <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
               </span>
             </span>
-            <span id="homeAnswerMain" class="main-line"></span>
+            <span id="homeAnswerMain" class="answer-summary"></span>
+            <span id="homeAnswerA11y" class="sr-only"></span>
             <span id="homeAnswerSub" class="sub-line"></span>
             <span id="homeAnswerWarning" class="home-warning hidden" role="status" aria-live="polite"></span>
           </button>
-
-          <section class="card gen-card">
-            <div class="card-head">
-              <span class="eyebrow" data-i18n="generateCardTitle"></span>
-              <span id="genCountPill" class="count-pill"></span>
-            </div>
-
-            <div id="generateIdle">
-              <button id="generate" class="btn primary block" type="button" data-i18n="generateStart"></button>
-              <p id="generateSetupHint" class="hint hidden" role="status"></p>
-            </div>
-
-            <div id="generateRunning" class="hidden">
-              <div class="progress-track" aria-hidden="true"><div id="progressFill" class="progress-fill"></div></div>
-              <div class="progress-row">
-                <span id="generateProgress" role="status"></span>
-                <button id="cancelGenerate" class="link-btn" type="button" data-i18n="generateStop"></button>
-              </div>
-            </div>
-
-            <div id="generateDone" class="hidden">
-              <div class="done-row">
-                <span class="done-icon" aria-hidden="true">✓</span>
-                <span id="generatedCount"></span>
-              </div>
-              <button id="openQuestions" class="list-row" type="button">
-                <span data-i18n="viewQuestionList"></span>
-                <span id="listCount" class="list-count"></span>
-                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
-              </button>
-            </div>
-
-            <p id="generateError" class="error" role="alert"></p>
-            <p id="generateOk" class="ok" role="status"></p>
-            <p id="bankMeta" class="bank-meta"></p>
-            <p id="stockNotice" class="hint hidden"></p>
-          </section>
         </section>
 
         <section id="genConfigPage" class="subpage hidden">
@@ -115,6 +131,7 @@
           <div class="field">
             <span class="field-label" data-i18n="genGradeLabel"></span>
             <div id="genGradeChips" class="chip-row" role="group" data-i18n-aria="genGradeLabel"></div>
+            <p id="genGradeHint" class="hint hidden"></p>
           </div>
 
           <div class="field">
@@ -133,9 +150,10 @@
             </div>
           </div>
 
-          <div class="field">
+          <div id="genTextbookField" class="field">
             <span class="field-label" id="genTextbookLabel" data-i18n="genTextbookLabel"></span>
             <div id="genTextbook" class="chip-row" role="group" aria-labelledby="genTextbookLabel"></div>
+            <p class="hint gen-textbook-hint" data-i18n="genTextbookHint"></p>
           </div>
 
           <div class="field">
@@ -210,69 +228,56 @@
           </div>
 
           <div id="answerPaneScope">
-            <div id="scopeMode" class="segmented" role="group" data-i18n-aria="answerScopeTitle">
-              <button type="button" data-scope-mode="bound" data-i18n="scopeBound"></button>
-              <button type="button" data-scope-mode="custom" data-i18n="scopeCustom"></button>
+            <div class="level-head">
+              <span class="field-label" data-i18n="levelListTitle"></span>
+              <span id="levelListCount" class="level-count" aria-live="polite"></span>
+            </div>
+            <p class="hint level-lead" data-i18n="levelListLead"></p>
+
+            <div id="levelList" class="level-list"></div>
+
+            <div id="levelEmpty" class="empty-state hidden">
+              <p data-i18n="levelEmptyTitle"></p>
+              <p class="muted" data-i18n="levelEmptyText"></p>
             </div>
 
-            <div id="scopeFollow" class="follow-box">
-              <p id="followMain" class="main-line"></p>
-              <p id="followSub" class="sub-line"></p>
-              <span id="followAvailable" class="available"></span>
+            <button id="addLevel" class="btn secondary block" type="button" data-i18n="levelAdd"></button>
+            <p id="levelMaxHint" class="hint hidden" data-i18n="levelMaxHint"></p>
+
+            <div id="levelUndo" class="level-undo hidden" role="status" aria-live="polite">
+              <span id="levelUndoText"></span>
+              <button id="levelUndoButton" class="btn text small" type="button" data-i18n="levelUndo"></button>
             </div>
 
-            <div id="scopeCustom" class="hidden">
-              <div id="scopeStepGrade" class="field scope-step">
-                <span class="field-label" data-i18n="scopeGrade"></span>
-                <div id="scopeGradeChips" class="chip-row" role="group" data-i18n-aria="scopeGrade"></div>
-              </div>
-
-              <div id="scopeStepSemester" class="field scope-step hidden">
-                <span class="field-label" data-i18n="scopeSemester"></span>
-                <div id="scopeSemesterChips" class="chip-row" role="group" data-i18n-aria="scopeSemester"></div>
-              </div>
-
-              <div id="scopeStepSubject" class="field scope-step hidden">
-                <span class="field-label" data-i18n="scopeSubject"></span>
-                <div id="scopeSubjectChips" class="chip-row" role="group" data-i18n-aria="scopeSubject"></div>
-              </div>
-
-              <div id="scopeStepTextbook" class="field scope-step hidden">
-                <span class="field-label" data-i18n="scopeTextbook"></span>
-                <div id="scopeTextbookChips" class="chip-row" role="group" data-i18n-aria="scopeTextbook"></div>
-              </div>
-
-              <div id="scopeStepTopic" class="field scope-step hidden">
-                <span class="field-label" data-i18n="scopeTopic"></span>
-                <div id="scopeTopicChips" class="chip-row" role="group" data-i18n-aria="scopeTopic"></div>
-              </div>
-
-              <div id="scopeStepDifficulty" class="field scope-step hidden">
-                <span class="field-label" data-i18n="scopeDifficulty"></span>
-                <div id="scopeDifficultyChips" class="chip-row" role="group" data-i18n-aria="scopeDifficulty"></div>
-              </div>
-
-              <span id="scopeAvailable" class="available"></span>
-
-              <div id="scopeEmpty" class="empty-state hidden">
-                <p id="scopeEmptyTitle"></p>
-                <p id="scopeEmptyText" class="muted"></p>
-                <div class="inline-actions">
-                  <button id="scopeEmptyGen" class="btn secondary small" type="button" data-i18n="goGenerate"></button>
-                  <button id="scopeEmptyConfig" class="btn text small" type="button" data-i18n="goGenerationConfig"></button>
-                </div>
-              </div>
-            </div>
+            <p id="levelState" class="ok" role="status"></p>
+            <p id="levelError" class="error" role="alert"></p>
           </div>
 
           <div id="answerPaneRules" class="hidden">
+            <p class="hint level-rules-note" data-i18n="levelRulesApplyAll"></p>
             <div class="rules-scope">
               <span id="ruleScope" class="available"></span>
             </div>
 
             <div class="field">
               <span class="field-label" data-i18n="settingsRound"></span>
-              <div id="roundCounts" class="chip-row" role="group" data-i18n-aria="settingsRound"></div>
+              <div class="round-wheel-wrap">
+                <div class="round-wheel-shell">
+                  <div id="roundWheel" class="round-wheel" role="spinbutton" tabindex="0"
+                       aria-valuemin="5" aria-valuemax="50" aria-valuenow="5"
+                       data-i18n-aria="settingsRound">
+                    <div id="roundWheelTrack" class="round-wheel-track"></div>
+                  </div>
+                  <div class="round-wheel-band" aria-hidden="true"></div>
+                </div>
+                <div class="round-wheel-meta">
+                  <span class="round-wheel-readout">
+                    <b id="roundWheelValue">5</b>
+                    <span data-i18n="roundUnit"></span>
+                  </span>
+                  <span class="round-wheel-hint" data-i18n="settingsRoundHint"></span>
+                </div>
+              </div>
             </div>
 
             <div class="field">
@@ -281,8 +286,45 @@
             </div>
 
             <div class="field">
-              <span class="field-label" data-i18n="rewardMinutes"></span>
-              <div id="rewardCounts" class="chip-row" role="group" data-i18n-aria="rewardMinutes"></div>
+              <span class="field-label" data-i18n="scoringTitle"></span>
+              <p class="hint scoring-lead" data-i18n="scoringLead"></p>
+              <div class="scoring-grid" role="group" data-i18n-aria="scoringTitle">
+                <span aria-hidden="true"></span>
+                <span id="scoringCorrectHead" class="scoring-col" data-i18n="scoringCorrect"></span>
+                <span id="scoringWrongHead" class="scoring-col" data-i18n="scoringWrong"></span>
+
+                <span id="scoringEasy" class="scoring-diff" data-i18n="difficultyEasy"></span>
+                <input id="easyReward" type="number" min="0" max="30" value="1"
+                  inputmode="numeric" aria-labelledby="scoringEasy scoringCorrectHead">
+                <input id="easyPenalty" type="number" min="0" max="30" value="0"
+                  inputmode="numeric" aria-labelledby="scoringEasy scoringWrongHead">
+
+                <span id="scoringMedium" class="scoring-diff" data-i18n="difficultyMedium"></span>
+                <input id="mediumReward" type="number" min="0" max="30" value="2"
+                  inputmode="numeric" aria-labelledby="scoringMedium scoringCorrectHead">
+                <input id="mediumPenalty" type="number" min="0" max="30" value="0"
+                  inputmode="numeric" aria-labelledby="scoringMedium scoringWrongHead">
+
+                <span id="scoringHard" class="scoring-diff" data-i18n="difficultyHard"></span>
+                <input id="hardReward" type="number" min="0" max="30" value="5"
+                  inputmode="numeric" aria-labelledby="scoringHard scoringCorrectHead">
+                <input id="hardPenalty" type="number" min="0" max="30" value="0"
+                  inputmode="numeric" aria-labelledby="scoringHard scoringWrongHead">
+              </div>
+              <p class="hint scoring-range" data-i18n="scoringRangeHint"></p>
+              <div class="inline-actions scoring-actions">
+                <button id="resetScoring" class="btn text small" type="button" data-i18n="scoringReset"></button>
+              </div>
+              <p id="scoringExample" class="hint scoring-example"></p>
+              <p id="scoringWarning" class="hint scoring-warning hidden" role="status"></p>
+            </div>
+
+            <div class="field">
+              <span class="field-label" data-i18n="unlockTitle"></span>
+              <div id="unlockCounts" class="chip-row" role="group" data-i18n-aria="unlockTitle"></div>
+              <input id="minUnlock" type="number" min="0" max="180" value="0"
+                inputmode="numeric" data-i18n-aria="unlockTitle">
+              <p class="hint" data-i18n="unlockHint"></p>
             </div>
 
             <details id="answerAdvanced" class="gen-advanced">
@@ -294,8 +336,8 @@
                 <p id="settingsActiveHint" class="hint hidden" data-i18n="settingsActiveHint"></p>
                 <div class="row">
                   <div>
-                    <label for="answerDisplay" data-i18n="answerDisplay"></label>
-                    <input id="answerDisplay" type="number" min="5" max="120" value="30">
+                    <label for="maxEarned" data-i18n="maxEarned"></label>
+                    <input id="maxEarned" type="number" min="1" max="180" value="60">
                   </div>
                   <div>
                     <label class="check" for="shuffle">
@@ -304,15 +346,6 @@
                     </label>
                   </div>
                 </div>
-                <div class="row single">
-                  <div>
-                    <label for="maxEarned" data-i18n="maxEarned"></label>
-                    <input id="maxEarned" type="number" min="1" max="180" value="60">
-                  </div>
-                </div>
-                <span class="field-label" data-i18n="settingsMinCorrect"></span>
-                <div id="minCounts" class="chip-row" role="group" data-i18n-aria="settingsMinCorrect"></div>
-                <p class="hint" data-i18n="settingsMinCorrectLocal"></p>
                 <div class="fold-section">
                   <p class="section-label" data-i18n="syncTitle"></p>
                   <p id="syncSummary" class="muted"></p>
@@ -327,8 +360,70 @@
 
           <p id="settingsState" class="ok fold-status" role="status"></p>
           <p id="settingsError" class="error fold-status" role="alert"></p>
-          <div class="sticky-bar">
+          <div id="answerSaveBar" class="sticky-bar hidden">
             <button id="saveAnswer" class="btn primary" type="button" data-i18n="saveConfig"></button>
+          </div>
+        </section>
+
+        <section id="levelEditorPage" class="subpage hidden">
+          <header class="page-head">
+            <button id="backFromLevel" class="back-btn" type="button" data-i18n-aria="back">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <h1 id="levelEditorTitle"></h1>
+          </header>
+
+          <div class="field">
+            <label id="levelNameLabel" for="levelName" data-i18n="levelNameLabel"></label>
+            <input id="levelName" type="text" maxlength="10" autocomplete="off"
+              aria-labelledby="levelNameLabel" data-i18n-placeholder="levelNamePlaceholder">
+            <p class="hint" data-i18n="levelNameHint"></p>
+          </div>
+
+          <div id="scopeStepGrade" class="field scope-step">
+            <span class="field-label" data-i18n="scopeGrade"></span>
+            <div id="scopeGradeChips" class="chip-row" role="group" data-i18n-aria="scopeGrade"></div>
+          </div>
+
+          <div id="scopeStepSemester" class="field scope-step hidden">
+            <span class="field-label" data-i18n="scopeSemester"></span>
+            <div id="scopeSemesterChips" class="chip-row" role="group" data-i18n-aria="scopeSemester"></div>
+          </div>
+
+          <div id="scopeStepSubject" class="field scope-step hidden">
+            <span class="field-label" data-i18n="scopeSubject"></span>
+            <div id="scopeSubjectChips" class="chip-row" role="group" data-i18n-aria="scopeSubject"></div>
+          </div>
+
+          <div id="scopeStepTextbook" class="field scope-step hidden">
+            <span class="field-label" data-i18n="scopeTextbook"></span>
+            <div id="scopeTextbookChips" class="chip-row" role="group" data-i18n-aria="scopeTextbook"></div>
+          </div>
+
+          <div id="scopeStepTopic" class="field scope-step hidden">
+            <span class="field-label" data-i18n="scopeTopic"></span>
+            <div id="scopeTopicChips" class="chip-row" role="group" data-i18n-aria="scopeTopic"></div>
+          </div>
+
+          <div id="scopeStepDifficulty" class="field scope-step hidden">
+            <span class="field-label" data-i18n="scopeDifficulty"></span>
+            <div id="scopeDifficultyChips" class="chip-row" role="group" data-i18n-aria="scopeDifficulty"></div>
+          </div>
+
+          <span id="levelEditorAvailable" class="available"></span>
+
+          <div id="levelEditorEmpty" class="empty-state hidden">
+            <p data-i18n="scopeEmptyTitle"></p>
+            <p class="muted" data-i18n="scopeEmptyText"></p>
+            <div class="inline-actions">
+              <button id="levelEmptyGen" class="btn secondary small" type="button" data-i18n="goGenerate"></button>
+              <button id="levelEmptyConfig" class="btn text small" type="button" data-i18n="goGenerationConfig"></button>
+            </div>
+          </div>
+
+          <p id="levelEditorError" class="error" role="alert"></p>
+          <div class="sticky-bar">
+            <button id="saveLevel" class="btn primary" type="button" data-i18n="levelSave"></button>
           </div>
         </section>
 
@@ -524,6 +619,22 @@
       </ul>
       <div class="modal-actions">
         <button class="btn secondary" type="button" data-close-modal data-i18n="close"></button>
+      </div>
+    </section>
+
+    <section id="scopeMismatchDialog" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="scopeMismatchTitle">
+      <div class="modal-head">
+        <h2 id="scopeMismatchTitle" data-i18n="scopeMismatchTitle"></h2>
+        <button class="icon-btn close" type="button" data-close-modal data-i18n-aria="close">×</button>
+      </div>
+      <p class="muted" data-i18n="scopeMismatchIntro"></p>
+      <p id="scopeMismatchAnswer" class="scope-mismatch-row"></p>
+      <p id="scopeMismatchGenerate" class="scope-mismatch-row"></p>
+      <p id="scopeMismatchBody" class="scope-mismatch-body"></p>
+      <p class="scope-mismatch-note" data-i18n="scopeMismatchNote"></p>
+      <div class="modal-actions">
+        <button id="scopeMismatchAlign" class="btn primary" type="button" data-i18n="alignToAnswerScope"></button>
+        <button id="scopeMismatchKeep" class="btn secondary" type="button" data-i18n="keepCurrentScope"></button>
       </div>
     </section>
   </div>

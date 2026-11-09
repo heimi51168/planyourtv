@@ -1,6 +1,8 @@
 package app.orchard.tv.quiz
 
 import android.util.Log
+import com.planyourtv.policy.quiz.QuizCurriculum
+import com.planyourtv.policy.quiz.QuizUnitCatalog
 import org.json.JSONObject
 import java.util.Locale
 
@@ -26,17 +28,12 @@ object QuizStudyProfile {
     private const val DEFAULT_UNIT = 3
     private const val DEFAULT_DIFFICULTY = ""
 
-    private val GRADES = Regex("[1-6][ab]")
-    private val SUBJECTS = setOf("chinese", "math", "english", "science", "all")
     private val DIFFICULTIES = setOf("", "easy", "medium", "hard")
-    private val TEXTBOOKS = setOf(
-        "bubian", "renjiao", "sujiao", "beishida", "qingdao",
-        "pep", "waiyan", "yilin", "kejiao", "general", "all",
-    )
     private val SCOPES = setOf("unit", "midterm", "final", "review")
 
     /** 返回 null 表示本地已保存的偏好损坏；调用方必须显式失败，不能猜默认值。 */
     fun current(): JSONObject? {
+        val curriculum = QuizCurriculum.current() ?: return null
         val stored = QuizSessionStore.loadGenerationPrefs()
             ?: return build(DEFAULT_GRADE, DEFAULT_SUBJECT, DEFAULT_TEXTBOOK,
                 DEFAULT_SCOPE, DEFAULT_UNIT)
@@ -46,8 +43,19 @@ object QuizStudyProfile {
         val scope = stored.optString("scope", "")
         val unit = stored.optInt("unit", 0)
         val difficulty = stored.optString("difficulty", "").trim().lowercase()
-        if (!GRADES.matches(grade) || subject !in SUBJECTS || textbook !in TEXTBOOKS ||
-            scope !in SCOPES || unit !in 1..8 || difficulty !in DIFFICULTIES
+        val gradeNo = curriculum.gradeNoForCode(grade)
+        val semester = curriculum.semesterForCode(grade)
+        val unitMax = gradeNo?.let { gradeNo ->
+            QuizUnitCatalog.current()
+                ?.unitMax(gradeNo, semester ?: 0, subject, textbook)
+                ?: curriculum.unitMax(gradeNo)
+        }
+        if (gradeNo == null || semester == null || unitMax == null ||
+            !curriculum.isSubjectSupported(gradeNo, subject) ||
+            !curriculum.isTextbookSupported(gradeNo, subject, textbook) ||
+            scope !in SCOPES ||
+            (scope == "unit" && unit !in 1..unitMax) ||
+            difficulty !in DIFFICULTIES
         ) {
             Log.e(TAG, "stored generation prefs invalid: $stored")
             return null

@@ -3,6 +3,53 @@
 This changelog covers the community source snapshot. Official hosted builds may ship different
 artifacts with the same upstream Aerial base.
 
+## [1.85.010] - 2026-11-09
+
+Quiz, curriculum and scoring update, based on Aerial 1.85 / versionCode 116. Version code
+`116010`.
+
+### Added
+
+- Grades 1–9 and junior-high subjects: the bundled curriculum matrix now drives grade, subject,
+  textbook and unit limits for primary and junior high, including ethics and law, history,
+  geography, biology, physics and chemistry.
+- Built-in question bank expanded from 120 to 4,900 first-semester midterm questions for grades
+  1–9, covering every supported subject and textbook combination used by the bank.
+- Real textbook unit titles: the parent page and AI prompt now use the national smart-education
+  platform catalogue (109 books, 765 nodes, 673 units), so questions target actual unit titles
+  and lesson coverage instead of generic "Unit N" labels.
+- Parent-designed quiz levels: save up to six named levels, each with its own answer scope, and
+  let the child scroll between them on the TV.
+- Difficulty scoring: independent rewards and deductions for easy, medium and hard questions, a
+  minimum net score required to unlock, and a per-round cap. The web page previews the result of
+  the configured rule.
+- Answer scope on the TV: the child can choose an available scope before starting, and the
+  confirmation panel shows the exact grade, subject, semester, textbook, scope and single-choice
+  format.
+- AI generation targets of 20, 30 or 50 questions, with progress reporting and a warning not to
+  refresh the page while generating.
+
+### Changed
+
+- One round is now 5–50 questions in steps of 5 (default 5), with a 60-second limit per question.
+  Difficulty rewards default to 1 / 2 / 5 minutes for easy / medium / hard, deductions default to
+  zero, and the answer-display-duration setting was removed.
+- The home generation page is consolidated into two cards; saved level cards wrap into 1 / 2–3 /
+  4+ rows.
+- The parent web page keeps a single active session. A second phone is shown an "another parent is
+  using this page" message instead of competing with the first session.
+- Parent PIN wording is unified as "家长密码".
+
+### Fixed
+
+- Batch generation no longer stops at 10 questions with an unparseable-response error. Complete
+  questions are recovered from a truncated provider response and retried in smaller batches, so
+  20-, 30- and 50-question targets finish and enter the bank automatically.
+- Requests outside the selected textbook's unit range are rejected in the web UI and cannot be
+  saved or sent to the provider. Every available unit is listed instead of only the first three.
+- Existing midterm ("期中必考") questions remain compatible; the unit number stays the canonical
+  key for the bank, cache, cloud and signatures.
+
 ## [1.85.006] - 2026-11-08
 
 Quiz and settings update, based on Aerial 1.85 / versionCode 116. Version code `116006`. This

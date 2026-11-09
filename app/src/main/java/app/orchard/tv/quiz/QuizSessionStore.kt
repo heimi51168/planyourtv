@@ -5,6 +5,7 @@ import com.planyourtv.policy.quiz.QuizAnswerScope
 import com.planyourtv.policy.quiz.QuizConfig
 import com.planyourtv.policy.quiz.QuizDecodeResult
 import com.planyourtv.policy.quiz.QuizEngineConfig
+import com.planyourtv.policy.quiz.QuizLevel
 import com.planyourtv.policy.quiz.QuizSession
 import com.planyourtv.policy.quiz.QuizSessionCodec
 import com.planyourtv.policy.quiz.QuizSourceConfig
@@ -31,11 +32,14 @@ object QuizSessionStore {
     private const val KEY_SYNC_STATE = "quiz.syncState"
     private const val KEY_GENERATION_PREFS = "quiz.generationPrefs"
     private const val KEY_ANSWER_SCOPE = "quiz.answerScope"
+    // The ordered list the parent designs on the phone. The legacy single
+    // scope above stays mirrored for cloud reporting and older readers.
+    private const val KEY_ANSWER_SCOPES = "quiz.answerScopes"
     private const val KEY_CONSENT_V1 = "quiz.consent_v1"
     // v2 invalidates the old 365-day browser tokens once, without touching
-    // any other quiz state.
+    // any other quiz state. Older builds could remember up to five phones;
+    // only the newest entry is the active parent session now.
     private const val KEY_WEB_TOKENS = "quiz.webTokens.v2"
-    private const val MAX_WEB_TOKENS = 5
     // A local day is normally 24h, but a DST fall-back day lasts 25h. Keep the
     // cap just above that so a same-day token is never rejected on those days.
     private const val MAX_WEB_TOKEN_TTL_MS = 25L * 60 * 60 * 1000L
@@ -177,6 +181,37 @@ object QuizSessionStore {
         TvStore.putStringDurable(KEY_ANSWER_SCOPE, scope?.encode()?.toString() ?: "null")
     }
 
+    /**
+     * The ordered answer levels saved by the parent. Null means the key is
+     * absent or unreadable; callers use [hasAnswerScopes] to tell those apart
+     * and only migrate when the list was never written.
+     */
+    fun loadAnswerScopes(): List<QuizLevel>? = synchronized(lock) {
+        val raw = TvStore.getString(KEY_ANSWER_SCOPES) ?: return null
+        val array = runCatching { JSONArray(raw) }.getOrNull() ?: return null
+        QuizLevel.parseList(array)
+    }
+
+    fun hasAnswerScopes(): Boolean = TvStore.getString(KEY_ANSWER_SCOPES) != null
+
+    /**
+     * Saves the list and mirrors its first scope into the legacy single-scope
+     * key. Cloud reporting and old readers still see one scope; the new list
+     * remains the source of truth for the TV and the web page.
+     */
+    fun saveAnswerScopes(levels: List<QuizLevel>): Boolean = synchronized(lock) {
+        if (levels.size > QuizLevel.MAX_LEVELS) return false
+        val listOk = TvStore.putStringDurable(
+            KEY_ANSWER_SCOPES,
+            QuizLevel.encodeList(levels).toString(),
+        )
+        val legacyOk = TvStore.putStringDurable(
+            KEY_ANSWER_SCOPE,
+            levels.firstOrNull()?.scope?.encode()?.toString() ?: "null",
+        )
+        listOk && legacyOk
+    }
+
     fun clearProviderKey() {
         TvStore.removeDurable(KEY_PROVIDER_KEY)
         TvStore.removeDurable(KEY_PROVIDER_META)
@@ -202,11 +237,18 @@ object QuizSessionStore {
         }
     }
 
+    /**
+     * The single remembered parent session. Older builds could store several
+     * tokens; the newest one owns the page now, so a second phone cannot edit
+     * alongside the parent who entered first.
+     */
+    fun activeWebToken(nowMs: Long = System.currentTimeMillis()): WebToken? =
+        readWebTokens(nowMs).lastOrNull()
+
     fun webTokenValid(digest: String, nowMs: Long = System.currentTimeMillis()): Boolean {
         if (!WEB_TOKEN_RE.matches(digest)) return false
-        return readWebTokens(nowMs).any {
-            MessageDigest.isEqual(it.digest.toByteArray(), digest.toByteArray())
-        }
+        val active = activeWebToken(nowMs) ?: return false
+        return MessageDigest.isEqual(active.digest.toByteArray(), digest.toByteArray())
     }
 
     fun saveWebToken(
@@ -221,18 +263,23 @@ object QuizSessionStore {
             ) {
                 return false
             }
-            val kept = readWebTokens(nowMs).filter { it.digest != digest }
-            // All tokens minted on the same day share one expiry. Keep the
-            // newest entries instead of sorting, so a new token can never be
-            // trimmed away by its own tie.
-            val next = (kept + WebToken(digest, expiresAt)).takeLast(MAX_WEB_TOKENS)
-            return persistWebTokens(next)
+            // One parent session at a time: a new login replaces the previous
+            // remembered phone instead of adding a second editor.
+            return persistWebTokens(listOf(WebToken(digest, expiresAt)))
         }
     }
 
-    fun removeWebToken(digest: String): Boolean {
+    fun removeWebToken(
+        digest: String,
+        nowMs: Long = System.currentTimeMillis(),
+    ): Boolean {
         synchronized(lock) {
-            return persistWebTokens(readWebTokens().filter { it.digest != digest })
+            val active = activeWebToken(nowMs) ?: return false
+            if (!MessageDigest.isEqual(active.digest.toByteArray(), digest.toByteArray())) {
+                return false
+            }
+            // Drop legacy extra tokens too; only this parent session was valid.
+            return persistWebTokens(emptyList())
         }
     }
 

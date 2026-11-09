@@ -45,20 +45,26 @@ data class QuizAnswerScope(
         const val SUBJECT_ALL = "ALL"
         const val TEXTBOOK_ALL = "ALL"
 
-        private val SUBJECTS = setOf("CHINESE", "MATH", "ENGLISH", "SCIENCE", SUBJECT_ALL)
-        private val TEXTBOOKS = setOf(
-            "BUBIAN", "RENJIAO", "SUJIAO", "BEISHIDA", "QINGDAO",
-            "PEP", "WAIYAN", "YILIN", "KEJIAO", "GENERAL", TEXTBOOK_ALL,
-        )
         private val SCOPE_TYPES = setOf("UNIT", "MIDTERM", "FINAL", "REVIEW")
         private val DIFFICULTIES = setOf("EASY", "MEDIUM", "HARD")
 
-        /** 供 facets / 表单校验复用，取值范围与 [create] 完全一致。 */
-        fun isSupportedSubject(value: String): Boolean =
-            value.trim().uppercase(Locale.ROOT) in SUBJECTS
+        /**
+         * Global legality checks stay permissive for old scopes and cloud configs:
+         * they only ask whether an ID exists anywhere, not whether a subject and
+         * textbook belong together. Stage/subject UI checks live in [QuizCurriculum].
+         */
+        fun isSupportedSubject(value: String): Boolean {
+            val normalized = value.trim().uppercase(Locale.ROOT)
+            return QuizCurriculum.current()?.subjectIds()?.contains(normalized) == true
+        }
 
-        fun isSupportedTextbook(value: String): Boolean =
-            value.trim().uppercase(Locale.ROOT) in TEXTBOOKS
+        fun isSupportedTextbook(value: String): Boolean {
+            val normalized = value.trim().uppercase(Locale.ROOT)
+            return QuizCurriculum.current()?.textbookIds()?.contains(normalized) == true
+        }
+
+        fun isSupportedGrade(grade: Int): Boolean =
+            QuizCurriculum.current()?.isGradeSupported(grade) == true
 
         fun isSupportedScopeType(value: String): Boolean =
             value.trim().uppercase(Locale.ROOT) in SCOPE_TYPES
@@ -93,12 +99,21 @@ data class QuizAnswerScope(
             val normalizedTextbook = textbook.trim().uppercase(Locale.ROOT)
             val normalizedScope = scopeType.trim().uppercase(Locale.ROOT)
             val normalizedDifficulty = difficulty?.trim()?.uppercase(Locale.ROOT)
-            if (grade !in 1..6 || semester !in 1..2) return null
-            if (normalizedSubject !in SUBJECTS) return null
-            if (normalizedTextbook !in TEXTBOOKS) return null
+            val curriculum = QuizCurriculum.current() ?: return null
+            if (!curriculum.isGradeSupported(grade)) return null
+            if (semester !in 1..2) return null
+            if (normalizedSubject !in curriculum.subjectIds()) return null
+            if (normalizedTextbook !in curriculum.textbookIds()) return null
             if (normalizedScope !in SCOPE_TYPES) return null
             if (normalizedScope == "UNIT") {
-                if (unitNo == null || unitNo !in 1..8) return null
+                // The textbook catalogue may know more units than the stage
+                // default. It is only an upper bound and only for UNIT scopes;
+                // midterm/final/review continue to work without it.
+                val stageMax = curriculum.unitMax(grade) ?: return null
+                val unitMax = QuizUnitCatalog.current()
+                    ?.unitMax(grade, semester, normalizedSubject, normalizedTextbook)
+                    ?: stageMax
+                if (unitNo == null || unitNo !in 1..unitMax) return null
             } else if (unitNo != null) {
                 return null
             }

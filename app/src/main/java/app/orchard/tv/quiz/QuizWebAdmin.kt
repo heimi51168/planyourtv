@@ -8,12 +8,15 @@ import fi.iki.elonen.NanoHTTPD.Method
 import fi.iki.elonen.NanoHTTPD.Response
 import org.json.JSONObject
 import com.planyourtv.policy.quiz.QuizAnswerScope
+import com.planyourtv.policy.quiz.QuizCurriculum
 import com.planyourtv.policy.quiz.QuizDecodeResult
 import com.planyourtv.policy.quiz.QuizItem
+import com.planyourtv.policy.quiz.QuizLevel
 import com.planyourtv.policy.quiz.QuizSession
 import com.planyourtv.policy.quiz.QuizSessionCodec
 import com.planyourtv.policy.quiz.QuizSessionStatus
 import com.planyourtv.policy.quiz.QuizSessionValidation
+import com.planyourtv.policy.quiz.QuizUnitCatalog
 import org.json.JSONArray
 
 /**
@@ -62,6 +65,7 @@ object QuizWebAdmin {
                 session.method == Method.POST && path == "/api/quiz/auth/pin" -> pin(session)
                 session.method == Method.POST && path == "/api/quiz/auth/logout" -> logout(session)
                 session.method == Method.GET && path == "/api/quiz/admin/session" -> readSession(session)
+                session.method == Method.GET && path == "/api/quiz/admin/units" -> readUnitCatalog(session)
                 session.method == Method.PUT && path == "/api/quiz/admin/session" -> putSession(session)
                 session.method == Method.DELETE && path == "/api/quiz/admin/session" -> deleteSession(session)
                 session.method == Method.POST && path == "/api/quiz/admin/challenge-config" -> saveChallengeConfig(session)
@@ -125,6 +129,7 @@ object QuizWebAdmin {
             )
             QuizAccess.AuthResult.PinInvalid -> error(Response.Status.UNAUTHORIZED, "PIN_INVALID")
             QuizAccess.AuthResult.PinNotSet -> error(Response.Status.CONFLICT, "PIN_NOT_SET")
+            QuizAccess.AuthResult.ParentInUse -> error(Response.Status.CONFLICT, "PARENT_IN_USE")
             is QuizAccess.AuthResult.PinLocked -> json(
                 Response.Status.TOO_MANY_REQUESTS,
                 JSONObject()
@@ -160,19 +165,18 @@ object QuizWebAdmin {
             body.put("session", JSONObject(QuizSessionCodec.encode(current)))
         }
         body.put("sessionActive", current?.status in ACTIVE_STATUSES)
+        body.put("curriculum", QuizCurriculum.current()?.descriptor() ?: JSONObject.NULL)
+        body.put("cloudJuniorReady", QuizCurriculum.CLOUD_JUNIOR_READY)
         body.put("consentAccepted", QuizSessionStore.consentAccepted())
         body.put("providerConfigured", QuizSessionStore.providerConfigured())
         body.put("challengeConfig", QuizSessionCodec.encodeConfig(challengeConfig))
-        val answerScope = QuizAnswerScopeStore.loadOrInitialize()
+        val answerLevels = QuizAnswerScopeStore.levels()
+        val answerScope = answerLevels.firstOrNull()?.scope
         body.put("answerScope", answerScope?.encode() ?: JSONObject.NULL)
-        body.put(
-            "answerScopeMode",
-            if (QuizAnswerScopeStore.mode() == QuizAnswerScopeStore.Mode.BOUND) {
-                "bound"
-            } else {
-                "custom"
-            },
-        )
+        // Kept for a page cached before the level list existed; it only knows
+        // one scope and reads the first level.
+        body.put("answerScopeMode", if (answerScope == null) "bound" else "custom")
+        body.put("answerScopes", answerLevelsJson(answerLevels))
         body.put(
             "answerScopeAvailable",
             QuizQuestionCache.availableCount(
@@ -199,6 +203,21 @@ object QuizWebAdmin {
         body.put("cache", legacyCacheJson(state.bankCounts))
         body.put("bankCapacity", QuizQuestionCache.BANK_CAPACITY)
         return json(Response.Status.OK, body)
+    }
+
+    /**
+     * Display-only unit titles for the phone page. The endpoint stays separate
+     * from the session so a missing catalogue cannot break editing; callers
+     * fall back to the stage unit limit and the numeric label.
+     */
+    private fun readUnitCatalog(session: IHTTPSession): Response {
+        adminError(session)?.let { return it }
+        return json(
+            Response.Status.OK,
+            JSONObject()
+                .put("ok", true)
+                .put("catalog", QuizUnitCatalog.current()?.descriptor() ?: JSONObject.NULL),
+        )
     }
 
     /**
@@ -327,7 +346,7 @@ object QuizWebAdmin {
             session.parameters[name]?.firstOrNull()?.trim()?.takeIf { it.isNotEmpty() }
 
         val grade = param("grade")?.let {
-            it.toIntOrNull()?.takeIf { value -> value in 1..6 }
+            it.toIntOrNull()?.takeIf { value -> QuizAnswerScope.isSupportedGrade(value) }
                 ?: return error(Response.Status.BAD_REQUEST, "INVALID_REQUEST")
         }
         val semester = param("semester")?.let {
@@ -348,12 +367,13 @@ object QuizWebAdmin {
             }
             normalized
         }
+        val unitMax = unitMaxForFacets(grade)
         val topic = param("topic")?.let { raw ->
             val normalized = raw.uppercase()
             when {
                 normalized.startsWith("UNIT:") -> {
                     val unit = normalized.removePrefix("UNIT:").toIntOrNull()
-                        ?.takeIf { it in 1..8 }
+                        ?.takeIf { unitMax > 0 && it in 1..unitMax }
                         ?: return error(Response.Status.BAD_REQUEST, "INVALID_REQUEST")
                     "UNIT:$unit"
                 }
@@ -460,20 +480,45 @@ object QuizWebAdmin {
     private fun facetRow(item: QuizItem): FacetRow? {
         val grade = item.scopeGrade ?: return null
         val semester = item.scopeSemester ?: return null
-        if (grade !in 1..6 || semester !in 1..2) return null
-        if (!QuizAnswerScope.isSupportedSubject(item.scopeSubject)) return null
-        if (!QuizAnswerScope.isSupportedTextbook(item.scopeTextbook)) return null
+        val curriculum = QuizCurriculum.current() ?: return null
+        if (!curriculum.isGradeSupported(grade) || semester !in 1..2) return null
+        if (isCloudJuniorBlocked(grade)) return null
+        if (!curriculum.isSubjectSupported(grade, item.scopeSubject)) return null
+        if (!item.scopeTextbook.equals(QuizAnswerScope.TEXTBOOK_ALL, ignoreCase = true) &&
+            !curriculum.isTextbookSupported(grade, item.scopeSubject, item.scopeTextbook)
+        ) {
+            return null
+        }
         val type = item.scopeType.trim().uppercase()
         if (!QuizAnswerScope.isSupportedScopeType(type)) return null
         val topic = if (type == "UNIT") {
             val unit = item.scopeUnitNo ?: return null
-            if (unit !in 1..8) return null
+            val unitMax = QuizUnitCatalog.current()
+                ?.unitMax(grade, semester, item.scopeSubject, item.scopeTextbook)
+                ?: curriculum.unitMax(grade)
+                ?: return null
+            if (unit !in 1..unitMax) return null
             "UNIT:$unit"
         } else {
             if (item.scopeUnitNo != null) return null
             type
         }
         return FacetRow(item, topic)
+    }
+
+    /** Facet queries may omit subject/textbook, so use the widest available limit. */
+    private fun unitMaxForFacets(grade: Int?): Int {
+        val curriculumMax = if (grade == null) {
+            QuizCurriculum.current()?.maxUnit()
+        } else {
+            QuizCurriculum.current()?.unitMax(grade)
+        } ?: 0
+        val catalogMax = if (grade == null) {
+            QuizUnitCatalog.current()?.maxUnit()
+        } else {
+            QuizUnitCatalog.current()?.unitMaxForGrade(grade)
+        } ?: 0
+        return maxOf(curriculumMax, catalogMax)
     }
 
     private fun facetCounts(
@@ -578,44 +623,57 @@ object QuizWebAdmin {
             ?: return error(Response.Status.BAD_REQUEST, "INVALID_CONFIG")
         val config = QuizSessionCodec.decodeConfig(configObject)
             ?: return error(Response.Status.BAD_REQUEST, "INVALID_CONFIG")
-        if (config.maxEarnedMinutes < config.minutesPerPoint ||
-            config.minCorrectCount > config.pullCount
-        ) {
-            return error(Response.Status.BAD_REQUEST, "INVALID_CONFIG")
-        }
-        // 答题形式与答题范围一次保存、一次同步。旧页面不带 scopeMode 时按
-        // scopeProvided/null 兼容：null = 绑定出题范围，对象 = 自定义范围。
-        val scopeMode = body.optString("scopeMode", "").trim().lowercase()
-        val scopeProvided = body.optBoolean("scopeProvided", false) || scopeMode.isNotEmpty()
-        var scopeBound = false
-        val scope = when (scopeMode) {
-            "bound" -> {
-                scopeBound = true
-                null
-            }
-            "custom" -> {
-                if (!body.has("scope") || body.isNull("scope")) {
-                    return error(Response.Status.BAD_REQUEST, "INVALID_SCOPE")
-                }
-                QuizAnswerScope.parse(body.optJSONObject("scope"))
+        // Field ranges are enforced by decodeConfig. Cross-field combinations
+        // (cap below one reward, threshold above cap) are intentional parent
+        // choices and only produce soft warnings on the web page.
+        // The new page sends the whole ordered list. A page cached before the
+        // level list keeps sending one scope; it is mapped to a one-level list.
+        // Rules-only saves leave the levels untouched.
+        val levelsProvided = body.has("answerScopes")
+        val levels: List<QuizLevel>? = if (levelsProvided) {
+            if (body.isNull("answerScopes")) {
+                emptyList()
+            } else {
+                QuizLevel.parseList(body.optJSONArray("answerScopes"))
                     ?: return error(Response.Status.BAD_REQUEST, "INVALID_SCOPE")
             }
-            "" -> {
-                if (!scopeProvided) {
-                    null
-                } else if (!body.has("scope")) {
-                    return error(Response.Status.BAD_REQUEST, "INVALID_SCOPE")
-                } else if (body.isNull("scope")) {
-                    scopeBound = true
-                    null
-                } else {
-                    QuizAnswerScope.parse(body.optJSONObject("scope"))
+        } else {
+            val scopeMode = body.optString("scopeMode", "").trim().lowercase()
+            val scopeProvided = body.optBoolean("scopeProvided", false) || scopeMode.isNotEmpty()
+            when {
+                !scopeProvided -> null
+                scopeMode == "bound" -> QuizAnswerScopeStore.generationScope()?.let {
+                    listOf(QuizLevel(id = "legacy-1", name = "", scope = it))
+                }.orEmpty()
+                scopeMode == "custom" -> {
+                    if (!body.has("scope") || body.isNull("scope")) {
+                        return error(Response.Status.BAD_REQUEST, "INVALID_SCOPE")
+                    }
+                    val scope = QuizAnswerScope.parse(body.optJSONObject("scope"))
                         ?: return error(Response.Status.BAD_REQUEST, "INVALID_SCOPE")
+                    listOf(QuizLevel(id = "legacy-1", name = "", scope = scope))
                 }
+                scopeMode.isEmpty() -> {
+                    when {
+                        !body.has("scope") ->
+                            return error(Response.Status.BAD_REQUEST, "INVALID_SCOPE")
+                        body.isNull("scope") -> QuizAnswerScopeStore.generationScope()?.let {
+                            listOf(QuizLevel(id = "legacy-1", name = "", scope = it))
+                        }.orEmpty()
+                        else -> {
+                            val scope = QuizAnswerScope.parse(body.optJSONObject("scope"))
+                                ?: return error(Response.Status.BAD_REQUEST, "INVALID_SCOPE")
+                            listOf(QuizLevel(id = "legacy-1", name = "", scope = scope))
+                        }
+                    }
+                }
+                else -> return error(Response.Status.BAD_REQUEST, "INVALID_SCOPE")
             }
-            else -> return error(Response.Status.BAD_REQUEST, "INVALID_SCOPE")
         }
-        val previousScopeSignature = if (scopeProvided) {
+        if (levels?.any { isCloudJuniorBlocked(it.scope.grade) } == true) {
+            return error(Response.Status.CONFLICT, "CLOUD_JUNIOR_UNSUPPORTED")
+        }
+        val previousScopeSignature = if (levels != null) {
             QuizAnswerScopeStore.currentSignature()
         } else {
             null
@@ -623,24 +681,16 @@ object QuizWebAdmin {
         if (!QuizSessionStore.saveChallengeConfig(config)) {
             return error(Response.Status.INTERNAL_ERROR, "STORAGE_ERROR")
         }
-        if (scopeProvided && !QuizSessionStore.saveAnswerScope(scope)) {
+        if (levels != null && !QuizAnswerScopeStore.save(levels)) {
             return error(Response.Status.INTERNAL_ERROR, "STORAGE_ERROR")
         }
         QuizConfigSync.afterLocalEdit()
-        val effectiveScope = if (scopeProvided && !scopeBound) {
-            scope
-        } else {
-            QuizAnswerScopeStore.loadOrInitialize()
-        }
+        val effectiveLevels = QuizAnswerScopeStore.levels()
+        val effectiveScope = effectiveLevels.firstOrNull()?.scope
         if (previousScopeSignature != null &&
-            previousScopeSignature != QuizAnswerScopeStore.signature(effectiveScope)
+            previousScopeSignature != QuizAnswerScopeStore.currentSignature()
         ) {
             QuizConfigSync.afterLocalScopeChange()
-        }
-        val effectiveBound = if (scopeProvided) {
-            scopeBound
-        } else {
-            QuizAnswerScopeStore.mode() == QuizAnswerScopeStore.Mode.BOUND
         }
         return json(
             Response.Status.OK,
@@ -648,7 +698,8 @@ object QuizWebAdmin {
                 .put("ok", true)
                 .put("config", QuizSessionCodec.encodeConfig(config))
                 .put("answerScope", effectiveScope?.encode() ?: JSONObject.NULL)
-                .put("answerScopeMode", if (effectiveBound) "bound" else "custom")
+                .put("answerScopeMode", if (effectiveScope == null) "bound" else "custom")
+                .put("answerScopes", answerLevelsJson(effectiveLevels))
                 .put(
                     "answerScopeAvailable",
                     QuizQuestionCache.availableCount(
@@ -828,20 +879,15 @@ object QuizWebAdmin {
         val body = jsonBody(session) ?: return error(Response.Status.BAD_REQUEST, "INVALID_JSON")
         val prefs = QuizGeneration.parsePreferences(body)
             ?: return error(Response.Status.BAD_REQUEST, "INVALID_REQUEST")
+        val gradeNo = QuizCurriculum.current()?.gradeNoForCode(prefs.optString("grade", ""))
+        if (isCloudJuniorBlocked(gradeNo)) {
+            return error(Response.Status.CONFLICT, "CLOUD_JUNIOR_UNSUPPORTED")
+        }
         if (!QuizSessionStore.saveGenerationPrefs(prefs)) {
             return error(Response.Status.INTERNAL_ERROR, "STORAGE_ERROR")
         }
-        // 绑定模式下答题范围实时跟随出题配置，因此出题配置变化也要同步云端；
-        // 自定义模式仍保持两者解耦。
-        if (QuizAnswerScopeStore.mode() == QuizAnswerScopeStore.Mode.BOUND) {
-            QuizConfigSync.afterLocalScopeChange()
-            return json(
-                Response.Status.OK,
-                JSONObject()
-                    .put("ok", true)
-                    .put("syncState", QuizSessionStore.loadSyncState().encode()),
-            )
-        }
+        // Levels are a frozen parent-designed list now; changing the generation
+        // settings no longer moves the answer scope.
         return json(Response.Status.OK, JSONObject().put("ok", true))
     }
 
@@ -853,6 +899,9 @@ object QuizWebAdmin {
         val request = when (val parsed = QuizGeneration.parseRequest(body)) {
             is QuizGeneration.ParseResult.Ok -> parsed.request
             is QuizGeneration.ParseResult.Invalid -> return invalidRequest(parsed.fields)
+        }
+        if (isCloudJuniorBlocked(request.gradeNo)) {
+            return generationFailure("CLOUD_JUNIOR_UNSUPPORTED")
         }
         return when (val started = QuizGeneration.start(adminToken(session), request)) {
             is QuizGeneration.StartResult.Started -> json(
@@ -1037,6 +1086,29 @@ object QuizWebAdmin {
             .put("legacy", counts.legacy)
             .put("expired", counts.expired)
 
+    /**
+     * The ordered levels plus a per-level availability count. The phone list
+     * uses the count to warn before a child picks a level the bank cannot fill.
+     */
+    private fun answerLevelsJson(levels: List<QuizLevel>): JSONArray =
+        JSONArray().apply {
+            levels.forEach { level ->
+                put(
+                    JSONObject()
+                        .put("id", level.id)
+                        .put("name", level.name)
+                        .put("scope", level.scope.encode())
+                        .put(
+                            "available",
+                            QuizQuestionCache.availableCount(
+                                QuizQuestionCache.LOCAL_SCOPE,
+                                answerScope = level.scope,
+                            ),
+                        ),
+                )
+            }
+        }
+
     /** The pre-V17 `cache` shape, kept so a cached page still renders counts. */
     private fun legacyCacheJson(counts: QuizQuestionCache.BankCounts): JSONObject =
         JSONObject()
@@ -1045,9 +1117,14 @@ object QuizWebAdmin {
             .put("consumed", counts.answered)
             .put("expired", counts.expired)
 
+    private fun isCloudJuniorBlocked(gradeNo: Int?): Boolean =
+        gradeNo != null && !QuizCurriculum.CLOUD_JUNIOR_READY &&
+            QuizCurriculum.current()?.stageFor(gradeNo)?.id == "junior" &&
+            QuizConfigSync.isCloudManaged()
+
     private fun generationFailure(code: String): Response = when (code) {
         "CONSENT_REQUIRED", "PROVIDER_NOT_CONFIGURED", "BUSY", "BANK_FULL",
-        "CACHE_UNAVAILABLE" ->
+        "CACHE_UNAVAILABLE", "CLOUD_JUNIOR_UNSUPPORTED" ->
             error(Response.Status.CONFLICT, code)
         else -> error(Response.Status.BAD_REQUEST, code)
     }

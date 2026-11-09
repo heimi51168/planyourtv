@@ -2,58 +2,85 @@ package app.orchard.tv.quiz
 
 import android.util.Log
 import com.planyourtv.policy.quiz.QuizAnswerScope
+import com.planyourtv.policy.quiz.QuizLevel
 import java.util.Locale
 
 /**
- * 本地答题范围的唯一入口。
+ * The ordered quiz levels the parent designs on the phone.
  *
- * 两种模式：
- * - BOUND：真实范围由出题配置实时推导，出题配置改了答题范围跟着改；
- * - CUSTOM：电视里保存一份独立的六字段快照。
- *
- * 存储沿用旧格式：`"null"`（或从未保存过）表示绑定出题范围，具体对象表示
- * 自定义范围。这样旧版本保存的 "null" 升级后自然变成新的绑定语义，不需要
- * 迁移 SharedPreferences。
+ * The list is the single source of truth. Older installs only had one answer
+ * scope, either a stored custom scope or a scope derived from the generation
+ * settings; the first read migrates that effective scope into one level so a
+ * child can keep starting rounds after the upgrade. A fresh install starts
+ * with no levels and the TV asks the parent to add one.
  */
 object QuizAnswerScopeStore {
     private const val TAG = "QuizAnswerScopeStore"
 
-    enum class Mode { BOUND, CUSTOM }
-
-    fun mode(): Mode =
-        if (!QuizSessionStore.hasAnswerScope() || QuizSessionStore.answerScopeIsBound()) {
-            Mode.BOUND
-        } else {
-            Mode.CUSTOM
+    fun levels(): List<QuizLevel> {
+        val stored = QuizSessionStore.loadAnswerScopes()
+        if (stored != null) return stored
+        if (QuizSessionStore.hasAnswerScopes()) {
+            // The list was written but no longer parses. Do not silently replace
+            // it with a guess; an empty list keeps the TV from starting a round
+            // on a range the parent never chose.
+            Log.e(TAG, "stored answer levels are corrupt; keeping an empty list")
+            return emptyList()
         }
-
-    /** 解析当前生效范围；null 表示无法映射（按“不过滤”处理，和旧行为一致）。 */
-    fun loadOrInitialize(): QuizAnswerScope? {
-        if (!QuizSessionStore.hasAnswerScope()) {
-            // 新安装默认绑定出题范围。写入显式 "null" 标记，让同步和设置页
-            // 对“从未保存”与“明确绑定”得到同一个答案。
-            if (!QuizSessionStore.saveAnswerScope(null)) {
-                Log.e(TAG, "failed to persist default bound answer scope")
-            }
-            return boundScope()
+        val migrated = migrateLegacyScope()
+        if (!QuizSessionStore.saveAnswerScopes(migrated)) {
+            Log.e(TAG, "failed to persist migrated answer levels")
         }
-        if (QuizSessionStore.answerScopeIsBound()) return boundScope()
-        val stored = QuizSessionStore.loadAnswerScope()
-        if (stored == null) {
-            Log.e(TAG, "stored answer scope is corrupt; keeping bound behaviour until next save")
-        }
-        return stored
+        return migrated
     }
 
-    fun signature(scope: QuizAnswerScope?): String =
-        scope?.signature() ?: QuizAnswerScope.FOLLOW_SIGNATURE
+    /** Saves the whole ordered list atomically through [QuizSessionStore]. */
+    fun save(levels: List<QuizLevel>): Boolean = QuizSessionStore.saveAnswerScopes(levels)
 
-    fun currentSignature(): String = signature(loadOrInitialize())
+    /** The selected level by id, or null when the parent removed it meanwhile. */
+    fun level(id: String?): QuizLevel? {
+        if (id.isNullOrBlank()) return levels().firstOrNull()
+        return levels().firstOrNull { it.id == id }
+    }
+
+    /** First level, used where the legacy single-scope surface still needs one. */
+    fun defaultScope(): QuizAnswerScope? = levels().firstOrNull()?.scope
+
+    /**
+     * The scope the generation settings currently describe. Only a page cached
+     * before the level list uses this to migrate an explicit "follow
+     * generation" save into one frozen level.
+     */
+    fun generationScope(): QuizAnswerScope? = boundScope()
+
+    fun signature(levels: List<QuizLevel>): String =
+        levels.joinToString(";") { it.scope.signature() }
+
+    fun currentSignature(): String = signature(levels())
+
+    /**
+     * The old format stored either "null" (bound to the generation settings) or
+     * one custom scope. Freeze whichever scope is effective today into level 1;
+     * later generation edits no longer move it, matching the new list model.
+     */
+    private fun migrateLegacyScope(): List<QuizLevel> {
+        val scope = if (!QuizSessionStore.hasAnswerScope() ||
+            QuizSessionStore.answerScopeIsBound()
+        ) {
+            boundScope()
+        } else {
+            QuizSessionStore.loadAnswerScope().also {
+                if (it == null) Log.e(TAG, "legacy answer scope is corrupt")
+            }
+        }
+        return scope?.let { listOf(QuizLevel(id = "legacy-1", name = "", scope = it)) }
+            ?: emptyList()
+    }
 
     private fun boundScope(): QuizAnswerScope? {
         val prefs = QuizStudyProfile.current()
         if (prefs == null) {
-            Log.e(TAG, "generation prefs invalid; bound answer scope resolves to no filter")
+            Log.i(TAG, "no generation prefs; migrating to an empty level list")
             return null
         }
         val subject = prefs.optString("subject", "").uppercase(Locale.ROOT)
@@ -74,7 +101,7 @@ object QuizAnswerScopeStore {
             difficulty = prefs.optString("difficulty", "").ifBlank { null },
         )
         if (scope == null) {
-            Log.e(TAG, "generation prefs cannot map to an answer scope; resolving to no filter")
+            Log.i(TAG, "generation prefs cannot map to an answer scope; starting empty")
         }
         return scope
     }

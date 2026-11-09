@@ -30,6 +30,7 @@ object QuizAccess {
         data object PinInvalid : AuthResult
         data object PinNotSet : AuthResult
         data class PinLocked(val retryAfterSeconds: Long) : AuthResult
+        data object ParentInUse : AuthResult
     }
 
     private data class Proof(val digest: ByteArray, val expiresAt: Long)
@@ -47,6 +48,10 @@ object QuizAccess {
         return when (PolicyModeCoordinator.verifyPin(pin)) {
             PinResult.OK -> {
                 pinFailures = 0
+                // One parent edits at a time. The first phone keeps the slot
+                // until it logs out or the local day ends; a second phone must
+                // not silently replace it in the middle of a change.
+                if (hasActiveSession(nowMs)) return AuthResult.ParentInUse
                 val token = randomToken()
                 // Remember the phone for the rest of the local day. At local
                 // midnight the parent must enter the PIN again.
@@ -77,26 +82,50 @@ object QuizAccess {
         }
     }
 
+    /** True while a parent phone still owns the settings page. */
     @Synchronized
-    fun adminValid(token: String, nowMs: Long = System.currentTimeMillis()): Boolean {
-        if (!TOKEN_RE.matches(token)) return false
+    fun hasActiveSession(nowMs: Long = System.currentTimeMillis()): Boolean {
         val current = admin
         if (current != null) {
             if (current.expiresAt <= nowMs) {
                 admin = null
-            } else if (MessageDigest.isEqual(current.digest, sha256(token))) {
+            } else {
                 return true
             }
         }
-        return QuizSessionStore.webTokenValid(sha256Hex(token), nowMs)
+        return QuizSessionStore.activeWebToken(nowMs) != null
+    }
+
+    @Synchronized
+    fun adminValid(token: String, nowMs: Long = System.currentTimeMillis()): Boolean {
+        if (!TOKEN_RE.matches(token)) return false
+        val current = admin
+        if (current != null && current.expiresAt <= nowMs) admin = null
+        val remembered = QuizSessionStore.activeWebToken(nowMs)
+        if (remembered != null) {
+            // Single-owner semantics: after a restart only the remembered
+            // token is accepted, even if this process minted an older one.
+            return MessageDigest.isEqual(
+                remembered.digest.toByteArray(),
+                sha256Hex(token).toByteArray(),
+            )
+        }
+        // Storage was unavailable when the parent entered; keep the old short
+        // in-memory proof so this session still works.
+        return admin?.let { MessageDigest.isEqual(it.digest, sha256(token)) } == true
     }
 
     @Synchronized
     fun logout(token: String) {
         if (!TOKEN_RE.matches(token)) return
+        val digest = sha256Hex(token)
+        val active = QuizSessionStore.activeWebToken()
         val current = admin
-        if (current != null && MessageDigest.isEqual(current.digest, sha256(token))) admin = null
-        QuizSessionStore.removeWebToken(sha256Hex(token))
+        val ownsSlot = active?.digest == digest ||
+            (current != null && MessageDigest.isEqual(current.digest, sha256(token)))
+        if (!ownsSlot) return
+        admin = null
+        QuizSessionStore.removeWebToken(digest)
     }
 
     /** Stable, non-reversible job-owner key; the admin token itself is never stored in a job. */

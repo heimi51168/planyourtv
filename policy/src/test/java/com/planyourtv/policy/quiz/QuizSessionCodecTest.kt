@@ -26,6 +26,7 @@ class QuizSessionCodecTest {
         status: QuizSessionStatus = QuizSessionStatus.READY,
         items: List<QuizItem> = listOf(item),
         run: QuizRun? = null,
+        config: QuizConfig = QuizConfig(minCorrectCount = 1),
     ) = QuizSession(
         id = "sess_12345678",
         source = "web",
@@ -34,7 +35,7 @@ class QuizSessionCodecTest {
         expiresAt = now + 24 * 60 * 60 * 1000L,
         status = status,
         language = "zh",
-        config = QuizConfig(minCorrectCount = 1),
+        config = config,
         items = items,
         run = run,
     )
@@ -291,6 +292,99 @@ class QuizSessionCodecTest {
         }
         val points = JSONObject(base.toString()).put("pointsPerQuestion", 2)
         assertEquals(null, QuizSessionCodec.decodeConfig(points))
+    }
+
+    @Test
+    fun roundTripsV5ScoringConfig() {
+        val config = QuizConfig(
+            maxEarnedMinutes = 90,
+            easyRewardMinutes = 1,
+            mediumRewardMinutes = 3,
+            hardRewardMinutes = 8,
+            easyPenaltyMinutes = 0,
+            mediumPenaltyMinutes = 2,
+            hardPenaltyMinutes = 4,
+            minUnlockMinutes = 10,
+        )
+        assertEquals(config, QuizSessionCodec.decodeConfig(QuizSessionCodec.encodeConfig(config)))
+    }
+
+    @Test
+    fun defaultsV5ScoringForOlderConfigJson() {
+        val legacy = QuizSessionCodec.encodeConfig(QuizConfig()).apply {
+            remove("easyRewardMinutes")
+            remove("mediumRewardMinutes")
+            remove("hardRewardMinutes")
+            remove("easyPenaltyMinutes")
+            remove("mediumPenaltyMinutes")
+            remove("hardPenaltyMinutes")
+            remove("minUnlockMinutes")
+        }
+        val decoded = QuizSessionCodec.decodeConfig(legacy) ?: error("config should decode")
+        assertEquals(1, decoded.easyRewardMinutes)
+        assertEquals(2, decoded.mediumRewardMinutes)
+        assertEquals(5, decoded.hardRewardMinutes)
+        assertEquals(0, decoded.easyPenaltyMinutes)
+        assertEquals(0, decoded.mediumPenaltyMinutes)
+        assertEquals(0, decoded.hardPenaltyMinutes)
+        assertEquals(0, decoded.minUnlockMinutes)
+    }
+
+    @Test
+    fun legacyCloudConfigOmitsDifficultyScoring() {
+        val config = QuizConfig(
+            easyRewardMinutes = 7,
+            minUnlockMinutes = 12,
+        )
+        val wire = QuizSessionCodec.encodeLegacyConfig(config)
+        assertEquals(false, wire.has("easyRewardMinutes"))
+        assertEquals(false, wire.has("easyPenaltyMinutes"))
+        assertEquals(false, wire.has("minUnlockMinutes"))
+        assertEquals(5, wire.getInt("minutesPerQuestion"))
+    }
+
+    @Test
+    fun rejectsOutOfRangeV5ScoringConfig() {
+        val base = QuizSessionCodec.encodeConfig(QuizConfig())
+        for ((field, value) in listOf(
+            "easyRewardMinutes" to QUIZ_MAX_DIFFICULTY_MINUTES + 1,
+            "mediumRewardMinutes" to -1,
+            "hardPenaltyMinutes" to QUIZ_MAX_DIFFICULTY_MINUTES + 1,
+            "minUnlockMinutes" to QUIZ_MAX_UNLOCK_MINUTES + 1,
+        )) {
+            val config = JSONObject(base.toString()).put(field, value)
+            assertEquals(null, QuizSessionCodec.decodeConfig(config))
+        }
+    }
+
+    @Test
+    fun v5RoundDoesNotRequireMinimumCorrectCountToFitTheRound() {
+        val run = QuizRun(
+            startedAt = now,
+            startedDate = "2025-10-09",
+            deadlineAt = now + 60_000,
+        )
+        val source = session(
+            status = QuizSessionStatus.RUNNING,
+            run = run,
+            config = QuizConfig(minCorrectCount = 10),
+        )
+        val decoded = QuizSessionCodec.decode(QuizSessionCodec.encode(source))
+        assertTrue(decoded is QuizDecodeResult.Success)
+    }
+
+    @Test
+    fun roundTripsFiftyQuestionRound() {
+        val items = (1..QUIZ_MAX_ITEMS).map { index ->
+            item.copy(questionId = "q_" + index.toString().padStart(7, '0'))
+        }
+        val source = session(
+            items = items,
+            config = QuizConfig(pullCount = QUIZ_MAX_PULL_COUNT),
+        )
+        val decoded = QuizSessionCodec.decode(QuizSessionCodec.encode(source))
+        assertTrue(decoded is QuizDecodeResult.Success)
+        assertEquals(QUIZ_MAX_ITEMS, (decoded as QuizDecodeResult.Success).session.items.size)
     }
 
     @Test

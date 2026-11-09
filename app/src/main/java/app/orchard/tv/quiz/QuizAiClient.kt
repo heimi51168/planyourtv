@@ -6,7 +6,9 @@ import com.planyourtv.policy.quiz.QUIZ_MAX_OPTION_CHARS
 import com.planyourtv.policy.quiz.QUIZ_MAX_OPTIONS
 import com.planyourtv.policy.quiz.QUIZ_MAX_PROMPT_CHARS
 import com.planyourtv.policy.quiz.QUIZ_MIN_OPTIONS
+import com.planyourtv.policy.quiz.QuizCurriculum
 import com.planyourtv.policy.quiz.QuizItem
+import android.util.Log as AndroidLog
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -22,6 +24,7 @@ import kotlin.math.min
  * answer, key, or response body.
  */
 object QuizAiClient {
+    private const val TAG = "QuizAiClient"
     const val MAX_RESPONSE_BYTES = 2 * 1024 * 1024
     private const val MAX_ERROR_BYTES = 4 * 1024
     private const val TOTAL_BUDGET_MS = 90_000L
@@ -39,6 +42,7 @@ object QuizAiClient {
         val difficulty: String,
         val points: Int,
         val timeLimitSec: Int,
+        val gradeNo: Int = 0,
     )
 
     sealed interface Result {
@@ -173,27 +177,56 @@ object QuizAiClient {
         }
     }
 
-    private fun parse(raw: String?, request: Request): Result {
-        if (raw.isNullOrBlank()) return Result.Failure("PROVIDER_INVALID_RESPONSE")
-        val root = runCatching { JSONObject(raw) }.getOrElse {
+    internal fun parse(raw: String?, request: Request): Result {
+        if (raw.isNullOrBlank()) {
+            AndroidLog.w(TAG, "provider response rejected: empty body")
+            return Result.Failure("PROVIDER_INVALID_RESPONSE")
+        }
+        val root = runCatching { JSONObject(raw) }.getOrElse { error ->
+            AndroidLog.w(TAG, "provider response rejected: envelope length=${raw.length} (${error.javaClass.simpleName})")
             return Result.Failure("PROVIDER_INVALID_RESPONSE")
         }
         val choice = root.optJSONArray("choices")?.optJSONObject(0)
-            ?: return Result.Failure("PROVIDER_INVALID_RESPONSE")
+            ?: return invalidResponse("envelope has no choices", raw.length, null, null)
         val message = choice.optJSONObject("message")
-            ?: return Result.Failure("PROVIDER_INVALID_RESPONSE")
+            ?: return invalidResponse("choice has no message", raw.length, null, choice.optString("finish_reason"))
         val content = when (val value = message.opt("content")) {
             is String -> value
             is JSONObject -> value.toString()
-            else -> return Result.Failure("PROVIDER_INVALID_RESPONSE")
+            else -> return invalidResponse(
+                "message has no text content",
+                raw.length,
+                null,
+                choice.optString("finish_reason"),
+            )
         }
-        val jsonText = extractJsonObject(content) ?: return Result.Failure("PROVIDER_INVALID_RESPONSE")
-        val questions = runCatching {
-            val obj = JSONObject(jsonText)
-            obj.optJSONArray("questions")
-        }.getOrNull() ?: return Result.Failure("PROVIDER_INVALID_RESPONSE")
+        val finishReason = choice.optString("finish_reason")
+        val jsonText = extractJsonObject(content)
+        val parsedQuestions = jsonText?.let { text ->
+            runCatching { JSONObject(text).optJSONArray("questions") }.getOrNull()
+        }
+        val recovered = parsedQuestions == null
+        val questions = parsedQuestions ?: salvageQuestions(content, request.count)
+        if (questions == null) {
+            return invalidResponse(
+                "content has no question array",
+                raw.length,
+                content.length,
+                finishReason,
+            )
+        }
+        if (recovered) {
+            AndroidLog.w(
+                TAG,
+                "provider response recovered from partial JSON: content=${content.length} " +
+                    "finish=$finishReason questions=${questions.length()}",
+            )
+        }
 
         val warnings = mutableListOf<String>()
+        if (recovered) {
+            warnings += "questions: recovered from partial response"
+        }
         if (questions.length() > request.count) {
             warnings += "questions: extra items ignored"
         }
@@ -292,6 +325,18 @@ object QuizAiClient {
 
     private fun requestBody(model: String, request: Request, strictRetry: Boolean = false): String {
         val difficulty = request.difficulty.ifBlank { "medium" }
+        val isJunior = QuizCurriculum.current()?.stageFor(request.gradeNo)?.id == "junior"
+        val audience = if (isJunior) "school-age children" else "children"
+        val quizKind = if (isJunior) "middle-school" else "children's"
+        val juniorRules = if (isJunior) {
+            """
+            - Do not write questions that depend on a picture, diagram, map, chart, or table that is not included as plain text.
+            - Write formulas and symbols in plain text; do not use LaTeX or markdown.
+            - Do not claim a specific page number or that a unit number matches a particular textbook edition.
+            """.trimIndent()
+        } else {
+            ""
+        }
         val retryNote = if (strictRetry) {
             "\n\nRetry note: the previous response was rejected by a strict validator. " +
                 "Follow the shape above exactly; answerLetter and answerText are required " +
@@ -306,7 +351,7 @@ object QuizAiClient {
                 "Grade: ${request.grade.ifBlank { "primary school" }}."
         }
         val user = """
-            Create ${request.count} multiple-choice questions for a children's TV quiz.
+            Create ${request.count} multiple-choice questions for a $quizKind TV quiz.
 
             Content request (authoritative):
             $contentRequest
@@ -334,6 +379,7 @@ object QuizAiClient {
             - Aim for 300–450 characters; never exceed 600 characters.
             - Do not use markdown, asterisks, headings, or code fences inside explanation.
             - No pictures, URLs, external links, or references to this prompt.
+            $juniorRules
             - Write every visible string in the requested language.
             - Return one JSON object only, with no markdown fences.
 
@@ -350,7 +396,7 @@ object QuizAiClient {
                             .put("role", "system")
                             .put(
                                 "content",
-                                "You are a careful quiz writer for children. " +
+                                "You are a careful quiz writer for $audience. " +
                                     "Return only a single JSON object. " +
                                     "Never include unsafe, violent, or age-inappropriate content.",
                             ),
@@ -375,6 +421,80 @@ object QuizAiClient {
         val end = text.lastIndexOf('}')
         if (start < 0 || end <= start) return null
         return text.substring(start, end + 1)
+    }
+
+    /**
+     * Providers occasionally cut a long JSON response at the output-token
+     * limit, leaving the array's last object incomplete. Keep every complete
+     * question object that arrived so a batch can still make progress instead
+     * of discarding the whole response and failing the job.
+     */
+    internal fun salvageQuestions(content: String, limit: Int): JSONArray? {
+        var text = content.trim()
+        if (text.startsWith("```")) {
+            text = text.removePrefix("```json").removePrefix("```").trim()
+            if (text.endsWith("```")) text = text.dropLast(3).trim()
+        }
+        val key = text.indexOf("\"questions\"")
+        val bracket = if (key >= 0) text.indexOf('[', key) else text.indexOf('[')
+        val start = if (bracket >= 0) bracket + 1 else 0
+        val max = limit.coerceIn(1, 50)
+        val questions = JSONArray()
+        var index = start
+        while (index < text.length && questions.length() < max) {
+            if (text[index] != '{') {
+                index++
+                continue
+            }
+            val end = balancedObjectEnd(text, index) ?: break
+            runCatching { JSONObject(text.substring(index, end + 1)) }
+                .getOrNull()
+                ?.takeIf { it.has("prompt") && it.has("options") }
+                ?.let { questions.put(it) }
+            index = end + 1
+        }
+        return questions.takeIf { it.length() > 0 }
+    }
+
+    /** Returns the closing brace index, or null when the object was truncated. */
+    private fun balancedObjectEnd(text: String, start: Int): Int? {
+        var depth = 0
+        var inString = false
+        var escaped = false
+        for (index in start until text.length) {
+            val ch = text[index]
+            if (inString) {
+                when {
+                    escaped -> escaped = false
+                    ch == '\\' -> escaped = true
+                    ch == '"' -> inString = false
+                }
+            } else {
+                when (ch) {
+                    '"' -> inString = true
+                    '{' -> depth++
+                    '}' -> {
+                        depth--
+                        if (depth == 0) return index
+                    }
+                }
+            }
+        }
+        return null
+    }
+
+    private fun invalidResponse(
+        reason: String,
+        rawLength: Int,
+        contentLength: Int?,
+        finishReason: String?,
+    ): Result.Failure {
+        AndroidLog.w(
+            TAG,
+            "provider response rejected: $reason raw=$rawLength content=${contentLength ?: -1} " +
+                "finish=${finishReason ?: ""}",
+        )
+        return Result.Failure("PROVIDER_INVALID_RESPONSE")
     }
 
     private fun codeFor(code: Int): String = when (code) {

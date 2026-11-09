@@ -1,6 +1,7 @@
 package app.orchard.tv.quiz
 
 import com.planyourtv.policy.quiz.QuizAnswerScope
+import com.planyourtv.policy.quiz.QuizCurriculum
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -72,6 +73,33 @@ class QuizGenerationRequestTest {
         assertEquals("UNIT", scope.scopeType)
         assertEquals(3, scope.unitNo)
         assertEquals("MEDIUM", scope.difficulty)
+    }
+
+    @Test fun juniorScopeIsAcceptedWhenTheCurriculumProvidesIt() {
+        if (!QuizCurriculum.current()!!.isGradeSupported(8)) return
+        val prefs = JSONObject()
+            .put("grade", "8a")
+            .put("subject", "physics")
+            .put("textbook", "suke")
+            .put("scope", "unit")
+            .put("unit", 15)
+            .put("targetCount", 20)
+            .put("options", 4)
+            .put("difficulty", "")
+            .put("customTopic", "")
+            .put("autoAdd", true)
+            .put("presetVersion", 3)
+        assertNotNull(QuizGeneration.parsePreferences(prefs))
+        val parsed = QuizGeneration.parseRequest(
+            JSONObject()
+                .put("subjectId", "physics")
+                .put("gradeNo", 8)
+                .put("semester", 1)
+                .put("textbook", "suke")
+                .put("scopeType", "unit")
+                .put("unitNo", 15),
+        )
+        assertTrue(parsed is QuizGeneration.ParseResult.Ok)
     }
 
     @Test fun acceptsAllSubjectScopeMetadata() {
@@ -179,7 +207,7 @@ class QuizGenerationRequestTest {
             )!!.optString("customTopic"),
         )
         assertNull(QuizGeneration.parsePreferences(prefs.put("subject", "unsafe")))
-        assertNull(QuizGeneration.parsePreferences(prefs.put("subject", "math").put("grade", "7a")))
+        assertNull(QuizGeneration.parsePreferences(prefs.put("subject", "math").put("grade", "10a")))
         assertNull(QuizGeneration.parsePreferences(prefs.put("targetCount", 25)))
         prefs.put("subject", "math").put("grade", "4b").put("targetCount", 30)
         assertNull(
@@ -188,6 +216,51 @@ class QuizGenerationRequestTest {
             ),
         )
         assertNull(QuizGeneration.parsePreferences(prefs.put("customTopic", 42)))
+    }
+
+    @Test fun catalogExtendsUnitLimitsOnlyForUnitScopes() {
+        val scope = { scopeType: String, unitNo: Int? ->
+            QuizGeneration.parseRequest(
+                JSONObject()
+                    .put("subjectId", "math")
+                    .put("gradeNo", 4)
+                    .put("semester", 2)
+                    .put("textbook", "renjiao")
+                    .put("scopeType", scopeType)
+                    .put("unitNo", unitNo)
+                    .put("difficulty", "medium"),
+            )
+        }
+        // The bundled catalogue lists ten units for the second term while the
+        // primary stage default stops at eight.
+        assertTrue(scope("unit", 10) is QuizGeneration.ParseResult.Ok)
+        assertTrue(scope("unit", 11) is QuizGeneration.ParseResult.Invalid)
+        assertTrue(scope("midterm", null) is QuizGeneration.ParseResult.Ok)
+        assertTrue(scope("final", null) is QuizGeneration.ParseResult.Ok)
+        assertTrue(scope("review", null) is QuizGeneration.ParseResult.Ok)
+        assertTrue(scope("midterm", 10) is QuizGeneration.ParseResult.Invalid)
+    }
+
+    @Test fun savedPrefsFollowTheCatalogUnitLimit() {
+        val prefs = JSONObject()
+            .put("grade", "4b")
+            .put("subject", "math")
+            .put("textbook", "renjiao")
+            .put("scope", "unit")
+            .put("unit", 10)
+            .put("targetCount", 20)
+            .put("options", 4)
+            .put("difficulty", "")
+            .put("customTopic", "")
+            .put("autoAdd", true)
+            .put("presetVersion", 3)
+        assertNotNull(QuizGeneration.parsePreferences(prefs))
+        assertNull(QuizGeneration.parsePreferences(JSONObject(prefs.toString()).put("unit", 11)))
+        assertNotNull(
+            QuizGeneration.parsePreferences(
+                JSONObject(prefs.toString()).put("scope", "midterm").put("unit", 10),
+            ),
+        )
     }
 
     @Test fun rejectsValuesOutsideTheDocumentedLimits() {

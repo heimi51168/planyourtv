@@ -1,0 +1,599 @@
+{
+  "schemaVersion": 1,
+  "curriculumVersion": "2026.3",
+  "stages": [
+    {
+      "id": "primary",
+      "grades": [1, 6],
+      "unitMax": 8,
+      "labels": {
+        "zh": "小学",
+        "en": "Primary",
+        "ru": "Начальная школа",
+        "uk": "Початкова школа",
+        "kk": "Бастауыш мектеп"
+      }
+    },
+    {
+      "id": "junior",
+      "grades": [7, 9],
+      "unitMax": 15,
+      "labels": {
+        "zh": "初中",
+        "en": "Junior high",
+        "ru": "Средняя школа",
+        "uk": "Середня школа",
+        "kk": "Орта мектеп"
+      }
+    }
+  ],
+  "grades": [
+    {
+      "no": 1,
+      "stage": "primary",
+      "labels": {
+        "zh": "小学一年级",
+        "en": "Grade 1",
+        "ru": "1 класс",
+        "uk": "1 клас",
+        "kk": "1-сынып"
+      }
+    },
+    {
+      "no": 2,
+      "stage": "primary",
+      "labels": {
+        "zh": "小学二年级",
+        "en": "Grade 2",
+        "ru": "2 класс",
+        "uk": "2 клас",
+        "kk": "2-сынып"
+      }
+    },
+    {
+      "no": 3,
+      "stage": "primary",
+      "labels": {
+        "zh": "小学三年级",
+        "en": "Grade 3",
+        "ru": "3 класс",
+        "uk": "3 клас",
+        "kk": "3-сынып"
+      }
+    },
+    {
+      "no": 4,
+      "stage": "primary",
+      "labels": {
+        "zh": "小学四年级",
+        "en": "Grade 4",
+        "ru": "4 класс",
+        "uk": "4 клас",
+        "kk": "4-сынып"
+      }
+    },
+    {
+      "no": 5,
+      "stage": "primary",
+      "labels": {
+        "zh": "小学五年级",
+        "en": "Grade 5",
+        "ru": "5 класс",
+        "uk": "5 клас",
+        "kk": "5-сынып"
+      }
+    },
+    {
+      "no": 6,
+      "stage": "primary",
+      "labels": {
+        "zh": "小学六年级",
+        "en": "Grade 6",
+        "ru": "6 класс",
+        "uk": "6 клас",
+        "kk": "6-сынып"
+      }
+    },
+    {
+      "no": 7,
+      "stage": "junior",
+      "labels": {
+        "zh": "初中一年级",
+        "en": "Grade 7",
+        "ru": "7 класс",
+        "uk": "7 клас",
+        "kk": "7-сынып"
+      }
+    },
+    {
+      "no": 8,
+      "stage": "junior",
+      "labels": {
+        "zh": "初中二年级",
+        "en": "Grade 8",
+        "ru": "8 класс",
+        "uk": "8 клас",
+        "kk": "8-сынып"
+      }
+    },
+    {
+      "no": 9,
+      "stage": "junior",
+      "labels": {
+        "zh": "初中三年级",
+        "en": "Grade 9",
+        "ru": "9 класс",
+        "uk": "9 клас",
+        "kk": "9-сынып"
+      }
+    }
+  ],
+  "subjects": [
+    {
+      "id": "CHINESE",
+      "labels": {
+        "zh": "语文",
+        "en": "Chinese",
+        "ru": "Китайский язык",
+        "uk": "Китайська мова",
+        "kk": "Қытай тілі"
+      },
+      "aliases": ["语文", "汉语", "chinese", "language arts", "китайский", "китайська", "қытай"],
+      "options": [
+        {
+          "grades": [1, 6],
+          "defaultTextbook": "BUBIAN",
+          "textbooks": ["BUBIAN"]
+        },
+        {
+          "grades": [7, 9],
+          "defaultTextbook": "BUBIAN",
+          "textbooks": ["BUBIAN", "GENERAL", "ALL"]
+        }
+      ]
+    },
+    {
+      "id": "MATH",
+      "labels": {
+        "zh": "数学",
+        "en": "Math",
+        "ru": "Математика",
+        "uk": "Математика",
+        "kk": "Математика"
+      },
+      "aliases": ["数学", "math", "mathematics", "математика"],
+      "options": [
+        {
+          "grades": [1, 6],
+          "defaultTextbook": "RENJIAO",
+          "textbooks": ["RENJIAO", "BEISHIDA", "SUJIAO", "QINGDAO"]
+        },
+        {
+          "grades": [7, 9],
+          "defaultTextbook": "RENJIAO",
+          "textbooks": ["RENJIAO", "BEISHIDA", "SUKE", "HUASHIDA", "XIANGJIAO", "ZHEJIAO", "HUIKE", "QINGDAO", "GENERAL", "ALL"]
+        }
+      ]
+    },
+    {
+      "id": "ENGLISH",
+      "labels": {
+        "zh": "英语",
+        "en": "English",
+        "ru": "Английский язык",
+        "uk": "Англійська мова",
+        "kk": "Ағылшын тілі"
+      },
+      "aliases": ["英语", "english", "английский", "англійська", "ағылшын"],
+      "options": [
+        {
+          "grades": [1, 6],
+          "defaultTextbook": "PEP",
+          "textbooks": ["PEP", "WAIYAN", "YILIN"]
+        },
+        {
+          "grades": [7, 9],
+          "defaultTextbook": "RENJIAO",
+          "textbooks": ["RENJIAO", "WAIYAN", "YILIN", "BEISHIDA", "GENERAL", "ALL"]
+        }
+      ]
+    },
+    {
+      "id": "SCIENCE",
+      "labels": {
+        "zh": "科学",
+        "en": "Science",
+        "ru": "Естествознание",
+        "uk": "Природознавство",
+        "kk": "Жаратылыстану"
+      },
+      "aliases": ["科学", "science", "естествознание", "природознавство", "жаратылыстану"],
+      "options": [
+        {
+          "grades": [1, 6],
+          "defaultTextbook": "KEJIAO",
+          "textbooks": ["KEJIAO", "SUJIAO", "RENJIAO_EJ"]
+        },
+        {
+          "grades": [7, 9],
+          "defaultTextbook": "GENERAL",
+          "textbooks": ["HUASHIDA", "HUJIAO", "ZHEJIAO", "GENERAL", "ALL"]
+        }
+      ]
+    },
+    {
+      "id": "POLITICS",
+      "labels": {
+        "zh": "道德与法治",
+        "en": "Morality and Law",
+        "ru": "Основы морали и права",
+        "uk": "Основи моралі та права",
+        "kk": "Мораль және құқық негіздері"
+      },
+      "aliases": ["道德与法治", "道法", "政治", "politics", "morality", "право", "мораль", "құқық"],
+      "options": [
+        {
+          "grades": [7, 9],
+          "defaultTextbook": "BUBIAN",
+          "textbooks": ["BUBIAN", "GENERAL", "ALL"]
+        }
+      ]
+    },
+    {
+      "id": "HISTORY",
+      "labels": {
+        "zh": "历史",
+        "en": "History",
+        "ru": "История",
+        "uk": "Історія",
+        "kk": "Тарих"
+      },
+      "aliases": ["历史", "history", "история", "історія", "тарих"],
+      "options": [
+        {
+          "grades": [7, 9],
+          "defaultTextbook": "BUBIAN",
+          "textbooks": ["BUBIAN", "GENERAL", "ALL"]
+        }
+      ]
+    },
+    {
+      "id": "GEOGRAPHY",
+      "labels": {
+        "zh": "地理",
+        "en": "Geography",
+        "ru": "География",
+        "uk": "Географія",
+        "kk": "География"
+      },
+      "aliases": ["地理", "geography", "география", "географія", "география"],
+      "options": [
+        {
+          "grades": [7, 8],
+          "defaultTextbook": "RENJIAO",
+          "textbooks": ["RENJIAO", "XIANGJIAO", "ZHONGTU", "GENERAL", "ALL"]
+        }
+      ]
+    },
+    {
+      "id": "BIOLOGY",
+      "labels": {
+        "zh": "生物学",
+        "en": "Biology",
+        "ru": "Биология",
+        "uk": "Біологія",
+        "kk": "Биология"
+      },
+      "aliases": ["生物", "biology", "биология", "біологія", "биология"],
+      "options": [
+        {
+          "grades": [7, 8],
+          "defaultTextbook": "RENJIAO",
+          "textbooks": ["RENJIAO", "BEISHIDA", "SUJIAO", "SUKE", "JINAN", "GENERAL", "ALL"]
+        }
+      ]
+    },
+    {
+      "id": "PHYSICS",
+      "labels": {
+        "zh": "物理",
+        "en": "Physics",
+        "ru": "Физика",
+        "uk": "Фізика",
+        "kk": "Физика"
+      },
+      "aliases": ["物理", "physics", "физика", "фізика", "физика"],
+      "options": [
+        {
+          "grades": [8, 9],
+          "defaultTextbook": "RENJIAO",
+          "textbooks": ["RENJIAO", "BEISHIDA", "SUKE", "HUIKE", "KEJIAO", "GENERAL", "ALL"]
+        }
+      ]
+    },
+    {
+      "id": "CHEMISTRY",
+      "labels": {
+        "zh": "化学",
+        "en": "Chemistry",
+        "ru": "Химия",
+        "uk": "Хімія",
+        "kk": "Химия"
+      },
+      "aliases": ["化学", "chemistry", "химия", "хімія", "химия"],
+      "options": [
+        {
+          "grades": [9, 9],
+          "defaultTextbook": "RENJIAO",
+          "textbooks": ["RENJIAO", "HUJIAO", "LUJIAO", "GENERAL", "ALL"]
+        }
+      ]
+    },
+    {
+      "id": "ALL",
+      "labels": {
+        "zh": "全科",
+        "en": "All subjects",
+        "ru": "Все предметы",
+        "uk": "Усі предмети",
+        "kk": "Барлық пәндер"
+      },
+      "aliases": ["全科", "all subjects", "все предметы", "усі предмети", "барлық пәндер"],
+      "options": [
+        {
+          "grades": [1, 6],
+          "defaultTextbook": "GENERAL",
+          "textbooks": ["GENERAL", "ALL"]
+        },
+        {
+          "grades": [7, 9],
+          "defaultTextbook": "GENERAL",
+          "textbooks": ["GENERAL", "ALL"]
+        }
+      ]
+    }
+  ],
+  "textbooks": [
+    {
+      "id": "BUBIAN",
+      "labels": {
+        "zh": "统编版",
+        "en": "Unified edition",
+        "ru": "Единое издание",
+        "uk": "Єдине видання",
+        "kk": "Бірыңғай басылым"
+      }
+    },
+    {
+      "id": "RENJIAO",
+      "labels": {
+        "zh": "人教版",
+        "en": "Renjiao edition",
+        "ru": "Жэньцзяо",
+        "uk": "Женьцзяо",
+        "kk": "Жэньцзяо"
+      }
+    },
+    {
+      "id": "RENJIAO_EJ",
+      "labels": {
+        "zh": "人教鄂教版",
+        "en": "Renjiao Hubei edition",
+        "ru": "Жэньцзяо (Хубэй)",
+        "uk": "Женьцзяо (Хубей)",
+        "kk": "Жэньцзяо (Хубэй)"
+      }
+    },
+    {
+      "id": "SUJIAO",
+      "labels": {
+        "zh": "苏教版",
+        "en": "Sujiao edition",
+        "ru": "Субань",
+        "uk": "Субань",
+        "kk": "Субань"
+      }
+    },
+    {
+      "id": "BEISHIDA",
+      "labels": {
+        "zh": "北师大版",
+        "en": "BNU edition",
+        "ru": "Бэйшида",
+        "uk": "Бейшіда",
+        "kk": "Бэйшида"
+      }
+    },
+    {
+      "id": "QINGDAO",
+      "labels": {
+        "zh": "青岛版",
+        "en": "Qingdao edition",
+        "ru": "Циндао",
+        "uk": "Циндао",
+        "kk": "Циндао"
+      }
+    },
+    {
+      "id": "PEP",
+      "labels": {
+        "zh": "人教版（PEP）",
+        "en": "PEP edition",
+        "ru": "PEP",
+        "uk": "PEP",
+        "kk": "PEP"
+      }
+    },
+    {
+      "id": "WAIYAN",
+      "labels": {
+        "zh": "外研社版",
+        "en": "FLTRP edition",
+        "ru": "Вайянь",
+        "uk": "Вайянь",
+        "kk": "Вайянь"
+      }
+    },
+    {
+      "id": "YILIN",
+      "labels": {
+        "zh": "译林版",
+        "en": "Yilin edition",
+        "ru": "Илинь",
+        "uk": "Ілінь",
+        "kk": "Илинь"
+      }
+    },
+    {
+      "id": "KEJIAO",
+      "labels": {
+        "zh": "教科版",
+        "en": "Science edition",
+        "ru": "Кэцзяо",
+        "uk": "Кецзяо",
+        "kk": "Кецзяо"
+      }
+    },
+    {
+      "id": "SUKE",
+      "labels": {
+        "zh": "苏科版",
+        "en": "SuKe edition",
+        "ru": "Суке",
+        "uk": "Суке",
+        "kk": "Суке"
+      }
+    },
+    {
+      "id": "HUIKE",
+      "labels": {
+        "zh": "沪科技版",
+        "en": "Shanghai Sci-Tech edition",
+        "ru": "Хуке",
+        "uk": "Хуке",
+        "kk": "Хуке"
+      }
+    },
+    {
+      "id": "HUJIAO",
+      "labels": {
+        "zh": "沪教版",
+        "en": "HuJiao edition",
+        "ru": "Хуцзяо",
+        "uk": "Хуцзяо",
+        "kk": "Хуцзяо"
+      }
+    },
+    {
+      "id": "XIANGJIAO",
+      "labels": {
+        "zh": "湘教版",
+        "en": "Xiangjiao edition",
+        "ru": "Сянцзяо",
+        "uk": "Сянцзяо",
+        "kk": "Сянцзяо"
+      }
+    },
+    {
+      "id": "HUASHIDA",
+      "labels": {
+        "zh": "华东师大版",
+        "en": "ECNU edition",
+        "ru": "Хуашида",
+        "uk": "Хуашіда",
+        "kk": "Хуашида"
+      }
+    },
+    {
+      "id": "ZHEJIAO",
+      "labels": {
+        "zh": "浙教版",
+        "en": "Zhejiang edition",
+        "ru": "Чжэцзян",
+        "uk": "Чжецзян",
+        "kk": "Чжэцзян"
+      }
+    },
+    {
+      "id": "RENAI",
+      "labels": {
+        "zh": "仁爱版",
+        "en": "Renai edition",
+        "ru": "Жэньай",
+        "uk": "Женьай",
+        "kk": "Жэньай"
+      }
+    },
+    {
+      "id": "LUJIAO",
+      "labels": {
+        "zh": "鲁教版",
+        "en": "LuJiao edition",
+        "ru": "Луцзяо",
+        "uk": "Луцзяо",
+        "kk": "Луцзяо"
+      }
+    },
+    {
+      "id": "LUKE",
+      "labels": {
+        "zh": "鲁科版",
+        "en": "LuKe edition",
+        "ru": "Луке",
+        "uk": "Луке",
+        "kk": "Луке"
+      }
+    },
+    {
+      "id": "ZHONGTU",
+      "labels": {
+        "zh": "中图版",
+        "en": "SinoMaps edition",
+        "ru": "Чжунту",
+        "uk": "Чжунту",
+        "kk": "Чжунту"
+      }
+    },
+    {
+      "id": "NIUJIN",
+      "labels": {
+        "zh": "沪教牛津版",
+        "en": "Oxford Shanghai edition",
+        "ru": "Оксфорд (Шанхай)",
+        "uk": "Оксфорд (Шанхай)",
+        "kk": "Оксфорд (Шанхай)"
+      }
+    },
+    {
+      "id": "JINAN",
+      "labels": {
+        "zh": "济南版",
+        "en": "Jinan edition",
+        "ru": "Цзинань",
+        "uk": "Цзінань",
+        "kk": "Цзинань"
+      }
+    },
+    {
+      "id": "GENERAL",
+      "labels": {
+        "zh": "综合",
+        "en": "General",
+        "ru": "Общий",
+        "uk": "Загальний",
+        "kk": "Жалпы"
+      }
+    },
+    {
+      "id": "ALL",
+      "labels": {
+        "zh": "全部教材",
+        "en": "All textbooks",
+        "ru": "Все учебники",
+        "uk": "Усі підручники",
+        "kk": "Барлық оқулықтар"
+      }
+    }
+  ],
+  "unitAliases": ["单元", "章", "Unit", "Chapter"]
+}

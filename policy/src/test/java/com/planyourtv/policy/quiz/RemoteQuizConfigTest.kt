@@ -75,8 +75,8 @@ class RemoteQuizConfigTest {
 
     @Test
     fun rejectsOutOfRangeNumbers() {
-        assertNull(RemoteQuizConfig.parse(valid { it.put("pullCount", 0) }))
-        assertNull(RemoteQuizConfig.parse(valid { it.put("pullCount", 11) }))
+        assertNull(RemoteQuizConfig.parse(valid { it.put("pullCount", 4) }))
+        assertNull(RemoteQuizConfig.parse(valid { it.put("pullCount", 51) }))
         assertNull(RemoteQuizConfig.parse(valid { it.put("minutesPerQuestion", 0) }))
         assertNull(RemoteQuizConfig.parse(valid { it.put("minutesPerQuestion", 31) }))
         assertNull(RemoteQuizConfig.parse(valid { it.put("defaultTimeLimitSec", 14) }))
@@ -158,7 +158,7 @@ class RemoteQuizConfigTest {
     fun anInvalidScopeRejectsTheWholeRemoteNode() {
         // 不静默换成默认范围：整包拒绝，调用方保留上一份已应用配置。
         assertNull(RemoteQuizConfig.parse(valid {
-            it.put("scope", scopeJson().put("subject", "HISTORY"))
+            it.put("scope", scopeJson().put("subject", "MUSIC"))
         }))
         assertNull(RemoteQuizConfig.parse(valid {
             it.put("scope", scopeJson(unitNo = null))

@@ -14,6 +14,10 @@ object QuizWeb {
         val config = state.challengeConfig
         return JSONObject()
             .put("enabled", state.enabled)
+            // A second phone can show the "parent already using" notice before
+            // asking for the PIN. The flag reveals only that the settings page
+            // is occupied, never the token or question content.
+            .put("parentInUse", QuizAccess.hasActiveSession())
             // An expired READY record is still stored, but it is not a usable setup.
             .put("configured", state.sessionState == "ready" || state.sessionState == "running")
             .put("sessionState", state.sessionState)

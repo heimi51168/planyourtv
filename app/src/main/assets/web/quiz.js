@@ -30,6 +30,10 @@
       gate_pair_title: "家长验证",
       gate_pair_text: "请输入电视上的 6 位家长密码。验证后当天内再次打开无需输入；次日 0 点后需要重新验证。网页不能解锁电视。",
       gate_pair_expired: "二维码已过期，请在电视上刷新后重新扫码。",
+      gate_in_use_heading: "家长设置正在使用中",
+      gate_in_use_lead: "同一时间只允许一台手机修改答题设置。",
+      gate_in_use_title: "当前已有家长在使用",
+      gate_in_use_text: "请稍后再试，或让已登录的手机退出「家长设置」；退出后这里会自动更新。",
       pinLabel: "请输入家长密码",
       pinButton: "进入设置",
       editor_locked: "本轮挑战进行中，网页只能查看摘要。",
@@ -79,6 +83,7 @@
       err_PIN_INVALID: "家长密码不正确。",
       err_PIN_LOCKED: "尝试次数过多，请稍后再试。",
       err_PIN_NOT_SET: "电视还没有设置家长密码。",
+      err_PARENT_IN_USE: "当前已有家长在使用，请让已登录的手机退出「家长设置」后再试。",
       err_PAIR_EXPIRED: "二维码已过期，请在电视上刷新后重新扫码。",
       err_ADMIN_REQUIRED: "请先完成家长验证。",
       err_ADMIN_EXPIRED: "授权已过期，请重新输入家长密码。",
@@ -126,13 +131,14 @@
       semesterSecond: "下册",
       gradeWithSemester: "{grade}{semester}",
       genTextbookLabel: "教材",
-      tbBubian: "部编版",
+      tbBubian: "统编版",
       tbRenjiao: "人教版",
+      tbRenjiaoEj: "人教鄂教版",
       tbSujiao: "苏教版",
       tbBeishida: "北师大版",
       tbQingdao: "青岛版",
-      tbPep: "PEP",
-      tbWaiyan: "外研版",
+      tbPep: "人教版（PEP）",
+      tbWaiyan: "外研社版",
       tbYilin: "译林版",
       tbKejiao: "教科版",
       tbGeneral: "综合",
@@ -163,6 +169,8 @@
       genPromptTemplate: "请为{grade}出{subject}题，范围是{scope}。优先覆盖重点知识和易错题。",
       genSubjectWithBook: "{subject}（{book}）",
       promptScopeUnit: "第{unit}单元的核心知识点",
+      promptScopeUnitTitle: "「{title}」的核心知识点",
+      promptScopeUnitLessons: "「{title}」的核心知识点，重点覆盖：{lessons}",
       promptScopeUnitAll: "各科同步单元的核心知识点",
       promptScopeMidterm: "本学期期中考试范围",
       promptScopeFinal: "本学期期末考试范围",
@@ -307,6 +315,10 @@
       gate_pair_title: "Parent verification",
       gate_pair_text: "Enter the 6-digit parent password shown on the TV. Reopening the page is password-free for the rest of the day; after local midnight it asks again. This page cannot unlock the TV.",
       gate_pair_expired: "The QR code expired. Refresh it on the TV and scan again.",
+      gate_in_use_heading: "Parent settings are in use",
+      gate_in_use_lead: "Only one phone can change quiz settings at a time.",
+      gate_in_use_title: "A parent is already using the settings",
+      gate_in_use_text: "Please try again shortly, or ask them to exit parent settings on their phone. This page updates automatically.",
       pinLabel: "Enter parent password",
       pinButton: "Open settings",
       editor_locked: "A challenge is running. This page can only show its summary.",
@@ -356,6 +368,7 @@
       err_PIN_INVALID: "The parent password is incorrect.",
       err_PIN_LOCKED: "Too many attempts. Try again later.",
       err_PIN_NOT_SET: "The TV has no parent password yet.",
+      err_PARENT_IN_USE: "A parent is already using the settings. Ask them to exit parent settings on their phone, then try again.",
       err_PAIR_EXPIRED: "The QR code expired. Refresh it on the TV and scan again.",
       err_ADMIN_REQUIRED: "Verify the parent password first.",
       err_ADMIN_EXPIRED: "The setup session expired. Enter the parent password again.",
@@ -403,12 +416,13 @@
       semesterSecond: "Semester 2",
       gradeWithSemester: "{grade} · {semester}",
       genTextbookLabel: "Textbook",
-      tbBubian: "Bubian edition",
+      tbBubian: "Unified edition",
       tbRenjiao: "Renjiao edition",
+      tbRenjiaoEj: "Renjiao Hubei edition",
       tbSujiao: "Sujiao edition",
       tbBeishida: "BNU edition",
       tbQingdao: "Qingdao edition",
-      tbPep: "PEP",
+      tbPep: "PEP edition",
       tbWaiyan: "FLTRP edition",
       tbYilin: "Yilin edition",
       tbKejiao: "Science edition",
@@ -440,6 +454,8 @@
       genPromptTemplate: "Create questions for {grade} {subject}, covering {scope}. Focus on key knowledge and common mistakes.",
       genSubjectWithBook: "{subject} ({book})",
       promptScopeUnit: "Unit {unit} core concepts",
+      promptScopeUnitTitle: "core concepts of \"{title}\"",
+      promptScopeUnitLessons: "core concepts of \"{title}\", focusing on: {lessons}",
       promptScopeUnitAll: "core concepts from the matching units across subjects",
       promptScopeMidterm: "this term's midterm exam scope",
       promptScopeFinal: "this term's final exam scope",
@@ -584,6 +600,10 @@
       gate_pair_title: "Проверка родителя",
       gate_pair_text: "Введите 6-значный пароль родителя с телевизора. В течение дня страница открывается без пароля; после местной полуночи потребуется ввести его снова. Страница не разблокирует телевизор.",
       gate_pair_expired: "QR-код устарел. Обновите его на телевизоре и отсканируйте снова.",
+      gate_in_use_heading: "Настройки родителя уже открыты",
+      gate_in_use_lead: "Изменять настройки викторины можно только с одного телефона одновременно.",
+      gate_in_use_title: "Настройки уже открыты у другого родителя",
+      gate_in_use_text: "Попробуйте позже или попросите его выйти из настроек на своём телефоне. Страница обновится автоматически.",
       pinLabel: "Введите пароль родителя",
       pinButton: "Открыть настройки",
       editor_locked: "Викторина идёт. Страница показывает только сводку.",
@@ -633,6 +653,7 @@
       err_PIN_INVALID: "Неверный пароль родителя.",
       err_PIN_LOCKED: "Слишком много попыток. Повторите позже.",
       err_PIN_NOT_SET: "На телевизоре ещё нет пароля родителя.",
+      err_PARENT_IN_USE: "Настройки уже открыты у другого родителя. Попросите его выйти из настроек на своём телефоне и повторите попытку.",
       err_PAIR_EXPIRED: "QR-код устарел. Обновите его на телевизоре.",
       err_ADMIN_REQUIRED: "Сначала подтвердите пароль родителя.",
       err_ADMIN_EXPIRED: "Сеанс истёк. Введите пароль родителя снова.",
@@ -680,8 +701,9 @@
       semesterSecond: "2-е полугодие",
       gradeWithSemester: "{grade} · {semester}",
       genTextbookLabel: "Учебник",
-      tbBubian: "Бубань",
+      tbBubian: "Единое издание",
       tbRenjiao: "Жэньцзяо",
+      tbRenjiaoEj: "Жэньцзяо (Хубэй)",
       tbSujiao: "Субань",
       tbBeishida: "Бэйшида",
       tbQingdao: "Циндао",
@@ -717,6 +739,8 @@
       genPromptTemplate: "Составь вопросы для {grade} по предмету «{subject}», тема: {scope}. Основной упор — важные знания и типичные ошибки.",
       genSubjectWithBook: "{subject} ({book})",
       promptScopeUnit: "ключевые знания блока {unit}",
+      promptScopeUnitTitle: "ключевые знания раздела «{title}»",
+      promptScopeUnitLessons: "ключевые знания раздела «{title}», прежде всего: {lessons}",
       promptScopeUnitAll: "ключевые знания параллельных блоков по всем предметам",
       promptScopeMidterm: "программа полугодовой контрольной этого семестра",
       promptScopeFinal: "программа итоговой контрольной этого семестра",
@@ -861,6 +885,10 @@
       gate_pair_title: "Перевірка батьків",
       gate_pair_text: "Введіть 6-значний пароль батьків із телевізора. Протягом дня сторінка відкривається без пароля; після місцевої півночі його треба ввести знову. Сторінка не розблоковує телевізор.",
       gate_pair_expired: "QR-код застарів. Оновіть його на телевізорі й відскануйте знову.",
+      gate_in_use_heading: "Налаштування батьків уже відкрито",
+      gate_in_use_lead: "Змінювати налаштування вікторини можна лише з одного телефона одночасно.",
+      gate_in_use_title: "Налаштування вже відкрито в іншого з батьків",
+      gate_in_use_text: "Спробуйте пізніше або попросіть його вийти з налаштувань на своєму телефоні. Сторінка оновиться автоматично.",
       pinLabel: "Введіть пароль батьків",
       pinButton: "Відкрити налаштування",
       editor_locked: "Вікторина триває. Сторінка показує лише підсумок.",
@@ -910,6 +938,7 @@
       err_PIN_INVALID: "Неправильний пароль батьків.",
       err_PIN_LOCKED: "Забагато спроб. Спробуйте пізніше.",
       err_PIN_NOT_SET: "На телевізорі ще немає пароля батьків.",
+      err_PARENT_IN_USE: "Налаштування вже відкрито в іншого з батьків. Попросіть його вийти з налаштувань на своєму телефоні й спробуйте ще раз.",
       err_PAIR_EXPIRED: "QR-код застарів. Оновіть його на телевізорі.",
       err_ADMIN_REQUIRED: "Спершу підтвердьте пароль батьків.",
       err_ADMIN_EXPIRED: "Сеанс завершився. Введіть пароль батьків ще раз.",
@@ -957,8 +986,9 @@
       semesterSecond: "2-й семестр",
       gradeWithSemester: "{grade} · {semester}",
       genTextbookLabel: "Підручник",
-      tbBubian: "Бубань",
+      tbBubian: "Єдине видання",
       tbRenjiao: "Женьцзяо",
+      tbRenjiaoEj: "Женьцзяо (Хубей)",
       tbSujiao: "Субань",
       tbBeishida: "Бейшіда",
       tbQingdao: "Циндао",
@@ -994,6 +1024,8 @@
       genPromptTemplate: "Створи питання для {grade} з предмета «{subject}», тема: {scope}. Основна увага — ключові знання й типові помилки.",
       genSubjectWithBook: "{subject} ({book})",
       promptScopeUnit: "ключові знання розділу {unit}",
+      promptScopeUnitTitle: "ключові знання розділу «{title}»",
+      promptScopeUnitLessons: "ключові знання розділу «{title}», насамперед: {lessons}",
       promptScopeUnitAll: "ключові знання паралельних розділів з усіх предметів",
       promptScopeMidterm: "програма піврічної контрольної цього семестру",
       promptScopeFinal: "програма підсумкової контрольної цього семестру",
@@ -1138,6 +1170,10 @@
       gate_pair_title: "Ата-ананы растау",
       gate_pair_text: "Теледидардағы 6 таңбалы ата-ана құпиясөзін енгізіңіз. Күн ішінде бет құпиясөзсіз ашылады; жергілікті түн ортасынан кейін оны қайта енгізу керек. Бет теледидарды ашпайды.",
       gate_pair_expired: "QR-код ескірді. Теледидарда жаңартып, қайта сканерлеңіз.",
+      gate_in_use_heading: "Ата-ана баптауы ашық тұр",
+      gate_in_use_lead: "Викторина баптауларын бір уақытта тек бір телефоннан өзгертуге болады.",
+      gate_in_use_title: "Баптау қазір басқа ата-анада ашық",
+      gate_in_use_text: "Сәл кейінірек қайталап көріңіз немесе одан өз телефонында баптаудан шығуды сұраңыз. Бет өзі жаңарады.",
       pinLabel: "Ата-ана құпиясөзін енгізіңіз",
       pinButton: "Баптауды ашу",
       editor_locked: "Викторина жүріп жатыр. Бет тек қорытындыны көрсетеді.",
@@ -1187,6 +1223,7 @@
       err_PIN_INVALID: "Ата-ана құпиясөзі дұрыс емес.",
       err_PIN_LOCKED: "Әрекет тым көп. Кейінірек қайталаңыз.",
       err_PIN_NOT_SET: "Теледидарда әзірге ата-ана құпиясөзі жоқ.",
+      err_PARENT_IN_USE: "Баптау қазір басқа ата-анада ашық. Одан өз телефонында баптаудан шығуды сұрап, қайта көріңіз.",
       err_PAIR_EXPIRED: "QR-код ескірді. Теледидарда жаңартыңыз.",
       err_ADMIN_REQUIRED: "Алдымен ата-ана құпиясөзін растаңыз.",
       err_ADMIN_EXPIRED: "Сеанс аяқталды. Ата-ана құпиясөзін қайта енгізіңіз.",
@@ -1234,8 +1271,9 @@
       semesterSecond: "2-жартыжылдық",
       gradeWithSemester: "{grade} · {semester}",
       genTextbookLabel: "Оқулық",
-      tbBubian: "Бубань",
+      tbBubian: "Бірыңғай басылым",
       tbRenjiao: "Жэньцзяо",
+      tbRenjiaoEj: "Жэньцзяо (Хубэй)",
       tbSujiao: "Субань",
       tbBeishida: "Бэйшида",
       tbQingdao: "Циндао",
@@ -1271,6 +1309,8 @@
       genPromptTemplate: "{grade} үшін «{subject}» пәнінен сұрақтар жаса, ауқымы: {scope}. Негізгі назар — маңызды білім мен жиі қателерге.",
       genSubjectWithBook: "{subject} ({book})",
       promptScopeUnit: "{unit}-бөлімнің негізгі білімдері",
+      promptScopeUnitTitle: "«{title}» бөлімінің негізгі білімдері",
+      promptScopeUnitLessons: "«{title}» бөлімінің негізгі білімдері, әсіресе: {lessons}",
       promptScopeUnitAll: "барлық пәндердің сәйкес бөлімдеріндегі негізгі білімдер",
       promptScopeMidterm: "осы тоқсанның аралық бақылау бағдарламасы",
       promptScopeFinal: "осы тоқсанның қорытынды бақылау бағдарламасы",
@@ -1443,6 +1483,8 @@
       shuffle: "打乱选项顺序",
       difficultyHard: "困难",
       err_INVALID_SCOPE: "答题范围无效，请重新选择。",
+      err_CLOUD_JUNIOR_UNSUPPORTED: "云端题库暂不支持初中答题范围。",
+      cloudJuniorUnsupported: "云端题库暂不支持初中，请选择小学年级。",
       settingsSummary: "每轮 {pull} 题 · 每题 {minutes} 分钟",
       settingsActiveHint: "本轮答题进行中，修改将在下一轮生效。",
       challengeToggle: "答题挑战",
@@ -1538,6 +1580,8 @@
       shuffle: "Shuffle options",
       difficultyHard: "Hard",
       err_INVALID_SCOPE: "The question range is invalid. Choose it again.",
+      err_CLOUD_JUNIOR_UNSUPPORTED: "The cloud question bank does not support junior-high ranges yet.",
+      cloudJuniorUnsupported: "The cloud question bank does not support junior high yet. Choose a primary grade.",
       settingsSummary: "{pull} per round · {minutes} min per question",
       settingsActiveHint: "A round is running; changes apply from the next round.",
       challengeToggle: "Quiz challenge",
@@ -1633,6 +1677,8 @@
       shuffle: "Перемешивать варианты",
       difficultyHard: "Сложно",
       err_INVALID_SCOPE: "Диапазон вопросов недопустим. Выберите его заново.",
+      err_CLOUD_JUNIOR_UNSUPPORTED: "Облачная база вопросов пока не поддерживает среднюю школу.",
+      cloudJuniorUnsupported: "Облачная база вопросов пока не поддерживает среднюю школу. Выберите класс начальной школы.",
       settingsSummary: "{pull} за раунд · {minutes} мин на вопрос",
       settingsActiveHint: "Раунд идёт; изменения применятся со следующего раунда.",
       challengeToggle: "Викторина",
@@ -1728,6 +1774,8 @@
       shuffle: "Перемішувати варіанти",
       difficultyHard: "Складно",
       err_INVALID_SCOPE: "Діапазон питань недійсний. Виберіть його знову.",
+      err_CLOUD_JUNIOR_UNSUPPORTED: "Хмарна база запитань поки не підтримує середню школу.",
+      cloudJuniorUnsupported: "Хмарна база запитань поки не підтримує середню школу. Виберіть клас початкової школи.",
       settingsSummary: "{pull} за раунд · {minutes} хв на питання",
       settingsActiveHint: "Раунд триває; зміни застосуються з наступного раунду.",
       challengeToggle: "Вікторина",
@@ -1823,6 +1871,8 @@
       shuffle: "Нұсқаларды араластыру",
       difficultyHard: "Қиын",
       err_INVALID_SCOPE: "Сұрақ ауқымы жарамсыз. Оны қайта таңдаңыз.",
+      err_CLOUD_JUNIOR_UNSUPPORTED: "Бұлттық сұрақ базасы әзірге орта мектепті қолдамайды.",
+      cloudJuniorUnsupported: "Бұлттық сұрақ базасы әзірге орта мектепті қолдамайды. Бастауыш сыныпты таңдаңыз.",
       settingsSummary: "Раундта {pull} сұрақ · сұраққа {minutes} мин",
       settingsActiveHint: "Раунд жүріп жатыр; өзгерістер келесі раундтан қолданылады.",
       challengeToggle: "Викторина",
@@ -1869,20 +1919,23 @@
     },
   };
 
-  // V19 three-section editor. Kept separate so the older four-tab table above
-  // stays untouched for cached markup and rollback.
+  // V19 editor: the home page merges the generation config and its action into
+  // one card, with quiz setup as the second card. Kept separate so the older
+  // four-tab table above stays untouched for cached markup and rollback.
   const V19_TEXTS = {
     zh: {
-      genConfigTitle: "出题配置",
+      genConfigTitle: "题目生成",
       answerConfigTitle: "答题配置",
       answerRulesTitle: "答题规则",
-      generateCardTitle: "生成题目",
-      scopeBound: "和出题范围一致",
+      generateCardTitle: "开始生成",
+      scopeBound: "和题目生成一致",
       scopeCustomMode: "自定义配置",
       genRequirementLabel: "题目要求",
       genRequirementSamples: "常用要求",
       genRequirementPlaceholder: "如：第六单元易错题",
       genRequirementScope: "题库归类：{scope}",
+      genRequirementScopeWithCount: "题库归类：{scope} · 共 {count} 个单元",
+      genRequirementInvalid: "当前教材没有{unit}，共 {count} 个单元可选。",
       genRequirementMissing: "尚未填写题目要求",
       genRequirementNote: "出题要求：{text}",
       promptScopeManual: "「{topic}」",
@@ -1890,7 +1943,22 @@
       genAutoAddHint: "开启：生成完成自动入库；关闭：在题目清单确认后加入。",
       genAutoAddShort: "自动入库",
       genManualAddShort: "手动确认入库",
-      homeBankInsufficient: "题库不足，请点击【生成题目】",
+      homeBankInsufficient: "电视可用 {available}/{pull} 题",
+      flowAiToBank: "AI → 题库",
+      flowBankToTv: "题库 → 电视",
+      genScopeStatusInsufficient: "电视可用 {available}/{pull} 题；生成完成后可直接答题。",
+      genScopeStatusMismatch: "当前生成范围与电视答题范围不一致；新生成的题不会进入电视答题范围。",
+      genScopeStatusMismatchInsufficient: "电视可用 {available}/{pull} 题；当前生成范围不会进入电视答题范围。",
+      alignToAnswerScope: "按答题范围生成",
+      editGenerationScope: "调整生成范围",
+      alignReplacesRequirement: "将使用电视答题范围，并替换当前题目要求。",
+      scopeMismatchTitle: "生成范围与答题范围不一致",
+      scopeMismatchIntro: "电视答题范围题目不足，当前生成范围又与它不一致。",
+      scopeMismatchAnswerLine: "电视答题范围：{scope}",
+      scopeMismatchGenerateLine: "本次生成范围：{scope}",
+      scopeMismatchBody: "电视可用 {available}/{pull} 题。按当前范围生成后，新题不会进入电视答题范围。",
+      scopeMismatchNote: "将替换当前生成范围和题目要求；电视答题配置不会改变。",
+      keepCurrentScope: "仍然按当前范围生成",
       generateAdding: "正在加入题库…",
       saving: "保存中…",
       settingsLoading: "正在读取答题配置…",
@@ -1900,6 +1968,9 @@
       saveConfig: "保存",
       back: "返回",
       generateStart: "生成题目",
+      generateStartCount: "生成 {n} 道题",
+      generateDisclaimer: "题目由 AI 生成，可能无法完全匹配最新教材的单元顺序和内容，仅供练习参考；请以学校教材为准。",
+      genTextbookHint: "教材版本按 2026 年六三学制主流版本整理；找不到请选「综合」。",
       generateStop: "停止",
       generateProviderRequired: "请先在「我的 · AI 出题」配置模型 API 密钥。",
       viewQuestionList: "查看题目清单",
@@ -1908,6 +1979,8 @@
       homeAnswerMain: "{scope} · 每轮 {n} 题",
       homeAnswerSub: "每轮 {n} 题 · {seconds} 秒/题 · 每题 +{minutes} 分钟",
       roundN: "{n} 题",
+      roundUnit: "题",
+      settingsRoundHint: "上下滑动 · 5–50 题，每次 5 题",
       rewardMinutes: "单题奖励",
       rewardMinutesN: "+{n} 分钟",
       scopeAvailableCount: "题库中 {n} 题符合",
@@ -1918,7 +1991,7 @@
       err_SCOPE_INCOMPLETE: "请先完成答题范围选择。",
       err_SCOPE_EMPTY: "当前范围没有题库题目，请调整条件或先生成题目。",
       goGenerate: "去生成题目",
-      goGenerationConfig: "调整出题配置",
+      goGenerationConfig: "调整题目生成",
       questionListTitle: "题目清单",
       questionListMeta: "{total} 道 · 已选 {selected}",
       selectAll: "全选",
@@ -1932,18 +2005,21 @@
       questionAnswer: "答案",
       unitN: "第{n}单元",
       generateStoppedReview: "已停止；已生成的题目保留在清单里，确认后加入题库。",
+      generateDoNotRefresh: "生成中，请不要刷新页面。",
     },
     en: {
-      genConfigTitle: "Question setup",
+      genConfigTitle: "Question generation",
       answerConfigTitle: "Quiz setup",
       answerRulesTitle: "Rules",
-      generateCardTitle: "Generate questions",
-      scopeBound: "Same as question setup",
+      generateCardTitle: "Start generating",
+      scopeBound: "Same as question generation",
       scopeCustomMode: "Custom",
       genRequirementLabel: "Question topic",
       genRequirementSamples: "Common topics",
       genRequirementPlaceholder: "e.g. Unit 6 common mistakes",
       genRequirementScope: "Bank category: {scope}",
+      genRequirementScopeWithCount: "Bank category: {scope} · {count} units",
+      genRequirementInvalid: "This book has no {unit}; choose from its {count} units.",
       genRequirementMissing: "Topic not set",
       genRequirementNote: "Extra requirement: {text}",
       promptScopeManual: "“{topic}”",
@@ -1951,7 +2027,22 @@
       genAutoAddHint: "On: finished questions are added automatically. Off: review the list first.",
       genAutoAddShort: "Auto-add",
       genManualAddShort: "Review first",
-      homeBankInsufficient: "Not enough questions. Tap Generate questions.",
+      homeBankInsufficient: "{available}/{pull} questions ready on TV",
+      flowAiToBank: "AI → Bank",
+      flowBankToTv: "Bank → TV",
+      genScopeStatusInsufficient: "TV has {available}/{pull} questions ready. Questions from this run can be used right away.",
+      genScopeStatusMismatch: "The generation range differs from the TV quiz range. New questions will not appear in the TV quiz.",
+      genScopeStatusMismatchInsufficient: "TV has {available}/{pull} questions ready. Questions from the current generation range will not appear in the TV quiz.",
+      alignToAnswerScope: "Generate for TV range",
+      editGenerationScope: "Edit generation range",
+      alignReplacesRequirement: "Uses the TV quiz range and replaces the current question topic.",
+      scopeMismatchTitle: "Generation range does not match the TV quiz range",
+      scopeMismatchIntro: "The TV quiz range is short of questions, and the current generation range does not match it.",
+      scopeMismatchAnswerLine: "TV quiz range: {scope}",
+      scopeMismatchGenerateLine: "Current generation range: {scope}",
+      scopeMismatchBody: "TV has {available}/{pull} questions ready. New questions from the current range will not appear in the TV quiz.",
+      scopeMismatchNote: "This replaces the current generation range and question topic. The TV quiz setup will not change.",
+      keepCurrentScope: "Generate with current range",
       generateAdding: "Adding to the bank…",
       saving: "Saving…",
       settingsLoading: "Loading quiz setup…",
@@ -1961,6 +2052,9 @@
       saveConfig: "Save",
       back: "Back",
       generateStart: "Generate questions",
+      generateStartCount: "Generate {n} questions",
+      generateDisclaimer: "Questions are generated by AI and may not fully match the unit order or content of the latest textbooks. For practice reference only; follow the school textbook.",
+      genTextbookHint: "Textbook editions follow mainstream 2026 6–3 school-system editions. Choose “General” if yours is not listed.",
       generateStop: "Stop",
       generateProviderRequired: "Set the model API key in Me · AI questions first.",
       viewQuestionList: "Review questions",
@@ -1969,6 +2063,8 @@
       homeAnswerMain: "{scope} · {n} per round",
       homeAnswerSub: "{n} per round · {seconds}s each · +{minutes} min per question",
       roundN: "{n} questions",
+      roundUnit: "questions",
+      settingsRoundHint: "Swipe up or down · 5–50, step 5",
       rewardMinutes: "Reward per question",
       rewardMinutesN: "+{n} min",
       scopeAvailableCount: "{n} bank questions match",
@@ -1979,7 +2075,7 @@
       err_SCOPE_INCOMPLETE: "Finish selecting the question range first.",
       err_SCOPE_EMPTY: "No bank questions match this range. Adjust the filters or generate questions first.",
       goGenerate: "Generate questions",
-      goGenerationConfig: "Edit question setup",
+      goGenerationConfig: "Edit question generation",
       questionListTitle: "Question list",
       questionListMeta: "{total} questions · {selected} selected",
       selectAll: "Select all",
@@ -1993,18 +2089,21 @@
       questionAnswer: "Answer",
       unitN: "Unit {n}",
       generateStoppedReview: "Stopped. Generated questions are kept for review; add them when ready.",
+      generateDoNotRefresh: "Generating. Do not refresh this page.",
     },
     ru: {
-      genConfigTitle: "Настройка вопросов",
+      genConfigTitle: "Генерация вопросов",
       answerConfigTitle: "Настройка викторины",
       answerRulesTitle: "Правила",
-      generateCardTitle: "Генерация вопросов",
-      scopeBound: "Совпадает с настройкой вопросов",
+      generateCardTitle: "Начать генерацию",
+      scopeBound: "Совпадает с генерацией вопросов",
       scopeCustomMode: "Свои условия",
       genRequirementLabel: "Тема вопросов",
       genRequirementSamples: "Частые темы",
       genRequirementPlaceholder: "например, типичные ошибки блока 6",
       genRequirementScope: "Категория в банке: {scope}",
+      genRequirementScopeWithCount: "Категория в банке: {scope} · разделов: {count}",
+      genRequirementInvalid: "В этом учебнике нет «{unit}»; доступно разделов: {count}.",
       genRequirementMissing: "Тема не указана",
       genRequirementNote: "Доп. требование: {text}",
       promptScopeManual: "«{topic}»",
@@ -2012,7 +2111,22 @@
       genAutoAddHint: "Вкл.: готовые вопросы добавляются сразу. Выкл.: сначала проверьте список.",
       genAutoAddShort: "Автодобавление",
       genManualAddShort: "Сначала проверка",
-      homeBankInsufficient: "Недостаточно вопросов. Нажмите «Сгенерировать вопросы».",
+      homeBankInsufficient: "На ТВ доступно {available} из {pull}",
+      flowAiToBank: "ИИ → Банк",
+      flowBankToTv: "Банк → ТВ",
+      genScopeStatusInsufficient: "На ТВ доступно {available} из {pull}. Вопросы этой генерации сразу можно будет использовать.",
+      genScopeStatusMismatch: "Диапазон генерации не совпадает с диапазоном викторины на ТВ. Новые вопросы не попадут в викторину.",
+      genScopeStatusMismatchInsufficient: "На ТВ доступно {available} из {pull}. Вопросы текущего диапазона генерации не попадут в викторину.",
+      alignToAnswerScope: "Создать для диапазона ТВ",
+      editGenerationScope: "Изменить диапазон генерации",
+      alignReplacesRequirement: "Будет использован диапазон викторины на ТВ; текущая тема вопросов заменится.",
+      scopeMismatchTitle: "Диапазон генерации не совпадает с диапазоном викторины",
+      scopeMismatchIntro: "В диапазоне викторины на ТВ не хватает вопросов, а текущий диапазон генерации с ним не совпадает.",
+      scopeMismatchAnswerLine: "Диапазон викторины на ТВ: {scope}",
+      scopeMismatchGenerateLine: "Текущий диапазон генерации: {scope}",
+      scopeMismatchBody: "На ТВ доступно {available} из {pull}. Новые вопросы текущего диапазона не попадут в викторину.",
+      scopeMismatchNote: "Текущий диапазон генерации и тема вопросов будут заменены. Настройка викторины на ТВ не изменится.",
+      keepCurrentScope: "Создать в текущем диапазоне",
       generateAdding: "Добавляем в банк…",
       saving: "Сохранение…",
       settingsLoading: "Загружаем настройку викторины…",
@@ -2022,6 +2136,9 @@
       saveConfig: "Сохранить",
       back: "Назад",
       generateStart: "Сгенерировать вопросы",
+      generateStartCount: "Создать {n} вопросов",
+      generateDisclaimer: "Вопросы создаёт ИИ; они могут не полностью совпадать с порядком разделов и содержанием новейших учебников. Только для тренировки; ориентируйтесь на школьный учебник.",
+      genTextbookHint: "Версии учебников соответствуют основным изданиям 2026 года для системы 6–3. Если вашей нет, выберите «Общий».",
       generateStop: "Стоп",
       generateProviderRequired: "Сначала укажите ключ API модели в разделе «Я · Вопросы ИИ».",
       viewQuestionList: "Проверить вопросы",
@@ -2030,6 +2147,8 @@
       homeAnswerMain: "{scope} · {n} за раунд",
       homeAnswerSub: "{n} за раунд · {seconds} с на вопрос · +{minutes} мин за вопрос",
       roundN: "{n} вопр.",
+      roundUnit: "вопр.",
+      settingsRoundHint: "Смахните · 5–50, шаг 5",
       rewardMinutes: "Награда за вопрос",
       rewardMinutesN: "+{n} мин",
       scopeAvailableCount: "В банке подходят {n} вопр.",
@@ -2040,7 +2159,7 @@
       err_SCOPE_INCOMPLETE: "Сначала завершите выбор диапазона вопросов.",
       err_SCOPE_EMPTY: "В банке нет вопросов для этого диапазона. Измените фильтры или сначала сгенерируйте вопросы.",
       goGenerate: "Сгенерировать вопросы",
-      goGenerationConfig: "Изменить настройку",
+      goGenerationConfig: "Изменить генерацию вопросов",
       questionListTitle: "Список вопросов",
       questionListMeta: "Всего: {total} · выбрано: {selected}",
       selectAll: "Выбрать все",
@@ -2054,18 +2173,21 @@
       questionAnswer: "Ответ",
       unitN: "Раздел {n}",
       generateStoppedReview: "Остановлено. Сгенерированные вопросы сохранены для проверки.",
+      generateDoNotRefresh: "Идёт генерация. Не обновляйте страницу.",
     },
     uk: {
-      genConfigTitle: "Налаштування питань",
+      genConfigTitle: "Генерація питань",
       answerConfigTitle: "Налаштування вікторини",
       answerRulesTitle: "Правила",
-      generateCardTitle: "Генерація питань",
-      scopeBound: "Збігається з налаштуванням питань",
+      generateCardTitle: "Почати генерацію",
+      scopeBound: "Збігається з генерацією питань",
       scopeCustomMode: "Власні умови",
       genRequirementLabel: "Тема питань",
       genRequirementSamples: "Часті теми",
       genRequirementPlaceholder: "наприклад, типові помилки розділу 6",
       genRequirementScope: "Категорія в банку: {scope}",
+      genRequirementScopeWithCount: "Категорія в банку: {scope} · розділів: {count}",
+      genRequirementInvalid: "У цьому підручнику немає «{unit}»; доступно розділів: {count}.",
       genRequirementMissing: "Тему не вказано",
       genRequirementNote: "Дод. вимога: {text}",
       promptScopeManual: "«{topic}»",
@@ -2073,7 +2195,22 @@
       genAutoAddHint: "Увімк.: готові питання додаються одразу. Вимк.: спершу перегляньте список.",
       genAutoAddShort: "Автододавання",
       genManualAddShort: "Спершу перевірка",
-      homeBankInsufficient: "Недостатньо питань. Натисніть «Згенерувати питання».",
+      homeBankInsufficient: "На ТБ доступно {available} з {pull}",
+      flowAiToBank: "ШІ → Банк",
+      flowBankToTv: "Банк → ТБ",
+      genScopeStatusInsufficient: "На ТБ доступно {available} з {pull}. Питання цієї генерації одразу можна буде використати.",
+      genScopeStatusMismatch: "Діапазон генерації не збігається з діапазоном вікторини на ТБ. Нові питання не потраплять у вікторину.",
+      genScopeStatusMismatchInsufficient: "На ТБ доступно {available} з {pull}. Питання поточного діапазону генерації не потраплять у вікторину.",
+      alignToAnswerScope: "Згенерувати для діапазону ТБ",
+      editGenerationScope: "Змінити діапазон генерації",
+      alignReplacesRequirement: "Буде використано діапазон вікторини на ТБ; поточну тему питань буде замінено.",
+      scopeMismatchTitle: "Діапазон генерації не збігається з діапазоном вікторини",
+      scopeMismatchIntro: "У діапазоні вікторини на ТБ бракує питань, а поточний діапазон генерації з ним не збігається.",
+      scopeMismatchAnswerLine: "Діапазон вікторини на ТБ: {scope}",
+      scopeMismatchGenerateLine: "Поточний діапазон генерації: {scope}",
+      scopeMismatchBody: "На ТБ доступно {available} з {pull}. Нові питання поточного діапазону не потраплять у вікторину.",
+      scopeMismatchNote: "Поточний діапазон генерації й тему питань буде замінено. Налаштування вікторини на ТБ не зміниться.",
+      keepCurrentScope: "Згенерувати в поточному діапазоні",
       generateAdding: "Додаємо до банку…",
       saving: "Збереження…",
       settingsLoading: "Завантажуємо налаштування вікторини…",
@@ -2083,6 +2220,9 @@
       saveConfig: "Зберегти",
       back: "Назад",
       generateStart: "Згенерувати питання",
+      generateStartCount: "Згенерувати {n} питань",
+      generateDisclaimer: "Питання створює ШІ; вони можуть не повністю збігатися з порядком розділів і змістом найновіших підручників. Лише для тренування; орієнтуйтеся на шкільний підручник.",
+      genTextbookHint: "Версії підручників відповідають основним виданням 2026 року для системи 6–3. Якщо вашої немає, виберіть «Загальний».",
       generateStop: "Стоп",
       generateProviderRequired: "Спочатку вкажіть ключ API моделі в розділі «Я · Питання ШІ».",
       viewQuestionList: "Переглянути питання",
@@ -2091,6 +2231,8 @@
       homeAnswerMain: "{scope} · {n} за раунд",
       homeAnswerSub: "{n} за раунд · {seconds} с на питання · +{minutes} хв за питання",
       roundN: "{n} питань",
+      roundUnit: "питань",
+      settingsRoundHint: "Проведіть · 5–50, крок 5",
       rewardMinutes: "Винагорода за питання",
       rewardMinutesN: "+{n} хв",
       scopeAvailableCount: "У банку відповідають {n} питань",
@@ -2101,7 +2243,7 @@
       err_SCOPE_INCOMPLETE: "Спочатку завершіть вибір діапазону питань.",
       err_SCOPE_EMPTY: "У банку немає питань для цього діапазону. Змініть фільтри або спочатку згенеруйте питання.",
       goGenerate: "Згенерувати питання",
-      goGenerationConfig: "Змінити налаштування",
+      goGenerationConfig: "Змінити генерацію питань",
       questionListTitle: "Список питань",
       questionListMeta: "Усього: {total} · вибрано: {selected}",
       selectAll: "Вибрати всі",
@@ -2115,18 +2257,21 @@
       questionAnswer: "Відповідь",
       unitN: "Розділ {n}",
       generateStoppedReview: "Зупинено. Згенеровані питання збережено для перегляду.",
+      generateDoNotRefresh: "Триває генерація. Не оновлюйте сторінку.",
     },
     kk: {
-      genConfigTitle: "Сұрақ баптауы",
+      genConfigTitle: "Сұрақ жасау",
       answerConfigTitle: "Викторина баптауы",
       answerRulesTitle: "Ережелер",
-      generateCardTitle: "Сұрақ жасау",
-      scopeBound: "Сұрақ баптауымен бірдей",
+      generateCardTitle: "Жасауды бастау",
+      scopeBound: "Сұрақ жасаумен бірдей",
       scopeCustomMode: "Өз шарттары",
       genRequirementLabel: "Сұрақ тақырыбы",
       genRequirementSamples: "Жиі тақырыптар",
       genRequirementPlaceholder: "мысалы, 6-бөлімнің жиі қателері",
       genRequirementScope: "Банктегі санат: {scope}",
+      genRequirementScopeWithCount: "Банктегі санат: {scope} · {count} бөлім",
+      genRequirementInvalid: "Бұл оқулықта «{unit}» жоқ; {count} бөлім қолжетімді.",
       genRequirementMissing: "Тақырып көрсетілмеген",
       genRequirementNote: "Қосымша талап: {text}",
       promptScopeManual: "«{topic}»",
@@ -2134,7 +2279,22 @@
       genAutoAddHint: "Қосулы: дайын сұрақтар бірден қосылады. Өшірулі: алдымен тізімді тексеріңіз.",
       genAutoAddShort: "Автоқосу",
       genManualAddShort: "Алдымен тексеру",
-      homeBankInsufficient: "Сұрақ жеткіліксіз. «Сұрақ жасау» түймесін басыңыз.",
+      homeBankInsufficient: "ТВ-де {available}/{pull} сұрақ қолжетімді",
+      flowAiToBank: "AI → Банк",
+      flowBankToTv: "Банк → ТВ",
+      genScopeStatusInsufficient: "ТВ-де {available}/{pull} сұрақ бар. Осы генерацияның сұрақтарын бірден қолдануға болады.",
+      genScopeStatusMismatch: "Жасау ауқымы ТВ викторина ауқымына сәйкес емес. Жаңа сұрақтар ТВ викторинасына қосылмайды.",
+      genScopeStatusMismatchInsufficient: "ТВ-де {available}/{pull} сұрақ бар. Ағымдағы жасау ауқымының сұрақтары ТВ викторинасына қосылмайды.",
+      alignToAnswerScope: "ТВ ауқымы бойынша жасау",
+      editGenerationScope: "Жасау ауқымын өзгерту",
+      alignReplacesRequirement: "ТВ викторина ауқымы қолданылып, ағымдағы сұрақ тақырыбы ауыстырылады.",
+      scopeMismatchTitle: "Жасау ауқымы ТВ викторина ауқымына сәйкес емес",
+      scopeMismatchIntro: "ТВ викторина ауқымында сұрақ жеткіліксіз, ал ағымдағы жасау ауқымы оған сәйкес емес.",
+      scopeMismatchAnswerLine: "ТВ викторина ауқымы: {scope}",
+      scopeMismatchGenerateLine: "Ағымдағы жасау ауқымы: {scope}",
+      scopeMismatchBody: "ТВ-де {available}/{pull} сұрақ бар. Ағымдағы ауқым бойынша жасалған жаңа сұрақтар ТВ викторинасына қосылмайды.",
+      scopeMismatchNote: "Ағымдағы жасау ауқымы мен сұрақ тақырыбы ауыстырылады. ТВ викторина баптауы өзгермейді.",
+      keepCurrentScope: "Ағымдағы ауқыммен жасау",
       generateAdding: "Банкке қосылуда…",
       saving: "Сақталуда…",
       settingsLoading: "Викторина баптауы жүктелуде…",
@@ -2144,6 +2304,9 @@
       saveConfig: "Сақтау",
       back: "Артқа",
       generateStart: "Сұрақ жасау",
+      generateStartCount: "{n} сұрақ жасау",
+      generateDisclaimer: "Сұрақтарды AI жасайды; олар ең жаңа оқулықтардың бөлім ретімен және мазмұнымен толық сәйкес келмеуі мүмкін. Тек жаттығуға арналған; мектеп оқулығын басшылыққа алыңыз.",
+      genTextbookHint: "Оқулық нұсқалары 2026 жылғы 6–3 жүйесінің негізгі басылымдарына сәйкес. Өзіңіздікі тізімде жоқ болса, «Жалпы» нұсқасын таңдаңыз.",
       generateStop: "Тоқтату",
       generateProviderRequired: "Алдымен «Мен · AI сұрақтары» бөлімінде модель API кілтін баптаңыз.",
       viewQuestionList: "Сұрақтарды қарау",
@@ -2152,6 +2315,8 @@
       homeAnswerMain: "{scope} · раундта {n} сұрақ",
       homeAnswerSub: "раундта {n} · сұраққа {seconds} с · сұраққа +{minutes} мин",
       roundN: "{n} сұрақ",
+      roundUnit: "сұрақ",
+      settingsRoundHint: "Сырғытыңыз · 5–50, қадам 5",
       rewardMinutes: "Сұрақ сыйақысы",
       rewardMinutesN: "+{n} мин",
       scopeAvailableCount: "Банкте {n} сұрақ сәйкес",
@@ -2162,7 +2327,7 @@
       err_SCOPE_INCOMPLETE: "Алдымен сұрақ ауқымын таңдауды аяқтаңыз.",
       err_SCOPE_EMPTY: "Бұл ауқымға сәйкес банкте сұрақ жоқ. Сүзгілерді өзгертіңіз немесе алдымен сұрақ жасаңыз.",
       goGenerate: "Сұрақ жасау",
-      goGenerationConfig: "Сұрақ баптауын өзгерту",
+      goGenerationConfig: "Сұрақ жасауды өзгерту",
       questionListTitle: "Сұрақтар тізімі",
       questionListMeta: "Барлығы: {total} · таңдалды: {selected}",
       selectAll: "Барлығын таңдау",
@@ -2176,11 +2341,300 @@
       questionAnswer: "Жауап",
       unitN: "{n}-бөлім",
       generateStoppedReview: "Тоқтатылды. Жасалған сұрақтар тексеру үшін сақталды.",
+      generateDoNotRefresh: "Генерация жүріп жатыр. Бетті жаңартпаңыз.",
+    },
+  };
+
+  // V20: the answer range is an ordered list of parent-designed levels. The TV
+  // shows that list as a wheel; these texts cover the list, the editor and the
+  // home summary.
+  const V20_TEXTS = {
+    zh: {
+      levelCountLabel: "{n} 个关卡",
+      levelMore: "还有 {n} 关",
+      levelNoneLabel: "未设置关卡",
+      levelListTitle: "关卡",
+      levelListLead: "电视上按这里的顺序显示关卡，孩子用遥控上下选择。",
+      levelListCount: "{n}/{max}",
+      levelEmptyTitle: "还没有设置关卡",
+      levelEmptyText: "添加一个答题范围，孩子就能在电视上像选关一样答题。",
+      levelAdd: "添加关卡",
+      levelMaxHint: "最多设置 {n} 个关卡。",
+      levelUndo: "撤销",
+      levelDeleted: "已删除「{name}」",
+      levelSaved: "关卡已保存",
+      levelOrderSaved: "关卡顺序已保存",
+      levelNameLabel: "关卡名称（可选）",
+      levelNamePlaceholder: "例如：语文期中冲刺",
+      levelNameHint: "最多 10 个字；不填时电视显示范围摘要。",
+      levelNameTooLong: "关卡名称最多 10 个字。",
+      levelAddTitle: "添加关卡",
+      levelEditTitle: "编辑关卡",
+      levelAvailable: "可用 {n} 题",
+      levelShort: "每轮需要 {pull} 题，当前只有 {available} 题",
+      levelDuplicate: "这个范围已经存在于其他关卡，请换一个范围。",
+      levelSave: "保存关卡",
+      levelFallbackName: "关卡 {n}",
+      levelDeleteAria: "删除「{name}」",
+      levelMoveUpAria: "上移「{name}」",
+      levelMoveDownAria: "下移「{name}」",
+      levelRulesApplyAll: "以下答题规则对所有关卡生效。",
+      homeLevelsInsufficient: "有 {n} 个关卡题量不足（每轮 {pull} 题）",
+      genScopeStatusLevelsInsufficient: "有 {n} 个关卡题量不足（每轮 {pull} 题）；生成完成后可直接答题。",
+      genScopeStatusLevelMismatch: "关卡「{level}」题量不足，且当前生成范围与它不一致。",
+    },
+    en: {
+      levelCountLabel: "{n} levels",
+      levelMore: "and {n} more",
+      levelNoneLabel: "No levels",
+      levelListTitle: "Levels",
+      levelListLead: "The TV lists the levels in this order so your child can pick one with the remote.",
+      levelListCount: "{n}/{max}",
+      levelEmptyTitle: "No levels yet",
+      levelEmptyText: "Add an answer range so your child can pick it on the TV like a game level.",
+      levelAdd: "Add level",
+      levelMaxHint: "Up to {n} levels.",
+      levelUndo: "Undo",
+      levelDeleted: "Deleted “{name}”",
+      levelSaved: "Level saved",
+      levelOrderSaved: "Level order saved",
+      levelNameLabel: "Level name (optional)",
+      levelNamePlaceholder: "e.g. Chinese midterm sprint",
+      levelNameHint: "Up to 10 characters. Leave empty to show the range summary on TV.",
+      levelNameTooLong: "Level name must be 10 characters or fewer.",
+      levelAddTitle: "Add level",
+      levelEditTitle: "Edit level",
+      levelAvailable: "{n} questions ready",
+      levelShort: "Needs {pull} per round; only {available} ready",
+      levelDuplicate: "This range already exists in another level. Choose a different range.",
+      levelSave: "Save level",
+      levelFallbackName: "Level {n}",
+      levelDeleteAria: "Delete “{name}”",
+      levelMoveUpAria: "Move “{name}” up",
+      levelMoveDownAria: "Move “{name}” down",
+      levelRulesApplyAll: "These rules apply to every level.",
+      homeLevelsInsufficient: "{n} level(s) need more questions ({pull} per round)",
+      genScopeStatusLevelsInsufficient: "{n} level(s) need more questions ({pull} per round). Generated questions can be used right away.",
+      genScopeStatusLevelMismatch: "Level “{level}” needs more questions and does not match the current generation range.",
+    },
+    ru: {
+      levelCountLabel: "Уровней: {n}",
+      levelMore: "и ещё {n}",
+      levelNoneLabel: "Уровни не заданы",
+      levelListTitle: "Уровни",
+      levelListLead: "На ТВ уровни показываются в этом порядке; ребёнок выбирает их пультом.",
+      levelListCount: "{n}/{max}",
+      levelEmptyTitle: "Уровней пока нет",
+      levelEmptyText: "Добавьте диапазон вопросов, чтобы ребёнок мог выбрать его на ТВ как уровень игры.",
+      levelAdd: "Добавить уровень",
+      levelMaxHint: "Можно добавить не больше {n} уровней.",
+      levelUndo: "Отменить",
+      levelDeleted: "Удалён уровень «{name}»",
+      levelSaved: "Уровень сохранён",
+      levelOrderSaved: "Порядок уровней сохранён",
+      levelNameLabel: "Название уровня (необязательно)",
+      levelNamePlaceholder: "например: Подготовка к четверти",
+      levelNameHint: "До 10 символов. Если пусто, на ТВ показывается описание диапазона.",
+      levelNameTooLong: "Название уровня — не больше 10 символов.",
+      levelAddTitle: "Добавить уровень",
+      levelEditTitle: "Изменить уровень",
+      levelAvailable: "Готово вопросов: {n}",
+      levelShort: "Нужно {pull} за раунд, готово только {available}",
+      levelDuplicate: "Такой диапазон уже есть в другом уровне. Выберите другой диапазон.",
+      levelSave: "Сохранить уровень",
+      levelFallbackName: "Уровень {n}",
+      levelDeleteAria: "Удалить «{name}»",
+      levelMoveUpAria: "Переместить «{name}» выше",
+      levelMoveDownAria: "Переместить «{name}» ниже",
+      levelRulesApplyAll: "Эти правила действуют для всех уровней.",
+      homeLevelsInsufficient: "Уровней без нужного запаса вопросов: {n} (нужно {pull} за раунд)",
+      genScopeStatusLevelsInsufficient: "Уровней без нужного запаса вопросов: {n} (нужно {pull} за раунд). Сгенерированные вопросы можно использовать сразу.",
+      genScopeStatusLevelMismatch: "Для уровня «{level}» не хватает вопросов, и текущий диапазон генерации с ним не совпадает.",
+    },
+    uk: {
+      levelCountLabel: "Рівнів: {n}",
+      levelMore: "і ще {n}",
+      levelNoneLabel: "Рівні не налаштовані",
+      levelListTitle: "Рівні",
+      levelListLead: "На ТБ рівні показуються в цьому порядку; дитина вибирає їх пультом.",
+      levelListCount: "{n}/{max}",
+      levelEmptyTitle: "Рівнів ще немає",
+      levelEmptyText: "Додайте діапазон питань, щоб дитина могла вибрати його на ТБ як рівень гри.",
+      levelAdd: "Додати рівень",
+      levelMaxHint: "Можна додати щонайбільше {n} рівнів.",
+      levelUndo: "Скасувати",
+      levelDeleted: "Видалено рівень «{name}»",
+      levelSaved: "Рівень збережено",
+      levelOrderSaved: "Порядок рівнів збережено",
+      levelNameLabel: "Назва рівня (необов’язково)",
+      levelNamePlaceholder: "наприклад: Підготовка до семестру",
+      levelNameHint: "До 10 символів. Якщо порожньо, на ТБ показується опис діапазону.",
+      levelNameTooLong: "Назва рівня — не більше 10 символів.",
+      levelAddTitle: "Додати рівень",
+      levelEditTitle: "Змінити рівень",
+      levelAvailable: "Готово питань: {n}",
+      levelShort: "Потрібно {pull} за раунд, готово лише {available}",
+      levelDuplicate: "Такий діапазон уже є в іншому рівні. Виберіть інший діапазон.",
+      levelSave: "Зберегти рівень",
+      levelFallbackName: "Рівень {n}",
+      levelDeleteAria: "Видалити «{name}»",
+      levelMoveUpAria: "Перемістити «{name}» вище",
+      levelMoveDownAria: "Перемістити «{name}» нижче",
+      levelRulesApplyAll: "Ці правила діють для всіх рівнів.",
+      homeLevelsInsufficient: "Рівнів без потрібного запасу питань: {n} (потрібно {pull} за раунд)",
+      genScopeStatusLevelsInsufficient: "Рівнів без потрібного запасу питань: {n} (потрібно {pull} за раунд). Згенеровані питання можна використати одразу.",
+      genScopeStatusLevelMismatch: "Для рівня «{level}» бракує питань, і поточний діапазон генерації з ним не збігається.",
+    },
+    kk: {
+      levelCountLabel: "Деңгейлер: {n}",
+      levelMore: "тағы {n} деңгей",
+      levelNoneLabel: "Деңгейлер орнатылмаған",
+      levelListTitle: "Деңгейлер",
+      levelListLead: "ТВ-де деңгейлер осы ретпен көрсетіледі; бала оны қашықтан басқару пультімен таңдайды.",
+      levelListCount: "{n}/{max}",
+      levelEmptyTitle: "Деңгейлер әзірге жоқ",
+      levelEmptyText: "Бала ТВ-де ойын деңгейі ретінде таңдай алатындай сұрақ ауқымын қосыңыз.",
+      levelAdd: "Деңгей қосу",
+      levelMaxHint: "Ең көбі {n} деңгей қосуға болады.",
+      levelUndo: "Қайтару",
+      levelDeleted: "«{name}» деңгейі жойылды",
+      levelSaved: "Деңгей сақталды",
+      levelOrderSaved: "Деңгей реті сақталды",
+      levelNameLabel: "Деңгей атауы (міндетті емес)",
+      levelNamePlaceholder: "мысалы: Тоқсанға дайындық",
+      levelNameHint: "10 таңбаға дейін. Бос болса, ТВ-де ауқым сипаттамасы көрсетіледі.",
+      levelNameTooLong: "Деңгей атауы 10 таңбадан аспауы керек.",
+      levelAddTitle: "Деңгей қосу",
+      levelEditTitle: "Деңгейді өзгерту",
+      levelAvailable: "Дайын сұрақтар: {n}",
+      levelShort: "Раундқа {pull} керек, дайын тек {available}",
+      levelDuplicate: "Бұл ауқым басқа деңгейде бар. Басқа ауқым таңдаңыз.",
+      levelSave: "Деңгейді сақтау",
+      levelFallbackName: "{n}-деңгей",
+      levelDeleteAria: "«{name}» деңгейін жою",
+      levelMoveUpAria: "«{name}» деңгейін жоғары жылжыту",
+      levelMoveDownAria: "«{name}» деңгейін төмен жылжыту",
+      levelRulesApplyAll: "Бұл ережелер барлық деңгейге қолданылады.",
+      homeLevelsInsufficient: "Сұрағы жеткіліксіз деңгейлер: {n} (раундқа {pull} керек)",
+      genScopeStatusLevelsInsufficient: "Сұрағы жеткіліксіз деңгейлер: {n} (раундқа {pull} керек). Жасалған сұрақтарды бірден қолдануға болады.",
+      genScopeStatusLevelMismatch: "«{level}» деңгейіне сұрақ жеткіліксіз және ағымдағы жасау ауқымы оған сәйкес емес.",
+    },
+  };
+
+  // V21: scoring is per difficulty (reward and deduction), and the unlock
+  // threshold is a net-minute line rather than a minimum correct count.
+  const V21_TEXTS = {
+    zh: {
+      scoringTitle: "难度计分",
+      scoringLead: "答对按题目难度加时间；答错或超时按同一难度扣时间。",
+      scoringCorrect: "答对（分钟）",
+      scoringWrong: "答错/超时（分钟）",
+      scoringRangeHint: "每题 0–30 分钟；填 0 表示答错不扣时间。",
+      scoringReset: "恢复默认计分",
+      scoringExample: "示例：答对简单 3 道、中等 2 道、困难 1 道，答错中等 1 道 → 加分 {gross}，扣分 {penalty}，净得 {net} 分钟",
+      scoringExampleNoPenalty: "示例：答对简单 3 道、中等 2 道、困难 1 道 → 净得 {net} 分钟",
+      scoringExampleCapped: "（单轮上限 {cap} 分钟）",
+      scoringWarnNoReward: "三档奖励都是 0 分钟，孩子答完也拿不到时间。",
+      scoringWarnThreshold: "最低解锁时长 {threshold} 分钟高于单轮上限 {cap} 分钟，可能永远无法解锁。",
+      scoringWarnPenalty: "有难度的扣分不低于答对奖励，答错一题可能抵消多道答对。",
+      unlockTitle: "最低解锁时长（分钟）",
+      unlockHint: "净得分钟达到门槛才能解锁；0 表示不设门槛。门槛只做判断，不会从奖励里扣除。",
+      unlockNone: "不设门槛",
+      minuteN: "{n} 分钟",
+      homeAnswerSub: "每轮 {n} 题 · 简单 +{easy} / 中等 +{medium} / 困难 +{hard} 分钟 · {unlock}",
+      homeUnlock: "门槛 {n} 分钟",
+      homeUnlockNone: "无门槛",
+    },
+    en: {
+      scoringTitle: "Difficulty scoring",
+      scoringLead: "Correct answers add time by difficulty; wrong answers and timeouts subtract time at the same difficulty.",
+      scoringCorrect: "Correct (min)",
+      scoringWrong: "Wrong/timeout (min)",
+      scoringRangeHint: "0–30 minutes per question; 0 means no deduction.",
+      scoringReset: "Reset scoring",
+      scoringExample: "Example: 3 easy, 2 medium and 1 hard correct, 1 medium wrong → +{gross}, −{penalty}, net {net} min",
+      scoringExampleNoPenalty: "Example: 3 easy, 2 medium and 1 hard correct → net {net} min",
+      scoringExampleCapped: "(round cap {cap} min)",
+      scoringWarnNoReward: "All three rewards are 0, so a finished round earns no time.",
+      scoringWarnThreshold: "The {threshold} min unlock threshold is above the {cap} min round cap, so it may never unlock.",
+      scoringWarnPenalty: "A deduction is at least its reward, so one wrong answer can cancel several correct ones.",
+      unlockTitle: "Minimum unlock time (minutes)",
+      unlockHint: "The round unlocks when net minutes reach this line; 0 means no threshold. The threshold only checks the result and is never deducted.",
+      unlockNone: "No threshold",
+      minuteN: "{n} min",
+      homeAnswerSub: "{n} per round · easy +{easy} / medium +{medium} / hard +{hard} min · {unlock}",
+      homeUnlock: "threshold {n} min",
+      homeUnlockNone: "no threshold",
+    },
+    ru: {
+      scoringTitle: "Очки по сложности",
+      scoringLead: "Верный ответ добавляет время по сложности; ошибка или тайм-аут вычитает время той же сложности.",
+      scoringCorrect: "Верно (мин)",
+      scoringWrong: "Ошибка/тайм-аут (мин)",
+      scoringRangeHint: "0–30 минут за вопрос; 0 — без вычета.",
+      scoringReset: "Сбросить очки",
+      scoringExample: "Пример: верно 3 простых, 2 средних и 1 сложный, 1 средняя ошибка → +{gross}, −{penalty}, итог {net} мин",
+      scoringExampleNoPenalty: "Пример: верно 3 простых, 2 средних и 1 сложный → итог {net} мин",
+      scoringExampleCapped: "(лимит раунда {cap} мин)",
+      scoringWarnNoReward: "Все три награды равны 0 — за раунд ребёнок не получит время.",
+      scoringWarnThreshold: "Порог {threshold} мин выше лимита раунда {cap} мин — разблокировка может не сработать.",
+      scoringWarnPenalty: "Штраф не меньше награды: одна ошибка может перекрыть несколько верных ответов.",
+      unlockTitle: "Минимум для разблокировки (минуты)",
+      unlockHint: "Раунд разблокируется, когда чистые минуты достигают порога; 0 — без порога. Порог только проверяет результат и не вычитается.",
+      unlockNone: "Без порога",
+      minuteN: "{n} мин",
+      homeAnswerSub: "{n} за раунд · лёгкий +{easy} / средний +{medium} / сложный +{hard} мин · {unlock}",
+      homeUnlock: "порог {n} мин",
+      homeUnlockNone: "без порога",
+    },
+    uk: {
+      scoringTitle: "Очки за складністю",
+      scoringLead: "Правильна відповідь додає час за складністю; помилка або тайм-аут віднімає час тієї ж складності.",
+      scoringCorrect: "Правильно (хв)",
+      scoringWrong: "Помилка/тайм-аут (хв)",
+      scoringRangeHint: "0–30 хвилин за питання; 0 — без відрахування.",
+      scoringReset: "Скинути очки",
+      scoringExample: "Приклад: правильно 3 простих, 2 середніх і 1 складний, 1 середня помилка → +{gross}, −{penalty}, разом {net} хв",
+      scoringExampleNoPenalty: "Приклад: правильно 3 простих, 2 середніх і 1 складний → разом {net} хв",
+      scoringExampleCapped: "(ліміт раунду {cap} хв)",
+      scoringWarnNoReward: "Усі три нагороди дорівнюють 0 — за раунд дитина не отримає часу.",
+      scoringWarnThreshold: "Поріг {threshold} хв вищий за ліміт раунду {cap} хв — розблокування може не спрацювати.",
+      scoringWarnPenalty: "Штраф не менший за нагороду: одна помилка може перекрити кілька правильних відповідей.",
+      unlockTitle: "Мінімум для розблокування (хвилини)",
+      unlockHint: "Раунд розблоковується, коли чисті хвилини сягають порогу; 0 — без порогу. Поріг лише перевіряє результат і не віднімається.",
+      unlockNone: "Без порогу",
+      minuteN: "{n} хв",
+      homeAnswerSub: "{n} за раунд · легкий +{easy} / середній +{medium} / складний +{hard} хв · {unlock}",
+      homeUnlock: "поріг {n} хв",
+      homeUnlockNone: "без порогу",
+    },
+    kk: {
+      scoringTitle: "Қиындық бойынша ұпай",
+      scoringLead: "Дұрыс жауап қиындыққа қарай уақыт қосады; қате немесе уақыт біту сол қиындықтан уақыт шегереді.",
+      scoringCorrect: "Дұрыс (мин)",
+      scoringWrong: "Қате/уақыт біту (мин)",
+      scoringRangeHint: "Әр сұраққа 0–30 минут; 0 — шегерусіз.",
+      scoringReset: "Ұпайды әдепкіге қайтару",
+      scoringExample: "Мысал: 3 жеңіл, 2 орташа және 1 қиын дұрыс, 1 орташа қате → +{gross}, −{penalty}, қорытынды {net} мин",
+      scoringExampleNoPenalty: "Мысал: 3 жеңіл, 2 орташа және 1 қиын дұрыс → қорытынды {net} мин",
+      scoringExampleCapped: "(раунд шегі {cap} мин)",
+      scoringWarnNoReward: "Үш сыйақы да 0 — раунд біткенде бала уақыт алмайды.",
+      scoringWarnThreshold: "Ең төмен ашу шегі {threshold} мин раунд шегінен {cap} мин жоғары — ашу мүмкін болмауы мүмкін.",
+      scoringWarnPenalty: "Шегерім сыйақыдан кем емес: бір қате бірнеше дұрыс жауапты жаба алады.",
+      unlockTitle: "Ашуға қажет ең аз уақыт (минут)",
+      unlockHint: "Раунд таза минуттар шекке жеткенде ашылады; 0 — шек жоқ. Шек тек нәтижені тексереді, сыйақыдан шегерілмейді.",
+      unlockNone: "Шек жоқ",
+      minuteN: "{n} мин",
+      homeAnswerSub: "Раундта {n} сұрақ · жеңіл +{easy} / орташа +{medium} / қиын +{hard} мин · {unlock}",
+      homeUnlock: "шек {n} мин",
+      homeUnlockNone: "шек жоқ",
     },
   };
 
   const LANGS = ["zh", "en", "ru", "uk", "kk"];
-  for (const code of LANGS) Object.assign(TEXTS[code], V17_TEXTS[code], V19_TEXTS[code]);
+  for (const code of LANGS) {
+    Object.assign(TEXTS[code], V17_TEXTS[code], V19_TEXTS[code], V20_TEXTS[code], V21_TEXTS[code]);
+  }
 
   // Local days are normally 24h; allow the 25h DST fall-back day.
   const AUTH_MAX_TTL_MS = 25 * 60 * 60 * 1000;
@@ -2195,29 +2649,46 @@
     pullCount: 5,
     minutesPerQuestion: 5,
     pointsPerQuestion: 1,
+    easyRewardMinutes: 1,
+    mediumRewardMinutes: 2,
+    hardRewardMinutes: 5,
+    easyPenaltyMinutes: 0,
+    mediumPenaltyMinutes: 0,
+    hardPenaltyMinutes: 0,
+    minUnlockMinutes: 0,
   };
-  const GRADE_VALUES = [
-    "1a", "1b", "2a", "2b", "3a", "3b",
-    "4a", "4b", "5a", "5b", "6a", "6b",
-  ];
-  const SUBJECT_VALUES = ["chinese", "math", "english", "science", "all"];
+  const SCORING_DEFAULTS = {
+    easyRewardMinutes: 1,
+    mediumRewardMinutes: 2,
+    hardRewardMinutes: 5,
+    easyPenaltyMinutes: 0,
+    mediumPenaltyMinutes: 0,
+    hardPenaltyMinutes: 0,
+    minUnlockMinutes: 0,
+  };
+  const UNLOCK_VALUES = [0, 5, 10, 20, 30];
   const SCOPE_VALUES = ["unit", "midterm", "final", "review"];
-  const UNIT_VALUES = ["1", "2", "3", "4", "5", "6", "7", "8"];
   const REQUIREMENT_MAX_CHARS = 30;
   const GEN_OPTIONS_VALUES = [4, 6];
-  const CN_UNIT_NUMBERS = {
-    "一": 1, "二": 2, "三": 3, "四": 4,
-    "五": 5, "六": 6, "七": 7, "八": 8,
-  };
   const TARGET_COUNTS = [20, 30, 50];
-  const REWARD_VALUES = [1, 2, 3, 5];
+  const ROUND_MIN = 5;
+  const ROUND_MAX = 50;
+  const ROUND_STEP = 5;
+  const ROUND_ITEM_HEIGHT = 44;
+  const ROUND_VALUES = Array.from(
+    { length: (ROUND_MAX - ROUND_MIN) / ROUND_STEP + 1 },
+    (_, index) => ROUND_MIN + index * ROUND_STEP,
+  );
   const GEN_DIFFICULTY_VALUES = ["", "easy", "medium", "hard"];
   const GEN_PAGE_IDS = {
     home: "generateHome",
     gen: "genConfigPage",
     answer: "answerConfigPage",
+    level: "levelEditorPage",
     questions: "questionsPage",
   };
+  const MAX_LEVELS = 6;
+  const LEVEL_NAME_MAX = 10;
   const BANK_PAGE_SIZE = 40;
   const SUBJECT_LABEL_KEYS = {
     chinese: "subjectChinese",
@@ -2229,6 +2700,7 @@
   const TEXTBOOK_LABEL_KEYS = {
     bubian: "tbBubian",
     renjiao: "tbRenjiao",
+    renjiao_ej: "tbRenjiaoEj",
     sujiao: "tbSujiao",
     beishida: "tbBeishida",
     qingdao: "tbQingdao",
@@ -2239,14 +2711,14 @@
     general: "tbGeneral",
     all: "tbAll",
   };
-  const TEXTBOOKS = {
-    chinese: ["bubian", "renjiao", "sujiao", "beishida"],
+  let TEXTBOOKS = {
+    chinese: ["bubian"],
     math: ["renjiao", "beishida", "sujiao", "qingdao"],
     english: ["pep", "waiyan", "yilin"],
-    science: ["kejiao", "sujiao", "renjiao"],
-    all: ["general"],
+    science: ["kejiao", "sujiao", "renjiao_ej"],
+    all: ["general", "all"],
   };
-  const DEFAULT_TEXTBOOK = {
+  let DEFAULT_TEXTBOOK = {
     chinese: "bubian",
     math: "renjiao",
     english: "pep",
@@ -2273,7 +2745,7 @@
   };
   // 答题范围是答题配置的一部分（与 PTV 同一套规范字段）。难度属于范围；
   // 范围为空 = 绑定出题范围（由出题配置实时推导），此时没有难度过滤。
-  const SCOPE_SUBJECTS = ["chinese", "math", "english", "science", "all"];
+  let SCOPE_SUBJECTS = ["chinese", "math", "english", "science", "all"];
   const SUBJECT_ALL = "all";
   const TEXTBOOK_ALL = "all";
   const SCOPE_TOPIC_VALUES = ["unit", "midterm", "final", "all"];
@@ -2328,12 +2800,14 @@
   let lang = detectLang();
   let adminToken = null;
   let adminExpiresAt = 0;
+  let gateShown = false;
+  let gateOccupied = false;
   let publicState = null;
   let adminSession = null;
   let challengeConfig = null;
   let syncState = null;
   let cloudManaged = false;
-  let bankCapacity = 300;
+  let bankCapacity = 6000;
   let bankCounts = null;
   let providerState = { aiSupported: true, consentAccepted: false, configured: false, baseUrl: "", model: "" };
   let providerMsg = null;
@@ -2372,8 +2846,17 @@
   let genPrefsSaveTimer = null;
   let genPage = "home";
   let answerTab = "scope";
-  // 答题范围：BOUND = 绑定出题范围（由出题配置实时推导，存储为 null），
-  // CUSTOM = 独立六字段快照。
+  // The ordered parent-designed levels. Each entry keeps the canonical API
+  // shape plus a normalised local scope for rendering and duplicate checks.
+  let answerLevels = [];
+  let levelEditingId = null;
+  let levelNameDraft = "";
+  let levelSaving = false;
+  let levelUndo = null;
+  let levelUndoTimer = 0;
+  let levelMessageTimer = 0;
+  // Legacy single-scope view, derived from the first level for the old
+  // generation helpers and cached surfaces.
   let answerScope = null;
   let answerScopeMode = "bound";
   let answerScopeAvailable = 0;
@@ -2388,8 +2871,11 @@
   let scopeOptionsLoading = {};
   let scopeRequestToken = 0;
   let scopeMatched = null;
+  let scopeMismatchAckKey = "";
   let selectedBatch = new Set();
-  let rewardMinutesValue = 2;
+  let roundWheelValue = DEFAULT_CONFIG.pullCount;
+  let roundWheelItems = [];
+  let roundWheelScrollTimer = 0;
   // The page lives under the TV's random token path. A leading "/" would make
   // fetch resolve the API from the host root, which PhoneServer answers with 404.
   const API_ROOT = location.pathname.replace(/\/quiz\/?$/, "/");
@@ -2467,6 +2953,431 @@
     return value;
   }
 
+  // ---- 课程表 ----
+  // 新电视在 /admin/session 里下发课程表，年级/科目/教材/单元上限与五语标签
+  // 全部以数据为准；旧电视没有这个字段，继续用内置 1-6 兜底。
+  let curriculumModel = null;
+  let unitCatalogModel = null;
+  let cloudJuniorReady = true;
+
+  function normalizeCurriculum(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    const grades = (Array.isArray(raw.grades) ? raw.grades : [])
+      .map((grade) => ({
+        no: Number(grade && grade.no),
+        stage: String(grade && grade.stage || ""),
+        labels: (grade && grade.labels) || {},
+      }))
+      .filter((grade) => Number.isInteger(grade.no) && grade.no >= 1)
+      .sort((a, b) => a.no - b.no);
+    if (grades.length === 0) return null;
+    const stages = (Array.isArray(raw.stages) ? raw.stages : [])
+      .map((stage) => {
+        const range = Array.isArray(stage && stage.grades) ? stage.grades : [];
+        return {
+          id: String(stage && stage.id || ""),
+          minGrade: Number(range[0]),
+          maxGrade: Number(range[1]),
+          unitMax: Number(stage && stage.unitMax),
+          labels: (stage && stage.labels) || {},
+        };
+      })
+      .filter((stage) => Number.isInteger(stage.minGrade) &&
+        Number.isInteger(stage.maxGrade) &&
+        Number.isInteger(stage.unitMax) && stage.unitMax > 0);
+    const subjects = (Array.isArray(raw.subjects) ? raw.subjects : [])
+      .map((subject) => ({
+        id: String(subject && subject.id || "").toLowerCase(),
+        labels: (subject && subject.labels) || {},
+        aliases: Array.isArray(subject && subject.aliases)
+          ? subject.aliases.map((alias) => String(alias))
+          : [],
+        options: (Array.isArray(subject && subject.options) ? subject.options : [])
+          .map((option) => {
+            const range = Array.isArray(option && option.grades) ? option.grades : [];
+            const textbooks = Array.isArray(option && option.textbooks)
+              ? option.textbooks.map((id) => String(id).toLowerCase())
+              : [];
+            return {
+              minGrade: Number(range[0]),
+              maxGrade: Number(range[1]),
+              defaultTextbook: String(option && option.defaultTextbook || "").toLowerCase(),
+              textbooks,
+            };
+          })
+          .filter((option) => Number.isInteger(option.minGrade) &&
+            Number.isInteger(option.maxGrade) && option.textbooks.length > 0),
+      }))
+      .filter((subject) => subject.id && subject.options.length > 0);
+    const textbooks = (Array.isArray(raw.textbooks) ? raw.textbooks : [])
+      .map((textbook) => ({
+        id: String(textbook && textbook.id || "").toLowerCase(),
+        labels: (textbook && textbook.labels) || {},
+      }))
+      .filter((textbook) => textbook.id);
+    if (subjects.length === 0 || textbooks.length === 0) return null;
+    return {
+      stages,
+      grades,
+      subjects,
+      textbooks,
+      unitAliases: Array.isArray(raw.unitAliases)
+        ? raw.unitAliases.map((alias) => String(alias)).filter(Boolean)
+        : [],
+    };
+  }
+
+  function fallbackCurriculum() {
+    const numbers = [1, 2, 3, 4, 5, 6];
+    const subjects = SCOPE_SUBJECTS.map((id) => ({
+      id,
+      labels: {},
+      aliases: [],
+      options: [{
+        minGrade: 1,
+        maxGrade: 6,
+        defaultTextbook: DEFAULT_TEXTBOOK[id] || "general",
+        textbooks: (TEXTBOOKS[id] || ["general"]).slice(),
+      }],
+    }));
+    return {
+      stages: [{ id: "primary", minGrade: 1, maxGrade: 6, unitMax: 8, labels: {} }],
+      grades: numbers.map((no) => ({ no, stage: "primary", labels: {} })),
+      subjects,
+      textbooks: Object.keys(TEXTBOOK_LABEL_KEYS).map((id) => ({ id, labels: {} })),
+      unitAliases: ["单元", "章", "Unit", "Chapter"],
+    };
+  }
+
+  function curriculum() {
+    return curriculumModel || fallbackCurriculum();
+  }
+
+  function gradeNos() {
+    return curriculum().grades.map((grade) => grade.no);
+  }
+
+  function gradeCodes() {
+    return gradeNos().flatMap((no) => [String(no) + "a", String(no) + "b"]);
+  }
+
+  function gradeDef(no) {
+    const number = Number(no);
+    return curriculum().grades.find((grade) => grade.no === number) || null;
+  }
+
+  function gradeLabel(no) {
+    const def = gradeDef(no);
+    return (def && def.labels && def.labels[lang]) || t("grade" + Number(no));
+  }
+
+  function subjectDef(id) {
+    const key = String(id || "").toLowerCase();
+    return curriculum().subjects.find((subject) => subject.id === key) || null;
+  }
+
+  function subjectLabel(id) {
+    const def = subjectDef(id);
+    return (def && def.labels && def.labels[lang]) ||
+      t(SUBJECT_LABEL_KEYS[id] || "subjectMath");
+  }
+
+  function textbookDef(id) {
+    const key = String(id || "").toLowerCase();
+    return curriculum().textbooks.find((textbook) => textbook.id === key) || null;
+  }
+
+  function textbookLabel(id) {
+    const def = textbookDef(id);
+    return (def && def.labels && def.labels[lang]) ||
+      t(TEXTBOOK_LABEL_KEYS[id] || "tbGeneral");
+  }
+
+  function stageForGrade(no) {
+    const grade = Number(no);
+    return curriculum().stages.find((stage) =>
+      grade >= stage.minGrade && grade <= stage.maxGrade) || null;
+  }
+
+  function unitMaxForGrade(no) {
+    const stage = stageForGrade(no);
+    return stage ? stage.unitMax : 8;
+  }
+
+  function maxUnit() {
+    return curriculum().stages.reduce(
+      (max, stage) => Math.max(max, stage.unitMax), 0) || 8;
+  }
+
+  // ---- 教材单元目录（仅展示与提示词；unitNo 仍是唯一键）----
+  // 电视通过 /api/quiz/admin/units 下发国家中小学智慧教育平台的目录。
+  // 目录缺失、旧电视或未覆盖的版本继续使用“第N单元”和学段上限。
+  function normalizeUnitCatalog(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    const books = (Array.isArray(raw.books) ? raw.books : [])
+      .map((book) => {
+        const grade = Number(book && book.grade);
+        const semesters = (Array.isArray(book && book.semesters) ? book.semesters : [])
+          .map(Number)
+          .filter((semester) => semester === 1 || semester === 2);
+        const units = (Array.isArray(book && book.units) ? book.units : [])
+          .map((unit) => {
+            const no = Number(unit && unit.no);
+            const title = String(unit && unit.title || "").trim();
+            if (!Number.isInteger(no) || no < 1 || no > 99 || !title) return null;
+            return {
+              no,
+              title,
+              kind: String(unit && unit.kind || "UNIT").trim().toUpperCase() || "UNIT",
+              lessons: (Array.isArray(unit && unit.lessons) ? unit.lessons : [])
+                .map((lesson) => String(lesson || "").trim())
+                .filter(Boolean),
+            };
+          })
+          .filter(Boolean)
+          .sort((a, b) => a.no - b.no);
+        if (!Number.isInteger(grade) || grade < 1 || grade > 9 ||
+            semesters.length === 0 || units.length === 0) {
+          return null;
+        }
+        const computedMax = units
+          .filter((unit) => unit.kind === "UNIT")
+          .reduce((max, unit) => Math.max(max, unit.no), 0);
+        const maxUnitNo = Math.max(computedMax, Number(book && book.maxUnitNo) || 0);
+        if (maxUnitNo < 1) return null;
+        return {
+          grade,
+          semesters: Array.from(new Set(semesters)),
+          subject: String(book && book.subject || "").toLowerCase(),
+          textbook: String(book && book.textbook || "").toLowerCase(),
+          volume: String(book && book.volume || ""),
+          maxUnitNo,
+          units,
+        };
+      })
+      .filter((book) => book && book.subject && book.textbook);
+    if (!books.length) return null;
+    return {
+      catalogVersion: String(raw.catalogVersion || ""),
+      fetchedAt: String(raw.fetchedAt || ""),
+      books,
+    };
+  }
+
+  function unitBook(grade, semester, subject, textbook) {
+    if (!unitCatalogModel) return null;
+    const number = Number(grade);
+    const term = Number(semester);
+    const subjectId = String(subject || "").toLowerCase();
+    const textbookId = String(textbook || "").toLowerCase();
+    if (!Number.isInteger(number) || (term !== 1 && term !== 2) ||
+        !subjectId || subjectId === SUBJECT_ALL ||
+        !textbookId || textbookId === TEXTBOOK_ALL) {
+      return null;
+    }
+    const candidates = unitCatalogModel.books.filter((book) =>
+      book.grade === number &&
+      book.semesters.includes(term) &&
+      book.subject === subjectId &&
+      book.textbook === textbookId);
+    // 全一册和单册可能同时覆盖同一学期；优先单册，和电视端保持一致。
+    const preferredVolume = term === 1 ? "上册" : "下册";
+    return candidates.find((book) => book.volume === preferredVolume) ||
+      candidates[0] || null;
+  }
+
+  function unitMaxForContext(grade, semester, subject, textbook) {
+    if (unitCatalogModel) {
+      const exact = unitBook(grade, semester, subject, textbook);
+      if (exact) return exact.maxUnitNo;
+      const subjectId = String(subject || "").toLowerCase();
+      const textbookId = String(textbook || "").toLowerCase();
+      const candidates = unitCatalogModel.books.filter((book) =>
+        book.grade === Number(grade) &&
+        book.semesters.includes(Number(semester)) &&
+        (subjectId === SUBJECT_ALL || book.subject === subjectId) &&
+        (textbookId === TEXTBOOK_ALL || book.textbook === textbookId));
+      if (candidates.length) {
+        return candidates.reduce((max, book) => Math.max(max, book.maxUnitNo), 0);
+      }
+    }
+    return unitMaxForGrade(grade);
+  }
+
+  function unitDisplayTitle(grade, semester, subject, textbook, unitNo) {
+    const book = unitBook(grade, semester, subject, textbook);
+    if (!book) return "";
+    return (book.units.find((unit) => unit.no === Number(unitNo)) || {}).title || "";
+  }
+
+  function unitDisplayLabel(grade, semester, subject, textbook, unitNo) {
+    // Chip labels stay compact: some English unit titles are full sentences.
+    return truncateText(
+      unitDisplayTitle(grade, semester, subject, textbook, unitNo) ||
+        t("unitN", { n: unitNo }),
+      24);
+  }
+
+  function unitLessons(grade, semester, subject, textbook, unitNo) {
+    const book = unitBook(grade, semester, subject, textbook);
+    if (!book) return [];
+    const unit = book.units.find((item) => item.no === Number(unitNo));
+    return unit ? unit.lessons.slice() : [];
+  }
+
+  function generationUnitBook() {
+    return unitBook(genGradeValue, genSemesterValue, genSubjectValue, genTextbookId);
+  }
+
+  function generationUnitMax() {
+    return unitMaxForContext(
+      genGradeValue, genSemesterValue, genSubjectValue, genTextbookId);
+  }
+
+  function generationUnitTitle(unitNo) {
+    return unitDisplayTitle(
+      genGradeValue, genSemesterValue, genSubjectValue, genTextbookId, unitNo);
+  }
+
+  function unitMatchKey(value) {
+    return String(value || "")
+      .toLowerCase()
+      .replace(/[\s　·•.。,，:：;；、'"“”‘’()（）\[\]【】!?！？\-—_\/\\]+/g, "");
+  }
+
+  function unitNumberToken(value) {
+    return /^\d+$/.test(value) ? Number(value) : chineseNumber(value);
+  }
+
+  // The platform titles usually carry the textbook's own number, which is not
+  // always the raw tree ordinal: geography starts at 第七章, chemistry's second
+  // term at 第八单元, and project/activity nodes can sit between units.
+  function catalogUnitLabel(unit) {
+    const title = String(unit && unit.title || "");
+    let match = /第\s*([一二三四五六七八九十百零〇两\d]+)\s*(?:单元|章|课)/.exec(title);
+    if (match) return unitNumberToken(match[1]);
+    match = /\bunit\s*(\d+)\b/i.exec(title);
+    if (match) return Number(match[1]);
+    match = /^\s*([一二三四五六七八九十百]+)\s*[、.．:：\s]/.exec(title);
+    if (match) return unitNumberToken(match[1]);
+    match = /^\s*(\d+)\s*[、.．:：\s]/.exec(title);
+    if (match) return Number(match[1]);
+    return null;
+  }
+
+  function explicitUnitNumber(value) {
+    const text = String(value || "");
+    let match = /第\s*([一二三四五六七八九十百零〇两\d]+)\s*(?:单元|章|课)/.exec(text);
+    if (match) return unitNumberToken(match[1]);
+    match = /\bunit\s*(\d+)\b/i.exec(text);
+    return match ? Number(match[1]) : null;
+  }
+
+  // Match a parent's free text against the current book's unit titles and
+  // lesson titles. The longest match wins, so "第一单元 观潮" beats "第一单元".
+  function catalogUnitFromText(value, grade, semester, subject, textbook) {
+    const book = unitBook(grade, semester, subject, textbook);
+    if (!book) return null;
+    const text = unitMatchKey(value);
+    if (!text) return null;
+    let best = null;
+    let bestLength = 0;
+    book.units.forEach((unit) => {
+      if (unit.kind !== "UNIT") return;
+      [unit.title].concat(unit.lessons).forEach((alias) => {
+        const key = unitMatchKey(alias);
+        if (key.length < 2) return;
+        if (text.includes(key) && key.length > bestLength) {
+          best = unit;
+          bestLength = key.length;
+        }
+      });
+    });
+    if (best) return best;
+    // "第七章" / "Unit 10" alone has no full-title match. Resolve it against
+    // the number printed in each unit title instead of the raw ordinal.
+    const label = explicitUnitNumber(value);
+    if (label === null) return null;
+    return book.units.find((unit) =>
+      unit.kind === "UNIT" && catalogUnitLabel(unit) === label) || null;
+  }
+
+  function truncateText(value, maxChars) {
+    const text = String(value || "");
+    return text.length <= maxChars ? text : text.slice(0, maxChars - 1) + "…";
+  }
+
+  function unitLessonSummary(unitNo) {
+    const lessons = unitLessons(
+      genGradeValue, genSemesterValue, genSubjectValue, genTextbookId, unitNo);
+    if (!lessons.length) return "";
+    return truncateText(lessons.join(lang === "zh" ? "、" : ", "), 80);
+  }
+
+  function generationUnitPromptScope() {
+    const title = generationUnitTitle(genUnitValue);
+    if (!title) return "";
+    const lessons = unitLessonSummary(genUnitValue);
+    return lessons
+      ? t("promptScopeUnitLessons", { title, lessons })
+      : t("promptScopeUnitTitle", { title });
+  }
+
+  function subjectOptionForGrade(id, no) {
+    const def = subjectDef(id);
+    if (!def) return null;
+    const grade = Number(no);
+    return def.options.find((option) =>
+      grade >= option.minGrade && grade <= option.maxGrade) || null;
+  }
+
+  function subjectIdsForGrade(no) {
+    const grade = Number(no);
+    if (!Number.isInteger(grade)) return allSubjectIds();
+    return curriculum().subjects
+      .filter((subject) => Boolean(subjectOptionForGrade(subject.id, grade)))
+      .map((subject) => subject.id);
+  }
+
+  function textbooksFor(no, subject) {
+    const option = subjectOptionForGrade(subject, no);
+    return option ? option.textbooks.slice() : [];
+  }
+
+  function defaultTextbookFor(no, subject) {
+    const option = subjectOptionForGrade(subject, no);
+    if (option && option.defaultTextbook) return option.defaultTextbook;
+    return (option && option.textbooks[0]) || "general";
+  }
+
+  function allSubjectIds() {
+    return curriculum().subjects.map((subject) => subject.id);
+  }
+
+  function allTextbookIds() {
+    return curriculum().textbooks.map((textbook) => textbook.id);
+  }
+
+  function isKnownSubject(id) {
+    return Boolean(subjectDef(id));
+  }
+
+  function isKnownTextbook(id) {
+    return Boolean(textbookDef(id));
+  }
+
+  function cloudJuniorBlocked(grade) {
+    const stage = stageForGrade(grade);
+    return !cloudJuniorReady && cloudManaged && Boolean(stage) && stage.id === "junior";
+  }
+
+  function applyCurriculum(raw, juniorReady) {
+    curriculumModel = normalizeCurriculum(raw);
+    // 旧电视不带 cloudJuniorReady；它们本来就只支持 1-6，不会走到初中分支。
+    cloudJuniorReady = juniorReady !== false;
+    SCOPE_SUBJECTS = allSubjectIds();
+  }
+
   function codeText(code) {
     const known = t("err_" + code);
     return known === "err_" + code ? code : known;
@@ -2538,8 +3449,14 @@
     $("langSelect").value = lang;
     $("langSelectMe").value = lang;
     if (!$("gateCard").classList.contains("hidden")) {
-      $("gateTitle").textContent = t("gate_pair_title");
-      $("gateText").textContent = t("gate_pair_text");
+      if (gateShown) {
+        renderGateOccupation();
+      } else {
+        // The gate is visible before the first status call finishes; show its
+        // normal copy instead of the placeholder dash.
+        $("gateTitle").textContent = t("gate_pair_title");
+        $("gateText").textContent = t("gate_pair_text");
+      }
     }
     syncGenerateComposer(true);
     renderStock();
@@ -2553,6 +3470,7 @@
     renderBankCounts();
     renderBank();
     if (genPage === "answer") renderAnswerPage();
+    if (genPage === "level") renderLevelEditor();
     if (genPage === "questions") renderQuestions();
     updateToggleState();
   }
@@ -2575,13 +3493,15 @@
 
   function gradeText(grade, semester) {
     return t("gradeWithSemester", {
-      grade: t("grade" + Number(grade || 0)),
+      grade: gradeLabel(grade),
       semester: t(Number(semester) === 2 ? "semesterSecond" : "semesterFirst"),
     });
   }
 
   function generationTopicText() {
-    if (genScopeValue === "unit") return t("unitN", { n: genUnitValue });
+    if (genScopeValue === "unit") {
+      return generationUnitTitle(genUnitValue) || t("unitN", { n: genUnitValue });
+    }
     return t(SCOPE_LABEL_KEYS[genScopeValue] || "scopeUnit");
   }
 
@@ -2592,10 +3512,81 @@
     return t(key);
   }
 
+  // The home card shows at most three level rows. One level keeps its full
+  // name, two or three levels get a numbered row each, and longer lists keep
+  // the first and last row with an ellipsis count between them. The hidden
+  // text leaves the collapsed middle levels available to screen readers.
+  function renderAnswerSummary(levels) {
+    const host = $("homeAnswerMain");
+    if (!host) return;
+    const hidden = $("homeAnswerA11y");
+    host.textContent = "";
+    host.classList.remove("single", "empty");
+    if (hidden) hidden.textContent = "";
+
+    const entries = levels.map((level, index) => ({
+      ordinal: index + 1,
+      name: String(level.name || "").trim() || scopeSummaryText(level.scope),
+    }));
+    if (!entries.length) {
+      host.classList.add("empty");
+      host.textContent = t("levelEmptyTitle");
+      return;
+    }
+
+    const rows = [];
+    if (entries.length <= 3) {
+      entries.forEach((entry) => rows.push({ ordinal: entry.ordinal, name: entry.name }));
+    } else {
+      rows.push({ ordinal: entries[0].ordinal, name: entries[0].name });
+      rows.push({ more: entries.length - 2 });
+      rows.push({
+        ordinal: entries[entries.length - 1].ordinal,
+        name: entries[entries.length - 1].name,
+      });
+      if (hidden) {
+        hidden.textContent = entries.slice(1, -1)
+          .map((entry) => `${entry.ordinal}. ${entry.name}`)
+          .join(" · ");
+      }
+    }
+
+    const single = entries.length === 1;
+    host.classList.toggle("single", single);
+    rows.forEach((row) => {
+      const line = document.createElement("span");
+      line.className = "level-summary-line";
+      if (row.more) {
+        line.classList.add("level-summary-more");
+        const mark = document.createElement("span");
+        mark.className = "level-summary-mark";
+        mark.textContent = "⋯";
+        mark.setAttribute("aria-hidden", "true");
+        const text = document.createElement("span");
+        text.className = "level-summary-name";
+        text.textContent = t("levelMore", { n: row.more });
+        line.append(mark, text);
+      } else {
+        if (!single) {
+          const badge = document.createElement("span");
+          badge.className = "level-summary-badge";
+          badge.textContent = String(row.ordinal);
+          badge.setAttribute("aria-hidden", "true");
+          line.append(badge);
+        }
+        const text = document.createElement("span");
+        text.className = "level-summary-name";
+        text.textContent = row.name;
+        line.append(text);
+      }
+      host.append(line);
+    });
+  }
+
   function renderHome() {
     if (!$("homeGenMain")) return;
-    const subject = t(SUBJECT_LABEL_KEYS[genSubjectValue] || "subjectMath");
-    const book = genSubjectValue === "all" ? "" : t(TEXTBOOK_LABEL_KEYS[genTextbookId] || "tbGeneral");
+    const subject = subjectLabel(genSubjectValue);
+    const book = genSubjectValue === "all" ? "" : textbookLabel(genTextbookId);
     const requirement = normalizeRequirement(genRequirementValue);
     $("homeGenMain").textContent = [
       gradeText(genGradeValue, genSemesterValue),
@@ -2613,29 +3604,35 @@
     const pull = Number(config.pullCount || 5);
     const scopeModeLabel = $("homeAnswerScopeMode");
     if (scopeModeLabel) {
-      scopeModeLabel.textContent = t(answerScopeMode === "custom" ? "scopeCustom" : "scopeBound");
+      scopeModeLabel.textContent = answerLevels.length
+        ? t("levelCountLabel", { n: answerLevels.length })
+        : t("levelNoneLabel");
     }
-    if (answerScopeMode === "custom") {
-      const saved = normalizeAnswerScope(answerScope || customScope);
-      $("homeAnswerMain").textContent = saved ? scopeSummaryText(saved) : t("scopeIncompleteShort");
-    } else {
-      $("homeAnswerMain").textContent = generationScopeSummary();
-    }
+    renderAnswerSummary(answerLevels);
+    const scoring = scoringValues(config);
     $("homeAnswerSub").textContent = t("homeAnswerSub", {
       n: pull,
-      seconds: configSeconds(config),
-      minutes: rewardMinutesValue,
+      easy: scoring.easyRewardMinutes,
+      medium: scoring.mediumRewardMinutes,
+      hard: scoring.hardRewardMinutes,
+      unlock: scoring.minUnlockMinutes > 0
+        ? t("homeUnlock", { n: scoring.minUnlockMinutes })
+        : t("homeUnlockNone"),
     });
     const warning = $("homeAnswerWarning");
     if (warning) {
-      const insufficient = Boolean(publicState) &&
+      const short = Boolean(publicState) &&
         publicState.enabled !== false &&
         publicState.source !== "CLOUD" &&
-        scopeLoaded &&
-        answerScopeAvailable < pull;
-      warning.textContent = insufficient ? t("homeBankInsufficient") : "";
-      warning.classList.toggle("hidden", !insufficient);
+        scopeLoaded
+        ? shortLevels(pull)
+        : [];
+      warning.textContent = short.length
+        ? t("homeLevelsInsufficient", { n: short.length, pull })
+        : "";
+      warning.classList.toggle("hidden", !short.length);
     }
+    updateGenerationScopeStatus();
     renderStock();
   }
 
@@ -2645,7 +3642,7 @@
       chip.textContent = t("targetN", { n: value });
       chip.setAttribute("aria-pressed", String(value === targetCount));
     });
-    if ($("genCountPill")) $("genCountPill").textContent = t("targetN", { n: targetCount });
+    if ($("generate")) $("generate").textContent = t("generateStartCount", { n: targetCount });
   }
 
   function renderGenerate() {
@@ -2688,10 +3685,13 @@
       $("generatedCount").textContent = t("generateDoneShort", { n: genState.batch.length });
     }
     if ($("listCount")) $("listCount").textContent = String(genState.batch.length);
-    $("generateError").textContent = genState.errorCode ? codeText(genState.errorCode) : "";
+    $("generateError").textContent = genState.errorCode === "REQUIREMENT_INVALID_UNIT"
+      ? requirementInvalidUnitText()
+      : genState.errorCode ? codeText(genState.errorCode) : "";
     $("generateOk").textContent = genState.noticeKey
       ? t(genState.noticeKey, { n: genState.noticeCount })
       : "";
+    updateGenerationScopeStatus();
     renderStock();
   }
 
@@ -2778,6 +3778,7 @@
     document.body.classList.toggle("subpage-open", page !== "home");
     if (page === "questions") renderQuestions();
     if (page === "answer") renderAnswerPage();
+    if (page === "level") renderLevelEditor();
     window.scrollTo({ top: 0 });
   }
 
@@ -2788,32 +3789,48 @@
     renderGenerate();
   }
 
-  // 答题配置只有点“保存”才落库；返回时把未保存的草稿恢复成已保存的范围。
+  // Levels save as soon as they are added, edited, reordered or deleted, so
+  // leaving the page only has to drop an unfinished editor draft. Rule changes
+  // still wait for the Save button.
   function backFromAnswerPage() {
     $("settingsError").textContent = "";
+    levelEditingId = null;
+    customScope = null;
     resetScopeOptions();
     if (answerDirty) {
       answerDirty = false;
-      answerScopeMode = answerScope ? "custom" : "bound";
-      customScope = answerScope ? Object.assign({}, answerScope) : null;
       loadAdminSession().catch(() => {});
     }
     backToGenerateHome();
   }
 
+  function backFromLevelEditor() {
+    levelEditingId = null;
+    levelNameDraft = "";
+    customScope = null;
+    answerScopeMode = answerLevels.length ? "custom" : "bound";
+    resetScopeOptions();
+    showGenPage("answer");
+  }
+
   function openGenConfigPage() {
     $("rangeError").textContent = "";
+    if (levelEditorOpen()) {
+      levelEditingId = null;
+      levelNameDraft = "";
+      customScope = null;
+      resetScopeOptions();
+    }
     syncGenerateComposer(true);
     showGenPage("gen");
   }
 
   function openAnswerConfigPage() {
     answerTab = "scope";
-    if (answerScopeMode === "custom") {
-      if (!customScope && answerScope) customScope = Object.assign({}, answerScope);
-      if (!customScope || typeof customScope !== "object") customScope = {};
-    }
+    levelEditingId = null;
+    customScope = null;
     resetScopeOptions();
+    $("levelError").textContent = "";
     showGenPage("answer");
   }
 
@@ -2857,7 +3874,7 @@
     }
   }
 
-  function renderChipRow(container, values, selected, attr, labelFn) {
+  function renderChipRow(container, values, selected, attr, labelFn, disabledFn) {
     if (!container) return;
     container.replaceChildren();
     values.forEach((value) => {
@@ -2866,6 +3883,9 @@
       button.className = "choice-chip";
       button.setAttribute(attr, String(value));
       button.setAttribute("aria-pressed", String(value === selected));
+      const disabled = Boolean(disabledFn && disabledFn(value));
+      button.disabled = disabled;
+      if (disabled) button.setAttribute("aria-disabled", "true");
       button.textContent = labelFn(value);
       container.appendChild(button);
     });
@@ -2875,40 +3895,215 @@
     return Number(config.defaultTimeLimitSec || 60);
   }
 
-  function renderSettingsChrome() {
-    if (!$("roundCounts")) return;
+  // A saved config may predate the 5-step wheel (the old chips offered 8).
+  // Keep that one value selectable until the parent picks a stepped value.
+  function roundPickerValues(selected) {
+    const value = Number(selected);
+    const values = ROUND_VALUES.slice();
+    if (Number.isInteger(value) && value >= ROUND_MIN && value <= ROUND_MAX &&
+        !values.includes(value)) {
+      values.push(value);
+      values.sort((a, b) => a - b);
+    }
+    return values;
+  }
+
+  function paintRoundWheel(index) {
+    const wheel = $("roundWheel");
+    if (!wheel || index < 0 || index >= roundWheelItems.length) return;
+    const value = Number(roundWheelItems[index].textContent);
+    roundWheelValue = value;
+    roundWheelItems.forEach((item, itemIndex) => {
+      item.setAttribute("aria-selected", String(itemIndex === index));
+    });
+    wheel.dataset.index = String(index);
+    wheel.setAttribute("aria-valuenow", String(value));
+    wheel.setAttribute("aria-valuetext", t("roundN", { n: value }));
+    if ($("roundWheelValue")) $("roundWheelValue").textContent = String(value);
+  }
+
+  function renderRoundWheel(selected) {
+    const wheel = $("roundWheel");
+    const track = $("roundWheelTrack");
+    if (!wheel || !track) return;
+    const value = Number(selected || DEFAULT_CONFIG.pullCount);
+    const values = roundPickerValues(value);
+    const signature = values.join(",");
+    if (track.dataset.values !== signature) {
+      track.dataset.values = signature;
+      const fragment = document.createDocumentFragment();
+      values.forEach((option, index) => {
+        const item = document.createElement("div");
+        item.className = "round-wheel-item";
+        item.setAttribute("role", "option");
+        item.dataset.index = String(index);
+        item.textContent = String(option);
+        fragment.appendChild(item);
+      });
+      track.replaceChildren(fragment);
+    }
+    roundWheelItems = Array.from(track.children);
+    const index = Math.max(0, values.indexOf(value));
+    paintRoundWheel(index);
+    const top = index * ROUND_ITEM_HEIGHT;
+    if (Math.abs(wheel.scrollTop - top) > 1) {
+      wheel.scrollTo({ top, behavior: "auto" });
+    }
+  }
+
+  function commitRoundWheel(index) {
+    const wheel = $("roundWheel");
+    if (!wheel || !roundWheelItems.length) return;
+    const clamped = Math.min(roundWheelItems.length - 1, Math.max(0, index));
+    paintRoundWheel(clamped);
+    wheel.scrollTo({ top: clamped * ROUND_ITEM_HEIGHT, behavior: "smooth" });
     const config = currentConfig();
-    const pull = Number(config.pullCount || 5);
+    const pull = Number(config.pullCount || DEFAULT_CONFIG.pullCount);
+    if (pull === roundWheelValue) return;
+    updateRuleConfig({ pullCount: roundWheelValue });
+  }
+
+  function settleRoundWheel() {
+    const wheel = $("roundWheel");
+    if (!wheel || !roundWheelItems.length) return;
+    commitRoundWheel(Math.round(wheel.scrollTop / ROUND_ITEM_HEIGHT));
+  }
+
+  // Difficulty scoring values are normalized on every render so an old saved
+  // config (or a blank input) can never put the TV outside the policy ranges.
+  function scoringNumber(value, fallback, max) {
+    const number = Number(value);
+    if (!Number.isInteger(number)) return fallback;
+    return Math.min(max, Math.max(0, number));
+  }
+
+  function scoringValues(config) {
+    const source = config || {};
+    return {
+      easyRewardMinutes: scoringNumber(
+        source.easyRewardMinutes, SCORING_DEFAULTS.easyRewardMinutes, 30),
+      mediumRewardMinutes: scoringNumber(
+        source.mediumRewardMinutes, SCORING_DEFAULTS.mediumRewardMinutes, 30),
+      hardRewardMinutes: scoringNumber(
+        source.hardRewardMinutes, SCORING_DEFAULTS.hardRewardMinutes, 30),
+      easyPenaltyMinutes: scoringNumber(source.easyPenaltyMinutes, 0, 30),
+      mediumPenaltyMinutes: scoringNumber(source.mediumPenaltyMinutes, 0, 30),
+      hardPenaltyMinutes: scoringNumber(source.hardPenaltyMinutes, 0, 30),
+      minUnlockMinutes: scoringNumber(source.minUnlockMinutes, 0, 180),
+      maxEarnedMinutes: Math.min(
+        180, Math.max(1, Number(source.maxEarnedMinutes) || DEFAULT_CONFIG.maxEarnedMinutes)),
+    };
+  }
+
+  function readScoringPatch() {
+    return {
+      easyRewardMinutes: numberField(
+        "easyReward", 0, 30, SCORING_DEFAULTS.easyRewardMinutes),
+      mediumRewardMinutes: numberField(
+        "mediumReward", 0, 30, SCORING_DEFAULTS.mediumRewardMinutes),
+      hardRewardMinutes: numberField(
+        "hardReward", 0, 30, SCORING_DEFAULTS.hardRewardMinutes),
+      easyPenaltyMinutes: numberField("easyPenalty", 0, 30, 0),
+      mediumPenaltyMinutes: numberField("mediumPenalty", 0, 30, 0),
+      hardPenaltyMinutes: numberField("hardPenalty", 0, 30, 0),
+      minUnlockMinutes: numberField("minUnlock", 0, 180, 0),
+    };
+  }
+
+  function renderScoringInputs(config) {
+    if (!$("easyReward")) return;
+    const scoring = scoringValues(config);
+    $("easyReward").value = String(scoring.easyRewardMinutes);
+    $("mediumReward").value = String(scoring.mediumRewardMinutes);
+    $("hardReward").value = String(scoring.hardRewardMinutes);
+    $("easyPenalty").value = String(scoring.easyPenaltyMinutes);
+    $("mediumPenalty").value = String(scoring.mediumPenaltyMinutes);
+    $("hardPenalty").value = String(scoring.hardPenaltyMinutes);
+    $("minUnlock").value = String(scoring.minUnlockMinutes);
+  }
+
+  function renderScoringSummary() {
+    if (!$("scoringExample")) return;
+    const scoring = scoringValues(currentConfig());
+    const gross = scoring.easyRewardMinutes * 3 +
+      scoring.mediumRewardMinutes * 2 + scoring.hardRewardMinutes;
+    const penalty = scoring.mediumPenaltyMinutes;
+    const net = Math.max(0, gross - penalty);
+    const capped = Math.min(net, scoring.maxEarnedMinutes);
+    let example = penalty > 0
+      ? t("scoringExample", { gross, penalty, net: capped })
+      : t("scoringExampleNoPenalty", { net: capped });
+    if (net > capped) example += " " + t("scoringExampleCapped", { cap: capped });
+    $("scoringExample").textContent = example;
+
+    const warning = $("scoringWarning");
+    if (!warning) return;
+    let text = "";
+    if (scoring.easyRewardMinutes + scoring.mediumRewardMinutes +
+        scoring.hardRewardMinutes === 0) {
+      text = t("scoringWarnNoReward");
+    } else if (scoring.minUnlockMinutes > 0 &&
+        scoring.minUnlockMinutes > scoring.maxEarnedMinutes) {
+      text = t("scoringWarnThreshold", {
+        threshold: scoring.minUnlockMinutes,
+        cap: scoring.maxEarnedMinutes,
+      });
+    } else if (
+      (scoring.easyRewardMinutes > 0 &&
+        scoring.easyPenaltyMinutes >= scoring.easyRewardMinutes) ||
+      (scoring.mediumRewardMinutes > 0 &&
+        scoring.mediumPenaltyMinutes >= scoring.mediumRewardMinutes) ||
+      (scoring.hardRewardMinutes > 0 &&
+        scoring.hardPenaltyMinutes >= scoring.hardRewardMinutes)
+    ) {
+      text = t("scoringWarnPenalty");
+    }
+    warning.textContent = text;
+    warning.classList.toggle("hidden", !text);
+  }
+
+  function renderUnlockChips() {
+    const scoring = scoringValues(currentConfig());
+    const selected = scoring.minUnlockMinutes;
+    const values = Array.from(new Set(UNLOCK_VALUES.concat([selected])))
+      .sort((a, b) => a - b);
+    renderChipRow($("unlockCounts"), values, selected, "data-unlock",
+      (value) => value === 0 ? t("unlockNone") : t("minuteN", { n: value }));
+  }
+
+  function resetScoringDefaults() {
+    $("easyReward").value = String(SCORING_DEFAULTS.easyRewardMinutes);
+    $("mediumReward").value = String(SCORING_DEFAULTS.mediumRewardMinutes);
+    $("hardReward").value = String(SCORING_DEFAULTS.hardRewardMinutes);
+    $("easyPenalty").value = String(SCORING_DEFAULTS.easyPenaltyMinutes);
+    $("mediumPenalty").value = String(SCORING_DEFAULTS.mediumPenaltyMinutes);
+    $("hardPenalty").value = String(SCORING_DEFAULTS.hardPenaltyMinutes);
+    $("minUnlock").value = String(SCORING_DEFAULTS.minUnlockMinutes);
+    updateRuleConfig(Object.assign({}, SCORING_DEFAULTS));
+  }
+
+  function renderSettingsChrome() {
+    if (!$("roundWheel")) return;
+    const config = currentConfig();
+    const pull = Number(config.pullCount || DEFAULT_CONFIG.pullCount);
     const time = configSeconds(config);
-    const min = Math.min(pull, Number(config.minCorrectCount || 1));
-    const pullValues = [5, 8, 10, pull];
-    const pullOptions = Array.from(new Set(pullValues.filter((value) => value > 0))).sort((a, b) => a - b);
     const timeOptions = Array.from(new Set([30, 45, 60, 90, time].filter((value) => value > 0)))
       .sort((a, b) => a - b);
-    const minOptions = Array.from({ length: Math.max(1, pull) }, (_, index) => index + 1);
-    const rewardOptions = Array.from(new Set([1, 2, 3, 5, rewardMinutesValue].filter((value) => value > 0)))
-      .sort((a, b) => a - b);
-    renderChipRow($("roundCounts"), pullOptions, pull, "data-pull", (value) => t("roundN", { n: value }));
+    renderRoundWheel(pull);
     renderChipRow($("timeCounts"), timeOptions, time, "data-seconds", (value) => t("secondsN", { n: value }));
-    renderChipRow($("rewardCounts"), rewardOptions, rewardMinutesValue, "data-reward",
-      (value) => t("rewardMinutesN", { n: value }));
-    renderChipRow($("minCounts"), minOptions, min, "data-min", (value) => String(value));
+    renderUnlockChips();
+    renderScoringSummary();
     if ($("ruleScope")) {
-      if (answerScopeMode === "custom") {
-        const draft = normalizeAnswerScope(customScope);
-        $("ruleScope").textContent = t("scopeCustom") + " · " +
-          (draft ? scopeSummaryText(draft) : t("scopeIncompleteShort"));
-      } else {
-        $("ruleScope").textContent = t("scopeBound") + " · " + generationScopeSummary();
-      }
+      $("ruleScope").textContent = answerLevels.length
+        ? t("levelCountLabel", { n: answerLevels.length })
+        : t("levelNoneLabel");
     }
   }
 
   function renderSettings() {
-    if (!$("answerDisplay")) return;
+    if (!$("maxEarned")) return;
     const config = currentConfig();
-    rewardMinutesValue = Number(config.minutesPerQuestion || config.minutesPerPoint || 5);
-    $("answerDisplay").value = config.answerDisplaySec || 30;
+    renderScoringInputs(config);
     $("maxEarned").value = config.maxEarnedMinutes || 60;
     $("shuffle").checked = config.shuffleOptions !== false;
     renderSettingsChrome();
@@ -3290,11 +4485,13 @@
     generationToken++;
     clearGenTimer();
     adminSession = null;
+    curriculumModel = null;
+    unitCatalogModel = null;
     challengeConfig = null;
     syncState = null;
     cloudManaged = false;
     bankCounts = null;
-    bankCapacity = 300;
+    bankCapacity = 6000;
     bankItems = [];
     bankFilter = "all";
     bankOffset = 0;
@@ -3307,6 +4504,19 @@
     pendingEnter = false;
     genState = idleGeneration();
     targetCount = 20;
+    answerLevels = [];
+    levelEditingId = null;
+    levelNameDraft = "";
+    levelSaving = false;
+    levelUndo = null;
+    if (levelUndoTimer) {
+      clearTimeout(levelUndoTimer);
+      levelUndoTimer = 0;
+    }
+    if (levelMessageTimer) {
+      clearTimeout(levelMessageTimer);
+      levelMessageTimer = 0;
+    }
     answerScope = null;
     answerScopeMode = "bound";
     answerScopeAvailable = 0;
@@ -3316,7 +4526,11 @@
     resetScopeOptions();
     selectedBatch = new Set();
     answerTab = "scope";
-    rewardMinutesValue = 2;
+    roundWheelValue = DEFAULT_CONFIG.pullCount;
+    if (roundWheelScrollTimer) {
+      clearTimeout(roundWheelScrollTimer);
+      roundWheelScrollTimer = 0;
+    }
     genRequirementValue = "";
     genOptionsValue = 4;
     genAutoAddValue = true;
@@ -3350,15 +4564,49 @@
     document.body.classList.remove("editor-open");
     $("editor").classList.add("hidden");
     $("bottomNav").classList.add("hidden");
+    gateShown = true;
     setGate("gate_pair_title", "gate_pair_text", true);
+    renderGateOccupation();
   }
 
   function showEditor() {
+    gateShown = false;
+    gateOccupied = false;
     document.body.classList.add("editor-open");
     $("gateCard").classList.add("hidden");
     $("editor").classList.remove("hidden");
     $("bottomNav").classList.remove("hidden");
     setTab(activeTab, true);
+  }
+
+  // A second phone sees the same PIN gate. When the first phone still owns
+  // the session, replace the form with a calm notice; the 5-second status
+  // poll reveals the form again as soon as that phone logs out.
+  function renderGateOccupation() {
+    if (!gateShown) return;
+    const inUse = !adminToken && Boolean(publicState && publicState.parentInUse);
+    $("gateTitle").textContent = t(inUse ? "gate_in_use_heading" : "gate_pair_title");
+    $("gateText").textContent = t(inUse ? "gate_in_use_lead" : "gate_pair_text");
+    if (inUse) {
+      $("gateNoticeTitle").textContent = t("gate_in_use_title");
+      $("gateNoticeText").textContent = t("gate_in_use_text");
+      $("gateError").textContent = "";
+      $("pin").value = "";
+    } else {
+      $("gateNoticeTitle").textContent = "";
+      $("gateNoticeText").textContent = "";
+    }
+    $("gateNotice").classList.toggle("hidden", !inUse);
+    $("pinForm").classList.toggle("hidden", inUse);
+    const released = gateOccupied && !inUse;
+    gateOccupied = inUse;
+    if (released) {
+      setTimeout(() => {
+        const active = document.activeElement;
+        const busy = active && ["INPUT", "SELECT", "TEXTAREA", "BUTTON"].includes(active.tagName);
+        if (!busy) $("pin").focus();
+      }, 50);
+    }
   }
 
   function setTab(tab, force) {
@@ -3380,27 +4628,51 @@
     window.scrollTo({ top: 0 });
   }
 
+  async function loadUnitCatalog() {
+    try {
+      const data = await api("/api/quiz/admin/units", { admin: true });
+      unitCatalogModel = normalizeUnitCatalog(data && data.catalog);
+    } catch (_) {
+      // Older TV builds do not expose the endpoint; numeric labels still work.
+      unitCatalogModel = null;
+    }
+  }
+
   async function loadAdminSession() {
-    const data = await api("/api/quiz/admin/session", { admin: true });
+    const [data] = await Promise.all([
+      api("/api/quiz/admin/session", { admin: true }),
+      loadUnitCatalog(),
+    ]);
     adminSession = data.session || null;
+    applyCurriculum(data.curriculum, data.cloudJuniorReady);
+    // Re-resolve a saved requirement now that unit titles are available; a
+    // title without "第N单元" could not map before this point.
+    applyRequirementScope(genRequirementValue, false);
     applyConfig(data.challengeConfig || DEFAULT_CONFIG);
-    const scopeBusy = settingsSaving || answerDirty;
-    if (!Object.prototype.hasOwnProperty.call(data, "answerScope")) {
-      // 契约破损时保留本地范围并显式报错，不把「缺字段」当成「绑定出题范围」。
-      console.error("[quiz] admin session is missing answerScope");
+    const scopeBusy = settingsSaving || answerDirty || levelSaving ||
+      Boolean(levelEditingId);
+    if (!Array.isArray(data.answerScopes) &&
+        !Object.prototype.hasOwnProperty.call(data, "answerScope")) {
+      // 契约破损时保留本地范围并显式报错，不把「缺字段」当成「没有关卡」。
+      console.error("[quiz] admin session is missing answerScopes/answerScope");
       $("settingsError").textContent = t("err_INVALID_SCOPE");
     } else if (!scopeLoaded || !scopeBusy) {
-      answerScopeAvailable = Number(data.answerScopeAvailable || 0);
-      applyAnswerScope(data.answerScope, data.answerScopeMode);
+      if (Array.isArray(data.answerScopes)) {
+        applyAnswerLevels(data.answerScopes);
+      } else {
+        answerScopeAvailable = Number(data.answerScopeAvailable || 0);
+        applyAnswerScope(data.answerScope, data.answerScopeMode);
+      }
     }
     syncState = data.syncState || null;
     cloudManaged = Boolean(data.cloudManaged);
-    bankCapacity = Number(data.bankCapacity || 300);
+    bankCapacity = Number(data.bankCapacity || 6000);
     applyBankCounts(data.bank);
     renderSync();
     renderStock();
     renderBankCounts();
     renderMaintenance();
+    renderGenConfig(false);
     renderGenerate();
   }
 
@@ -3575,11 +4847,31 @@
   }
 
   function applyGenerationGrade(code) {
-    const match = /^([1-6])([ab])?$/.exec(String(code || ""));
+    const match = /^([1-9])([ab])?$/.exec(String(code || ""));
     if (!match) return false;
-    genGradeValue = Number(match[1]);
+    const grade = Number(match[1]);
+    if (!gradeNos().includes(grade)) return false;
+    genGradeValue = grade;
     genSemesterValue = match[2] === "b" ? 2 : 1;
     return true;
+  }
+
+  function escapeRegExp(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  function chineseNumber(value) {
+    const digits = {
+      "一": 1, "二": 2, "三": 3, "四": 4, "五": 5,
+      "六": 6, "七": 7, "八": 8, "九": 9,
+    };
+    if (value === "十") return 10;
+    if (value.startsWith("十")) return 10 + (digits[value.slice(1)] || 0);
+    if (value.includes("十")) {
+      const parts = value.split("十");
+      return (digits[parts[0]] || 1) * 10 + (digits[parts[1]] || 0);
+    }
+    return digits[value] ?? Number(value);
   }
 
   // 自定义主题只影响出题提示词与清单展示；答题范围仍按规范六字段归类。
@@ -3595,24 +4887,114 @@
     return normalizeCustomTopic(value);
   }
 
+  // Every unit in the current book is listed so the parent can see the real
+  // range instead of guessing a number the textbook does not have.
   function requirementSamples() {
-    return [
-      { label: t("unitN", { n: 1 }), scope: "unit", unit: 1 },
-      { label: t("unitN", { n: 2 }), scope: "unit", unit: 2 },
-      { label: t("unitN", { n: 3 }), scope: "unit", unit: 3 },
+    const units = [];
+    const book = generationUnitBook();
+    if (book) {
+      book.units
+        .filter((unit) => unit.kind === "UNIT")
+        .forEach((unit) => {
+          units.push({
+            label: unit.title.length <= REQUIREMENT_MAX_CHARS
+              ? unit.title
+              : t("unitN", { n: unit.no }),
+            title: unit.title,
+            scope: "unit",
+            unit: unit.no,
+          });
+        });
+    }
+    if (!units.length) {
+      const max = generationUnitMax();
+      for (let unit = 1; unit <= max; unit += 1) {
+        units.push({ label: t("unitN", { n: unit }), scope: "unit", unit });
+      }
+    }
+    return units.concat([
       { label: t(SCOPE_LABEL_KEYS.midterm), scope: "midterm" },
       { label: t(SCOPE_LABEL_KEYS.final), scope: "final" },
       { label: t(SCOPE_LABEL_KEYS.review), scope: "review" },
-    ];
+    ]);
+  }
+
+  function generationUnitNumbers() {
+    const book = generationUnitBook();
+    if (book) {
+      return book.units
+        .filter((unit) => unit.kind === "UNIT")
+        .map((unit) => unit.no);
+    }
+    return Array.from({ length: generationUnitMax() }, (_, index) => index + 1);
+  }
+
+  function generationUnitCount() {
+    return generationUnitNumbers().length;
+  }
+
+  // A manual "第十单元" must not silently keep the previous bank category.
+  // Ordinals can be sparse (chemistry keeps the raw tree position), so check
+  // the actual UNIT list rather than comparing against its length.
+  function outOfRangeRequirementUnit(value) {
+    const text = normalizeRequirement(value);
+    if (!text) return null;
+    const unit = explicitUnitNumber(text);
+    if (unit === null) return null;
+    if (canonicalFromRequirement(text)) return null;
+    return generationUnitNumbers().includes(unit) ? null : unit;
+  }
+
+  function requirementInvalidUnitText() {
+    const unit = outOfRangeRequirementUnit(genRequirementValue);
+    if (unit === null) return "";
+    return t("genRequirementInvalid", {
+      unit: t("unitN", { n: unit }),
+      count: generationUnitCount(),
+    });
+  }
+
+  function unitAliasPattern() {
+    const aliases = curriculum().unitAliases;
+    const values = (aliases.length ? aliases : ["单元", "章", "Unit", "Chapter"])
+      .map(escapeRegExp);
+    return "(?:" + values.join("|") + ")";
   }
 
   function canonicalUnit(value) {
     const text = String(value || "");
-    const match = text.match(/第?\s*([一二三四五六七八1-8])\s*单元/i) ||
-      text.match(/\bunit\s*([1-8])\b/i);
+    // With a known book, an explicit "第N单元/章" that the catalogue could not
+    // resolve must not fall back to the raw tree ordinal: in geography and
+    // chemistry those two numbers differ.
+    if (generationUnitBook() && explicitUnitNumber(text) !== null) return null;
+    const alias = unitAliasPattern();
+    const before = text.match(
+      new RegExp("第?\\s*([一二三四五六七八九十]+|\\d+)\\s*" + alias, "i"));
+    const after = text.match(
+      new RegExp("(?:^|\\b)" + alias + "\\s*([0-9]+)\\b", "i"));
+    const match = before || after;
     if (!match) return null;
-    const unit = CN_UNIT_NUMBERS[match[1]] || Number(match[1]);
-    return Number.isInteger(unit) && unit >= 1 && unit <= 8 ? unit : null;
+    const unit = unitNumberToken(match[1]);
+    return Number.isInteger(unit) && unit >= 1 && unit <= generationUnitMax() ? unit : null;
+  }
+
+  // True when the free text only names the resolved catalogue unit ("第七章",
+  // "Unit 7", a full title or a lesson), without extra instructions. Such text
+  // should keep the lesson coverage in the prompt instead of falling back to
+  // the manual-text branch just because it is shorter than the full title.
+  function requirementOnlyNamesUnit(value, unit) {
+    if (!unit) return false;
+    const text = normalizeRequirement(value);
+    if (!text) return false;
+    const key = unitMatchKey(text);
+    if (!key) return false;
+    if (key === unitMatchKey(unit.title)) return true;
+    if (unit.lessons.some((lesson) => unitMatchKey(lesson) === key)) return true;
+    if (explicitUnitNumber(text) === null) return false;
+    const stripped = text
+      .replace(/第\s*[一二三四五六七八九十百零〇两\d]+\s*(?:单元|章|课)/g, "")
+      .replace(/(?:^|\b)unit\s*\d+\b/gi, "");
+    return unitMatchKey(stripped) === "";
   }
 
   // 只识别明确的规范标记；识别不到时保留当前归类，避免把“易错题”误判。
@@ -3625,6 +5007,9 @@
         ? { scope: "unit", unit: sample.unit }
         : { scope: sample.scope };
     }
+    const catalogUnit = catalogUnitFromText(
+      text, genGradeValue, genSemesterValue, genSubjectValue, genTextbookId);
+    if (catalogUnit) return { scope: "unit", unit: catalogUnit.no };
     const unit = canonicalUnit(text);
     if (unit) return { scope: "unit", unit };
     if (/期中|midterm|mid-term/i.test(text)) return { scope: "midterm" };
@@ -3638,7 +5023,9 @@
     genScopeValue = parsed.scope;
     if (parsed.scope === "unit") {
       const unit = Number(parsed.unit);
-      if (UNIT_VALUES.includes(String(unit))) genUnitValue = unit;
+      if (Number.isInteger(unit) && unit >= 1 && unit <= generationUnitMax()) {
+        genUnitValue = unit;
+      }
     }
   }
 
@@ -3655,7 +5042,9 @@
   }
 
   function legacyRequirementLabel(scope, unit) {
-    if (scope === "unit") return t("unitN", { n: unit });
+    if (scope === "unit") {
+      return generationUnitTitle(unit) || t("unitN", { n: unit });
+    }
     return t(SCOPE_LABEL_KEYS[scope] || "scopeReview");
   }
 
@@ -3670,19 +5059,26 @@
     const legacyDefaultMidterm = version === 2 && !customTopic && prefs.scope === "midterm";
     const legacyDefault = legacyDefaultUnit || legacyDefaultMidterm;
     applyGenerationGrade(prefs.grade);
-    if (SUBJECT_VALUES.includes(prefs.subject)) genSubjectValue = prefs.subject;
+    const subjects = subjectIdsForGrade(genGradeValue);
+    if (subjects.includes(prefs.subject)) {
+      genSubjectValue = prefs.subject;
+    } else if (!subjects.includes(genSubjectValue)) {
+      genSubjectValue = subjects.includes("math") ? "math" : (subjects[0] || "math");
+    }
     if (legacyDefault) {
       genScopeValue = "review";
       genUnitValue = 1;
     } else if (SCOPE_VALUES.includes(prefs.scope)) {
       genScopeValue = prefs.scope;
     }
-    if (Object.prototype.hasOwnProperty.call(TEXTBOOK_LABEL_KEYS, prefs.textbook)) {
+    if (isKnownTextbook(prefs.textbook)) {
       genTextbookId = String(prefs.textbook);
     }
+    if (genSubjectValue === "all") genTextbookId = "general";
+    keepGenerationTextbook();
     const unit = Number(prefs.unit);
-    if (!legacyDefault && Number.isInteger(unit) &&
-        UNIT_VALUES.includes(String(unit))) {
+    if (!legacyDefault && Number.isInteger(unit) && unit >= 1 &&
+        (genScopeValue !== "unit" || unit <= generationUnitMax())) {
       genUnitValue = unit;
     }
     const target = Number(prefs.targetCount);
@@ -3699,7 +5095,6 @@
     } else {
       genRequirementValue = legacyRequirementLabel(genScopeValue, genUnitValue);
     }
-    if (genSubjectValue === "all") genTextbookId = "general";
     applyRequirementScope(genRequirementValue, true);
   }
 
@@ -3727,18 +5122,23 @@
       autoAdd: genAutoAddValue,
       presetVersion: 3,
     };
-    const valid = GRADE_VALUES.includes(prefs.grade) &&
-      SUBJECT_VALUES.includes(prefs.subject) &&
-      Object.prototype.hasOwnProperty.call(TEXTBOOK_LABEL_KEYS, prefs.textbook) &&
+    const subjects = subjectIdsForGrade(genGradeValue);
+    const books = textbooksFor(genGradeValue, genSubjectValue);
+    const valid = gradeCodes().includes(prefs.grade) &&
+      subjects.includes(prefs.subject) &&
+      books.includes(prefs.textbook) &&
       SCOPE_VALUES.includes(prefs.scope) &&
-      Number.isInteger(prefs.unit) && UNIT_VALUES.includes(String(prefs.unit)) &&
+      Number.isInteger(prefs.unit) && prefs.unit >= 1 &&
+      (prefs.scope !== "unit" || prefs.unit <= generationUnitMax()) &&
       TARGET_COUNTS.includes(prefs.targetCount) &&
       GEN_OPTIONS_VALUES.includes(prefs.options) &&
       GEN_DIFFICULTY_VALUES.includes(prefs.difficulty) &&
       typeof prefs.customTopic === "string" &&
       prefs.customTopic.length <= REQUIREMENT_MAX_CHARS &&
+      outOfRangeRequirementUnit(prefs.customTopic) === null &&
       typeof prefs.autoAdd === "boolean" &&
-      prefs.presetVersion === 3;
+      prefs.presetVersion === 3 &&
+      !cloudJuniorBlocked(genGradeValue);
     return valid ? prefs : null;
   }
 
@@ -3808,14 +5208,37 @@
   }
 
   function generationTextbookBooks() {
-    return TEXTBOOKS[genSubjectValue] || ["general"];
+    const books = textbooksFor(genGradeValue, genSubjectValue);
+    return books.length ? books : ["general"];
+  }
+
+  function keepGenerationSubject() {
+    const subjects = subjectIdsForGrade(genGradeValue);
+    if (!subjects.includes(genSubjectValue)) {
+      genSubjectValue = subjects.includes("math") ? "math" : (subjects[0] || "math");
+    }
   }
 
   function keepGenerationTextbook() {
     const books = generationTextbookBooks();
     if (!books.includes(genTextbookId)) {
-      genTextbookId = DEFAULT_TEXTBOOK[genSubjectValue] || books[0] || "general";
+      genTextbookId = defaultTextbookFor(genGradeValue, genSubjectValue) || books[0] || "general";
     }
+  }
+
+  function renderGenerationSubjects() {
+    const container = $("genSubjects");
+    if (!container) return;
+    container.replaceChildren();
+    subjectIdsForGrade(genGradeValue).forEach((id) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "choice-chip";
+      button.dataset.subject = id;
+      button.setAttribute("aria-pressed", String(id === genSubjectValue));
+      button.textContent = subjectLabel(id);
+      container.appendChild(button);
+    });
   }
 
   function renderRequirementSamples() {
@@ -3829,6 +5252,7 @@
       button.className = "choice-chip";
       button.dataset.requirement = sample.label;
       button.setAttribute("aria-pressed", String(sample.label === current));
+      if (sample.title) button.title = sample.title;
       button.textContent = sample.label;
       container.appendChild(button);
     });
@@ -3841,9 +5265,18 @@
     const hint = $("genRequirementScope");
     if (hint) {
       const text = normalizeRequirement(genRequirementValue);
-      hint.textContent = text
-        ? t("genRequirementScope", { scope: generationTopicText() })
-        : "";
+      const invalidUnit = outOfRangeRequirementUnit(text);
+      hint.classList.toggle("error", invalidUnit !== null);
+      if (invalidUnit !== null) {
+        hint.textContent = requirementInvalidUnitText();
+      } else {
+        hint.textContent = text
+          ? t("genRequirementScopeWithCount", {
+            scope: generationTopicText(),
+            count: generationUnitCount(),
+          })
+          : "";
+      }
     }
   }
 
@@ -3864,20 +5297,43 @@
 
   function renderGenConfig(recompose) {
     if (!$("genGradeChips")) return;
+    // A stale junior preference on a cloud-managed TV cannot be used; fall back
+    // to the first selectable grade instead of leaving an unsavable state.
+    if (cloudJuniorBlocked(genGradeValue)) {
+      const allowed = gradeNos().filter((no) => !cloudJuniorBlocked(no));
+      genGradeValue = allowed.includes(4) ? 4 : (allowed[0] || genGradeValue);
+      genSemesterValue = 1;
+      genUnitValue = 1;
+    }
+    keepGenerationSubject();
     keepGenerationTextbook();
 
-    renderChipRow($("genGradeChips"), [1, 2, 3, 4, 5, 6], genGradeValue, "data-grade",
-      (value) => t("grade" + value));
+    renderChipRow($("genGradeChips"), gradeNos(), genGradeValue, "data-grade",
+      (value) => gradeLabel(value),
+      (value) => cloudJuniorBlocked(value));
+    const gradeHint = $("genGradeHint");
+    if (gradeHint) {
+      const blocked = cloudJuniorBlocked(genGradeValue);
+      gradeHint.textContent = blocked ? t("cloudJuniorUnsupported") : "";
+      gradeHint.classList.toggle("hidden", !blocked);
+    }
     renderChipRow($("genSemester"), [1, 2], genSemesterValue, "data-semester",
       (value) => t(Number(value) === 2 ? "semesterSecond" : "semesterFirst"));
 
+    renderGenerationSubjects();
+    // All-subject generation forces textbook=ALL on the wire, so a textbook
+    // picker would be misleading; the field (and its curation hint) is hidden.
+    const textbookField = $("genTextbookField");
+    if (textbookField) {
+      textbookField.classList.toggle("hidden", genSubjectValue === SUBJECT_ALL);
+    }
     const books = generationTextbookBooks();
     renderChipRow($("genTextbook"), books, genTextbookId, "data-textbook",
-      (id) => t(TEXTBOOK_LABEL_KEYS[id]));
-
-    document.querySelectorAll("#genSubjects [data-subject]").forEach((chip) => {
-      chip.setAttribute("aria-pressed", String(chip.dataset.subject === genSubjectValue));
-    });
+      (id) => textbookLabel(id));
+    if (genUnitValue > generationUnitMax()) {
+      genUnitValue = generationUnitMax();
+    }
+    if (genUnitValue < 1) genUnitValue = 1;
 
     renderRequirementState();
     if ($("genAutoAdd")) $("genAutoAdd").checked = genAutoAddValue;
@@ -3923,14 +5379,17 @@
       : SCOPE_TOPIC_FROM_CANONICAL[String(raw.scopeType || "").toUpperCase()];
     const difficulty = String(raw.difficulty || "").toUpperCase();
     const unitNo = raw.unitNo === null || raw.unitNo === undefined ? null : Number(raw.unitNo);
-    if (!Number.isInteger(grade) || grade < 1 || grade > 6) return null;
+    if (!Number.isInteger(grade) || !gradeNos().includes(grade)) return null;
     if (!Number.isInteger(semester) || semester < 1 || semester > 2) return null;
-    if (!SCOPE_SUBJECTS.includes(subject)) return null;
-    if (!Object.prototype.hasOwnProperty.call(TEXTBOOK_LABEL_KEYS, textbook)) return null;
+    if (!subjectIdsForGrade(grade).includes(subject)) return null;
+    if (!isKnownTextbook(textbook)) return null;
     if (!SCOPE_TOPIC_VALUES.includes(topic)) return null;
     if (!SCOPE_DIFFICULTY_VALUES.includes(difficulty)) return null;
     if (topic === "unit") {
-      if (!Number.isInteger(unitNo) || unitNo < 1 || unitNo > 8) return null;
+      if (!Number.isInteger(unitNo) || unitNo < 1 ||
+          unitNo > unitMaxForContext(grade, semester, subject, textbook)) {
+        return null;
+      }
     } else if (unitNo !== null) {
       return null;
     }
@@ -3950,16 +5409,12 @@
   }
 
   // 保留上一份已知配置并显式报错，不静默换成默认范围。
+  // Only used when the TV omits answerScopes (cached page or contract break).
+  // One legacy scope becomes level 1 so the rest of the page keeps working.
   function applyAnswerScope(raw, mode) {
     const custom = mode ? mode === "custom" : raw !== null && raw !== undefined;
     if (!custom) {
-      answerScope = null;
-      answerScopeMode = "bound";
-      customScope = null;
-      resetScopeOptions();
-      scopeLoaded = true;
-      renderAnswerPage();
-      renderHome();
+      applyAnswerLevels([]);
       return true;
     }
     const scope = normalizeAnswerScope(raw);
@@ -3968,21 +5423,13 @@
       $("settingsError").textContent = t("err_INVALID_SCOPE");
       return false;
     }
-    answerScope = scope;
-    answerScopeMode = "custom";
-    customScope = Object.assign({}, scope);
-    resetScopeOptions();
-    scopeLoaded = true;
-    renderAnswerPage();
-    renderHome();
+    applyAnswerLevels([{
+      id: "legacy-1",
+      name: "",
+      scope,
+      available: answerScopeAvailable,
+    }]);
     return true;
-  }
-
-  function readAnswerConfig() {
-    if (answerScopeMode !== "custom") return { scopeMode: "bound", scope: null };
-    const scope = normalizeAnswerScope(customScope);
-    if (!scope) return undefined;
-    return { scopeMode: "custom", scope: scopeToCanonical(scope) };
   }
 
   function scopeTopicLabel(topic) {
@@ -3993,12 +5440,158 @@
     if (!scope) return "—";
     return [
       gradeText(scope.grade, scope.semester),
-      t(SUBJECT_LABEL_KEYS[scope.subject] || "subjectMath"),
-      t(TEXTBOOK_LABEL_KEYS[scope.textbook] || "tbGeneral"),
-      scope.topic === "unit" ? t("unitN", { n: scope.unitNo }) : scopeTopicLabel(scope.topic),
+      subjectLabel(scope.subject),
+      textbookLabel(scope.textbook),
+      scope.topic === "unit"
+        ? unitDisplayLabel(
+          scope.grade, scope.semester, scope.subject, scope.textbook, scope.unitNo)
+        : scopeTopicLabel(scope.topic),
       scope.difficulty ? t(DIFFICULTY_LABEL_KEYS[scope.difficulty.toLowerCase()] ||
         "difficultyMedium") : t("difficultyUnlimited"),
     ].join(" · ");
+  }
+
+  // Mirror QuizQuestionCache.matchesAnswerScope: a generated item is usable only
+  // when its scope is inside one level's answer scope. Answer "all" values are
+  // wildcards; an unrestricted answer difficulty accepts any generated level.
+  function generationFitsAnswerScope(scope) {
+    const ans = normalizeAnswerScope(scope);
+    if (!ans) return true;
+    if (genGradeValue !== ans.grade || genSemesterValue !== ans.semester) return false;
+    const genTopic = genScopeValue === "review" ? "all" : genScopeValue;
+    if (genTopic !== ans.topic) return false;
+    if (ans.topic === "unit" && genUnitValue !== ans.unitNo) return false;
+    if (ans.difficulty && genDifficultyValue.toUpperCase() !== ans.difficulty) return false;
+    if (ans.subject !== SUBJECT_ALL) {
+      if (genSubjectValue !== ans.subject) return false;
+      if (ans.textbook !== TEXTBOOK_ALL && genTextbookId !== ans.textbook) return false;
+    }
+    return true;
+  }
+
+  function generationScopeMismatch() {
+    const target = generationTargetLevel();
+    return Boolean(target) && !generationFitsAnswerScope(target.scope);
+  }
+
+  function answerScopeNeedsQuestions() {
+    return Boolean(publicState) &&
+      publicState.enabled !== false &&
+      publicState.source !== "CLOUD" &&
+      scopeLoaded &&
+      shortLevels(Number(currentConfig().pullCount || 5)).length > 0;
+  }
+
+  function canAlignGenerationToAnswerScope(scope) {
+    const ans = normalizeAnswerScope(scope);
+    if (!ans || cloudJuniorBlocked(ans.grade)) return false;
+    if (ans.subject === SUBJECT_ALL) return true;
+    if (!subjectIdsForGrade(ans.grade).includes(ans.subject)) return false;
+    return ans.textbook === TEXTBOOK_ALL ||
+      textbooksFor(ans.grade, ans.subject).includes(ans.textbook);
+  }
+
+  function generationScopeSignature() {
+    const target = generationTargetLevel();
+    const ans = target ? target.scope : null;
+    const answerPart = ans ? levelScopeSignature(ans) : "";
+    const genPart = [
+      genGradeValue, genSemesterValue, genSubjectValue, genTextbookId,
+      genScopeValue, genUnitValue, genDifficultyValue,
+    ].join("/");
+    return (target ? target.id : "none") + "|" + answerPart + "|" + genPart;
+  }
+
+  function updateGenerationScopeStatus() {
+    const box = $("genScopeStatus");
+    if (!box) return;
+    const pull = Number(currentConfig().pullCount || 5);
+    const active = Boolean(publicState) &&
+      publicState.enabled !== false &&
+      publicState.source !== "CLOUD" &&
+      scopeLoaded;
+    const busy = genState.phase === "running" || genState.phase === "adding";
+    if (!active || busy) {
+      box.classList.add("hidden");
+      return;
+    }
+    const short = shortLevels(pull);
+    // 只在电视当前关卡确实缺题时占用生成卡的空间；题量足够时不打扰。
+    if (!short.length) {
+      box.classList.add("hidden");
+      return;
+    }
+    const target = generationTargetLevel();
+    const mismatch = Boolean(target) && !generationFitsAnswerScope(target.scope);
+    box.classList.remove("hidden");
+    // 不足和范围不一致都属于需要处理的异常，统一用警示色；
+    // 蓝色只留给两张卡的数据流标签。
+    box.classList.add("warn");
+    if (mismatch && target) {
+      const index = answerLevels.indexOf(target);
+      $("genScopeStatusText").textContent = t("genScopeStatusLevelMismatch", {
+        level: levelLabel(target, index),
+      });
+    } else {
+      $("genScopeStatusText").textContent =
+        t("genScopeStatusLevelsInsufficient", { n: short.length, pull });
+    }
+    const canAlign = mismatch && Boolean(target) &&
+      canAlignGenerationToAnswerScope(target.scope);
+    $("genScopeStatusActions").classList.toggle("hidden", !mismatch);
+    $("alignGenToAnswer").classList.toggle("hidden", !canAlign);
+    $("genScopeStatusNote").classList.toggle("hidden", !canAlign);
+  }
+
+  function alignGenerationToAnswerScope() {
+    const target = generationTargetLevel();
+    const ans = target ? target.scope : null;
+    if (!ans || !canAlignGenerationToAnswerScope(ans)) return false;
+    genGradeValue = ans.grade;
+    genSemesterValue = ans.semester;
+    genSubjectValue = ans.subject;
+    if (ans.subject === SUBJECT_ALL) {
+      genTextbookId = "general";
+    } else if (ans.textbook === TEXTBOOK_ALL) {
+      genTextbookId = defaultTextbookFor(ans.grade, ans.subject);
+    } else {
+      genTextbookId = ans.textbook;
+    }
+    keepGenerationSubject();
+    keepGenerationTextbook();
+    genScopeValue = ans.topic === "all" ? "review" : ans.topic;
+    genUnitValue = ans.topic === "unit" ? ans.unitNo : 1;
+    genDifficultyValue = ans.difficulty ? ans.difficulty.toLowerCase() : "";
+    setRequirement(legacyRequirementLabel(genScopeValue, genUnitValue), { persist: false });
+    renderGenConfig(true);
+    saveGeneratePrefs();
+    scopeMismatchAckKey = "";
+    renderHome();
+    renderGenerate();
+    return true;
+  }
+
+  function openScopeMismatchDialog() {
+    const target = generationTargetLevel();
+    const ans = target ? target.scope : null;
+    if (!ans) return false;
+    const pull = Number(currentConfig().pullCount || 5);
+    const index = answerLevels.indexOf(target);
+    $("scopeMismatchAnswer").textContent = t("scopeMismatchAnswerLine", {
+      scope: levelLabel(target, index) + " · " + scopeSummaryText(ans),
+    });
+    $("scopeMismatchGenerate").textContent =
+      t("scopeMismatchGenerateLine", { scope: generationScopeSummary() });
+    $("scopeMismatchBody").textContent = t("scopeMismatchBody", {
+      available: target.available,
+      pull,
+    });
+    $("scopeMismatchAlign").classList.toggle(
+      "hidden",
+      !canAlignGenerationToAnswerScope(ans),
+    );
+    openModal("scopeMismatchDialog");
+    return true;
   }
 
   function requirementDisplayTopic() {
@@ -4013,8 +5606,8 @@
   }
 
   function generationScopeParts() {
-    const subject = t(SUBJECT_LABEL_KEYS[genSubjectValue] || "subjectMath");
-    const book = genSubjectValue === "all" ? "" : t(TEXTBOOK_LABEL_KEYS[genTextbookId] || "tbGeneral");
+    const subject = subjectLabel(genSubjectValue);
+    const book = genSubjectValue === "all" ? "" : textbookLabel(genTextbookId);
     return {
       main: [
         gradeText(genGradeValue, genSemesterValue),
@@ -4070,13 +5663,17 @@
     const grade = Number(draft.grade);
     const semester = Number(draft.semester);
     const unitNo = Number(draft.unitNo);
-    if (!Number.isInteger(grade) || grade < 1 || grade > 6) return false;
+    if (!Number.isInteger(grade) || !gradeNos().includes(grade)) return false;
     if (semester !== 1 && semester !== 2) return false;
-    if (!SCOPE_SUBJECTS.includes(draft.subject)) return false;
+    if (!subjectIdsForGrade(grade).includes(draft.subject)) return false;
     if (draft.subject === SUBJECT_ALL && draft.textbook !== TEXTBOOK_ALL) return false;
-    if (!Object.prototype.hasOwnProperty.call(TEXTBOOK_LABEL_KEYS, draft.textbook)) return false;
+    if (!isKnownTextbook(draft.textbook)) return false;
     if (!SCOPE_TOPIC_VALUES.includes(draft.topic)) return false;
-    if (draft.topic === "unit" && (!Number.isInteger(unitNo) || unitNo < 1 || unitNo > 8)) return false;
+    if (draft.topic === "unit" &&
+        (!Number.isInteger(unitNo) || unitNo < 1 ||
+         unitNo > unitMaxForContext(grade, semester, draft.subject, draft.textbook))) {
+      return false;
+    }
     return SCOPE_DIFFICULTY_VALUES.includes(String(draft.difficulty || "").toUpperCase());
   }
 
@@ -4103,14 +5700,20 @@
     return visible[visible.length - 1];
   }
 
-  function scopeValueLabel(step, value) {
-    if (step === "grade") return t("grade" + Number(value));
+  function scopeValueLabel(step, value, draft) {
+    if (step === "grade") return gradeLabel(Number(value));
     if (step === "semester") return t(Number(value) === 2 ? "semesterSecond" : "semesterFirst");
-    if (step === "subject") return t(SUBJECT_LABEL_KEYS[value] || "subjectMath");
-    if (step === "textbook") return t(TEXTBOOK_LABEL_KEYS[value] || "tbGeneral");
+    if (step === "subject") return subjectLabel(value);
+    if (step === "textbook") return textbookLabel(value);
     if (step === "topic") {
-      const unit = /^unit:([1-8])$/.exec(String(value));
-      return unit ? t("unitN", { n: Number(unit[1]) }) : scopeTopicLabel(value);
+      const unit = /^unit:([0-9]+)$/.exec(String(value));
+      if (unit) {
+        const context = draft || {};
+        return unitDisplayLabel(
+          context.grade, context.semester, context.subject, context.textbook,
+          Number(unit[1]));
+      }
+      return scopeTopicLabel(value);
     }
     if (step === "difficulty") {
       return t(value
@@ -4121,25 +5724,33 @@
   }
 
   function scopeCandidateValues(step, draft, counts) {
-    if (step === "grade") return ["1", "2", "3", "4", "5", "6"];
+    if (step === "grade") {
+      return gradeNos().filter((no) => !cloudJuniorBlocked(no)).map(String);
+    }
     if (step === "semester") return ["1", "2"];
-    if (step === "subject") return SCOPE_SUBJECTS.slice();
+    if (step === "subject") {
+      return subjectIdsForGrade(draft && draft.grade);
+    }
     if (step === "textbook") {
       if (draft && draft.subject === SUBJECT_ALL) return [TEXTBOOK_ALL];
-      const known = (TEXTBOOKS[draft && draft.subject] || ["general"]).slice();
+      const known = textbooksFor(draft && draft.grade, draft && draft.subject);
       const extra = Object.keys(counts || {})
         .map((key) => String(key).toLowerCase())
-        .filter((key) => Object.prototype.hasOwnProperty.call(TEXTBOOK_LABEL_KEYS, key));
+        .filter((key) => isKnownTextbook(key));
       // 具体学科也可以跨教材出题；“全部教材”放在第一位。
       return Array.from(new Set([TEXTBOOK_ALL].concat(known, extra)));
     }
     if (step === "topic") {
       // List the bank's real topic values: every unit separately, then the
       // canonical midterm/final/review scopes that actually have questions.
+      const unitMax = draft
+        ? unitMaxForContext(draft.grade, draft.semester, draft.subject, draft.textbook)
+        : unitMaxForGrade(0);
       const units = Object.keys(counts || {})
-        .filter((key) => /^UNIT:[1-8]$/.test(key))
-        .sort((a, b) => Number(a.slice(5)) - Number(b.slice(5)))
-        .map((key) => "unit:" + key.slice(5));
+        .map((key) => /^UNIT:([0-9]+)$/.exec(key))
+        .filter((match) => match && Number(match[1]) >= 1 && Number(match[1]) <= unitMax)
+        .sort((a, b) => Number(a[1]) - Number(b[1]))
+        .map((match) => "unit:" + match[1]);
       const topics = ["MIDTERM", "FINAL", "REVIEW"]
         .filter((key) => Number(counts[key] || 0) > 0)
         .map((key) => SCOPE_TOPIC_FROM_CANONICAL[key]);
@@ -4153,7 +5764,7 @@
     if (!data || !data.counts) return null;
     const counts = data.counts;
     if (step === "topic") {
-      const unit = /^unit:([1-8])$/.exec(String(value));
+      const unit = /^unit:([0-9]+)$/.exec(String(value));
       if (unit) return Number(counts["UNIT:" + unit[1]] || 0);
       return Number(counts[SCOPE_TOPIC_TO_CANONICAL[value]] || 0);
     }
@@ -4163,7 +5774,8 @@
     if (step === "subject") {
       if (String(value) === SUBJECT_ALL) {
         // 题库按单题学科计数；全科范围是这些计数的总和（含识别不出学科的 ALL）。
-        return ["CHINESE", "MATH", "ENGLISH", "SCIENCE", "ALL"]
+        return allSubjectIds()
+          .map((id) => id.toUpperCase())
           .reduce((sum, key) => sum + Number(counts[key] || 0), 0);
       }
       return Number(counts[String(value).toUpperCase()] || 0);
@@ -4171,9 +5783,7 @@
     if (step === "textbook") {
       if (String(value) === TEXTBOOK_ALL) {
         return Object.keys(counts || {})
-          .filter((key) => Object.prototype.hasOwnProperty.call(
-            TEXTBOOK_LABEL_KEYS, String(key).toLowerCase(),
-          ))
+          .filter((key) => isKnownTextbook(String(key).toLowerCase()))
           .reduce((sum, key) => sum + Number(counts[key] || 0), 0);
       }
       return Number(counts[String(value).toUpperCase()] || 0);
@@ -4187,16 +5797,20 @@
     if (!data || data.failed) {
       return current === null
         ? []
-        : [{ value: current, label: scopeValueLabel(step, current), count: null }];
+        : [{ value: current, label: scopeValueLabel(step, current, draft), count: null }];
     }
     const counts = data.counts || {};
     const entries = scopeCandidateValues(step, draft, counts).map((value) => ({
       value,
-      label: scopeValueLabel(step, value),
+      label: scopeValueLabel(step, value, draft),
       count: scopeValueCount(step, value, data),
     }));
     if (current !== null && !entries.some((entry) => String(entry.value) === String(current))) {
-      entries.push({ value: current, label: scopeValueLabel(step, current), count: 0 });
+      entries.push({
+        value: current,
+        label: scopeValueLabel(step, current, draft),
+        count: 0,
+      });
     }
     // Hide values with no bank questions. Keep the current selection visible
     // even at 0, and always keep "any difficulty" so it can be cleared.
@@ -4268,8 +5882,13 @@
     return params.toString();
   }
 
+  function levelEditorOpen() {
+    const page = $("levelEditorPage");
+    return Boolean(page) && !page.classList.contains("hidden");
+  }
+
   function ensureScopeOptions() {
-    if (answerScopeMode !== "custom") return;
+    if (!levelEditorOpen()) return;
     const draft = customScope || {};
     scopeVisibleSteps(draft).forEach((step) => {
       if (!Object.prototype.hasOwnProperty.call(scopeFacets, step) && !scopeOptionsLoading[step]) {
@@ -4279,7 +5898,7 @@
   }
 
   async function loadScopeStep(step) {
-    if (answerScopeMode !== "custom" || scopeOptionsLoading[step]) return;
+    if (!levelEditorOpen() || scopeOptionsLoading[step]) return;
     const token = scopeRequestToken;
     const draft = Object.assign({}, customScope || {});
     scopeOptionsLoading[step] = true;
@@ -4297,16 +5916,18 @@
         matched: Number(data && data.matched || 0),
       };
       if (step === "difficulty") scopeMatched = Number(data && data.matched || 0);
-      $("settingsError").textContent = "";
+      if (levelEditorOpen()) $("levelEditorError").textContent = "";
     } catch (error) {
       if (token !== scopeRequestToken) return;
       scopeFacets[step] = { counts: {}, unrestricted: 0, matched: null, failed: true };
       if (step === "difficulty") scopeMatched = null;
-      if (error.code !== "NOT_FOUND") $("settingsError").textContent = errorText(error);
+      if (error.code !== "NOT_FOUND" && levelEditorOpen()) {
+        $("levelEditorError").textContent = errorText(error);
+      }
     } finally {
       if (token === scopeRequestToken) {
         scopeOptionsLoading[step] = false;
-        if (answerScopeMode === "custom") renderAnswerPage();
+        if (levelEditorOpen()) renderLevelEditor();
       }
     }
   }
@@ -4330,6 +5951,9 @@
 
   function answerScopeErrorMessage() {
     if (answerScopeMode !== "custom") return "";
+    if (customScope && cloudJuniorBlocked(customScope.grade)) {
+      return t("err_CLOUD_JUNIOR_UNSUPPORTED");
+    }
     if (!scopeRequiredComplete(customScope)) return t("err_SCOPE_INCOMPLETE");
     if (scopeMatched !== null && Number(scopeMatched) === 0) return t("err_SCOPE_EMPTY");
     return "";
@@ -4346,18 +5970,28 @@
     let value = String(rawValue === undefined || rawValue === null ? "" : rawValue);
     if (step === "grade" || step === "semester") {
       const number = Number(value);
-      const max = step === "grade" ? 6 : 2;
-      if (!Number.isInteger(number) || number < 1 || number > max) return;
+      if (step === "grade") {
+        if (!gradeNos().includes(number) || cloudJuniorBlocked(number)) return;
+      } else if (number !== 1 && number !== 2) {
+        return;
+      }
       value = number;
     }
-    if (step === "subject" && !SCOPE_SUBJECTS.includes(value)) return;
-    if (step === "textbook" &&
-        !Object.prototype.hasOwnProperty.call(TEXTBOOK_LABEL_KEYS, value)) return;
+    if (step === "subject" && !subjectIdsForGrade(draft.grade).includes(value)) return;
+    if (step === "textbook" && !isKnownTextbook(value)) return;
     let topicUnit = null;
     if (step === "topic") {
-      const unit = /^unit:([1-8])$/.exec(value);
-      if (unit) topicUnit = Number(unit[1]);
-      else if (!SCOPE_TOPIC_VALUES.includes(value)) return;
+      const unit = /^unit:([0-9]+)$/.exec(value);
+      if (unit) {
+        topicUnit = Number(unit[1]);
+        if (topicUnit < 1 ||
+            topicUnit > unitMaxForContext(
+              draft.grade, draft.semester, draft.subject, draft.textbook)) {
+          return;
+        }
+      } else if (!SCOPE_TOPIC_VALUES.includes(value)) {
+        return;
+      }
     }
     if (step === "difficulty") {
       value = value.toUpperCase();
@@ -4407,10 +6041,143 @@
     }
 
     customScope = draft;
-    answerDirty = true;
-    $("settingsError").textContent = "";
+    $("levelEditorError").textContent = "";
     invalidateScopeAfter(step);
-    renderAnswerPage();
+    renderLevelEditor();
+  }
+
+  function levelLabel(level, index) {
+    const name = String(level && level.name || "").trim();
+    return name || t("levelFallbackName", { n: Number(index) + 1 });
+  }
+
+  function levelScopeSignature(scope) {
+    const normalized = normalizeAnswerScope(scope);
+    if (!normalized) return "";
+    return [
+      normalized.grade,
+      normalized.semester,
+      normalized.subject,
+      normalized.textbook,
+      normalized.topic,
+      normalized.unitNo === null ? "" : normalized.unitNo,
+      normalized.difficulty,
+    ].join("/");
+  }
+
+  function shortLevels(pull) {
+    return answerLevels.filter((level) => level.available < pull);
+  }
+
+  // Levels drive the generation hint: prefer the first short level whose scope
+  // the current generation settings do not fit, so the offered action is useful.
+  function generationTargetLevel() {
+    const pull = Number(currentConfig().pullCount || 5);
+    const short = shortLevels(pull);
+    if (!short.length) return null;
+    return short.find((level) => !generationFitsAnswerScope(level.scope)) || short[0];
+  }
+
+  function renderLevelUndo() {
+    const bar = $("levelUndo");
+    if (!bar) return;
+    if (!levelUndo) {
+      bar.classList.add("hidden");
+      return;
+    }
+    $("levelUndoText").textContent = t("levelDeleted", { name: levelUndo.name });
+    bar.classList.remove("hidden");
+  }
+
+  function scheduleLevelMessage(text) {
+    if ($("levelState")) $("levelState").textContent = text;
+    if (levelMessageTimer) clearTimeout(levelMessageTimer);
+    levelMessageTimer = setTimeout(() => {
+      levelMessageTimer = 0;
+      if ($("levelState")) $("levelState").textContent = "";
+    }, 2600);
+  }
+
+  function renderAnswerLevels() {
+    const list = $("levelList");
+    if (!list) return;
+    list.replaceChildren();
+    answerLevels.forEach((level, index) => {
+      const row = document.createElement("div");
+      row.className = "level-row";
+      row.dataset.levelId = level.id;
+      if (level.available < Number(currentConfig().pullCount || 5)) {
+        row.classList.add("short");
+      }
+
+      const main = document.createElement("button");
+      main.type = "button";
+      main.className = "level-main";
+      main.dataset.levelEdit = level.id;
+
+      const badge = document.createElement("span");
+      badge.className = "level-index";
+      badge.textContent = String(index + 1);
+      main.appendChild(badge);
+
+      const copy = document.createElement("span");
+      copy.className = "level-copy";
+      const title = document.createElement("span");
+      title.className = "level-title";
+      const summary = document.createElement("span");
+      summary.className = "level-meta";
+      if (String(level.name || "").trim()) {
+        title.textContent = level.name.trim();
+        summary.textContent = scopeSummaryText(level.scope);
+      } else {
+        title.textContent = scopeSummaryText(level.scope);
+      }
+      const available = document.createElement("span");
+      available.className = "level-available";
+      const pull = Number(currentConfig().pullCount || 5);
+      available.textContent = level.available < pull
+        ? t("levelShort", { available: level.available, pull })
+        : t("levelAvailable", { n: level.available });
+      if (level.available < pull) available.classList.add("warn");
+      copy.appendChild(title);
+      if (summary.textContent) copy.appendChild(summary);
+      copy.appendChild(available);
+      main.appendChild(copy);
+      row.appendChild(main);
+
+      const actions = document.createElement("div");
+      actions.className = "level-actions";
+      const label = levelLabel(level, index);
+      const addAction = (attr, text, aria) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "level-action";
+        button.setAttribute(attr, level.id);
+        button.setAttribute("aria-label", t(aria, { name: label }));
+        button.textContent = text;
+        button.disabled = levelSaving;
+        actions.appendChild(button);
+        return button;
+      };
+      const up = addAction("data-level-up", "↑", "levelMoveUpAria");
+      up.disabled = levelSaving || index === 0;
+      const down = addAction("data-level-down", "↓", "levelMoveDownAria");
+      down.disabled = levelSaving || index === answerLevels.length - 1;
+      addAction("data-level-delete", "×", "levelDeleteAria");
+      row.appendChild(actions);
+      list.appendChild(row);
+    });
+
+    $("levelEmpty").classList.toggle("hidden", answerLevels.length > 0);
+    $("levelListCount").textContent = t("levelListCount", {
+      n: answerLevels.length,
+      max: MAX_LEVELS,
+    });
+    $("addLevel").classList.toggle("hidden", answerLevels.length >= MAX_LEVELS);
+    $("addLevel").disabled = levelSaving;
+    $("levelMaxHint").classList.toggle("hidden", answerLevels.length < MAX_LEVELS);
+    $("levelMaxHint").textContent = t("levelMaxHint", { n: MAX_LEVELS });
+    renderLevelUndo();
   }
 
   function renderAnswerPage() {
@@ -4420,60 +6187,256 @@
     });
     $("answerPaneScope").classList.toggle("hidden", answerTab !== "scope");
     $("answerPaneRules").classList.toggle("hidden", answerTab !== "rules");
-    document.querySelectorAll("#scopeMode [data-scope-mode]").forEach((button) => {
-      button.setAttribute("aria-pressed", String(button.dataset.scopeMode === answerScopeMode));
-    });
-
-    const custom = answerScopeMode === "custom";
-    $("scopeFollow").classList.toggle("hidden", custom);
-    $("scopeCustom").classList.toggle("hidden", !custom);
-
-    const parts = generationScopeParts();
-    $("followMain").textContent = parts.main;
-    $("followSub").textContent = parts.detail;
-    $("followAvailable").textContent = scopeLoaded
-      ? t("scopeAvailableCount", { n: answerScopeAvailable })
-      : "";
-
-    if (custom) {
-      if (!customScope && answerScope) customScope = Object.assign({}, answerScope);
-      if (!customScope || typeof customScope !== "object") customScope = {};
-      renderCustomScopeControls();
-      ensureScopeOptions();
-      $("scopeEmptyTitle").textContent = t("scopeEmptyTitle");
-      $("scopeEmptyText").textContent = t("scopeEmptyText");
-      $("scopeAvailable").textContent = scopeAvailableText(customScope);
-      $("scopeEmpty").classList.toggle("hidden", !scopeIsEmpty(customScope));
-    }
+    $("answerSaveBar").classList.toggle("hidden", answerTab !== "rules");
+    if (answerTab === "scope") renderAnswerLevels();
     renderSettingsChrome();
   }
 
-  function setAnswerScopeMode(mode) {
-    const next = mode === "custom" ? "custom" : "bound";
-    if (next === answerScopeMode) return;
-    answerScopeMode = next;
-    answerDirty = true;
-    $("settingsError").textContent = "";
-    if (next === "custom") {
-      if (!customScope && answerScope) customScope = Object.assign({}, answerScope);
-      if (!customScope || typeof customScope !== "object") customScope = {};
+  function applyAnswerLevels(rawLevels) {
+    answerLevels = (Array.isArray(rawLevels) ? rawLevels : [])
+      .map((item) => {
+        const scope = normalizeAnswerScope(item && item.scope);
+        if (!scope) return null;
+        return {
+          id: String(item.id || ""),
+          name: String(item.name || "").trim(),
+          scope,
+          available: Math.max(0, Number(item.available || 0)),
+        };
+      })
+      .filter(Boolean)
+      .slice(0, MAX_LEVELS);
+    answerScope = answerLevels.length ? Object.assign({}, answerLevels[0].scope) : null;
+    answerScopeMode = answerLevels.length ? "custom" : "bound";
+    answerScopeAvailable = answerLevels.reduce(
+      (max, level) => Math.max(max, level.available),
+      0,
+    );
+    scopeLoaded = true;
+    if ($("answerTabs")) renderAnswerPage();
+    renderHome();
+  }
+
+  function renderLevelEditor() {
+    if (!$("levelEditorPage")) return;
+    if (!customScope || typeof customScope !== "object") customScope = {};
+    $("levelEditorTitle").textContent = t(
+      levelEditingId ? "levelEditTitle" : "levelAddTitle",
+    );
+    if (document.activeElement !== $("levelName")) {
+      $("levelName").value = levelNameDraft;
     }
+    renderCustomScopeControls();
+    ensureScopeOptions();
+    $("levelEditorAvailable").textContent = scopeAvailableText(customScope);
+    $("levelEditorEmpty").classList.toggle("hidden", !scopeIsEmpty(customScope));
+    $("saveLevel").disabled = levelSaving;
+  }
+
+  function openLevelEditor(id) {
+    const level = id ? answerLevels.find((item) => item.id === id) : null;
+    if (id && !level) return false;
+    levelEditingId = level ? level.id : null;
+    levelNameDraft = level ? level.name : "";
+    customScope = level ? Object.assign({}, level.scope) : {};
+    answerScopeMode = "custom";
+    $("levelName").value = levelNameDraft;
+    $("levelEditorError").textContent = "";
     resetScopeOptions();
-    renderAnswerPage();
+    showGenPage("level");
+    ensureScopeOptions();
+    renderLevelEditor();
+    return true;
+  }
+
+  async function postLevels(levels, successKey) {
+    if (levelSaving) return false;
+    if (!challengeConfig) {
+      $("levelError").textContent = t("settingsLoading");
+      try {
+        await loadAdminSession();
+      } catch (error) {
+        $("levelError").textContent = errorText(error);
+        return false;
+      }
+      if (!challengeConfig) return false;
+    }
+    levelSaving = true;
+    // Any new list operation supersedes a pending undo snapshot; restoring it
+    // later would also undo the newer change.
+    if (levelUndo) {
+      levelUndo = null;
+      if (levelUndoTimer) {
+        clearTimeout(levelUndoTimer);
+        levelUndoTimer = 0;
+      }
+      renderLevelUndo();
+    }
+    $("levelError").textContent = "";
+    if ($("saveLevel")) $("saveLevel").disabled = true;
+    renderAnswerLevels();
+    const config = readSettingsConfig();
+    try {
+      const data = await api("/api/quiz/admin/challenge-config", {
+        method: "POST",
+        admin: true,
+        body: {
+          config,
+          answerScopes: levels.map((level) => {
+            const payload = {
+              name: String(level.name || ""),
+              scope: scopeToCanonical(level.scope),
+            };
+            if (level.id) payload.id = level.id;
+            return payload;
+          }),
+        },
+      });
+      challengeConfig = normalizeConfig(data.config || config);
+      applyAnswerLevels(data.answerScopes || []);
+      syncState = data.syncState || syncState;
+      answerDirty = false;
+      renderSync();
+      renderSettings();
+      renderHome();
+      renderAnswerPage();
+      if (successKey) scheduleLevelMessage(t(successKey));
+      return true;
+    } catch (error) {
+      $("levelError").textContent = errorText(error);
+      return false;
+    } finally {
+      levelSaving = false;
+      if ($("saveLevel")) $("saveLevel").disabled = false;
+      // The success path re-renders while levelSaving is still true, so render
+      // once more to re-enable every row action.
+      renderAnswerLevels();
+    }
+  }
+
+  async function saveLevelDraft() {
+    if (levelSaving) return;
+    const name = String($("levelName").value || "").trim();
+    if (Array.from(name).length > LEVEL_NAME_MAX) {
+      $("levelEditorError").textContent = t("levelNameTooLong");
+      return;
+    }
+    const scopeError = answerScopeErrorMessage();
+    if (scopeError) {
+      $("levelEditorError").textContent = scopeError;
+      focusActiveScopeStep();
+      return;
+    }
+    const scope = normalizeAnswerScope(customScope);
+    if (!scope) {
+      $("levelEditorError").textContent = t("err_SCOPE_INCOMPLETE");
+      return;
+    }
+    const signature = levelScopeSignature(scope);
+    const duplicate = answerLevels.some((level) =>
+      level.id !== levelEditingId && levelScopeSignature(level.scope) === signature);
+    if (duplicate) {
+      $("levelEditorError").textContent = t("levelDuplicate");
+      return;
+    }
+    $("levelEditorError").textContent = "";
+    let next;
+    if (levelEditingId) {
+      next = answerLevels.map((level) => level.id === levelEditingId
+        ? Object.assign({}, level, { name, scope })
+        : level);
+    } else {
+      next = answerLevels.concat([{ id: "", name, scope, available: 0 }]);
+    }
+    const saved = await postLevels(next, "levelSaved");
+    if (!saved) {
+      $("levelEditorError").textContent = $("levelError").textContent;
+      $("levelError").textContent = "";
+      return;
+    }
+    levelEditingId = null;
+    levelNameDraft = "";
+    customScope = null;
+    resetScopeOptions();
+    showGenPage("answer");
+  }
+
+  async function deleteLevel(id) {
+    const index = answerLevels.findIndex((level) => level.id === id);
+    if (index < 0) return;
+    const previous = answerLevels.slice();
+    const name = levelLabel(answerLevels[index], index);
+    const next = answerLevels.filter((level) => level.id !== id);
+    const saved = await postLevels(next, "");
+    if (!saved) return;
+    levelUndo = { levels: previous, name };
+    if (levelUndoTimer) clearTimeout(levelUndoTimer);
+    levelUndoTimer = setTimeout(() => {
+      levelUndoTimer = 0;
+      levelUndo = null;
+      renderLevelUndo();
+    }, 8000);
+    renderLevelUndo();
+  }
+
+  async function undoDeleteLevel() {
+    if (!levelUndo || levelSaving) return;
+    const restore = levelUndo.levels;
+    levelUndo = null;
+    if (levelUndoTimer) {
+      clearTimeout(levelUndoTimer);
+      levelUndoTimer = 0;
+    }
+    renderLevelUndo();
+    await postLevels(restore, "levelSaved");
+  }
+
+  async function moveLevel(id, delta) {
+    const index = answerLevels.findIndex((level) => level.id === id);
+    const target = index + delta;
+    if (index < 0 || target < 0 || target >= answerLevels.length) return;
+    const next = answerLevels.slice();
+    const moved = next.splice(index, 1)[0];
+    next.splice(target, 0, moved);
+    await postLevels(next, "levelOrderSaved");
   }
 
   function setAnswerTab(tab) {
     answerTab = tab === "rules" ? "rules" : "scope";
+    $("levelError").textContent = "";
+    $("levelState").textContent = "";
     renderAnswerPage();
   }
 
   // ---- AI 提示词（自动生成；家长编辑后由徽标提示）----
 
+  function joinSubjectLabels(names) {
+    if (!names.length) return "";
+    if (names.length === 1) return names[0];
+    if (lang === "zh") return names.join("、");
+    const conjunction = {
+      en: " and ",
+      ru: " и ",
+      uk: " й ",
+      kk: " және ",
+    }[lang] || " and ";
+    if (names.length === 2) return names[0] + conjunction + names[1];
+    return names.slice(0, -1).join(", ") +
+      (lang === "en" ? ", and " : " " + conjunction.trim() + " ") +
+      names[names.length - 1];
+  }
+
   function generationSubjectText() {
-    if (genSubjectValue === "all") return t("subjectAllPrompt");
+    if (genSubjectValue === "all") {
+      return joinSubjectLabels(
+        subjectIdsForGrade(genGradeValue)
+          .filter((id) => id !== SUBJECT_ALL)
+          .map((id) => subjectLabel(id)),
+      );
+    }
     return t("genSubjectWithBook", {
-      subject: t(SUBJECT_LABEL_KEYS[genSubjectValue]),
-      book: t(TEXTBOOK_LABEL_KEYS[genTextbookId]),
+      subject: subjectLabel(genSubjectValue),
+      book: textbookLabel(genTextbookId),
     });
   }
 
@@ -4481,14 +6444,29 @@
     const grade = gradeText(genGradeValue, genSemesterValue);
     const requirement = normalizeRequirement(genRequirementValue);
     const canonicalLabel = generationTopicText();
+    const resolved = requirement ? canonicalFromRequirement(requirement) : null;
+    const resolvedBook = resolved && resolved.scope === "unit"
+      ? unitBook(genGradeValue, genSemesterValue, genSubjectValue, genTextbookId)
+      : null;
+    const resolvedUnit = resolvedBook && resolved.scope === "unit"
+      ? resolvedBook.units.find((unit) => unit.no === resolved.unit)
+      : null;
+    const namesUnitOnly = resolvedUnit &&
+      genScopeValue === "unit" &&
+      genUnitValue === resolved.unit &&
+      requirementOnlyNamesUnit(requirement, resolvedUnit);
+    const invalidUnit = outOfRangeRequirementUnit(requirement);
     let scope;
-    if (requirement && requirement !== canonicalLabel) {
+    // A unit the book does not have must not leak into the prompt as if it
+    // were the active scope; the requirement hint explains the real range.
+    if (invalidUnit === null && requirement && requirement !== canonicalLabel && !namesUnitOnly) {
       // 自由要求写进提示词；规范归类由文字里的明确标记决定。
       scope = t("promptScopeManual", { topic: requirement });
     } else if (genScopeValue === "unit") {
       scope = genSubjectValue === "all"
         ? t("promptScopeUnitAll")
-        : t("promptScopeUnit", { unit: genUnitValue });
+        : (generationUnitPromptScope() ||
+          t("promptScopeUnit", { unit: genUnitValue }));
     } else if (genSubjectValue === "all" && genScopeValue === "review") {
       scope = t("promptScopeMixed");
     } else {
@@ -4561,6 +6539,11 @@
       if ($("genRequirement")) $("genRequirement").focus();
       return;
     }
+    if (outOfRangeRequirementUnit(genRequirementValue) !== null) {
+      $("rangeError").textContent = requirementInvalidUnitText();
+      if ($("genRequirement")) $("genRequirement").focus();
+      return;
+    }
     if (!readGenerationPrefs()) {
       $("rangeError").textContent = t("err_INVALID_CONFIG");
       return;
@@ -4601,7 +6584,8 @@
       ["", "easy", "medium", "hard"].includes(payload.difficulty);
   }
 
-  async function startGeneration() {
+  async function startGeneration(options) {
+    const skipScopePrompt = Boolean(options && options.skipScopePrompt);
     if (genState.phase === "running" || genState.phase === "adding") return;
     genRequirementValue = normalizeRequirement(
       $("genRequirement") ? $("genRequirement").value : genRequirementValue,
@@ -4611,6 +6595,14 @@
       genState = idleGeneration();
       genState.phase = "failed";
       genState.errorCode = "REQUIREMENT_REQUIRED";
+      renderGenerate();
+      return;
+    }
+    // Leaving the config page without saving must not skip the unit check.
+    if (outOfRangeRequirementUnit(genRequirementValue) !== null) {
+      genState = idleGeneration();
+      genState.phase = "failed";
+      genState.errorCode = "REQUIREMENT_INVALID_UNIT";
       renderGenerate();
       return;
     }
@@ -4633,14 +6625,22 @@
       renderProviderMessages();
       return;
     }
+    // The status action and this fallback share the same alignment helper.
+    // Only prompt when the TV scope is short and the two scopes really differ;
+    // once the parent aligns or accepts the current range, never ask again.
+    if (!skipScopePrompt &&
+        answerScopeNeedsQuestions() &&
+        generationScopeMismatch() &&
+        canAlignGenerationToAnswerScope() &&
+        scopeMismatchAckKey !== generationScopeSignature()) {
+      if (openScopeMismatchDialog()) return;
+    }
     const prompt = $("genPrompt").value.trim() || composeGenerationPrompt();
     const payload = {
       targetCount,
       options: genOptionsValue,
       language: lang,
-      subject: genSubjectValue === "all"
-        ? t("subjectAll")
-        : t(SUBJECT_LABEL_KEYS[genSubjectValue]),
+      subject: subjectLabel(genSubjectValue),
       grade: gradeText(genGradeValue, genSemesterValue),
       prompt,
       difficulty: genDifficultyValue,
@@ -4914,6 +6914,7 @@
       renderMaintenance();
       renderSettingsAttention();
       updateToggleState();
+      renderGateOccupation();
       if (adminToken && previous && previous.sessionState !== publicState.sessionState) {
         loadAdminSession().catch((error) => {
           if (error.code !== "ADMIN_EXPIRED" && error.code !== "ADMIN_REQUIRED") {
@@ -4941,7 +6942,14 @@
       $("pin").value = "";
       await enterEditor();
     } catch (error) {
-      $("gateError").textContent = errorText(error);
+      if (error.code === "PARENT_IN_USE") {
+        // The first phone logged in between the last status poll and this
+        // submit; show the same notice instead of a misleading PIN error.
+        if (publicState) publicState.parentInUse = true;
+        renderGateOccupation();
+      } else {
+        $("gateError").textContent = errorText(error);
+      }
     } finally {
       $("pinBtn").disabled = false;
     }
@@ -4981,6 +6989,9 @@
         .catch(() => { /* the token may already be invalid */ });
     }
     clearAuth();
+    // This phone released the slot; do not show the "another parent" notice
+    // while the next status poll catches up with the revoked token.
+    if (publicState) publicState.parentInUse = false;
     showPinGate();
   }
 
@@ -5028,37 +7039,37 @@
     return Math.min(max, Math.max(min, value));
   }
 
+  function currentRoundWheelValue() {
+    const fallback = Number(currentConfig().pullCount || DEFAULT_CONFIG.pullCount);
+    if (!$("roundWheel") || !roundWheelItems.length) return fallback;
+    const index = Math.round($("roundWheel").scrollTop / ROUND_ITEM_HEIGHT);
+    const item = roundWheelItems[Math.min(roundWheelItems.length - 1, Math.max(0, index))];
+    return item ? Number(item.textContent) : fallback;
+  }
+
   function readSettingsConfig() {
     const base = currentConfig();
-    const pull = Number(base.pullCount || 5);
-    const min = Math.min(pull, Math.max(1, Number(base.minCorrectCount || 1)));
-    const minutes = REWARD_VALUES.includes(rewardMinutesValue) ? rewardMinutesValue : 2;
+    const pull = currentRoundWheelValue();
+    const scoring = readScoringPatch();
     return Object.assign({}, base, {
       defaultTimeLimitSec: configSeconds(base),
       pullCount: pull,
-      minCorrectCount: min,
-      minutesPerPoint: minutes,
-      minutesPerQuestion: minutes,
+      // Legacy single-rate fields stay for cloud compatibility; local v5
+      // rounds settle from the difficulty table below.
+      minutesPerPoint: Number(base.minutesPerPoint || DEFAULT_CONFIG.minutesPerPoint),
+      minutesPerQuestion: Number(base.minutesPerQuestion || DEFAULT_CONFIG.minutesPerQuestion),
       maxEarnedMinutes: numberField("maxEarned", 1, 180, Number(base.maxEarnedMinutes || 60)),
-      answerDisplaySec: numberField("answerDisplay", 5, 120, Number(base.answerDisplaySec || 30)),
+      // No longer parent-editable; keep the stored value for protocol compatibility.
+      answerDisplaySec: Number(base.answerDisplaySec || DEFAULT_CONFIG.answerDisplaySec),
       shuffleOptions: $("shuffle").checked,
       pointsPerQuestion: 1,
-    });
+    }, scoring);
   }
 
-  // 答题范围和答题规则同一次保存、一次同步；本地状态以刚提交的范围为准。
+  // Levels save themselves immediately; the Save button only persists the
+  // rules that apply to every level.
   async function saveSettings() {
     if (settingsSaving) return;
-    const scopeError = answerScopeErrorMessage();
-    if (scopeError) {
-      $("settingsError").textContent = scopeError;
-      if (answerTab !== "scope") {
-        answerTab = "scope";
-        renderAnswerPage();
-      }
-      focusActiveScopeStep();
-      return;
-    }
     if (!challengeConfig) {
       // 首次点保存时配置可能还在加载；等加载完自动继续，避免“要点两次”。
       $("settingsError").textContent = t("settingsLoading");
@@ -5067,16 +7078,7 @@
         .catch((error) => { $("settingsError").textContent = errorText(error); });
       return;
     }
-    const answer = readAnswerConfig();
-    if (answer === undefined) {
-      $("settingsError").textContent = t("err_INVALID_SCOPE");
-      return;
-    }
     const config = readSettingsConfig();
-    if (config.maxEarnedMinutes < config.minutesPerQuestion) {
-      $("settingsError").textContent = t("err_INVALID_CONFIG");
-      return;
-    }
     settingsSaving = true;
     setButtonSaving($("saveAnswer"), true);
     $("settingsError").textContent = "";
@@ -5084,28 +7086,10 @@
       const data = await api("/api/quiz/admin/challenge-config", {
         method: "POST",
         admin: true,
-        body: {
-          config,
-          scopeMode: answer.scopeMode,
-          scope: answer.scope,
-        },
+        body: { config },
       });
       challengeConfig = normalizeConfig(data.config || config);
-      answerScopeMode = data.answerScopeMode === "custom" ? "custom" : "bound";
-      if (answerScopeMode === "custom") {
-        const saved = normalizeAnswerScope(data.answerScope);
-        if (saved) {
-          answerScope = saved;
-          customScope = Object.assign({}, saved);
-        }
-      } else {
-        answerScope = null;
-        customScope = null;
-      }
-      if (typeof data.answerScopeAvailable === "number") {
-        answerScopeAvailable = data.answerScopeAvailable;
-      }
-      scopeLoaded = true;
+      if (Array.isArray(data.answerScopes)) applyAnswerLevels(data.answerScopes);
       answerDirty = false;
       syncState = data.syncState || syncState;
       renderSync();
@@ -5191,23 +7175,30 @@
     $("testProvider").addEventListener("click", testProviderConnection);
     bindReliableTap($("saveRange"), saveRange);
     $("openGenConfig").addEventListener("click", openGenConfigPage);
-    $("openAnswerConfig").addEventListener("click", (event) => {
-      if (event.target.closest("#homeAnswerWarning")) {
-        const generate = $("generate");
-        generate.scrollIntoView({ behavior: "smooth", block: "center" });
-        generate.focus({ preventScroll: true });
-        return;
-      }
-      openAnswerConfigPage();
-    });
+    $("openAnswerConfig").addEventListener("click", openAnswerConfigPage);
     $("backFromGen").addEventListener("click", backToGenerateHome);
     $("backFromAnswer").addEventListener("click", backFromAnswerPage);
     $("backFromQuestions").addEventListener("click", backToGenerateHome);
     $("openQuestions").addEventListener("click", openQuestionsPage);
     $("addSelected").addEventListener("click", addSelectedQuestions);
     bindReliableTap($("saveAnswer"), saveSettings);
-    $("generate").addEventListener("click", startGeneration);
+    $("generate").addEventListener("click", () => startGeneration());
     $("cancelGenerate").addEventListener("click", cancelGeneration);
+    $("alignGenToAnswer").addEventListener("click", () => {
+      if (!alignGenerationToAnswerScope()) return;
+      startGeneration({ skipScopePrompt: true });
+    });
+    $("editGenScope").addEventListener("click", openGenConfigPage);
+    $("scopeMismatchAlign").addEventListener("click", () => {
+      closeModal();
+      if (!alignGenerationToAnswerScope()) return;
+      startGeneration({ skipScopePrompt: true });
+    });
+    $("scopeMismatchKeep").addEventListener("click", () => {
+      scopeMismatchAckKey = generationScopeSignature();
+      closeModal();
+      startGeneration({ skipScopePrompt: true });
+    });
 
     $("selectAll").addEventListener("click", () => {
       const selectable = genState.batch
@@ -5228,8 +7219,10 @@
     });
     $("genGradeChips").addEventListener("click", (event) => {
       const chip = event.target.closest("[data-grade]");
-      if (!chip) return;
-      genGradeValue = Number(chip.dataset.grade);
+      if (!chip || chip.disabled) return;
+      const grade = Number(chip.dataset.grade);
+      if (!gradeNos().includes(grade) || cloudJuniorBlocked(grade)) return;
+      genGradeValue = grade;
       genPromptDirty = false;
       renderGenConfig(true);
       saveGeneratePrefs();
@@ -5253,6 +7246,7 @@
     $("genSubjects").addEventListener("click", (event) => {
       const chip = event.target.closest("[data-subject]");
       if (!chip) return;
+      if (!subjectIdsForGrade(genGradeValue).includes(chip.dataset.subject)) return;
       genSubjectValue = chip.dataset.subject;
       keepGenerationTextbook();
       genPromptDirty = false;
@@ -5299,54 +7293,93 @@
       if (!button) return;
       setAnswerTab(button.dataset.answerTab);
     });
-    $("scopeMode").addEventListener("click", (event) => {
-      const button = event.target.closest("[data-scope-mode]");
-      if (!button) return;
-      setAnswerScopeMode(button.dataset.scopeMode);
+    $("addLevel").addEventListener("click", () => openLevelEditor(null));
+    $("backFromLevel").addEventListener("click", backFromLevelEditor);
+    $("levelList").addEventListener("click", (event) => {
+      const edit = event.target.closest("[data-level-edit]");
+      if (edit) {
+        openLevelEditor(edit.dataset.levelEdit);
+        return;
+      }
+      const up = event.target.closest("[data-level-up]");
+      if (up && !up.disabled) {
+        moveLevel(up.dataset.levelUp, -1);
+        return;
+      }
+      const down = event.target.closest("[data-level-down]");
+      if (down && !down.disabled) {
+        moveLevel(down.dataset.levelDown, 1);
+        return;
+      }
+      const remove = event.target.closest("[data-level-delete]");
+      if (remove && !remove.disabled) deleteLevel(remove.dataset.levelDelete);
     });
-    $("scopeEmptyGen").addEventListener("click", () => {
-      showGenPage("home");
-      renderHome();
+    $("levelUndoButton").addEventListener("click", undoDeleteLevel);
+    $("levelName").addEventListener("input", () => {
+      levelNameDraft = $("levelName").value;
     });
-    $("scopeEmptyConfig").addEventListener("click", openGenConfigPage);
-    $("scopeCustom").addEventListener("click", (event) => {
+    bindReliableTap($("saveLevel"), saveLevelDraft);
+    $("levelEditorPage").addEventListener("click", (event) => {
       const chip = event.target.closest("[data-scope-step]");
       if (!chip) return;
       selectScopeValue(chip.dataset.scopeStep, chip.dataset.scopeValue);
     });
+    $("levelEmptyGen").addEventListener("click", () => {
+      levelEditingId = null;
+      customScope = null;
+      resetScopeOptions();
+      backToGenerateHome();
+    });
+    $("levelEmptyConfig").addEventListener("click", openGenConfigPage);
 
-    $("roundCounts").addEventListener("click", (event) => {
-      const chip = event.target.closest("[data-pull]");
-      if (!chip) return;
-      const pull = Number(chip.dataset.pull);
-      const config = currentConfig();
-      updateRuleConfig({
-        pullCount: pull,
-        minCorrectCount: Math.min(Number(config.minCorrectCount || 1), pull),
-      });
+    $("roundWheel").addEventListener("scroll", () => {
+      const wheel = $("roundWheel");
+      const index = Math.round(wheel.scrollTop / ROUND_ITEM_HEIGHT);
+      if (Number(wheel.dataset.index) !== index) paintRoundWheel(index);
+      if (roundWheelScrollTimer) clearTimeout(roundWheelScrollTimer);
+      roundWheelScrollTimer = setTimeout(settleRoundWheel, 120);
+    }, { passive: true });
+    $("roundWheel").addEventListener("keydown", (event) => {
+      const current = Number($("roundWheel").dataset.index || 0);
+      const last = Math.max(0, roundWheelItems.length - 1);
+      let next = null;
+      if (event.key === "ArrowDown") next = Math.min(last, current + 1);
+      else if (event.key === "ArrowUp") next = Math.max(0, current - 1);
+      else if (event.key === "Home") next = 0;
+      else if (event.key === "End") next = last;
+      if (next === null) return;
+      event.preventDefault();
+      commitRoundWheel(next);
+    });
+    $("roundWheelTrack").addEventListener("click", (event) => {
+      const item = event.target.closest(".round-wheel-item");
+      if (!item) return;
+      const index = Number(item.dataset.index);
+      if (!Number.isInteger(index)) return;
+      $("roundWheel").focus({ preventScroll: true });
+      commitRoundWheel(index);
     });
     $("timeCounts").addEventListener("click", (event) => {
       const chip = event.target.closest("[data-seconds]");
       if (!chip) return;
       updateRuleConfig({ defaultTimeLimitSec: Number(chip.dataset.seconds) });
     });
-    $("rewardCounts").addEventListener("click", (event) => {
-      const chip = event.target.closest("[data-reward]");
+    for (const id of [
+      "easyReward", "mediumReward", "hardReward",
+      "easyPenalty", "mediumPenalty", "hardPenalty",
+    ]) {
+      $(id).addEventListener("input", () => updateRuleConfig(readScoringPatch()));
+    }
+    $("minUnlock").addEventListener("input", () => {
+      updateRuleConfig({ minUnlockMinutes: numberField("minUnlock", 0, 180, 0) });
+    });
+    $("unlockCounts").addEventListener("click", (event) => {
+      const chip = event.target.closest("[data-unlock]");
       if (!chip) return;
-      rewardMinutesValue = Number(chip.dataset.reward);
-      updateRuleConfig({
-        minutesPerQuestion: rewardMinutesValue,
-        minutesPerPoint: rewardMinutesValue,
-      });
+      $("minUnlock").value = chip.dataset.unlock;
+      updateRuleConfig({ minUnlockMinutes: Number(chip.dataset.unlock) });
     });
-    $("minCounts").addEventListener("click", (event) => {
-      const chip = event.target.closest("[data-min]");
-      if (!chip) return;
-      updateRuleConfig({ minCorrectCount: Number(chip.dataset.min) });
-    });
-    $("answerDisplay").addEventListener("change", () => {
-      updateRuleConfig({ answerDisplaySec: numberField("answerDisplay", 5, 120, 30) });
-    });
+    $("resetScoring").addEventListener("click", resetScoringDefaults);
     $("maxEarned").addEventListener("change", () => {
       updateRuleConfig({ maxEarnedMinutes: numberField("maxEarned", 1, 180, 60) });
     });

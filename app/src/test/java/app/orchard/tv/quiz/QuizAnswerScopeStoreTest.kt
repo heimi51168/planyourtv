@@ -34,9 +34,12 @@ class QuizAnswerScopeStoreTest {
 
     @Test
     fun boundAllSubjectKeepsTheOtherFieldsAsWildcards() {
-        val scope = QuizAnswerScopeStore.loadOrInitialize()
+        // The legacy single scope migrates into the ordered level list.
+        val levels = QuizAnswerScopeStore.levels()
+        assertEquals(1, levels.size)
+        val scope = levels.single().scope
         assertNotNull(scope)
-        assertEquals(QuizAnswerScope.SUBJECT_ALL, scope!!.subject)
+        assertEquals(QuizAnswerScope.SUBJECT_ALL, scope.subject)
         assertEquals(QuizAnswerScope.TEXTBOOK_ALL, scope.textbook)
         assertEquals(4, scope.grade)
         assertEquals(1, scope.semester)

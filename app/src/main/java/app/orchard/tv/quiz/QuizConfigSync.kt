@@ -4,6 +4,7 @@ import android.util.Log
 import app.orchard.tv.policy.PolicyCloud
 import com.planyourtv.policy.PolicyRuntime
 import com.planyourtv.policy.quiz.QuizConfig
+import com.planyourtv.policy.quiz.QuizLevel
 import com.planyourtv.policy.quiz.QuizPendingKind
 import com.planyourtv.policy.quiz.QuizSessionCodec
 import com.planyourtv.policy.quiz.QuizSessionStatus
@@ -231,9 +232,22 @@ object QuizConfigSync {
     ): ApplyResult {
         val local = QuizSessionStore.loadChallengeConfig() ?: QuizConfig()
         val next = remote.toQuizConfig(local)
-        val shouldApplyScope = applyScope && remote.scopeProvided
+        // The cloud still speaks one scope. A concrete remote scope replaces the
+        // local level list with that single level; an explicit "bound" (null)
+        // leaves the parent-designed levels alone, because the new TV surfaces
+        // never fall back to the generation settings.
+        val shouldApplyScope = applyScope && remote.scopeProvided && remote.scope != null
         val previousScope = if (shouldApplyScope) QuizAnswerScopeStore.currentSignature() else null
-        if (shouldApplyScope && !QuizSessionStore.saveAnswerScope(remote.scope)) {
+        if (shouldApplyScope && !QuizAnswerScopeStore.save(
+                listOf(
+                    QuizLevel(
+                        id = "cloud-1",
+                        name = "",
+                        scope = requireNotNull(remote.scope),
+                    ),
+                ),
+            )
+        ) {
             return ApplyResult.Rejected("STORAGE")
         }
         if (!QuizSessionStore.saveChallengeConfig(next)) return ApplyResult.Rejected("STORAGE")
@@ -537,7 +551,9 @@ object QuizConfigSync {
     fun reportPayload(): JSONObject {
         val config = QuizSessionStore.loadChallengeConfig() ?: QuizConfig()
         val source = QuizSessionStore.loadSourceConfig()
-        val answerScope = QuizAnswerScopeStore.loadOrInitialize()
+        // The backend model has one scope; report the first level so a bound TV
+        // keeps a meaningful scope. Local challenges always use the full list.
+        val answerScope = QuizAnswerScopeStore.defaultScope()
         return JSONObject()
             .put("enabled", QuizSessionStore.enabled())
             // Binding alone decides the source; the backend normalizes this anyway.
@@ -553,7 +569,9 @@ object QuizConfigSync {
             // 不能因为缺字段让云端保留一个电视已经不再使用的范围。
             .put("scopeProvided", true)
             .put("scope", answerScope?.encode() ?: JSONObject.NULL)
-            .put("sessionConfig", QuizSessionCodec.encodeConfig(config))
+            // The cloud contract is still the v4 single-rate shape. Difficulty
+            // scoring stays local until the backend owns the same fields.
+            .put("sessionConfig", QuizSessionCodec.encodeLegacyConfig(config))
             .put("localVersion", source.localVersion)
     }
 

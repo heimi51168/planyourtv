@@ -2,6 +2,7 @@ package app.orchard.tv.quiz
 
 import com.planyourtv.policy.TvStore
 import com.planyourtv.policy.quiz.QuizAnswerScope
+import com.planyourtv.policy.quiz.QuizCurriculum
 import com.planyourtv.policy.quiz.QuizSessionCodec
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -136,22 +137,33 @@ class QuizSeedBankTest {
     fun shippedAssetImportsCleanly() {
         val context = RuntimeEnvironment.getApplication()
 
-        assertEquals(120, QuizSeedBank.install(context))
-        assertEquals(120, QuizQuestionCache.availableCount(nowMs = now))
+        assertEquals(4_900, QuizSeedBank.install(context))
+        assertEquals(4_900, QuizQuestionCache.availableCount(nowMs = now))
         assertEquals(0, QuizSeedBank.install(context))
 
-        val defaultScope = QuizAnswerScope.create(
-            grade = 4,
-            semester = 1,
-            subject = "MATH",
-            textbook = "RENJIAO",
-            scopeType = "MIDTERM",
-            unitNo = null,
-            difficulty = null,
-        )
-        assertEquals(
-            5,
-            QuizQuestionCache.availableCount(nowMs = now, answerScope = defaultScope),
-        )
+        val curriculum = requireNotNull(QuizCurriculum.current())
+        var combinations = 0
+        for (grade in 1..9) {
+            for (subject in curriculum.subjectIds()) {
+                if (subject == QuizAnswerScope.SUBJECT_ALL) continue
+                val textbook = curriculum.defaultTextbook(grade, subject) ?: continue
+                val scope = QuizAnswerScope.create(
+                    grade = grade,
+                    semester = 1,
+                    subject = subject,
+                    textbook = textbook,
+                    scopeType = "MIDTERM",
+                    unitNo = null,
+                    difficulty = null,
+                )
+                assertEquals(
+                    "$grade/$subject/$textbook",
+                    100,
+                    QuizQuestionCache.availableCount(nowMs = now, answerScope = scope),
+                )
+                combinations++
+            }
+        }
+        assertEquals(49, combinations)
     }
 }

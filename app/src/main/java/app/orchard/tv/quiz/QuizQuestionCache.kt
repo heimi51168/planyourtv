@@ -22,11 +22,17 @@ import java.util.UUID
  */
 object QuizQuestionCache {
     const val LOCAL_SCOPE = "local"
-    const val BANK_CAPACITY = 300
+
+    /**
+     * Leaves room for the 4,900 bundled questions plus user-generated batches.
+     * The seed import is one transaction; the web lists the bank with paging,
+     * so the larger bound does not turn into a larger page.
+     */
+    const val BANK_CAPACITY = 6_000
 
     private const val TABLE = "quiz_question_cache"
     private const val DB_NAME = "quiz_question_cache.db"
-    private const val DB_VERSION = 2
+    private const val DB_VERSION = 3
 
     private const val STATE_AVAILABLE = "AVAILABLE"
     private const val STATE_RESERVED = "RESERVED"
@@ -181,6 +187,7 @@ object QuizQuestionCache {
                         put("source_kind", SOURCE_LOCAL)
                         put("source_ref", sourceRef)
                         put("scope_key", LOCAL_SCOPE)
+                        putScopeFields(stored)
                         put("fingerprint", fingerprint(stored))
                         put("state", STATE_AVAILABLE)
                         putNull("reserved_by")
@@ -244,6 +251,7 @@ object QuizQuestionCache {
                     put("source_kind", SOURCE_CLOUD)
                     put("source_ref", sourceRef)
                     put("scope_key", scopeKey)
+                    putScopeFields(stored)
                     put("fingerprint", fingerprint(stored))
                     put("state", STATE_AVAILABLE)
                     putNull("reserved_by")
@@ -321,26 +329,32 @@ object QuizQuestionCache {
         db.beginTransaction()
         try {
             expire(db, scopeKey, nowMs)
+            val (scopeWhere, scopeArgs) = answerScopeWhere(answerScope)
+            val baseArgs = arrayOf(scopeKey, STATE_AVAILABLE, nowMs.toString()) + scopeArgs
+            val total = db.rawQuery(
+                "SELECT COUNT(*) FROM $TABLE WHERE scope_key = ? AND state = ? " +
+                    "AND (expires_at IS NULL OR expires_at > ?)$scopeWhere",
+                baseArgs,
+            ).use { if (it.moveToFirst()) it.getInt(0) else 0 }
+            if (total < minRequired) {
+                db.setTransactionSuccessful()
+                return emptyList()
+            }
             val candidates = mutableListOf<CachedQuestion>()
             db.rawQuery(
                 "SELECT cache_id, question_json, source_kind, source_ref, scope_key, " +
                     "received_at, expires_at, state, last_result, wrong_count, answered_at, " +
                     "last_timed_out, last_selected_index FROM $TABLE " +
                     "WHERE scope_key = ? AND state = ? " +
-                    "AND (expires_at IS NULL OR expires_at > ?) " +
-                    "ORDER BY received_at ASC, rowid ASC",
-                arrayOf(scopeKey, STATE_AVAILABLE, nowMs.toString()),
+                    "AND (expires_at IS NULL OR expires_at > ?)$scopeWhere " +
+                    "ORDER BY received_at ASC, rowid ASC LIMIT ?",
+                baseArgs + count.toString(),
             ).use { cursor ->
                 while (cursor.moveToNext()) {
-                    val row = readQuestion(cursor)
-                    if (matchesAnswerScope(row.question, answerScope)) candidates += row
+                    candidates += readQuestion(cursor)
                 }
             }
-            if (candidates.size < minRequired) {
-                db.setTransactionSuccessful()
-                return emptyList()
-            }
-            val picked = candidates.take(count)
+            val picked = candidates
             picked.forEach { item ->
                 db.update(
                     TABLE,
@@ -471,6 +485,7 @@ object QuizQuestionCache {
                 put("source_kind", SOURCE_LOCAL)
                 put("source_ref", sourceRef)
                 put("scope_key", LOCAL_SCOPE)
+                putScopeFields(item)
                 put("fingerprint", fp)
                 put("state", STATE_AVAILABLE)
                 putNull("reserved_by")
@@ -859,46 +874,53 @@ object QuizQuestionCache {
         val db = database() ?: return 0
         runCatching {
             expire(db, scopeKey, nowMs)
-            var available = 0
+            val (scopeWhere, scopeArgs) = answerScopeWhere(answerScope)
             db.rawQuery(
-                "SELECT question_json FROM $TABLE WHERE scope_key = ? AND state = ? " +
-                    "AND (expires_at IS NULL OR expires_at > ?)",
-                arrayOf(scopeKey, STATE_AVAILABLE, nowMs.toString()),
-            ).use { cursor ->
-                while (cursor.moveToNext()) {
-                    val question = QuizSessionCodec.decodeItem(cursor.getString(0)) ?: continue
-                    if (matchesAnswerScope(question, answerScope)) available++
-                }
-            }
-            available
+                "SELECT COUNT(*) FROM $TABLE WHERE scope_key = ? AND state = ? " +
+                    "AND (expires_at IS NULL OR expires_at > ?)$scopeWhere",
+                arrayOf(scopeKey, STATE_AVAILABLE, nowMs.toString()) + scopeArgs,
+            ).use { if (it.moveToFirst()) it.getInt(0) else 0 }
         }.onFailure { Log.e(TAG, "scoped available count failed", it) }.getOrDefault(0)
     }
 
-    private fun matchesAnswerScope(item: QuizItem, scope: QuizAnswerScope?): Boolean {
-        if (scope == null) return true
-        if (item.scopeGrade != scope.grade || item.scopeSemester != scope.semester) return false
-        if (!scope.subject.equals(QuizAnswerScope.SUBJECT_ALL, ignoreCase = true) &&
-            !item.scopeSubject.equals(scope.subject, ignoreCase = true)
-        ) {
-            return false
+    /**
+     * The SQL twin of the old in-memory matcher. Grade, semester, topic and
+     * difficulty are always strict; subject/textbook are wildcards only when
+     * the answer scope uses `ALL`. Rows without a scope never match a custom
+     * range because their nullable columns yield NULL, not a wildcard.
+     */
+    private fun answerScopeWhere(scope: QuizAnswerScope?): Pair<String, List<String>> {
+        if (scope == null) return "" to emptyList()
+        val clauses = mutableListOf(
+            "scope_grade = ?",
+            "scope_semester = ?",
+            "UPPER(scope_type) = ?",
+        )
+        val args = mutableListOf(
+            scope.grade.toString(),
+            scope.semester.toString(),
+            scope.scopeType.uppercase(),
+        )
+        if (!scope.subject.equals(QuizAnswerScope.SUBJECT_ALL, ignoreCase = true)) {
+            clauses += "UPPER(scope_subject) = ?"
+            args += scope.subject.uppercase()
         }
-        if (!scope.textbook.equals(QuizAnswerScope.TEXTBOOK_ALL, ignoreCase = true) &&
-            !item.scopeTextbook.equals(scope.textbook, ignoreCase = true)
-        ) {
-            return false
+        if (!scope.textbook.equals(QuizAnswerScope.TEXTBOOK_ALL, ignoreCase = true)) {
+            clauses += "UPPER(scope_textbook) = ?"
+            args += scope.textbook.uppercase()
         }
-        if (!item.scopeType.equals(scope.scopeType, ignoreCase = true)) return false
         if (scope.scopeType.equals("UNIT", ignoreCase = true)) {
-            if (item.scopeUnitNo != scope.unitNo) return false
-        } else if (item.scopeUnitNo != null) {
-            return false
+            clauses += "scope_unit_no = ?"
+            args += scope.unitNo.toString()
+        } else {
+            clauses += "scope_unit_no IS NULL"
         }
-        if (scope.difficulty != null &&
-            !item.difficulty.equals(scope.difficulty, ignoreCase = true)
-        ) {
-            return false
+        val difficulty = scope.difficulty
+        if (difficulty != null) {
+            clauses += "LOWER(difficulty) = ?"
+            args += difficulty.lowercase()
         }
-        return true
+        return " AND " + clauses.joinToString(" AND ") to args
     }
 
     private fun database(): SQLiteDatabase? = helper?.writableDatabase
@@ -1048,6 +1070,21 @@ object QuizQuestionCache {
         QuizSessionCodec.decodeItem(QuizSessionCodec.encodeItem(item).toString()) != null
     }.getOrDefault(false)
 
+    /**
+     * Scope columns let the hot paths (bank state after every answer, reserve
+     * at round start) filter in SQLite instead of decoding the whole bank.
+     * `question_json` remains the source of truth; these are a query index.
+     */
+    private fun ContentValues.putScopeFields(item: QuizItem) {
+        if (item.scopeGrade == null) putNull("scope_grade") else put("scope_grade", item.scopeGrade)
+        if (item.scopeSemester == null) putNull("scope_semester") else put("scope_semester", item.scopeSemester)
+        put("scope_subject", item.scopeSubject)
+        put("scope_textbook", item.scopeTextbook)
+        put("scope_type", item.scopeType)
+        if (item.scopeUnitNo == null) putNull("scope_unit_no") else put("scope_unit_no", item.scopeUnitNo)
+        put("difficulty", item.difficulty)
+    }
+
     private fun fingerprint(item: QuizItem): String {
         val canonical = item.prompt.trim().lowercase() + " " +
             item.options.joinToString(" ") { it.trim().lowercase() } + " " +
@@ -1069,6 +1106,13 @@ object QuizQuestionCache {
                     "source_kind TEXT NOT NULL, " +
                     "source_ref TEXT, " +
                     "scope_key TEXT NOT NULL, " +
+                    "scope_grade INTEGER, " +
+                    "scope_semester INTEGER, " +
+                    "scope_subject TEXT NOT NULL DEFAULT '', " +
+                    "scope_textbook TEXT NOT NULL DEFAULT '', " +
+                    "scope_type TEXT NOT NULL DEFAULT '', " +
+                    "scope_unit_no INTEGER, " +
+                    "difficulty TEXT NOT NULL DEFAULT '', " +
                     "fingerprint TEXT NOT NULL, " +
                     "state TEXT NOT NULL, " +
                     "reserved_by TEXT, " +
@@ -1084,6 +1128,7 @@ object QuizQuestionCache {
                     "last_selected_index INTEGER)",
             )
             createIndexes(db)
+            createAnswerScopeIndex(db)
         }
 
         override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
@@ -1107,6 +1152,43 @@ object QuizQuestionCache {
                 )
                 createIndexes(db)
             }
+            if (oldVersion < 3) {
+                addScopeColumns(db)
+            }
+        }
+
+        private fun addScopeColumns(db: SQLiteDatabase) {
+            addColumn(db, "scope_grade", "INTEGER")
+            addColumn(db, "scope_semester", "INTEGER")
+            addColumn(db, "scope_subject", "TEXT NOT NULL DEFAULT ''")
+            addColumn(db, "scope_textbook", "TEXT NOT NULL DEFAULT ''")
+            addColumn(db, "scope_type", "TEXT NOT NULL DEFAULT ''")
+            addColumn(db, "scope_unit_no", "INTEGER")
+            addColumn(db, "difficulty", "TEXT NOT NULL DEFAULT ''")
+            backfillScopeColumns(db)
+            createIndexes(db)
+            createAnswerScopeIndex(db)
+        }
+
+        private fun backfillScopeColumns(db: SQLiteDatabase) {
+            val rows = mutableListOf<Pair<String, String>>()
+            db.rawQuery(
+                "SELECT cache_id, question_json FROM $TABLE WHERE scope_type = ''",
+                null,
+            ).use { cursor ->
+                while (cursor.moveToNext()) {
+                    rows += cursor.getString(0) to cursor.getString(1)
+                }
+            }
+            rows.forEach { (cacheId, raw) ->
+                val item = QuizSessionCodec.decodeItem(raw) ?: return@forEach
+                db.update(
+                    TABLE,
+                    ContentValues().apply { putScopeFields(item) },
+                    "cache_id = ?",
+                    arrayOf(cacheId),
+                )
+            }
         }
 
         private fun createIndexes(db: SQLiteDatabase) {
@@ -1126,6 +1208,13 @@ object QuizQuestionCache {
             db.execSQL(
                 "CREATE UNIQUE INDEX IF NOT EXISTS uk_qc_source ON $TABLE(source_kind, source_ref) " +
                     "WHERE source_ref IS NOT NULL",
+            )
+        }
+
+        private fun createAnswerScopeIndex(db: SQLiteDatabase) {
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS idx_qc_answer_scope " +
+                    "ON $TABLE(scope_key, state, scope_grade, scope_semester, scope_type)",
             )
         }
 

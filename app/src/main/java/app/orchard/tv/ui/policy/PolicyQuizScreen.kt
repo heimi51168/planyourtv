@@ -96,7 +96,10 @@ import app.orchard.tv.ui.wallpaper.latestBringIntoView
 import app.orchard.tv.wallpaper.PhoneServer
 import com.planyourtv.policy.PolicyVoiceBus
 import com.planyourtv.policy.PolicyVoiceCue
+import com.planyourtv.policy.quiz.QuizAnswerScope
+import com.planyourtv.policy.quiz.QuizConfig
 import com.planyourtv.policy.quiz.QuizItem
+import com.planyourtv.policy.quiz.QuizScoring
 import com.planyourtv.policy.quiz.QuizSession
 import com.planyourtv.policy.quiz.QuizSessionStatus
 import com.planyourtv.policy.quiz.QuizSubmission
@@ -195,6 +198,7 @@ fun PolicyQuizScreen(onClose: () -> Unit) {
             state.sessionState == "ready" && (!hosted || cloudReady) -> QuizReadyScreen(
                 session = state.session ?: return@Box,
                 questionCount = state.readyQuestionCount,
+                answerScope = state.answerScope,
                 onClose = ::closeCleanly,
             )
             state.sessionState == "running" -> QuizRoundScreen(
@@ -468,7 +472,17 @@ private fun QuizBankStartScreen(
     onClose: () -> Unit,
 ) {
     val config = state.defaultChallengeConfig
-    val roundCount = config.pullCount.coerceAtMost(state.bankUnused)
+    val levels = state.answerLevels
+    // Default to the first level that can fill a round, so the child does not
+    // land on a short level after the parent reorders the list.
+    val fallbackIndex = remember(levels, config.pullCount) {
+        levels.indexOfFirst { it.available >= config.pullCount }.coerceAtLeast(0)
+    }
+    var selectedLevelId by remember { mutableStateOf<String?>(null) }
+    val matchedIndex = levels.indexOfFirst { it.id == selectedLevelId }
+    val selectedIndex = if (matchedIndex >= 0) matchedIndex else fallbackIndex
+    val selected = levels.getOrNull(selectedIndex)
+    val roundCount = config.pullCount.coerceAtMost(selected?.available ?: 0)
     val qr = rememberQuizQr(scale = 8)
     var busy by remember { mutableStateOf(false) }
     var leaving by remember { mutableStateOf(false) }
@@ -488,12 +502,21 @@ private fun QuizBankStartScreen(
         runCatching { startFocus.requestFocus() }
     }
 
+    fun choose(delta: Int) {
+        val next = selectedIndex + delta
+        if (next !in levels.indices) return
+        selectedLevelId = levels[next].id
+        error = null
+    }
+
     fun begin() {
         if (busy || leaving) return
         busy = true
         error = null
         scope.launch {
-            val result = withContext(Dispatchers.Default) { QuizChallenge.start() }
+            val result = withContext(Dispatchers.Default) {
+                QuizChallenge.start(levelId = selected?.id)
+            }
             busy = false
             if (result is QuizChallenge.BeginResult.Rejected) {
                 error = result.code
@@ -538,23 +561,33 @@ private fun QuizBankStartScreen(
                 style = Type.LargeTitle,
             )
             Spacer(Modifier.height(10.dp))
-            BasicText(
-                stringResource(
-                    R.string.policy_quiz_start_body,
-                    roundCount,
-                    config.minCorrectCount,
-                    config.minutesPerQuestion,
-                ),
-                style = Type.Body.copy(color = Palette.SecondaryLabel),
-                modifier = Modifier.widthIn(max = 404.dp),
-            )
+            // v5 local rounds show the exact difficulty table before the first
+            // question, including the child-visible penalties and unlock gate.
+            QuizScoringRules(config = config, roundCount = roundCount)
+            Spacer(Modifier.height(10.dp))
+            QuizLevelWheel(levels = levels, selectedIndex = selectedIndex)
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 GlyphIcon(Glyph.Home, Palette.SecondaryLabel, 15.dp)
                 Spacer(Modifier.width(7.dp))
                 BasicText(
-                    stringResource(R.string.policy_quiz_bank_stock, state.bankUnused),
+                    stringResource(
+                        R.string.policy_quiz_bank_stock,
+                        selected?.available ?: 0,
+                    ),
                     style = Type.Caption.copy(color = Palette.SecondaryLabel),
+                )
+            }
+            selected?.takeIf { it.available < config.pullCount }?.let {
+                Spacer(Modifier.height(4.dp))
+                BasicText(
+                    stringResource(
+                        R.string.policy_quiz_level_short,
+                        it.available,
+                        config.pullCount,
+                    ),
+                    style = Type.Caption.copy(color = Palette.Orange),
+                    modifier = Modifier.widthIn(max = 404.dp),
                 )
             }
             error?.let {
@@ -573,7 +606,39 @@ private fun QuizBankStartScreen(
                     width = 220.dp,
                     focusRequester = startFocus,
                     primary = true,
-                    onKey = linearDpadFocus(next = backFocus),
+                    // Up/down browse the parent-designed levels while focus stays
+                    // on Start; Right reaches Back, Left is clamped.
+                    onKey = { event ->
+                        when (event.nativeKeyEvent.keyCode) {
+                            NativeKeyEvent.KEYCODE_DPAD_UP,
+                            NativeKeyEvent.KEYCODE_DPAD_DOWN -> {
+                                if (event.type == KeyEventType.KeyDown &&
+                                    event.nativeKeyEvent.repeatCount == 0
+                                ) {
+                                    choose(
+                                        if (event.nativeKeyEvent.keyCode ==
+                                            NativeKeyEvent.KEYCODE_DPAD_DOWN
+                                        ) {
+                                            1
+                                        } else {
+                                            -1
+                                        },
+                                    )
+                                }
+                                true
+                            }
+                            NativeKeyEvent.KEYCODE_DPAD_LEFT -> true
+                            NativeKeyEvent.KEYCODE_DPAD_RIGHT -> {
+                                if (event.type == KeyEventType.KeyDown &&
+                                    event.nativeKeyEvent.repeatCount == 0
+                                ) {
+                                    runCatching { backFocus.requestFocus() }
+                                }
+                                true
+                            }
+                            else -> false
+                        }
+                    },
                 )
                 LockButton(
                     label = stringResource(R.string.policy_back),
@@ -621,8 +686,6 @@ private fun QuizBankEmptyScreen(
     val scope = rememberCoroutineScope()
     val refreshFocus = remember { FocusRequester() }
     val backFocus = remember { FocusRequester() }
-    val need = (state.defaultChallengeConfig.minCorrectCount - state.bankUnused)
-        .coerceAtLeast(0)
 
     LaunchedEffect(Unit) {
         while (isActive) {
@@ -672,14 +735,6 @@ private fun QuizBankEmptyScreen(
                 style = Type.Body.copy(color = Palette.SecondaryLabel),
                 modifier = Modifier.widthIn(max = 410.dp),
             )
-            if (need > 0) {
-                Spacer(Modifier.height(8.dp))
-                BasicText(
-                    stringResource(R.string.policy_quiz_bank_insufficient, need),
-                    style = Type.Caption.copy(color = Palette.Orange),
-                    modifier = Modifier.widthIn(max = 410.dp),
-                )
-            }
             Spacer(Modifier.height(20.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 LockButton(
@@ -814,6 +869,7 @@ private fun QuizCloudSetupScreen(onClose: () -> Unit, onReady: () -> Unit) {
 private fun QuizReadyScreen(
     session: QuizSession,
     questionCount: Int,
+    answerScope: QuizAnswerScope?,
     onClose: () -> Unit,
 ) {
     var busy by remember { mutableStateOf(false) }
@@ -877,16 +933,22 @@ private fun QuizReadyScreen(
                 style = Type.LargeTitle,
             )
             Spacer(Modifier.height(10.dp))
-            BasicText(
-                stringResource(
-                    R.string.policy_quiz_start_body,
-                    questionCount,
-                    session.config.minCorrectCount,
-                    session.config.minutesPerQuestion,
-                ),
-                style = Type.Body.copy(color = Palette.SecondaryLabel),
-                modifier = Modifier.widthIn(max = 404.dp),
-            )
+            if (session.originSchemaVersion >= 5 && !QuizChallenge.isCloudSession(session)) {
+                QuizScoringRules(config = session.config, roundCount = questionCount)
+            } else {
+                BasicText(
+                    stringResource(
+                        R.string.policy_quiz_start_body,
+                        questionCount,
+                        session.config.minCorrectCount,
+                        session.config.minutesPerQuestion,
+                    ),
+                    style = Type.Body.copy(color = Palette.SecondaryLabel),
+                    modifier = Modifier.widthIn(max = 404.dp),
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+            QuizScopeCard(scope = answerScope)
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 GlyphIcon(Glyph.Cloud, Palette.SecondaryLabel, 15.dp)
@@ -923,6 +985,116 @@ private fun QuizReadyScreen(
                 )
             }
         }
+    }
+}
+
+/**
+ * The complete scoring contract shown on the transparent start card. Rewards,
+ * deductions, unlock threshold and cap are all visible before the first tap, so
+ * the child can judge the round without a parent explaining it.
+ */
+@Composable
+private fun QuizScoringRules(
+    config: QuizConfig,
+    roundCount: Int,
+    modifier: Modifier = Modifier,
+) {
+    val threshold = if (config.minUnlockMinutes == 0) {
+        stringResource(R.string.policy_quiz_rules_threshold_none)
+    } else {
+        stringResource(R.string.policy_quiz_rules_threshold_minutes, config.minUnlockMinutes)
+    }
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(Palette.Fill)
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+    ) {
+        BasicText(
+            stringResource(R.string.policy_quiz_rules_summary, roundCount),
+            style = Type.Caption.copy(color = Palette.SecondaryLabel),
+        )
+        Spacer(Modifier.height(6.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            BasicText(
+                stringResource(R.string.policy_quiz_rules_difficulty),
+                style = Type.Caption.copy(color = Palette.SecondaryLabel),
+                modifier = Modifier.weight(1f),
+            )
+            BasicText(
+                stringResource(R.string.policy_quiz_rules_correct),
+                style = Type.Caption.copy(
+                    color = Palette.SecondaryLabel,
+                    textAlign = TextAlign.End,
+                ),
+                modifier = Modifier.width(92.dp),
+            )
+            BasicText(
+                stringResource(R.string.policy_quiz_rules_wrong),
+                style = Type.Caption.copy(
+                    color = Palette.SecondaryLabel,
+                    textAlign = TextAlign.End,
+                ),
+                modifier = Modifier.width(120.dp),
+            )
+        }
+        Spacer(Modifier.height(2.dp))
+        QuizScoringRuleRow(
+            label = stringResource(R.string.policy_quiz_difficulty_easy),
+            reward = config.easyRewardMinutes,
+            penalty = config.easyPenaltyMinutes,
+        )
+        QuizScoringRuleRow(
+            label = stringResource(R.string.policy_quiz_difficulty_medium),
+            reward = config.mediumRewardMinutes,
+            penalty = config.mediumPenaltyMinutes,
+        )
+        QuizScoringRuleRow(
+            label = stringResource(R.string.policy_quiz_difficulty_hard),
+            reward = config.hardRewardMinutes,
+            penalty = config.hardPenaltyMinutes,
+        )
+        Spacer(Modifier.height(4.dp))
+        BasicText(
+            stringResource(
+                R.string.policy_quiz_rules_limits,
+                threshold,
+                config.maxEarnedMinutes,
+            ),
+            style = Type.Caption.copy(color = Palette.SecondaryLabel),
+        )
+    }
+}
+
+@Composable
+private fun QuizScoringRuleRow(label: String, reward: Int, penalty: Int) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        BasicText(
+            label,
+            style = Type.Caption.copy(color = Palette.Label),
+            modifier = Modifier.weight(1f),
+        )
+        BasicText(
+            stringResource(R.string.policy_quiz_rules_reward, reward),
+            style = Type.Caption.copy(
+                color = Palette.Green,
+                textAlign = TextAlign.End,
+            ),
+            modifier = Modifier.width(92.dp),
+        )
+        BasicText(
+            if (penalty == 0) {
+                stringResource(R.string.policy_quiz_rules_no_penalty)
+            } else {
+                stringResource(R.string.policy_quiz_rules_penalty, penalty)
+            },
+            style = Type.Caption.copy(
+                color = if (penalty == 0) Palette.SecondaryLabel else Palette.Orange,
+                textAlign = TextAlign.End,
+            ),
+            modifier = Modifier.width(120.dp),
+        )
     }
 }
 
@@ -982,6 +1154,10 @@ private fun QuizRoundScreen(
     onReward: (QuizReward) -> Unit,
 ) {
     val run = session.run ?: return
+    // Only local v5 rounds use the difficulty table. Hosted rounds remain
+    // backend-authoritative and keep the old single-rate presentation.
+    val difficultyScoring = session.originSchemaVersion >= 5 &&
+        !QuizChallenge.isCloudSession(session)
     // The first question is the first moment the intro film has been released,
     // so the start line starts here and never over the MP4's own soundtrack.
     // The short age guard keeps it from replaying when a round is re-opened.
@@ -997,6 +1173,16 @@ private fun QuizRoundScreen(
             session.items.firstOrNull { it.questionId == sub.questionId }
         }
         if (submission != null && answeredItem != null) {
+            val rewardMinutes = if (difficultyScoring) {
+                QuizScoring.rewardMinutes(answeredItem.difficulty, session.config)
+            } else {
+                session.config.minutesPerQuestion
+            }
+            val penaltyMinutes = if (difficultyScoring) {
+                QuizScoring.penaltyMinutes(answeredItem.difficulty, session.config)
+            } else {
+                null
+            }
             var resumeFailed by remember(submission.answeredAt) { mutableStateOf(false) }
             if (submission.correct) {
                 // A correct answer never opens the answer page: flash the earned
@@ -1006,7 +1192,7 @@ private fun QuizRoundScreen(
                     onReward(
                         QuizReward(
                             answeredAt = submission.answeredAt,
-                            minutes = session.config.minutesPerQuestion,
+                            minutes = rewardMinutes,
                         ),
                     )
                     val outcome = withContext(Dispatchers.Default) {
@@ -1024,7 +1210,8 @@ private fun QuizRoundScreen(
                 questionNumber = run.index.coerceIn(1, session.items.size),
                 total = session.items.size,
                 isLast = run.index >= session.items.size,
-                minutesPerQuestion = session.config.minutesPerQuestion,
+                rewardMinutes = rewardMinutes,
+                penaltyMinutes = penaltyMinutes,
             )
             return
         }
@@ -1043,7 +1230,16 @@ private fun QuizRoundScreen(
         questionNumber = run.index + 1,
         total = session.items.size,
         deadlineAt = run.deadlineAt,
-        minutesPerQuestion = session.config.minutesPerQuestion,
+        rewardMinutes = if (difficultyScoring) {
+            QuizScoring.rewardMinutes(item.difficulty, session.config)
+        } else {
+            session.config.minutesPerQuestion
+        },
+        penaltyMinutes = if (difficultyScoring) {
+            QuizScoring.penaltyMinutes(item.difficulty, session.config)
+        } else {
+            null
+        },
         onExit = onExit,
     )
 }
@@ -1085,7 +1281,8 @@ private fun QuizQuestionPage(
     questionNumber: Int,
     total: Int,
     deadlineAt: Long,
-    minutesPerQuestion: Int,
+    rewardMinutes: Int,
+    penaltyMinutes: Int?,
     onExit: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
@@ -1181,8 +1378,27 @@ private fun QuizQuestionPage(
                     ),
                 )
                 BasicText(
-                    stringResource(R.string.policy_quiz_points_hint, minutesPerQuestion),
-                    style = Type.Caption.copy(color = Palette.SecondaryLabel),
+                    when {
+                        penaltyMinutes == null -> stringResource(
+                            R.string.policy_quiz_points_hint,
+                            rewardMinutes,
+                        )
+                        penaltyMinutes > 0 -> stringResource(
+                            R.string.policy_quiz_scored_hint,
+                            rewardMinutes,
+                            penaltyMinutes,
+                        )
+                        else -> stringResource(
+                            R.string.policy_quiz_scored_hint_no_penalty,
+                            rewardMinutes,
+                        )
+                    },
+                    style = Type.Caption.copy(
+                        color = Palette.SecondaryLabel,
+                        textAlign = TextAlign.End,
+                    ),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
@@ -1396,6 +1612,15 @@ private fun QuizReviewScreen(
 ) {
     val run = session.run ?: return
     val total = session.items.size
+    // Only local v5 rounds settle on the difficulty table; hosted rounds keep
+    // the backend's own arithmetic and presentation.
+    val difficultyScoring = session.originSchemaVersion >= 5 &&
+        !QuizChallenge.isCloudSession(session)
+    val score = if (difficultyScoring) {
+        QuizScoring.score(session.items, run.submissions, session.config)
+    } else {
+        null
+    }
     val correct = run.correctCount.coerceIn(0, total)
     val ratio = if (total > 0) correct.toFloat() / total.toFloat() else 0f
     val stars = when {
@@ -1412,7 +1637,6 @@ private fun QuizReviewScreen(
     var serverError by remember { mutableStateOf<String?>(null) }
     val ready = !busy && !starting && !failed
     val errorCode = run.startErrorCode ?: localError
-    val needMore = (session.config.minCorrectCount - correct).coerceAtLeast(0)
     val gradeTitle = stringResource(
         when {
             ratio >= 1f -> R.string.policy_quiz_report_grade_perfect
@@ -1551,15 +1775,55 @@ private fun QuizReviewScreen(
                 modifier = Modifier.weight(1f),
             )
         }
-        if (needMore > 0 && run.earnedMinutes <= 0) {
+        if (score != null) {
             Spacer(Modifier.height(10.dp))
             BasicText(
-                stringResource(R.string.policy_quiz_report_need_more, needMore),
-                style = Type.Body.copy(
+                if (score.penaltyMinutes > 0) {
+                    stringResource(
+                        R.string.policy_quiz_report_breakdown,
+                        score.grossMinutes,
+                        score.penaltyMinutes,
+                        score.cappedMinutes,
+                    )
+                } else {
+                    stringResource(
+                        R.string.policy_quiz_report_breakdown_no_penalty,
+                        score.grossMinutes,
+                        score.cappedMinutes,
+                    )
+                },
+                style = Type.Caption.copy(
                     color = Palette.SecondaryLabel,
                     textAlign = TextAlign.Center,
                 ),
             )
+            if (score.netMinutes > score.cappedMinutes) {
+                Spacer(Modifier.height(4.dp))
+                BasicText(
+                    stringResource(
+                        R.string.policy_quiz_report_capped,
+                        score.cappedMinutes,
+                    ),
+                    style = Type.Caption.copy(
+                        color = Palette.SecondaryLabel,
+                        textAlign = TextAlign.Center,
+                    ),
+                )
+            }
+            if (score.thresholdMinutes > 0 && !score.unlockReached) {
+                Spacer(Modifier.height(4.dp))
+                BasicText(
+                    stringResource(
+                        R.string.policy_quiz_report_threshold,
+                        score.thresholdMinutes,
+                        score.netMinutes,
+                    ),
+                    style = Type.Caption.copy(
+                        color = Palette.Orange,
+                        textAlign = TextAlign.Center,
+                    ),
+                )
+            }
         }
         if (failed && errorCode != null) {
             Spacer(Modifier.height(10.dp))
@@ -1672,7 +1936,8 @@ private fun QuizFeedbackPage(
     questionNumber: Int,
     total: Int,
     isLast: Boolean,
-    minutesPerQuestion: Int,
+    rewardMinutes: Int,
+    penaltyMinutes: Int?,
 ) {
     val scope = rememberCoroutineScope()
     val scroll = rememberScrollState()
@@ -1754,8 +2019,19 @@ private fun QuizFeedbackPage(
             }
             if (correct) {
                 BasicText(
-                    stringResource(R.string.policy_quiz_feedback_points, minutesPerQuestion),
+                    stringResource(R.string.policy_quiz_feedback_points, rewardMinutes),
                     style = Type.Title.copy(color = Palette.Green),
+                )
+            } else if (penaltyMinutes != null) {
+                BasicText(
+                    if (penaltyMinutes > 0) {
+                        stringResource(R.string.policy_quiz_feedback_penalty, penaltyMinutes)
+                    } else {
+                        stringResource(R.string.policy_quiz_feedback_no_penalty)
+                    },
+                    style = Type.Title.copy(
+                        color = if (penaltyMinutes > 0) Palette.Orange else Palette.SecondaryLabel,
+                    ),
                 )
             }
         }
@@ -2098,6 +2374,7 @@ private fun rejectText(code: String): String = when (code) {
     "SCREEN_OFF" -> stringResource(R.string.policy_quiz_reason_screen)
     "ALREADY_RUNNING" -> stringResource(R.string.policy_quiz_running_title)
     "CACHE_EMPTY", "LOCAL_BANK_EMPTY" -> stringResource(R.string.policy_quiz_reason_cache_empty)
+    "NO_LEVELS" -> stringResource(R.string.policy_quiz_reason_no_levels)
     "LOCAL_BANK_INSUFFICIENT" -> stringResource(R.string.policy_quiz_reason_cache_insufficient)
     "CACHE_UNAVAILABLE" -> stringResource(R.string.policy_quiz_reason_cache_unavailable)
     "SOURCE_DISABLED" -> stringResource(R.string.policy_quiz_reason_source_disabled)

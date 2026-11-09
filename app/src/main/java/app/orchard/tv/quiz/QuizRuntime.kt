@@ -1,7 +1,9 @@
 package app.orchard.tv.quiz
 
 import app.orchard.tv.policy.PolicyModeCoordinator
+import com.planyourtv.policy.quiz.QuizAnswerScope
 import com.planyourtv.policy.quiz.QuizConfig
+import com.planyourtv.policy.quiz.QuizLevel
 import com.planyourtv.policy.quiz.QuizSession
 import com.planyourtv.policy.quiz.QuizSessionStatus
 import com.planyourtv.policy.quiz.QuizSource
@@ -16,6 +18,14 @@ import kotlinx.coroutines.flow.asStateFlow
  * may block on Keystore/storage, so callers run them off the frame thread.
  */
 object QuizRuntime {
+    /** One parent-designed level plus how many bank questions it can use now. */
+    data class LevelState(
+        val id: String,
+        val name: String,
+        val scope: QuizAnswerScope,
+        val available: Int,
+    )
+
     private val EXPIRY_BOUND_STATUSES = setOf(
         QuizSessionStatus.DRAFT,
         QuizSessionStatus.READY,
@@ -34,6 +44,10 @@ object QuizRuntime {
         val bankState: String = "empty",
         val localBankActive: Boolean = true,
         val defaultChallengeConfig: QuizConfig = QuizConfig(),
+        /** Ordered levels; the TV shows exactly this list to the child. */
+        val answerLevels: List<LevelState> = emptyList(),
+        /** First level, kept for the cloud/legacy single-scope surfaces. */
+        val answerScope: QuizAnswerScope? = null,
         val activeScope: String? = null,
         val activeScopeAvailable: Int = 0,
     ) {
@@ -110,19 +124,26 @@ object QuizRuntime {
             QuizRecovery.scopeFor(it, PolicyModeCoordinator.state.value.deviceNo)
         }
         val activeAvailable = activeScope?.let { QuizQuestionCache.availableCount(it) } ?: 0
-        val answerScope = QuizAnswerScopeStore.loadOrInitialize()
-        val playable = if (answerScope == null) {
-            bankCounts.unused
-        } else {
-            QuizQuestionCache.availableCount(
-                QuizQuestionCache.LOCAL_SCOPE,
-                answerScope = answerScope,
+        val answerLevels = QuizAnswerScopeStore.levels().map { level: QuizLevel ->
+            LevelState(
+                id = level.id,
+                name = level.name,
+                scope = level.scope,
+                available = QuizQuestionCache.availableCount(
+                    QuizQuestionCache.LOCAL_SCOPE,
+                    answerScope = level.scope,
+                ),
             )
         }
+        val answerScope = answerLevels.firstOrNull()?.scope
+        // The entry is playable when at least one level can fill a round. The
+        // wheel still shows every level and marks the short ones.
+        val playable = answerLevels.maxOfOrNull { it.available } ?: 0
+        // v5 has no minimum-correct gate: one available question is enough to
+        // start, and short levels are flagged on the start card instead.
         val bankState = when {
             !enabled -> "disabled"
             playable <= 0 -> "empty"
-            playable < defaultConfig.minCorrectCount -> "insufficient"
             else -> "ready"
         }
         val next = UiState(
@@ -138,6 +159,8 @@ object QuizRuntime {
             bankState = bankState,
             localBankActive = sourceConfig.source != QuizSource.CLOUD,
             defaultChallengeConfig = defaultConfig,
+            answerLevels = answerLevels,
+            answerScope = answerScope,
             activeScope = activeScope,
             activeScopeAvailable = activeAvailable,
         )

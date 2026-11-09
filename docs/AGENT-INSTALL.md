@@ -7,7 +7,7 @@
 - 项目主页：https://github.com/heimi51168/planyourtv
 - 官方下载：https://planyourtv.me/download/
 - 支持系统：Android TV 5.0+（API 21+），不需要 root
-- 当前社区版本：`1.85.006` / 116006
+- 当前社区版本：`1.85.010` / 116010
 
 ## 0. 必须遵守的规则
 

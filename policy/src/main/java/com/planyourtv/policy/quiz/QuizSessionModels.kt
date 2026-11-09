@@ -5,18 +5,20 @@ import org.json.JSONObject
 import java.security.MessageDigest
 
 /** The wire schema stored under `quiz.session`. Bump this for any incompatible edit. */
-const val QUIZ_SCHEMA_VERSION = 4
+const val QUIZ_SCHEMA_VERSION = 5
 /** v2 differs only by the removed daily-attempt limit, so old records remain readable. */
 const val QUIZ_MIN_SCHEMA_VERSION = 2
 const val QUIZ_MAX_EARNED_MINUTES = 180
-const val QUIZ_MIN_PULL_COUNT = 1
-const val QUIZ_MAX_PULL_COUNT = 10
+const val QUIZ_MAX_DIFFICULTY_MINUTES = 30
+const val QUIZ_MAX_UNLOCK_MINUTES = 180
+const val QUIZ_MIN_PULL_COUNT = 5
+const val QUIZ_MAX_PULL_COUNT = 50
 const val QUIZ_DEFAULT_PULL_COUNT = 5
-const val QUIZ_MAX_ITEMS = 10
+const val QUIZ_MAX_ITEMS = 50
 const val QUIZ_MIN_ITEMS = 1
 const val QUIZ_MIN_OPTIONS = 2
 const val QUIZ_MAX_OPTIONS = 6
-const val QUIZ_MAX_SESSION_CHARS = 256 * 1024
+const val QUIZ_MAX_SESSION_CHARS = 512 * 1024
 const val QUIZ_MAX_PROMPT_CHARS = 200
 const val QUIZ_MAX_OPTION_CHARS = 60
 const val QUIZ_MAX_EXPLANATION_CHARS = 600
@@ -47,10 +49,20 @@ data class QuizConfig(
     val answerDisplaySec: Int = QUIZ_DEFAULT_ANSWER_DISPLAY_SEC,
     /** v4: how many questions one round reserves from the cache. */
     val pullCount: Int = QUIZ_DEFAULT_PULL_COUNT,
-    /** v4: minutes earned per correctly answered question. */
+    /** v4: minutes earned per correctly answered question; old rounds and cloud only. */
     val minutesPerQuestion: Int = 5,
     /** v4 internal compatibility assumption. Never displayed to a user. */
     val pointsPerQuestion: Int = 1,
+    /** v5: minutes awarded for a correct answer at each difficulty. */
+    val easyRewardMinutes: Int = 1,
+    val mediumRewardMinutes: Int = 2,
+    val hardRewardMinutes: Int = 5,
+    /** v5: minutes deducted for a wrong or timed-out answer at each difficulty. */
+    val easyPenaltyMinutes: Int = 0,
+    val mediumPenaltyMinutes: Int = 0,
+    val hardPenaltyMinutes: Int = 0,
+    /** v5: minimum net minutes needed to unlock the session; 0 means no gate. */
+    val minUnlockMinutes: Int = 0,
 )
 
 data class QuizItem(
@@ -283,6 +295,16 @@ object QuizSessionCodec {
         val pullCount = root.optInt("pullCount", QUIZ_DEFAULT_PULL_COUNT)
         val minutesPerQuestion = root.optInt("minutesPerQuestion", minutesPerPoint ?: 5)
         val pointsPerQuestion = root.optInt("pointsPerQuestion", 1)
+        // v5 difficulty scoring is optional on read: old v4 records and cached
+        // pages simply fall back to the product defaults. v4 rounds still use
+        // their own settlement formula, selected by originSchemaVersion.
+        val easyReward = optionalInt(root, "easyRewardMinutes", "config", errors) ?: 1
+        val mediumReward = optionalInt(root, "mediumRewardMinutes", "config", errors) ?: 2
+        val hardReward = optionalInt(root, "hardRewardMinutes", "config", errors) ?: 5
+        val easyPenalty = optionalInt(root, "easyPenaltyMinutes", "config", errors) ?: 0
+        val mediumPenalty = optionalInt(root, "mediumPenaltyMinutes", "config", errors) ?: 0
+        val hardPenalty = optionalInt(root, "hardPenaltyMinutes", "config", errors) ?: 0
+        val minUnlock = optionalInt(root, "minUnlockMinutes", "config", errors) ?: 0
         if (defaultTime == null || minutesPerPoint == null || minCorrect == null ||
             maxEarned == null || shuffle == null
         ) {
@@ -300,16 +322,33 @@ object QuizSessionCodec {
         }
         if (minutesPerQuestion !in 1..30) errors += "config.minutesPerQuestion: out of range"
         if (pointsPerQuestion != 1) errors += "config.pointsPerQuestion: must be 1"
+        val scoreRange = 0..QUIZ_MAX_DIFFICULTY_MINUTES
+        if (easyReward !in scoreRange) errors += "config.easyRewardMinutes: out of range"
+        if (mediumReward !in scoreRange) errors += "config.mediumRewardMinutes: out of range"
+        if (hardReward !in scoreRange) errors += "config.hardRewardMinutes: out of range"
+        if (easyPenalty !in scoreRange) errors += "config.easyPenaltyMinutes: out of range"
+        if (mediumPenalty !in scoreRange) errors += "config.mediumPenaltyMinutes: out of range"
+        if (hardPenalty !in scoreRange) errors += "config.hardPenaltyMinutes: out of range"
+        if (minUnlock !in 0..QUIZ_MAX_UNLOCK_MINUTES) {
+            errors += "config.minUnlockMinutes: out of range"
+        }
         return QuizConfig(
-            defaultTime,
-            minutesPerPoint,
-            minCorrect,
-            maxEarned,
-            shuffle,
-            answerDisplay,
-            pullCount,
-            minutesPerQuestion,
-            pointsPerQuestion,
+            defaultTimeLimitSec = defaultTime,
+            minutesPerPoint = minutesPerPoint,
+            minCorrectCount = minCorrect,
+            maxEarnedMinutes = maxEarned,
+            shuffleOptions = shuffle,
+            answerDisplaySec = answerDisplay,
+            pullCount = pullCount,
+            minutesPerQuestion = minutesPerQuestion,
+            pointsPerQuestion = pointsPerQuestion,
+            easyRewardMinutes = easyReward,
+            mediumRewardMinutes = mediumReward,
+            hardRewardMinutes = hardReward,
+            easyPenaltyMinutes = easyPenalty,
+            mediumPenaltyMinutes = mediumPenalty,
+            hardPenaltyMinutes = hardPenalty,
+            minUnlockMinutes = minUnlock,
         )
     }
 
@@ -514,7 +553,17 @@ object QuizSessionCodec {
         )
     }
 
-    fun encodeConfig(config: QuizConfig): JSONObject = JSONObject()
+    fun encodeConfig(config: QuizConfig): JSONObject = encodeConfig(config, includeScoring = true)
+
+    /**
+     * The cloud wire contract still knows only the single-rate v4 shape. Local
+     * difficulty scoring must not leak into uploads until the backend owns the
+     * same fields, so the binding report uses this stripped snapshot.
+     */
+    fun encodeLegacyConfig(config: QuizConfig): JSONObject =
+        encodeConfig(config, includeScoring = false)
+
+    private fun encodeConfig(config: QuizConfig, includeScoring: Boolean): JSONObject = JSONObject()
         .put("defaultTimeLimitSec", config.defaultTimeLimitSec)
         .put("minutesPerPoint", config.minutesPerPoint)
         .put("minCorrectCount", config.minCorrectCount)
@@ -524,6 +573,16 @@ object QuizSessionCodec {
         .put("pullCount", config.pullCount)
         .put("minutesPerQuestion", config.minutesPerQuestion)
         .put("pointsPerQuestion", config.pointsPerQuestion)
+        .apply {
+            if (!includeScoring) return@apply
+            put("easyRewardMinutes", config.easyRewardMinutes)
+            put("mediumRewardMinutes", config.mediumRewardMinutes)
+            put("hardRewardMinutes", config.hardRewardMinutes)
+            put("easyPenaltyMinutes", config.easyPenaltyMinutes)
+            put("mediumPenaltyMinutes", config.mediumPenaltyMinutes)
+            put("hardPenaltyMinutes", config.hardPenaltyMinutes)
+            put("minUnlockMinutes", config.minUnlockMinutes)
+        }
 
     /** Decodes stored challenge defaults; returns null when a field is out of range. */
     fun decodeConfig(root: JSONObject): QuizConfig? {

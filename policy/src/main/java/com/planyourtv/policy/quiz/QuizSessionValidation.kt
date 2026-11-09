@@ -64,16 +64,23 @@ object QuizSessionValidation {
         if (config.answerDisplaySec !in QUIZ_MIN_ANSWER_DISPLAY_SEC..QUIZ_MAX_ANSWER_DISPLAY_SEC) {
             errors += "config.answerDisplaySec: out of range"
         }
-        if (config.maxEarnedMinutes < config.minutesPerPoint) {
-            errors += "config.maxEarnedMinutes: less than minutesPerPoint"
-        }
         if (config.pullCount !in QUIZ_MIN_PULL_COUNT..QUIZ_MAX_PULL_COUNT) {
             errors += "config.pullCount: out of range"
         }
         if (config.minutesPerQuestion !in 1..30) errors += "config.minutesPerQuestion: out of range"
         if (config.pointsPerQuestion != 1) errors += "config.pointsPerQuestion: must be 1"
-        if (config.maxEarnedMinutes < config.minutesPerQuestion) {
-            errors += "config.maxEarnedMinutes: less than minutesPerQuestion"
+        // v5 scoring is independent per difficulty. The cap may deliberately be
+        // below one question's reward; the web treats that as a soft warning,
+        // never a hard save error.
+        val scoreRange = 0..QUIZ_MAX_DIFFICULTY_MINUTES
+        if (config.easyRewardMinutes !in scoreRange) errors += "config.easyRewardMinutes: out of range"
+        if (config.mediumRewardMinutes !in scoreRange) errors += "config.mediumRewardMinutes: out of range"
+        if (config.hardRewardMinutes !in scoreRange) errors += "config.hardRewardMinutes: out of range"
+        if (config.easyPenaltyMinutes !in scoreRange) errors += "config.easyPenaltyMinutes: out of range"
+        if (config.mediumPenaltyMinutes !in scoreRange) errors += "config.mediumPenaltyMinutes: out of range"
+        if (config.hardPenaltyMinutes !in scoreRange) errors += "config.hardPenaltyMinutes: out of range"
+        if (config.minUnlockMinutes !in 0..QUIZ_MAX_UNLOCK_MINUTES) {
+            errors += "config.minUnlockMinutes: out of range"
         }
     }
 
@@ -115,7 +122,12 @@ object QuizSessionValidation {
     }
 
     private fun validateStatus(session: QuizSession, errors: MutableList<String>) {
-        if (session.config.minCorrectCount > session.items.size) {
+        // v5 has no minimum-correct gate: minCorrectCount is a legacy/cloud field
+        // and may legitimately be larger than one local round. Older records
+        // keep the historical consistency check.
+        if (session.originSchemaVersion < 5 &&
+            session.config.minCorrectCount > session.items.size
+        ) {
             errors += "config.minCorrectCount: greater than item count"
         }
         val run = session.run

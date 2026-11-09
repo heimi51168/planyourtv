@@ -27,7 +27,7 @@ PlanYourTV 是一个**桌面级儿童时间管理 App**：它替代电视自带�
 
 > 常见搜索：Android TV 儿童模式、小米电视儿童锁、TCL 电视时间管理、电视屏幕时间、儿童电视桌面、答题解锁电视、Aerial 儿童桌面。
 
-> **当前社区源码版本：`1.85.006`（versionCode 116006），基于 Aerial 1.85。** 小米电视 `standard` 已由本项目真机验证；其他机型和 `guard` 版本沿用 Aerial 上游的支持范围，本项目未逐一验证。
+> **当前社区源码版本：`1.85.010`（versionCode 116010），基于 Aerial 1.85。** 小米电视 `standard` 已由本项目真机验证；其他机型和 `guard` 版本沿用 Aerial 上游的支持范围，本项目未逐一验证。
 
 ## 项目速览
 
@@ -37,7 +37,7 @@ PlanYourTV 是一个**桌面级儿童时间管理 App**：它替代电视自带�
 | 类型 | Android TV 桌面 / 儿童时间管理 / 家长控制 |
 | 平台 | Android TV 5.0+（API 21+），不需要 root |
 | 包名 | `com.planyourtv.tv` |
-| 当前版本 | `1.85.006` / 116006 |
+| 当前版本 | `1.85.010` / 116010 |
 | 上游基线 | [Aerial](https://github.com/pengchujin/aerial-tv) 1.85（MIT） |
 | 许可证 | MIT |
 | 下载 | [官方 APK](https://planyourtv.me/download/planyourtv-standard.apk) |
@@ -84,17 +84,18 @@ PlanYourTV 是一个**桌面级儿童时间管理 App**：它替代电视自带�
 
 时间用完不是死锁，而是给孩子一个「自己挣时间」的出口：
 
-- 锁屏上弹出答题挑战，完成整轮题目后结算。
-- 默认 **5 道题**，答对至少 **1 道**才有奖励；题数（1–10）、答对门槛、每题奖励分钟数、单次奖励上限都可以在手机设置页调整。
+- 锁屏上弹出答题挑战；开始前可以选择答题范围，确认面板会写明年级、学科、学期、教材、范围和「单选」。
+- 每轮 **5–50 道题（5 道一档，默认 5 道）**，每题默认 **60 秒**；家长可以设计最多 **6 个答题关卡**，孩子在电视上滚动选择。
+- **难度计分**：简单 / 中等 / 困难分别设置答对奖励和答错扣分，结算按净得分计算；可以设置最低解锁分钟和单轮奖励上限。
 - 每题作答后立即显示对错和解析；全部题目答完后统一结算，奖励时长直接进入下一次观看。
-- 答对反馈、语音提示和大号金色时间，让答题更像游戏而不是惩罚。
+- 答对反馈、语音提示和大号金色时间，让答题更像游戏而不是惩罚；不再需要配置答案展示时长。
 - 题目、答案和答题进度只保存在电视上，不会上传。
 
 ### 5. 本地题库 + AI 出题 + 错题管理
 
-- **内置 120 道题**：小学 1–6 年级，语文、数学、英语、科学各 30 道，开箱即用。
-- **按范围出题**：可按年级、学期、学科、教材版本和考试类型筛选，避免题目超纲。
-- **AI 批量出题（可选）**：家长在手机设置页配置自己的 OpenAI 兼容模型服务（默认 DeepSeek 接口，Key 需家长自行到 DeepSeek 开放平台创建），AI 按学科、年级、难度和数量分批生成题目，家长挑选后**加入电视本地题库**。
+- **内置 4,900 道题**：1–9 年级上册期中必考，覆盖语文、数学、英语、科学，以及初中道德与法治、历史、地理、生物、物理、化学，开箱即用。
+- **按范围出题**：可按 1–9 年级、学期、学科、教材版本、真实单元 / 期中 / 期末 / 复习范围筛选，避免题目超纲；教材目录来自国家中小学智慧教育平台（109 本教材、765 个节点、673 个单元）。
+- **AI 批量出题（可选）**：家长在手机设置页配置自己的 OpenAI 兼容模型服务（默认 DeepSeek 接口，Key 需家长自行到 DeepSeek 开放平台创建），AI 按真实单元标题和课时范围生成 20 / 30 / 50 道题，完成后**自动加入电视本地题库**。
 - **密钥只在电视上**：API Key 保存在电视端，手机页面通过电视代理调用模型；请求只包含学科、年级、难度、数量等出题参数，不包含家庭信息。不配置 AI 也能使用内置题库和手动题库。
 - **题库管理**：查看未使用、已回答、本轮中、答对、答错、旧记录和过期题目；支持去重、容量管理和批量清理。
 - **错题本**：最近答错的题排在前面，显示答错次数和作答日期；可以单独清空错题，保留其他题目。
@@ -235,7 +236,7 @@ PlanYourTV 是基于 [Aerial](https://github.com/pengchujin/aerial-tv)（MIT）�
 
 **AI 出题必须联网吗？**
 
-只有使用 AI 出题时需要联网，并且要由家长配置自己的 OpenAI 兼容模型服务（默认 DeepSeek，Key 需家长自行到 [DeepSeek 开放平台](https://platform.deepseek.com)创建）。内置 120 道题和手动题库完全离线可用。
+只有使用 AI 出题时需要联网，并且要由家长配置自己的 OpenAI 兼容模型服务（默认 DeepSeek，Key 需家长自行到 [DeepSeek 开放平台](https://platform.deepseek.com)创建）。内置 4,900 道题和手动题库完全离线可用。
 
 **支持哪些电视？**
 
@@ -265,15 +266,15 @@ PlanYourTV 与 Apple、小米、TCL、索尼或 Aerial 项目没有隶属、背�
 
 **PlanYourTV is an open-source, desktop-level parental-control launcher for Android TV.** It replaces the TV home screen and enforces screen-time rules at the launcher level: scheduled windows, daily and per-session limits, rest breaks, an app allowlist, a study mode, and a quiz challenge that lets kids earn extra viewing time.
 
-Built on [Aerial](https://github.com/pengchujin/aerial-tv) 1.85 (MIT). Current community source: **`1.85.006`** / 116006. Xiaomi `standard` is verified on a real TV; other devices follow Aerial's upstream support and are not verified by this project.
+Built on [Aerial](https://github.com/pengchujin/aerial-tv) 1.85 (MIT). Current community source: **`1.85.010`** / 116010. Xiaomi `standard` is verified on a real TV; other devices follow Aerial's upstream support and are not verified by this project.
 
 ### Highlights
 
 - **Rules that run themselves** — weekday/weekend windows, daily quota, per-session cap, rest breaks, automatic lock screen and countdown.
 - **App-level scope** — only the entertainment apps selected by the parent are allowed during a timed session; learning apps are never timed and are available through Study mode on the lock screen.
 - **Study mode** — shows only the configured learning apps; no timer, no quota, no PIN.
-- **Quiz unlock** — a configurable quiz (default 5 questions, at least 1 correct) rewards viewing minutes; every answer gets feedback and an explanation.
-- **Local question bank + AI generation (optional)** — 120 built-in primary-school questions across Chinese, math, English and science (grades 1–6), scoped by grade, semester, subject, textbook and exam type. Parents can generate more questions through their own OpenAI-compatible provider (DeepSeek by default; the parent creates the key); the API key stays on the TV.
+- **Quiz unlock** — the child picks an answer scope, then answers 5–50 questions (5-question steps, default 5; 60 seconds each). Easy / medium / hard questions carry separate rewards and deductions; a settable minimum net score gates the unlock and a per-round cap limits the payout. Parents can design up to six named levels, and every answer gets feedback and an explanation.
+- **Local question bank + AI generation (optional)** — 4,900 built-in first-semester midterm questions for grades 1–9 across Chinese, math, English, science and junior-high subjects. AI generation targets real textbook units (109 books, 765 nodes, 673 units) and supports 20 / 30 / 50-question batches through the parent's own OpenAI-compatible provider (DeepSeek by default; the parent creates the key); the API key stays on the TV.
 - **Question bank and wrong-answer management** — filters, deduplication, capacity management, wrong-answer review and selective clearing.
 - **Parent controls** — six-digit PIN, one-time recovery code, temporary parent override, TV parent center, and a LAN phone settings page.
 - **Aerial desktop experience** — app grid, folders, wallpapers, screensaver, control center, HDMI sources, Home Guard, `standard`/`guard` flavors and five UI languages.

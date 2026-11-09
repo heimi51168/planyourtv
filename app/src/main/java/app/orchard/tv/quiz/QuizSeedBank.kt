@@ -23,7 +23,7 @@ import org.json.JSONObject
  */
 object QuizSeedBank {
     /** Bump together with assets/quiz/seed_bank.json. */
-    const val SEED_VERSION = 2
+    const val SEED_VERSION = 3
 
     private const val TAG = "QuizSeedBank"
     private const val ASSET = "quiz/seed_bank.json"
@@ -34,9 +34,11 @@ object QuizSeedBank {
      * seed version yet. Returns the number of questions added; 0 means already
      * imported, storage not ready, or the asset is unusable.
      *
-     * Runs on the caller's thread: the asset is small and this happens once per
-     * seed version, before the lock screen reads the bank for the first time.
+     * Runs on the caller's thread: [PolicyProduct] calls this off the main
+     * thread because the full 1–9 bank is large, and it happens once per seed
+     * version before the lock screen reads the bank for the first time.
      */
+    @Synchronized
     fun install(context: Context): Int {
         if (!TvStore.isReady || !QuizQuestionCache.isReady()) return 0
         if (TvStore.getInt(KEY_VERSION, 0) >= SEED_VERSION) return 0

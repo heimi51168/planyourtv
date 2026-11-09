@@ -1,11 +1,14 @@
 package app.orchard.tv.quiz
 
 import com.planyourtv.policy.quiz.QuizAnswerScope
+import com.planyourtv.policy.quiz.QuizCurriculum
 import com.planyourtv.policy.quiz.QuizItem
+import com.planyourtv.policy.quiz.QuizUnitCatalog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.util.Locale
@@ -287,6 +290,8 @@ object QuizGeneration {
         var batchIndex = 0
         var warnings = emptyList<String>()
         var errorCode: String? = null
+        var batchCap = BATCH_SIZE
+        var parseRetries = 0
         val staged = mutableListOf<QuizItem>()
         val maxAttempts = ((request.targetCount + BATCH_SIZE - 1) / BATCH_SIZE) * 3 + 2
 
@@ -300,17 +305,33 @@ object QuizGeneration {
                 warnings = (warnings + "BANK_DUPLICATE_LIMIT").takeLast(8)
                 break
             }
-            val count = min(BATCH_SIZE, request.targetCount - unique).coerceAtLeast(1)
+            val count = min(batchCap, request.targetCount - unique).coerceAtLeast(1)
             val result = runCatching {
                 QuizAiClient.generate(meta, key, request.toAiRequest(count))
             }.getOrElse { QuizAiClient.Result.Failure("PROVIDER_NETWORK") }
             if (!isRunning(id)) return
             when (result) {
                 is QuizAiClient.Result.Failure -> {
+                    val retryable = result.code == "PROVIDER_INVALID_RESPONSE" ||
+                        result.code == "AI_EMPTY"
+                    if (retryable && parseRetries < 2 && batchIndex + 1 < maxAttempts &&
+                        expiresAt - System.currentTimeMillis() > 10_000L) {
+                        // A long five-question response can hit the provider's
+                        // output limit; retry with a shorter batch so the JSON
+                        // has a chance to finish. Keep three per call so a
+                        // 50-question target still fits the ten-minute job TTL.
+                        parseRetries++
+                        batchCap = min(batchCap, 3)
+                        warnings = (warnings + "generation: retrying a shorter batch").takeLast(8)
+                        batchIndex++
+                        delay(600)
+                        continue
+                    }
                     errorCode = result.code
                     break
                 }
                 is QuizAiClient.Result.Success -> {
+                    parseRetries = 0
                     staged += result.items.map { request.stamp(it) }
                     val flags = QuizQuestionCache.duplicateFlags(staged)
                     val batch = staged.mapIndexed { index, item ->
@@ -375,6 +396,7 @@ object QuizGeneration {
         difficulty = difficulty,
         points = DEFAULT_POINTS,
         timeLimitSec = DEFAULT_TIME_LIMIT_SEC,
+        gradeNo = gradeNo,
     )
 
     private fun Request.stamp(item: QuizItem): QuizItem {
@@ -382,7 +404,9 @@ object QuizGeneration {
         // 全科出题的公共范围仍然有效；单题学科尽量从模型返回的 subject 识别，
         // 识别不了就保留 ALL，避免把题硬塞进某一科。
         val perItem = if (answerScope.subject == QuizAnswerScope.SUBJECT_ALL) {
-            canonicalSubject(item.subject)?.let { subject -> subject to defaultTextbook(subject) }
+            canonicalSubject(item.subject)?.let { subject ->
+                subject to defaultTextbook(answerScope.grade, subject)
+            }
         } else {
             null
         }
@@ -401,22 +425,15 @@ object QuizGeneration {
     private fun canonicalSubject(raw: String): String? {
         val value = raw.trim().lowercase(Locale.ROOT)
         if (value.isBlank()) return null
-        return when {
-            value.contains("语文") || value.contains("chinese") ||
-                value.contains("language arts") -> "CHINESE"
-            value.contains("数学") || value.contains("math") -> "MATH"
-            value.contains("英语") || value.contains("english") -> "ENGLISH"
-            value.contains("科学") || value.contains("science") -> "SCIENCE"
-            else -> null
-        }
+        val curriculum = QuizCurriculum.current() ?: return null
+        return curriculum.subjects.firstOrNull { subject ->
+            subject.aliases.any { value.contains(it.lowercase(Locale.ROOT)) } ||
+                subject.labels.values.any { value.contains(it.lowercase(Locale.ROOT)) }
+        }?.id
     }
 
-    private fun defaultTextbook(subject: String): String = when (subject) {
-        "CHINESE" -> "BUBIAN"
-        "MATH" -> "RENJIAO"
-        "ENGLISH" -> "PEP"
-        else -> "KEJIAO"
-    }
+    private fun defaultTextbook(grade: Int, subject: String): String =
+        QuizCurriculum.current()?.defaultTextbook(grade, subject) ?: "GENERAL"
 
     fun parseRequest(root: JSONObject): ParseResult {
         val errors = mutableListOf<String>()
@@ -464,15 +481,29 @@ object QuizGeneration {
         val hasScopeMetadata = subjectId.isNotEmpty() || gradeNo != 0 || semester != 0 ||
             textbook.isNotEmpty() || scopeType.isNotEmpty() || unitNo != null
         if (hasScopeMetadata) {
-            if (subjectId !in SCOPE_SUBJECTS) errors += "subjectId: invalid"
-            if (gradeNo !in 1..6) errors += "gradeNo: out of range"
-            if (semester !in 1..2) errors += "semester: out of range"
-            if (textbook !in TEXTBOOKS) errors += "textbook: invalid"
-            if (scopeType !in SCOPE_TYPES) errors += "scopeType: invalid"
-            if (scopeType == "unit") {
-                if (unitNo == null || unitNo !in 1..8) errors += "unitNo: out of range"
-            } else if (unitNo != null) {
-                errors += "unitNo: must be empty outside unit scope"
+            val curriculum = QuizCurriculum.current()
+            if (curriculum == null) {
+                errors += "curriculum: unavailable"
+            } else {
+                if (!curriculum.isGradeSupported(gradeNo)) errors += "gradeNo: out of range"
+                if (semester !in 1..2) errors += "semester: out of range"
+                if (!curriculum.isSubjectSupported(gradeNo, subjectId)) {
+                    errors += "subjectId: invalid"
+                }
+                if (!curriculum.isTextbookSupported(gradeNo, subjectId, textbook)) {
+                    errors += "textbook: invalid"
+                }
+                if (scopeType !in SCOPE_TYPES) errors += "scopeType: invalid"
+                if (scopeType == "unit") {
+                    val unitMax = QuizUnitCatalog.current()
+                        ?.unitMax(gradeNo, semester, subjectId, textbook)
+                        ?: curriculum.unitMax(gradeNo)
+                    if (unitMax == null || unitNo == null || unitNo !in 1..unitMax) {
+                        errors += "unitNo: out of range"
+                    }
+                } else if (unitNo != null) {
+                    errors += "unitNo: must be empty outside unit scope"
+                }
             }
         }
         return if (errors.isEmpty()) {
@@ -544,11 +575,17 @@ object QuizGeneration {
             root.has("count") -> root.optInt("count", 0)
             else -> DEFAULT_TARGET_COUNT
         }
-        val valid = grade.matches(Regex("[1-6][ab]")) &&
-            subject in setOf("chinese", "math", "english", "science", "all") &&
-            textbook in TEXTBOOKS &&
-            scope in setOf("unit", "midterm", "final", "review") &&
-            unit in 1..8 &&
+        val curriculum = QuizCurriculum.current() ?: return null
+        val gradeNo = curriculum.gradeNoForCode(grade) ?: return null
+        val semester = curriculum.semesterForCode(grade) ?: return null
+        val valid = curriculum.isSubjectSupported(gradeNo, subject) &&
+            curriculum.isTextbookSupported(gradeNo, subject, textbook) &&
+            scope in SCOPE_TYPES &&
+            // Only a unit scope needs a unit limit. The earlier form stored a
+            // stale unit for midterm/final/review and must stay readable.
+            (scope != "unit" || unit in 1..(QuizUnitCatalog.current()
+                ?.unitMax(gradeNo, semester, subject, textbook)
+                ?: curriculum.unitMax(gradeNo) ?: Int.MAX_VALUE)) &&
             options in setOf(4, 6) &&
             difficulty in setOf("", "easy", "medium", "hard") &&
             (targetCount in TARGET_COUNTS || (root.has("count") && targetCount in 1..LEGACY_BATCH_COUNT))
@@ -568,10 +605,5 @@ object QuizGeneration {
             .put("presetVersion", presetVersion)
     }
 
-    private val SCOPE_SUBJECTS = setOf("chinese", "math", "english", "science", "all")
-    private val TEXTBOOKS = setOf(
-        "bubian", "renjiao", "sujiao", "beishida", "qingdao",
-        "pep", "waiyan", "yilin", "kejiao", "general", "all",
-    )
     private val SCOPE_TYPES = setOf("unit", "midterm", "final", "review")
 }

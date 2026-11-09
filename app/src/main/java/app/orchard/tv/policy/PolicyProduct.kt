@@ -7,6 +7,7 @@ import app.orchard.tv.quiz.QuizRuntime
 import app.orchard.tv.quiz.QuizSeedBank
 import app.orchard.tv.BuildConfig
 import com.planyourtv.log.TvLog
+import com.planyourtv.policy.quiz.QuizUnitCatalog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,8 +50,22 @@ object PolicyProduct {
         )
         // Ship a usable local bank so the quiz works before an AI key or the
         // network exists. After the coordinator because the durable marker
-        // lives in TvStore, which it initializes.
-        if (QuizSeedBank.install(context.applicationContext) > 0) QuizRuntime.refresh()
+        // lives in TvStore, which it initializes. The bundled set is now large
+        // enough that parsing it on the main thread would delay Home, so import
+        // once in the background; the quiz entry refreshes when it finishes.
+        val appContext = context.applicationContext
+        Thread({
+            // The unit catalogue is display/prompt data only, but its JSON is
+            // large enough that parsing it on the first scope card would be
+            // visible. Warm it on this disposable thread.
+            QuizUnitCatalog.current()
+            runCatching { QuizSeedBank.install(appContext) }
+                .onSuccess { added -> if (added > 0) QuizRuntime.refresh() }
+                .onFailure { error -> TvLog.w("PolicyProduct", "quiz seed import failed", error) }
+        }, "quiz-seed-import").apply {
+            isDaemon = true
+            start()
+        }
     }
 
     fun openParentSettings() {
