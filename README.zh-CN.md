@@ -254,6 +254,12 @@ Android TV 5.0+，兼容范围与 Aerial 保持一致。小米 `standard` 已真
 
 欢迎提交 Issue 和 Pull Request。请先阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。报告中不要包含电视 IP、ADB 密钥、签名文件、账号凭据或孩子的个人信息。
 
+## 致谢
+
+PlanYourTV 的桌面、Home Guard、设备适配层和整体架构来自 [Aerial](https://github.com/pengchujin/aerial-tv)。感谢作者 [pengchujin](https://github.com/pengchujin) 与 Aerial 贡献者以 MIT 协议开源这项工作，让 PlanYourTV 能在成熟的 Android TV 桌面基础上专注做儿童时间管理。
+
+其他开源依赖和素材的许可信息见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。
+
 ## 许可证与声明
 
 MIT。Aerial 的版权声明和第三方声明保留在 [LICENSE](LICENSE)、[NOTICE](NOTICE) 和 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。

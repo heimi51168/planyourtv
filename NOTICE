@@ -6,6 +6,8 @@ This product is based on Aerial:
   Copyright (c) 2026 pengchujin
   Licensed under the MIT License.
 
+The PlanYourTV maintainers thank pengchujin and the Aerial contributors for their work.
+
 The Aerial copyright notice and license text are preserved in LICENSE. Aerial's source namespace,
 `app.orchard.tv`, is retained for upstream compatibility; it is not the installed package identity
 of community builds, which is `com.planyourtv.tv`.
