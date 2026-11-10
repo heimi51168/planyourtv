@@ -8,6 +8,7 @@
 - 官方下载：https://planyourtv.me/download/
 - 支持系统：Android TV 5.0+（API 21+），不需要 root
 - 版本：以 https://planyourtv.me/download/version.txt 为准；官方下载地址始终提供最新社区版本，不要使用任何文档里写死的版本号
+- 上游与致谢：基于 Aerial（MIT）；感谢 pengchujin 与 Aerial 贡献者。详见项目 README、LICENSE 和 NOTICE。
 
 ## 0. 必须遵守的规则
 
@@ -93,22 +94,26 @@ adb shell getprop ro.build.version.release
 
 ## 4. 下载并安装
 
-官方下载地址始终指向最新社区版本。先读取最新版本号（输出形如 `vX.Y.ZZZ`，不要用任何文档里写死的版本号判断）：
+官方下载地址始终指向最新社区版本。先读取最新版本号（输出形如 `vX.Y.ZZZ`，不要用任何文档里写死的版本号判断）。如果命令失败、输出为空或不是 `v` 开头，立即停止，不要继续使用本机残留的旧 APK：
 
 ```bash
 curl -fsSL https://planyourtv.me/download/version.txt
 ```
 
-只从官方地址下载：
+只从官方地址下载。下载前先删除上次可能残留的同名文件，避免下载失败时误装旧包（macOS/Linux 用 `rm -f`，Windows PowerShell 用 `Remove-Item -Force -ErrorAction SilentlyContinue`）：
 
 ```bash
+rm -f planyourtv-standard.apk
 curl -fL -o planyourtv-standard.apk https://planyourtv.me/download/planyourtv-standard.apk
 adb install -r planyourtv-standard.apk
 ```
 
+如果 `curl` 失败或 APK 文件不存在，停止并贴出输出，不要继续执行 `adb install`。如果电视上已经装了旧版，直接 `adb install -r` 覆盖升级，数据会保留；不要先卸载。
+
 输出必须是 `Success`。如果固件拒绝安装桌面类 App，改用 guard 版本重试：
 
 ```bash
+rm -f planyourtv-guard.apk
 curl -fL -o planyourtv-guard.apk https://planyourtv.me/download/planyourtv-guard.apk
 adb install -r planyourtv-guard.apk
 ```
