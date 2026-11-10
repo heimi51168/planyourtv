@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -31,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -50,6 +53,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private const val DIALOG_PIN_LENGTH = 6
+
+/** All PIN prompts share one frame so step changes cannot resize or move the glass panel. */
+private val PIN_DIALOG_WIDTH = 400.dp
+private val PIN_DIALOG_MIN_HEIGHT = 400.dp
 
 /** Pad slots: 0-8 are "1".."9"; the bottom row is close, 0 and delete under them. */
 private const val PAD_ZERO = 10
@@ -122,6 +129,8 @@ private fun PolicyDialogRoot(
     onDismiss: () -> Unit,
     dismissible: () -> Boolean,
     onKey: (NativeKeyEvent) -> Boolean,
+    fixedWidth: Boolean = false,
+    minHeight: Dp = 0.dp,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val current by rememberUpdatedState(onKey)
@@ -132,6 +141,8 @@ private fun PolicyDialogRoot(
         // have its registration removed by the one that left.
         onDispose { keyRouter.detach(registration) }
     }
+    val widthModifier =
+        if (fixedWidth) Modifier.width(maxWidth) else Modifier.widthIn(max = maxWidth)
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -141,7 +152,8 @@ private fun PolicyDialogRoot(
     ) {
         Column(
             modifier = Modifier
-                .widthIn(max = maxWidth)
+                .then(widthModifier)
+                .heightIn(min = minHeight)
                 .consumeTaps()
                 .liquidGlass(24.dp)
                 .padding(horizontal = 28.dp, vertical = 22.dp),
@@ -149,6 +161,31 @@ private fun PolicyDialogRoot(
             content = content,
         )
     }
+}
+
+/**
+ * Fixed frame shared by every PIN prompt. The dialog used to size itself to its content, so
+ * hiding a description or switching to a shorter step made the glass panel shrink and re-center
+ * between steps. Keep the outer frame stable; only the content inside changes.
+ */
+@Composable
+private fun PolicyPinDialogRoot(
+    keyRouter: PolicyDialogKeyRouter,
+    onDismiss: () -> Unit,
+    dismissible: () -> Boolean,
+    onKey: (NativeKeyEvent) -> Boolean,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    PolicyDialogRoot(
+        maxWidth = PIN_DIALOG_WIDTH,
+        keyRouter = keyRouter,
+        onDismiss = onDismiss,
+        dismissible = dismissible,
+        onKey = onKey,
+        fixedWidth = true,
+        minHeight = PIN_DIALOG_MIN_HEIGHT,
+        content = content,
+    )
 }
 
 /** Back closes a dialog unless a save is in flight. */
@@ -231,6 +268,22 @@ private fun DialogTile(
                 textAlign = TextAlign.Center,
             ),
         )
+    }
+}
+
+/**
+ * Reserves a stable subtitle slot so switching steps or languages cannot move the PIN dots and
+ * keypad. Two lines is the common height; longer translations may still grow the slot.
+ */
+@Composable
+private fun DialogSubtitle(text: String, style: TextStyle, minHeight: Dp = 32.dp) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = minHeight),
+        contentAlignment = Alignment.TopCenter,
+    ) {
+        BasicText(text, style = style)
     }
 }
 
@@ -404,8 +457,7 @@ internal fun PolicyChangePinDialog(
         }
     }
 
-    PolicyDialogRoot(
-        maxWidth = 520.dp,
+    PolicyPinDialogRoot(
         keyRouter = keyRouter,
         onDismiss = onDismiss,
         dismissible = { !busy },
@@ -413,8 +465,8 @@ internal fun PolicyChangePinDialog(
     ) {
         BasicText(stringResource(R.string.policy_parent_change_pin), style = Type.Title)
         Spacer(Modifier.height(6.dp))
-        BasicText(
-            stringResource(
+        DialogSubtitle(
+            text = stringResource(
                 when (step) {
                     0 -> R.string.policy_parent_old_pin
                     1 -> R.string.policy_parent_new_pin
@@ -423,7 +475,7 @@ internal fun PolicyChangePinDialog(
             ),
             style = Type.Body,
         )
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(12.dp))
         PolicyPinDots(entered.length, DIALOG_PIN_LENGTH)
         Spacer(Modifier.height(6.dp))
         BasicText(
@@ -567,8 +619,7 @@ internal fun PolicyInitialPinDialog(
         }
     }
 
-    PolicyDialogRoot(
-        maxWidth = 520.dp,
+    PolicyPinDialogRoot(
         keyRouter = keyRouter,
         onDismiss = onDismiss,
         dismissible = { !busy },
@@ -584,16 +635,17 @@ internal fun PolicyInitialPinDialog(
             ),
             style = Type.Title,
         )
-        if (step != 1) {
-            Spacer(Modifier.height(6.dp))
-            BasicText(
-                stringResource(
-                    if (step == 0) R.string.policy_setup_body
-                    else R.string.policy_setup_recovery_body,
-                ),
-                style = Type.Caption.copy(textAlign = TextAlign.Center),
-            )
-        }
+        Spacer(Modifier.height(6.dp))
+        DialogSubtitle(
+            text = stringResource(
+                when (step) {
+                    0 -> R.string.policy_setup_body
+                    1 -> R.string.policy_setup_pin_again_hint
+                    else -> R.string.policy_setup_recovery_body
+                },
+            ),
+            style = Type.Caption.copy(textAlign = TextAlign.Center),
+        )
         Spacer(Modifier.height(12.dp))
         if (step < 2) {
             PolicyPinDots(entered.length, DIALOG_PIN_LENGTH)
@@ -718,8 +770,7 @@ internal fun PolicySyncPinDialog(
         }
     }
 
-    PolicyDialogRoot(
-        maxWidth = 520.dp,
+    PolicyPinDialogRoot(
         keyRouter = keyRouter,
         onDismiss = onDismiss,
         dismissible = { !busy },
@@ -929,8 +980,7 @@ internal fun PolicyVerifyPinDialog(
         }
     }
 
-    PolicyDialogRoot(
-        maxWidth = 520.dp,
+    PolicyPinDialogRoot(
         keyRouter = keyRouter,
         onDismiss = onDismiss,
         dismissible = { !busy },
@@ -938,7 +988,7 @@ internal fun PolicyVerifyPinDialog(
     ) {
         BasicText(stringResource(R.string.policy_parent_verify_title), style = Type.Title)
         Spacer(Modifier.height(6.dp))
-        BasicText(message, style = Type.Body.copy(fontSize = 15.sp))
+        DialogSubtitle(text = message, style = Type.Body.copy(fontSize = 15.sp))
         Spacer(Modifier.height(12.dp))
         PolicyPinDots(entered.length, DIALOG_PIN_LENGTH)
         Spacer(Modifier.height(6.dp))

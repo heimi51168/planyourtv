@@ -22,7 +22,11 @@ import kotlin.math.min
  * writes a half-reviewed batch.
  */
 object QuizGeneration {
-    const val JOB_TTL_MS = 10 * 60 * 1000L
+    // Slow free-tier models can take around two minutes per five-question
+    // batch. Keep the whole-run cap generous enough for the 50-question
+    // option while still freeing the single in-memory job if the page goes
+    // away without cancelling it.
+    const val JOB_TTL_MS = 30 * 60 * 1000L
     const val MAX_PROMPT_CHARS = 400
     // "Grade 4 · Semester 1" and its five-language variants all fit here.
     const val MAX_GRADE_CHARS = 32
@@ -319,7 +323,7 @@ object QuizGeneration {
                         // A long five-question response can hit the provider's
                         // output limit; retry with a shorter batch so the JSON
                         // has a chance to finish. Keep three per call so a
-                        // 50-question target still fits the ten-minute job TTL.
+                        // 50-question target still fits the job TTL.
                         parseRetries++
                         batchCap = min(batchCap, 3)
                         warnings = (warnings + "generation: retrying a shorter batch").takeLast(8)

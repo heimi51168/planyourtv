@@ -45,6 +45,10 @@
     <string name="policy_quiz_source_cloud">Source: cloud bank</string>
     <string name="policy_quiz_scope_label">Question range</string>
     <string name="policy_quiz_level_hint">Up/down to switch level</string>
+    <string name="policy_quiz_intro_hint">Press an arrow key to see levels</string>
+    <string name="policy_quiz_key_ok">OK</string>
+    <string name="policy_quiz_preparing">Preparing this round…</string>
+    <string name="policy_quiz_back_hint">Exit</string>
     <string name="policy_quiz_level_available">This level: %1$d questions</string>
     <string name="policy_quiz_level_short">This level has only %1$d of the %2$d questions a round needs</string>
     <string name="policy_quiz_scope_any">Not set</string>
@@ -251,6 +255,7 @@
     <string name="policy_setup_body">Choose a 6-digit parent PIN. The TV will use the default local rules until you change them.</string>
     <string name="policy_setup_pin_title">Set parent PIN</string>
     <string name="policy_setup_pin_again">Enter it again</string>
+    <string name="policy_setup_pin_again_hint">Enter the same PIN again to confirm.</string>
     <string name="policy_setup_pin_mismatch">The PINs do not match</string>
     <string name="policy_setup_pin_default">Do not use the built-in default PIN</string>
     <string name="policy_setup_recovery_title">Photograph this recovery code</string>

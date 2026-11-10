@@ -13,6 +13,8 @@ import com.planyourtv.policy.RemotePolicyMode
 import com.planyourtv.policy.SessionStartResult
 import com.planyourtv.policy.SessionState
 import com.planyourtv.policy.quiz.QUIZ_MAX_EARNED_MINUTES
+import com.planyourtv.policy.quiz.QUIZ_MAX_PULL_COUNT
+import com.planyourtv.policy.quiz.QUIZ_MIN_PULL_COUNT
 import com.planyourtv.policy.quiz.QuizConfig
 import com.planyourtv.policy.quiz.QuizItem
 import com.planyourtv.policy.quiz.QuizRun
@@ -302,8 +304,13 @@ object QuizChallenge {
             return BeginResult.Rejected("LOCAL_BANK_EMPTY")
         }
         // Keep the configured legacy field untouched; v5 ignores it. Only the
-        // reserved count is frozen into the round snapshot.
-        val runtimeConfig = config.copy(pullCount = items.size)
+        // reserved count is frozen into the round snapshot. The shared codec
+        // still enforces its configured-pull range, so a short level (one to
+        // four unused questions) must not persist a snapshot the next load
+        // rejects as unreadable; the round itself is always driven by [items].
+        val runtimeConfig = config.copy(
+            pullCount = items.size.coerceIn(QUIZ_MIN_PULL_COUNT, QUIZ_MAX_PULL_COUNT),
+        )
         val run = QuizRun(
             startedAt = nowMs,
             startedDate = QuizSessionStore.today(nowMs),

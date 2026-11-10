@@ -290,6 +290,17 @@ class QuizGenerationRequestTest {
         assertEquals("deepseek-chat", QuizProviderMeta.normalizeModel("deepseek-chat"))
         assertNull(QuizProviderMeta.normalizeModel("deepseek chat"))
         assertNull(QuizProviderMeta.normalizeModel("../../key"))
+        assertEquals(
+            "deepseek-ai/DeepSeek-V3",
+            QuizProviderMeta.normalizeModel("deepseek-ai/DeepSeek-V3"),
+        )
+        assertEquals(
+            "Pro/deepseek-ai/DeepSeek-R1",
+            QuizProviderMeta.normalizeModel("Pro/deepseek-ai/DeepSeek-R1"),
+        )
+        assertNull(QuizProviderMeta.normalizeModel("a/b/c/d"))
+        assertNull(QuizProviderMeta.normalizeModel("/deepseek-ai/DeepSeek-V3"))
+        assertNull(QuizProviderMeta.normalizeModel("deepseek-ai//DeepSeek-V3"))
         assertEquals(QuizProviderMeta(), QuizProviderMeta.fromJson("not json"))
     }
 }

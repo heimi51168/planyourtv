@@ -30,10 +30,13 @@
       gate_pair_title: "家长验证",
       gate_pair_text: "请输入电视上的 6 位家长密码。验证后当天内再次打开无需输入；次日 0 点后需要重新验证。网页不能解锁电视。",
       gate_pair_expired: "二维码已过期，请在电视上刷新后重新扫码。",
-      gate_in_use_heading: "家长设置正在使用中",
-      gate_in_use_lead: "同一时间只允许一台手机修改答题设置。",
-      gate_in_use_title: "当前已有家长在使用",
-      gate_in_use_text: "请稍后再试，或让已登录的手机退出「家长设置」；退出后这里会自动更新。",
+      gate_in_use_badge: "使用中",
+      gate_in_use_heading: "另一台手机正在使用",
+      gate_in_use_lead: "家长设置同一时间只能由一台手机修改。",
+      gate_in_use_title: "约 10 秒后自动恢复",
+      gate_in_use_text: "若对方已离开，本页会自动更新；\n对方点「退出家长设置」可立即释放。",
+      gate_takeover_button: "仍要接管",
+      gate_takeover_note: "需要家长密码；对方手机会立即退出。",
       pinLabel: "请输入家长密码",
       pinButton: "进入设置",
       editor_locked: "本轮挑战进行中，网页只能查看摘要。",
@@ -110,6 +113,20 @@
       keyHintSaved: "已保存密钥，不会回显；留空表示沿用。",
       keyHintNew: "密钥只保存在电视本地（系统支持时加密）。",
       deepseekKeyHint: "默认服务是 DeepSeek。没有 Key？可在 DeepSeek 开放平台创建（可选，费用由你与该平台结算）。",
+      providerPresetLabel: "快捷填入服务地址",
+      providerPresetNote: "仅为示例，非官方合作；费用和数据由所选服务商处理。",
+      providerPresetHintDeepSeek: "默认模型 deepseek-flash；当前配置已测试正常。",
+      providerPresetHintKimi: "例：kimi-k3.1-pro / kimi-k3。K3 系列为思考模型，题量多时可能被截断。",
+      providerPresetHintGlm: "免费模型 glm-4.7-flash 已关闭思考，约 2 分钟/5 题；测试连接只检查 /models，不代表能出题。",
+      providerPresetHintQwen: "例：qwen-plus / qwen3-max。新账号可能使用专属业务空间地址；模型以控制台为准。",
+      providerPresetHintDoubao: "例：doubao-seed-2-1-pro-260915，或控制台的接入点 ID（ep-...）。模型带日期，迭代较快。",
+      providerPresetHintHunyuan: "例：hunyuan-turbos-latest / hunyuan-t1-latest。旧接口仍可用；新账号可改用 TokenHub 地址。",
+      providerPresetHintErnie: "例：ernie-5.1 / ernie-4.5-turbo-128k。旧模型可能下线，以控制台模型列表为准。",
+      providerPresetHintSpark: "例：generalv3.5 / 4.0Ultra。密钥填控制台的 APIPassword（APIKey:APISecret）。",
+      providerPresetHintMiniMax: "例：MiniMax-M2 / MiniMax-M3。M2.x 始终思考；结构化输出可能不稳定。",
+      providerPresetHintLongCat: "例：LongCat-Flash-Chat / LongCat-2.5。模型更新较快，以 /models 返回为准。",
+      providerPresetHintStepFun: "例：step-3.5-flash / step-5-preview。Step Plan 订阅需使用不同的服务地址。",
+      providerPresetHintCustom: "填写服务商提供的模型 ID，以服务商控制台或 /models 为准。",
       saveProvider: "保存 AI 设置",
       testProvider: "测试连接",
       providerReady: "AI 出题已配置",
@@ -201,7 +218,7 @@
       noCandidatesSelected: "请至少勾选一道题。",
       err_CONSENT_REQUIRED: "请先同意隐私说明。",
       err_PROVIDER_KEY_REQUIRED: "请填写 API 密钥。",
-      err_PROVIDER_KEY_INVALID: "API 密钥格式不正确。",
+      err_PROVIDER_KEY_INVALID: "API 密钥无效，请检查是否粘贴完整后重试。",
       err_PROVIDER_CONFIG: "模型服务地址或模型名称不正确。",
       err_AI_UNSUPPORTED: "此电视的 Android 版本不支持 AI 出题。",
       err_PROVIDER_TIMEOUT: "模型服务响应超时。",
@@ -212,6 +229,7 @@
       err_PROVIDER_UNAVAILABLE: "模型服务暂时不可用。",
       err_PROVIDER_HTTP: "模型服务返回错误。",
       err_PROVIDER_INVALID_RESPONSE: "模型返回的内容无法解析，请重试。",
+      err_PROVIDER_TEST_UNSUPPORTED: "该服务未提供自动检测接口（地址也可能有误）；可保存后直接出题验证。",
       err_PROVIDER_NOT_CONFIGURED: "请先配置 AI 出题。",
       err_AI_EMPTY: "模型没有返回有效题目，请重试。",
       err_BUSY: "已有生成任务在进行。",
@@ -315,10 +333,13 @@
       gate_pair_title: "Parent verification",
       gate_pair_text: "Enter the 6-digit parent password shown on the TV. Reopening the page is password-free for the rest of the day; after local midnight it asks again. This page cannot unlock the TV.",
       gate_pair_expired: "The QR code expired. Refresh it on the TV and scan again.",
-      gate_in_use_heading: "Parent settings are in use",
-      gate_in_use_lead: "Only one phone can change quiz settings at a time.",
-      gate_in_use_title: "A parent is already using the settings",
-      gate_in_use_text: "Please try again shortly, or ask them to exit parent settings on their phone. This page updates automatically.",
+      gate_in_use_badge: "In use",
+      gate_in_use_heading: "Another phone is in use",
+      gate_in_use_lead: "Only one phone can change parent settings at a time.",
+      gate_in_use_title: "Auto-resumes in about 10 seconds",
+      gate_in_use_text: "If the other phone has left, this page refreshes automatically.\nExit parent settings there to release it now.",
+      gate_takeover_button: "Take over",
+      gate_takeover_note: "Parent password required; the other phone is signed out immediately.",
       pinLabel: "Enter parent password",
       pinButton: "Open settings",
       editor_locked: "A challenge is running. This page can only show its summary.",
@@ -395,6 +416,20 @@
       keyHintSaved: "A key is saved and never shown; leave this blank to keep it.",
       keyHintNew: "The key is stored only on the TV, encrypted when the system supports it.",
       deepseekKeyHint: "DeepSeek is the default. Need a key? Create one on the DeepSeek platform (optional; billed by DeepSeek).",
+      providerPresetLabel: "Quick fill service URL",
+      providerPresetNote: "Examples only, not an endorsement; fees and data are handled by the selected provider.",
+      providerPresetHintDeepSeek: "Default model is deepseek-flash; this setup is tested.",
+      providerPresetHintKimi: "e.g. kimi-k3.1-pro / kimi-k3. The K3 series always thinks; large batches may be truncated.",
+      providerPresetHintGlm: "Free glm-4.7-flash with thinking disabled takes about 2 minutes per 5 questions; the connection test only checks /models, not generation.",
+      providerPresetHintQwen: "e.g. qwen-plus / qwen3-max. New accounts may need a workspace-specific host; check the console.",
+      providerPresetHintDoubao: "e.g. doubao-seed-2-1-pro-260915, or an Ark endpoint ID (ep-...). Dated model IDs change often.",
+      providerPresetHintHunyuan: "e.g. hunyuan-turbos-latest / hunyuan-t1-latest. The legacy endpoint still works; new accounts may use TokenHub.",
+      providerPresetHintErnie: "e.g. ernie-5.1 / ernie-4.5-turbo-128k. Older models may retire; check the console list.",
+      providerPresetHintSpark: "e.g. generalv3.5 / 4.0Ultra. Use the console APIPassword (APIKey:APISecret) as the key.",
+      providerPresetHintMiniMax: "e.g. MiniMax-M2 / MiniMax-M3. M2.x always thinks; structured output may be unreliable.",
+      providerPresetHintLongCat: "e.g. LongCat-Flash-Chat / LongCat-2.5. Model IDs change quickly; check /models.",
+      providerPresetHintStepFun: "e.g. step-3.5-flash / step-5-preview. Step Plan subscriptions use a different host.",
+      providerPresetHintCustom: "Enter the model ID from the provider console or /models.",
       saveProvider: "Save AI settings",
       testProvider: "Test connection",
       providerReady: "AI questions configured",
@@ -486,7 +521,7 @@
       noCandidatesSelected: "Tick at least one question.",
       err_CONSENT_REQUIRED: "Accept the privacy notice first.",
       err_PROVIDER_KEY_REQUIRED: "Enter the API key.",
-      err_PROVIDER_KEY_INVALID: "The API key format is not valid.",
+      err_PROVIDER_KEY_INVALID: "The API key is not valid. Check that it was pasted in full and try again.",
       err_PROVIDER_CONFIG: "The service URL or model name is not valid.",
       err_AI_UNSUPPORTED: "AI questions are not supported on this TV's Android version.",
       err_PROVIDER_TIMEOUT: "The model service timed out.",
@@ -497,6 +532,7 @@
       err_PROVIDER_UNAVAILABLE: "The model service is temporarily unavailable.",
       err_PROVIDER_HTTP: "The model service returned an error.",
       err_PROVIDER_INVALID_RESPONSE: "The model response could not be parsed. Try again.",
+      err_PROVIDER_TEST_UNSUPPORTED: "This service has no automatic test endpoint (the URL may also be wrong). Save and try generating to verify.",
       err_PROVIDER_NOT_CONFIGURED: "Configure AI questions first.",
       err_AI_EMPTY: "The model returned no valid questions. Try again.",
       err_BUSY: "Another generation is already running.",
@@ -600,10 +636,13 @@
       gate_pair_title: "Проверка родителя",
       gate_pair_text: "Введите 6-значный пароль родителя с телевизора. В течение дня страница открывается без пароля; после местной полуночи потребуется ввести его снова. Страница не разблокирует телевизор.",
       gate_pair_expired: "QR-код устарел. Обновите его на телевизоре и отсканируйте снова.",
-      gate_in_use_heading: "Настройки родителя уже открыты",
-      gate_in_use_lead: "Изменять настройки викторины можно только с одного телефона одновременно.",
-      gate_in_use_title: "Настройки уже открыты у другого родителя",
-      gate_in_use_text: "Попробуйте позже или попросите его выйти из настроек на своём телефоне. Страница обновится автоматически.",
+      gate_in_use_badge: "Используется",
+      gate_in_use_heading: "Другой телефон сейчас использует настройки",
+      gate_in_use_lead: "Настройки родителя можно менять только с одного телефона одновременно.",
+      gate_in_use_title: "Восстановится примерно через 10 секунд",
+      gate_in_use_text: "Если другой телефон уже вышел, страница обновится сама.\nВыход из настроек освобождает доступ сразу.",
+      gate_takeover_button: "Перехватить управление",
+      gate_takeover_note: "Нужен пароль родителя; другой телефон сразу выйдет из настроек.",
       pinLabel: "Введите пароль родителя",
       pinButton: "Открыть настройки",
       editor_locked: "Викторина идёт. Страница показывает только сводку.",
@@ -680,6 +719,20 @@
       keyHintSaved: "Ключ сохранён и не показывается; оставьте поле пустым, чтобы сохранить его.",
       keyHintNew: "Ключ хранится только на телевизоре; шифрование используется, если система его поддерживает.",
       deepseekKeyHint: "По умолчанию используется DeepSeek. Нет ключа? Создайте его на платформе DeepSeek (необязательно; оплачивается DeepSeek).",
+      providerPresetLabel: "Быстрое заполнение адреса",
+      providerPresetNote: "Только примеры, не официальное партнёрство; оплату и данные обрабатывает выбранный сервис.",
+      providerPresetHintDeepSeek: "Модель по умолчанию — deepseek-flash; эта конфигурация проверена.",
+      providerPresetHintKimi: "Например, kimi-k3.1-pro / kimi-k3. Серия K3 всегда размышляет; большие наборы могут обрезаться.",
+      providerPresetHintGlm: "Бесплатная glm-4.7-flash с отключённым размышлением обрабатывает 5 вопросов примерно за 2 минуты; проверка подключения проверяет только /models, а не генерацию.",
+      providerPresetHintQwen: "Например, qwen-plus / qwen3-max. Новым аккаунтам может понадобиться отдельный адрес рабочего пространства; проверьте консоль.",
+      providerPresetHintDoubao: "Например, doubao-seed-2-1-pro-260915 или endpoint ID из консоли (ep-...). ID моделей с датой быстро меняются.",
+      providerPresetHintHunyuan: "Например, hunyuan-turbos-latest / hunyuan-t1-latest. Старый адрес ещё работает; новые аккаунты могут использовать TokenHub.",
+      providerPresetHintErnie: "Например, ernie-5.1 / ernie-4.5-turbo-128k. Старые модели могут отключать; смотрите список в консоли.",
+      providerPresetHintSpark: "Например, generalv3.5 / 4.0Ultra. В поле ключа укажите APIPassword из консоли (APIKey:APISecret).",
+      providerPresetHintMiniMax: "Например, MiniMax-M2 / MiniMax-M3. M2.x всегда размышляет; структурированный вывод может быть нестабильным.",
+      providerPresetHintLongCat: "Например, LongCat-Flash-Chat / LongCat-2.5. ID моделей часто меняются; смотрите /models.",
+      providerPresetHintStepFun: "Например, step-3.5-flash / step-5-preview. Для подписки Step Plan используется другой адрес.",
+      providerPresetHintCustom: "Укажите ID модели из консоли сервиса или /models.",
       saveProvider: "Сохранить настройки ИИ",
       testProvider: "Проверить подключение",
       providerReady: "ИИ-вопросы настроены",
@@ -771,7 +824,7 @@
       noCandidatesSelected: "Отметьте хотя бы один вопрос.",
       err_CONSENT_REQUIRED: "Сначала примите уведомление о конфиденциальности.",
       err_PROVIDER_KEY_REQUIRED: "Введите ключ API.",
-      err_PROVIDER_KEY_INVALID: "Неверный формат ключа API.",
+      err_PROVIDER_KEY_INVALID: "Ключ API недействителен. Проверьте, что он вставлен полностью, и повторите попытку.",
       err_PROVIDER_CONFIG: "Неверный адрес сервиса или название модели.",
       err_AI_UNSUPPORTED: "ИИ-вопросы не поддерживаются этой версией Android на телевизоре.",
       err_PROVIDER_TIMEOUT: "Сервис модели не ответил вовремя.",
@@ -782,6 +835,7 @@
       err_PROVIDER_UNAVAILABLE: "Сервис модели временно недоступен.",
       err_PROVIDER_HTTP: "Сервис модели вернул ошибку.",
       err_PROVIDER_INVALID_RESPONSE: "Ответ модели не удалось разобрать. Повторите.",
+      err_PROVIDER_TEST_UNSUPPORTED: "Сервис не предоставляет автоматическую проверку (адрес также может быть неверным). Сохраните и попробуйте сгенерировать вопросы.",
       err_PROVIDER_NOT_CONFIGURED: "Сначала настройте ИИ-вопросы.",
       err_AI_EMPTY: "Модель не вернула корректных вопросов. Повторите.",
       err_BUSY: "Уже выполняется другая генерация.",
@@ -885,10 +939,13 @@
       gate_pair_title: "Перевірка батьків",
       gate_pair_text: "Введіть 6-значний пароль батьків із телевізора. Протягом дня сторінка відкривається без пароля; після місцевої півночі його треба ввести знову. Сторінка не розблоковує телевізор.",
       gate_pair_expired: "QR-код застарів. Оновіть його на телевізорі й відскануйте знову.",
-      gate_in_use_heading: "Налаштування батьків уже відкрито",
-      gate_in_use_lead: "Змінювати налаштування вікторини можна лише з одного телефона одночасно.",
-      gate_in_use_title: "Налаштування вже відкрито в іншого з батьків",
-      gate_in_use_text: "Спробуйте пізніше або попросіть його вийти з налаштувань на своєму телефоні. Сторінка оновиться автоматично.",
+      gate_in_use_badge: "Використовується",
+      gate_in_use_heading: "Інший телефон зараз використовує налаштування",
+      gate_in_use_lead: "Налаштування батьків можна змінювати лише з одного телефона одночасно.",
+      gate_in_use_title: "Відновиться приблизно через 10 секунд",
+      gate_in_use_text: "Якщо інший телефон уже вийшов, сторінка оновиться сама.\nВихід із налаштувань звільняє доступ одразу.",
+      gate_takeover_button: "Перехопити керування",
+      gate_takeover_note: "Потрібен пароль батьків; інший телефон одразу вийде з налаштувань.",
       pinLabel: "Введіть пароль батьків",
       pinButton: "Відкрити налаштування",
       editor_locked: "Вікторина триває. Сторінка показує лише підсумок.",
@@ -965,6 +1022,20 @@
       keyHintSaved: "Ключ збережено і не показується; залиште поле порожнім, щоб зберегти його.",
       keyHintNew: "Ключ зберігається лише на телевізорі; шифрування використовується, якщо система його підтримує.",
       deepseekKeyHint: "Типово використовується DeepSeek. Немає ключа? Створіть його на платформі DeepSeek (необов’язково; оплачується DeepSeek).",
+      providerPresetLabel: "Швидке заповнення адреси",
+      providerPresetNote: "Лише приклади, не офіційне партнерство; оплату й дані обробляє обраний сервіс.",
+      providerPresetHintDeepSeek: "Модель за замовчуванням — deepseek-flash; цю конфігурацію перевірено.",
+      providerPresetHintKimi: "Наприклад, kimi-k3.1-pro / kimi-k3. Серія K3 завжди міркує; великі набори можуть обрізатися.",
+      providerPresetHintGlm: "Безкоштовна glm-4.7-flash із вимкненим міркуванням обробляє 5 питань приблизно за 2 хвилини; перевірка підключення перевіряє лише /models, а не генерацію.",
+      providerPresetHintQwen: "Наприклад, qwen-plus / qwen3-max. Новим акаунтам може знадобитися окрема адреса робочого простору; перевірте консоль.",
+      providerPresetHintDoubao: "Наприклад, doubao-seed-2-1-pro-260915 або endpoint ID з консолі (ep-...). ID моделей із датою швидко змінюються.",
+      providerPresetHintHunyuan: "Наприклад, hunyuan-turbos-latest / hunyuan-t1-latest. Стара адреса ще працює; нові акаунти можуть використовувати TokenHub.",
+      providerPresetHintErnie: "Наприклад, ernie-5.1 / ernie-4.5-turbo-128k. Старі моделі можуть вимикати; дивіться список у консолі.",
+      providerPresetHintSpark: "Наприклад, generalv3.5 / 4.0Ultra. У полі ключа вкажіть APIPassword з консолі (APIKey:APISecret).",
+      providerPresetHintMiniMax: "Наприклад, MiniMax-M2 / MiniMax-M3. M2.x завжди міркує; структурований вивід може бути нестабільним.",
+      providerPresetHintLongCat: "Наприклад, LongCat-Flash-Chat / LongCat-2.5. ID моделей часто змінюються; дивіться /models.",
+      providerPresetHintStepFun: "Наприклад, step-3.5-flash / step-5-preview. Для підписки Step Plan використовується інша адреса.",
+      providerPresetHintCustom: "Укажіть ID моделі з консолі сервісу або /models.",
       saveProvider: "Зберегти налаштування ШІ",
       testProvider: "Перевірити з'єднання",
       providerReady: "ШІ-питання налаштовано",
@@ -1056,7 +1127,7 @@
       noCandidatesSelected: "Позначте хоча б одне питання.",
       err_CONSENT_REQUIRED: "Спершу прийміть повідомлення про конфіденційність.",
       err_PROVIDER_KEY_REQUIRED: "Введіть ключ API.",
-      err_PROVIDER_KEY_INVALID: "Неправильний формат ключа API.",
+      err_PROVIDER_KEY_INVALID: "Ключ API недійсний. Перевірте, чи його вставлено повністю, і повторіть спробу.",
       err_PROVIDER_CONFIG: "Неправильна адреса сервісу або назва моделі.",
       err_AI_UNSUPPORTED: "ШІ-питання не підтримуються цією версією Android на телевізорі.",
       err_PROVIDER_TIMEOUT: "Сервіс моделі не відповів вчасно.",
@@ -1067,6 +1138,7 @@
       err_PROVIDER_UNAVAILABLE: "Сервіс моделі тимчасово недоступний.",
       err_PROVIDER_HTTP: "Сервіс моделі повернув помилку.",
       err_PROVIDER_INVALID_RESPONSE: "Відповідь моделі не вдалося розібрати. Повторіть.",
+      err_PROVIDER_TEST_UNSUPPORTED: "Сервіс не надає автоматичної перевірки (адреса також може бути неправильною). Збережіть і спробуйте згенерувати питання.",
       err_PROVIDER_NOT_CONFIGURED: "Спершу налаштуйте ШІ-питання.",
       err_AI_EMPTY: "Модель не повернула коректних питань. Повторіть.",
       err_BUSY: "Уже виконується інше створення.",
@@ -1170,10 +1242,13 @@
       gate_pair_title: "Ата-ананы растау",
       gate_pair_text: "Теледидардағы 6 таңбалы ата-ана құпиясөзін енгізіңіз. Күн ішінде бет құпиясөзсіз ашылады; жергілікті түн ортасынан кейін оны қайта енгізу керек. Бет теледидарды ашпайды.",
       gate_pair_expired: "QR-код ескірді. Теледидарда жаңартып, қайта сканерлеңіз.",
-      gate_in_use_heading: "Ата-ана баптауы ашық тұр",
-      gate_in_use_lead: "Викторина баптауларын бір уақытта тек бір телефоннан өзгертуге болады.",
-      gate_in_use_title: "Баптау қазір басқа ата-анада ашық",
-      gate_in_use_text: "Сәл кейінірек қайталап көріңіз немесе одан өз телефонында баптаудан шығуды сұраңыз. Бет өзі жаңарады.",
+      gate_in_use_badge: "Қолданылуда",
+      gate_in_use_heading: "Басқа телефон қазір баптауды қолданып тұр",
+      gate_in_use_lead: "Ата-ана баптауларын бір уақытта тек бір телефоннан өзгертуге болады.",
+      gate_in_use_title: "Шамамен 10 секундтан кейін қалпына келеді",
+      gate_in_use_text: "Басқа телефон шыққан болса, бет өзі жаңарады.\nБаптаудан шығу қолжетімділікті бірден босатады.",
+      gate_takeover_button: "Басқарып алу",
+      gate_takeover_note: "Ата-ана құпиясөзі қажет; басқа телефон бірден шығады.",
       pinLabel: "Ата-ана құпиясөзін енгізіңіз",
       pinButton: "Баптауды ашу",
       editor_locked: "Викторина жүріп жатыр. Бет тек қорытындыны көрсетеді.",
@@ -1250,6 +1325,20 @@
       keyHintSaved: "Кілт сақталған және көрсетілмейді; сақтау үшін өрісті бос қалдырыңыз.",
       keyHintNew: "Кілт тек теледидарда сақталады; жүйе қолдаса, шифрланады.",
       deepseekKeyHint: "Әдепкіде DeepSeek қолданылады. Кілт жоқ па? Оны DeepSeek платформасында жасаңыз (міндетті емес; төлемді DeepSeek алады).",
+      providerPresetLabel: "Мекенжайды жылдам толтыру",
+      providerPresetNote: "Тек мысалдар, ресми серіктестік емес; төлем мен деректерді таңдалған қызмет өңдейді.",
+      providerPresetHintDeepSeek: "Әдепкі модель — deepseek-flash; бұл конфигурация тексерілген.",
+      providerPresetHintKimi: "Мысалы, kimi-k3.1-pro / kimi-k3. K3 сериясы әрдайым ойланады; үлкен топтамалар қысқарып қалуы мүмкін.",
+      providerPresetHintGlm: "Ойлау өшірілген тегін glm-4.7-flash шамамен 5 сұрақты 2 минутта өңдейді; қосылымды тексеру тек /models тексереді, генерацияны емес.",
+      providerPresetHintQwen: "Мысалы, qwen-plus / qwen3-max. Жаңа аккаунттарға жеке жұмыс кеңістігі мекенжайы қажет болуы мүмкін; консольді тексеріңіз.",
+      providerPresetHintDoubao: "Мысалы, doubao-seed-2-1-pro-260915 немесе консольдегі endpoint ID (ep-...). Күні бар модель ID-лері жиі өзгереді.",
+      providerPresetHintHunyuan: "Мысалы, hunyuan-turbos-latest / hunyuan-t1-latest. Ескі мекенжай әлі жұмыс істейді; жаңа аккаунттар TokenHub қолдануы мүмкін.",
+      providerPresetHintErnie: "Мысалы, ernie-5.1 / ernie-4.5-turbo-128k. Ескі модельдер өшірілуі мүмкін; консольдегі тізімді қараңыз.",
+      providerPresetHintSpark: "Мысалы, generalv3.5 / 4.0Ultra. Кілт өрісіне консольдегі APIPassword (APIKey:APISecret) енгізіңіз.",
+      providerPresetHintMiniMax: "Мысалы, MiniMax-M2 / MiniMax-M3. M2.x әрдайым ойланады; құрылымдалған шығыс тұрақсыз болуы мүмкін.",
+      providerPresetHintLongCat: "Мысалы, LongCat-Flash-Chat / LongCat-2.5. Модель ID-лері жиі өзгереді; /models қараңыз.",
+      providerPresetHintStepFun: "Мысалы, step-3.5-flash / step-5-preview. Step Plan жазылымы басқа мекенжайды қолданады.",
+      providerPresetHintCustom: "Модель ID-ін қызмет консолінен немесе /models арқылы енгізіңіз.",
       saveProvider: "AI баптауын сақтау",
       testProvider: "Қосылымды тексеру",
       providerReady: "AI сұрақтары бапталған",
@@ -1341,7 +1430,7 @@
       noCandidatesSelected: "Кемінде бір сұрақты белгілеңіз.",
       err_CONSENT_REQUIRED: "Алдымен құпиялық туралы хабарламаны қабылдаңыз.",
       err_PROVIDER_KEY_REQUIRED: "API кілтін енгізіңіз.",
-      err_PROVIDER_KEY_INVALID: "API кілтінің пішімі дұрыс емес.",
+      err_PROVIDER_KEY_INVALID: "API кілті жарамсыз. Оның толық қойылғанын тексеріп, қайталап көріңіз.",
       err_PROVIDER_CONFIG: "Қызмет мекенжайы немесе модель атауы дұрыс емес.",
       err_AI_UNSUPPORTED: "Бұл теледидардың Android нұсқасы AI сұрақтарын қолдамайды.",
       err_PROVIDER_TIMEOUT: "Модель қызметі уақытында жауап бермеді.",
@@ -1352,6 +1441,7 @@
       err_PROVIDER_UNAVAILABLE: "Модель қызметі уақытша қолжетімсіз.",
       err_PROVIDER_HTTP: "Модель қызметі қате қайтарды.",
       err_PROVIDER_INVALID_RESPONSE: "Модель жауабын талдау мүмкін болмады. Қайталаңыз.",
+      err_PROVIDER_TEST_UNSUPPORTED: "Бұл қызметте автоматты тексеру интерфейсі жоқ (мекенжай да қате болуы мүмкін). Сақтап, сұрақ жасауды көріңіз.",
       err_PROVIDER_NOT_CONFIGURED: "Алдымен AI сұрақтарын баптаңыз.",
       err_AI_EMPTY: "Модель жарамды сұрақтар қайтармады. Қайталаңыз.",
       err_BUSY: "Басқа жасау жүріп жатыр.",
@@ -2639,6 +2729,11 @@
   // Local days are normally 24h; allow the 25h DST fall-back day.
   const AUTH_MAX_TTL_MS = 25 * 60 * 60 * 1000;
   const AUTH_CLOCK_SKEW_MS = 30 * 60 * 1000;
+  // Sent only while the page is visible. The TV releases the editing slot
+  // after 10 seconds without one, so closing WeChat still frees it even when
+  // the unload request cannot be delivered. Three missed beats release the
+  // slot, so a single dropped request does not cut off an active page.
+  const HEARTBEAT_MS = 3 * 1000;
   const DEFAULT_CONFIG = {
     defaultTimeLimitSec: 60,
     minutesPerPoint: 5,
@@ -2679,6 +2774,10 @@
     { length: (ROUND_MAX - ROUND_MIN) / ROUND_STEP + 1 },
     (_, index) => ROUND_MIN + index * ROUND_STEP,
   );
+  // A fresh TV opens the generation page on a ready-to-run demo scope instead of
+  // an empty requirement, which would block generation until a parent types one.
+  // The title matches unit 1 of grade 4 / semester 1 / math / 人教版.
+  const DEFAULT_GEN_REQUIREMENT = "一 万以上数的认识";
   const GEN_DIFFICULTY_VALUES = ["", "easy", "medium", "hard"];
   const GEN_PAGE_IDS = {
     home: "generateHome",
@@ -2800,6 +2899,8 @@
   let lang = detectLang();
   let adminToken = null;
   let adminExpiresAt = 0;
+  let heartbeatTimer = 0;
+  let forceTakeover = false;
   let gateShown = false;
   let gateOccupied = false;
   let publicState = null;
@@ -2834,12 +2935,13 @@
   let genSemesterValue = 1;
   let genUnitValue = 1;
   let genSubjectValue = "math";
-  // 题目要求为空时使用“总复习”作为兜底归类；文字可自动覆盖。
-  let genScopeValue = "review";
+  // Keep the default demo on the first unit so a new TV can generate without
+  // any configuration. A saved preference replaces both values.
+  let genScopeValue = "unit";
   let genTextbookId = "renjiao";
   let genDifficultyValue = "";
   // 完全自由的题目要求；样例只是快捷填充，不再代表下拉选中项。
-  let genRequirementValue = "";
+  let genRequirementValue = DEFAULT_GEN_REQUIREMENT;
   let genOptionsValue = 4;
   let genAutoAddValue = true;
   let genPromptDirty = false;
@@ -2928,10 +3030,50 @@
     } catch (_) { /* private mode */ }
   }
 
+  function stopHeartbeat() {
+    if (heartbeatTimer) {
+      clearInterval(heartbeatTimer);
+      heartbeatTimer = 0;
+    }
+  }
+
+  function heartbeat() {
+    if (!adminToken) return;
+    api("/api/quiz/admin/heartbeat", { admin: true }).catch(() => {});
+  }
+
+  function startHeartbeat() {
+    stopHeartbeat();
+    if (!adminToken) return;
+    heartbeatTimer = setInterval(() => {
+      // WeChat keeps background pages alive on some versions; an explicit
+      // visible check is what stops a forgotten page from holding the slot.
+      if (document.hidden) return;
+      heartbeat();
+    }, HEARTBEAT_MS);
+  }
+
   function clearAuth() {
+    stopHeartbeat();
     adminToken = null;
     adminExpiresAt = 0;
+    forceTakeover = false;
     try { localStorage.removeItem(AUTH_KEY); } catch (_) { /* ignore */ }
+  }
+
+  // Leaving the page should not force the parent to re-enter the PIN. The TV
+  // only marks the slot idle; the remembered token still resumes this phone
+  // unless another phone takes over first.
+  function releaseSession() {
+    if (!adminToken) return;
+    stopHeartbeat();
+    // keepalive can outlive the page; sendBeacon cannot carry the admin header.
+    api("/api/quiz/auth/release", {
+      method: "POST",
+      admin: true,
+      body: {},
+      keepalive: true,
+    }).catch(() => {});
   }
 
   function detectLang() {
@@ -4135,6 +4277,9 @@
       const el = $(id);
       if (el) el.disabled = !supported;
     }
+    document.querySelectorAll("[data-provider-preset]").forEach((el) => {
+      el.disabled = !supported;
+    });
     if (!supported) {
       $("providerBadge").textContent = t("aiUnavailableShort");
       $("providerBadge").className = "setting-value";
@@ -4144,6 +4289,7 @@
     $("providerBadge").textContent = t(providerState.configured ? "aiConfigured" : "aiNotConfigured");
     $("providerBadge").className = "setting-value" + (providerState.configured ? " good" : "");
     $("keyHint").textContent = t(providerState.configured ? "keyHintSaved" : "keyHintNew");
+    updateProviderModelHint();
     // Keep the generate card honest when the model key is cleared elsewhere.
     renderGenerate();
   }
@@ -4153,6 +4299,8 @@
     const msg = providerMsg;
     $("providerError").textContent =
       msg && msg.kind === "error" ? (msg.key ? t(msg.key) : codeText(msg.code)) : "";
+    $("providerWarn").textContent =
+      msg && msg.kind === "warn" ? (msg.key ? t(msg.key) : codeText(msg.code)) : "";
     $("providerOk").textContent =
       msg && msg.kind === "ok" ? (msg.key ? t(msg.key) : codeText(msg.code)) : "";
   }
@@ -4531,10 +4679,10 @@
       clearTimeout(roundWheelScrollTimer);
       roundWheelScrollTimer = 0;
     }
-    genRequirementValue = "";
+    genRequirementValue = DEFAULT_GEN_REQUIREMENT;
     genOptionsValue = 4;
     genAutoAddValue = true;
-    genScopeValue = "review";
+    genScopeValue = "unit";
     genUnitValue = 1;
     if (genPrefsSaveTimer) {
       clearTimeout(genPrefsSaveTimer);
@@ -4559,6 +4707,8 @@
   }
 
   function showPinGate() {
+    stopHeartbeat();
+    forceTakeover = false;
     if (activeModal) closeModal();
     resetSessionState();
     document.body.classList.remove("editor-open");
@@ -4570,6 +4720,7 @@
   }
 
   function showEditor() {
+    forceTakeover = false;
     gateShown = false;
     gateOccupied = false;
     document.body.classList.add("editor-open");
@@ -4584,7 +4735,10 @@
   // poll reveals the form again as soon as that phone logs out.
   function renderGateOccupation() {
     if (!gateShown) return;
-    const inUse = !adminToken && Boolean(publicState && publicState.parentInUse);
+    const occupied = !adminToken && Boolean(publicState && publicState.parentInUse);
+    // After the second parent confirms takeover, keep the PIN form visible
+    // across the five-second status poll until the request finishes.
+    const inUse = occupied && !forceTakeover;
     $("gateTitle").textContent = t(inUse ? "gate_in_use_heading" : "gate_pair_title");
     $("gateText").textContent = t(inUse ? "gate_in_use_lead" : "gate_pair_text");
     if (inUse) {
@@ -4597,6 +4751,10 @@
       $("gateNoticeText").textContent = "";
     }
     $("gateNotice").classList.toggle("hidden", !inUse);
+    $("gateNotice").classList.toggle("wait", inUse);
+    $("gateStatus").classList.toggle("hidden", !inUse);
+    $("gateTakeover").classList.toggle("hidden", !inUse);
+    $("gateTakeoverNote").classList.toggle("hidden", !occupied);
     $("pinForm").classList.toggle("hidden", inUse);
     const released = gateOccupied && !inUse;
     gateOccupied = inUse;
@@ -4703,6 +4861,93 @@
     return payload;
   }
 
+  // Presets are examples, not endorsements. The base URL is the prefix this client
+  // appends "/chat/completions" to, so it must include the provider's version path.
+  // Model IDs rotate quickly; hints under the model field repeat the samples and
+  // tell the parent to verify them in the provider console or through /models.
+  const PROVIDER_PRESETS = {
+    deepseek: { baseUrl: "https://api.deepseek.com", sampleModel: "deepseek-flash" },
+    // New Qwen accounts may use a workspace host such as
+    // https://{WorkspaceId}.cn-beijing.maas.aliyuncs.com/compatible-mode/v1;
+    // the classic Beijing host below still works. API keys are region-bound.
+    qwen: { baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1", sampleModel: "qwen-plus" },
+    kimi: { baseUrl: "https://api.moonshot.cn/v1", sampleModel: "kimi-k3.1-pro" },
+    glm: { baseUrl: "https://open.bigmodel.cn/api/paas/v4", sampleModel: "glm-4.7-flash" },
+    // Ark also accepts a console endpoint ID (ep-...). Dated model IDs change often.
+    // The Coding Plan endpoint is /api/coding/v3 and must not be used here.
+    doubao: { baseUrl: "https://ark.cn-beijing.volces.com/api/v3", sampleModel: "doubao-seed-2-1-pro-260915" },
+    // Legacy direct Hunyuan endpoint; Tencent is moving new accounts to TokenHub
+    // (https://tokenhub.tencentmaas.com/v1). The two platforms' keys are not interchangeable.
+    hunyuan: { baseUrl: "https://api.hunyuan.cloud.tencent.com/v1", sampleModel: "hunyuan-turbos-latest" },
+    // Some ERNIE models are retired over time; the international host is
+    // https://api.baiduqianfan.ai/v1 and uses a separate key.
+    ernie: { baseUrl: "https://qianfan.baidubce.com/v2", sampleModel: "ernie-5.1" },
+    // Spark keys are the console APIPassword in "APIKey:APISecret" form. Spark has no
+    // GET /models, so the test button reports "cannot auto-test". X1.5/X2 use another host.
+    spark: { baseUrl: "https://spark-api-open.xf-yun.com/v1", sampleModel: "generalv3.5" },
+    // MiniMax may ignore response_format, M2.x cannot disable thinking, and /models
+    // support is unconfirmed. The international host is https://api.minimax.io/v1.
+    minimax: { baseUrl: "https://api.minimaxi.com/v1", sampleModel: "MiniMax-M2" },
+    // LongCat SDK examples use https://api.longcat.chat/openai and let the SDK add /v1;
+    // this client only appends /chat/completions, so keep /v1 in the preset.
+    longcat: { baseUrl: "https://api.longcat.chat/openai/v1", sampleModel: "LongCat-Flash-Chat" },
+    // Step Plan subscriptions use https://api.stepfun.com/step_plan/v1 instead; the
+    // international host is https://api.stepfun.ai/v1.
+    stepfun: { baseUrl: "https://api.stepfun.com/v1", sampleModel: "step-3.5-flash" },
+  };
+
+  // Values already written by a preset may be replaced when another preset is chosen;
+  // a model the parent typed (or saved) is kept.
+  const PROVIDER_SAMPLE_MODELS = new Set(
+    Object.values(PROVIDER_PRESETS).map((preset) => preset.sampleModel).filter(Boolean),
+  );
+
+  function normalizedBaseUrl(value) {
+    return String(value || "").trim().replace(/\/+$/, "").toLowerCase();
+  }
+
+  function providerHintKey(value) {
+    const base = normalizedBaseUrl(value);
+    if (base.includes("moonshot.cn") || base.includes("moonshot.ai")) return "providerPresetHintKimi";
+    if (base.includes("bigmodel.cn") || base.includes("z.ai")) return "providerPresetHintGlm";
+    if (base.includes("deepseek.com")) return "providerPresetHintDeepSeek";
+    if (base.includes("dashscope.aliyuncs.com") || base.includes("maas.aliyuncs.com")) return "providerPresetHintQwen";
+    if (base.includes("volces.com") || base.includes("bytepluses.com")) return "providerPresetHintDoubao";
+    if (base.includes("hunyuan.cloud.tencent.com") || base.includes("tokenhub.tencentmaas.com")) return "providerPresetHintHunyuan";
+    if (base.includes("qianfan.baidubce.com") || base.includes("baiduqianfan.ai")) return "providerPresetHintErnie";
+    if (base.includes("spark-api-open.xf-yun.com")) return "providerPresetHintSpark";
+    if (base.includes("minimaxi.com") || base.includes("minimax.io") || base.includes("minimax.chat")) return "providerPresetHintMiniMax";
+    if (base.includes("longcat.chat")) return "providerPresetHintLongCat";
+    if (base.includes("stepfun.com") || base.includes("stepfun.ai")) return "providerPresetHintStepFun";
+    return "providerPresetHintCustom";
+  }
+
+  function updateProviderModelHint() {
+    if (!$("providerModelHint")) return;
+    const base = normalizedBaseUrl($("baseUrl").value);
+    $("providerModelHint").textContent = t(providerHintKey(base));
+    document.querySelectorAll("[data-provider-preset]").forEach((button) => {
+      const preset = PROVIDER_PRESETS[button.dataset.providerPreset];
+      const active = Boolean(preset) && normalizedBaseUrl(preset.baseUrl) === base;
+      button.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+  }
+
+  function applyProviderPreset(id) {
+    const preset = PROVIDER_PRESETS[id];
+    if (!preset) return;
+    const currentModel = $("model").value.trim();
+    $("baseUrl").value = preset.baseUrl;
+    // Keep a model the parent typed; replace an empty field or a sample left by
+    // another preset so a provider never receives the previous vendor's model ID.
+    if (!currentModel || PROVIDER_SAMPLE_MODELS.has(currentModel)) {
+      $("model").value = preset.sampleModel || "";
+    }
+    providerMsg = null;
+    renderProviderMessages();
+    updateProviderModelHint();
+  }
+
   function openProviderDialog(pending) {
     pendingGenerate = Boolean(pending);
     providerMsg = null;
@@ -4787,7 +5032,15 @@
       providerMsg = { kind: "ok", key: "providerTestOk" };
       renderProviderMessages();
     } catch (error) {
-      setProviderError(error);
+      // Some OpenAI-compatible services (for example Spark) have no GET /models.
+      // That is not a bad key, so show a warning instead of a red error.
+      const code = (error && (error.code || error.message)) || "";
+      if (code === "PROVIDER_TEST_UNSUPPORTED") {
+        providerMsg = { kind: "warn", code };
+        renderProviderMessages();
+      } else {
+        setProviderError(error);
+      }
     } finally {
       $("testProvider").disabled = providerState.aiSupported === false;
     }
@@ -6934,17 +7187,20 @@
     try {
       const data = await api("/api/quiz/auth/pin", {
         method: "POST",
-        body: { pin: $("pin").value.trim() },
+        body: { pin: $("pin").value.trim(), takeover: forceTakeover },
       });
       adminToken = data.adminToken;
       adminExpiresAt = data.expiresAt;
+      forceTakeover = false;
       saveAuth();
+      startHeartbeat();
       $("pin").value = "";
       await enterEditor();
     } catch (error) {
       if (error.code === "PARENT_IN_USE") {
         // The first phone logged in between the last status poll and this
         // submit; show the same notice instead of a misleading PIN error.
+        forceTakeover = false;
         if (publicState) publicState.parentInUse = true;
         renderGateOccupation();
       } else {
@@ -6971,6 +7227,8 @@
       }
       return;
     }
+    // The editor now owns the slot; keep it alive while this page is visible.
+    startHeartbeat();
     if (!providerState.consentAccepted) {
       pendingEnter = true;
       openConsent();
@@ -6984,6 +7242,7 @@
   function logout() {
     // Drop local auth immediately; revoking the token on the TV is best-effort
     // so declining the privacy gate never waits on the network.
+    stopHeartbeat();
     if (adminToken) {
       api("/api/quiz/auth/logout", { method: "POST", admin: true, body: {} })
         .catch(() => { /* the token may already be invalid */ });
@@ -7164,6 +7423,11 @@
     $("pin").addEventListener("input", () => {
       $("pin").value = $("pin").value.replace(/\D/g, "").slice(0, 6);
     });
+    $("gateTakeover").addEventListener("click", () => {
+      forceTakeover = true;
+      renderGateOccupation();
+      $("pin").focus();
+    });
     $("syncRetry").addEventListener("click", retrySync);
     $("syncUseRemote").addEventListener("click", useRemoteConfig);
     $("meAi").addEventListener("click", () => openProviderDialog(false));
@@ -7173,6 +7437,10 @@
     $("declineConsent").addEventListener("click", logout);
     $("saveProvider").addEventListener("click", saveProvider);
     $("testProvider").addEventListener("click", testProviderConnection);
+    $("baseUrl").addEventListener("input", updateProviderModelHint);
+    document.querySelectorAll("[data-provider-preset]").forEach((button) => {
+      button.addEventListener("click", () => applyProviderPreset(button.dataset.providerPreset));
+    });
     bindReliableTap($("saveRange"), saveRange);
     $("openGenConfig").addEventListener("click", openGenConfigPage);
     $("openAnswerConfig").addEventListener("click", openAnswerConfigPage);
@@ -7413,11 +7681,26 @@
     });
     document.addEventListener("keydown", modalKeydown);
     document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) refreshStatus();
+      if (!document.hidden && adminToken) {
+        // Reclaim the slot immediately if it is still free. If another phone
+        // took over while this page was hidden, the heartbeat returns
+        // ADMIN_EXPIRED and the PIN gate opens.
+        heartbeat();
+        refreshStatus();
+      }
+    });
+    // Best-effort immediate release when the page is torn down. WeChat may kill
+    // the process without delivering this; the TV's idle timeout covers that.
+    window.addEventListener("pagehide", releaseSession);
+    window.addEventListener("pageshow", (event) => {
+      if (!event.persisted || !adminToken) return;
+      startHeartbeat();
+      heartbeat();
+      refreshStatus();
     });
     setInterval(() => {
       if (!document.hidden) refreshStatus();
-    }, 5000);
+    }, 3000);
   }
 
   async function init() {

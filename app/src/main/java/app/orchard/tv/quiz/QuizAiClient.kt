@@ -27,10 +27,14 @@ object QuizAiClient {
     private const val TAG = "QuizAiClient"
     const val MAX_RESPONSE_BYTES = 2 * 1024 * 1024
     private const val MAX_ERROR_BYTES = 4 * 1024
-    private const val TOTAL_BUDGET_MS = 90_000L
+    // A free GLM flash batch of five questions can take about two minutes.
+    // Keep the per-batch budget above that; the generation job TTL still
+    // bounds the whole run, and other providers normally answer much sooner.
+    private const val TOTAL_BUDGET_MS = 360_000L
     private const val CONNECT_TIMEOUT_MS = 10_000
-    private const val READ_TIMEOUT_MS = 60_000
+    private const val READ_TIMEOUT_MS = 180_000
     private const val RETRY_DELAY_MS = 800L
+    private val RATE_LIMIT_RETRY_DELAYS_MS = longArrayOf(3_000L, 8_000L, 15_000L)
 
     data class Request(
         val count: Int,
@@ -63,16 +67,30 @@ object QuizAiClient {
         val model = QuizProviderMeta.normalizeModel(meta.model)
             ?: return Result.Failure("PROVIDER_CONFIG")
         val deadline = nowMs + TOTAL_BUDGET_MS
-        val body = requestBody(model, request).toByteArray(Charsets.UTF_8)
-        val retryBody = requestBody(model, request, strictRetry = true).toByteArray(Charsets.UTF_8)
+        val zhipu = isZhipu(base)
+        val body = requestBody(model, request, zhipu = zhipu).toByteArray(Charsets.UTF_8)
+        val retryBody = requestBody(model, request, strictRetry = true, zhipu = zhipu)
+            .toByteArray(Charsets.UTF_8)
+        // Some OpenAI-compatible providers reject optional parameters such as
+        // temperature or response_format. Keep a minimal payload ready for one
+        // compatibility retry; the prompt still requires a single JSON object.
+        val minimalBody = requestBody(model, request, minimal = true, zhipu = zhipu)
+            .toByteArray(Charsets.UTF_8)
 
         var lastCode = "PROVIDER_UNAVAILABLE"
         var schemaRetried = false
         var httpRetried = false
+        var compatRetried = false
+        var rateLimitRetries = 0
+        var minimal = false
         while (true) {
             val remaining = deadline - System.currentTimeMillis()
             if (remaining < 2_000L) return Result.Failure("PROVIDER_TIMEOUT")
-            val payload = if (schemaRetried) retryBody else body
+            val payload = when {
+                minimal -> minimalBody
+                schemaRetried -> retryBody
+                else -> body
+            }
             val response = try {
                 post("$base/chat/completions", apiKey, payload, deadline)
             } catch (_: SocketTimeoutException) {
@@ -107,7 +125,28 @@ object QuizAiClient {
                 }
             }
             lastCode = codeFor(response.code)
+            // 400/422 usually means this provider does not accept an optional
+            // OpenAI field. Retry once without temperature/response_format.
+            if (!compatRetried && (response.code == 400 || response.code == 422) &&
+                deadline - System.currentTimeMillis() > 20_000L
+            ) {
+                compatRetried = true
+                minimal = true
+                sleepQuietly(RETRY_DELAY_MS)
+                continue
+            }
             val retryable = response.code == 429 || response.code in 500..599
+            if (response.code == 429 &&
+                rateLimitRetries < RATE_LIMIT_RETRY_DELAYS_MS.size &&
+                deadline - System.currentTimeMillis() > 20_000L
+            ) {
+                // GLM's free tier often answers 429/1305 while the model is
+                // overloaded. Back off longer than the generic retry instead
+                // of failing the whole batch on a transient queueing error.
+                val delayMs = RATE_LIMIT_RETRY_DELAYS_MS[rateLimitRetries++]
+                sleepQuietly(delayMs)
+                continue
+            }
             if (!httpRetried && retryable && deadline - System.currentTimeMillis() > 20_000L) {
                 httpRetried = true
                 sleepQuietly(RETRY_DELAY_MS)
@@ -137,7 +176,14 @@ object QuizAiClient {
             connection.errorStream?.let { stream ->
                 runCatching { stream.use { readLimited(it, MAX_ERROR_BYTES) } }
             }
-            if (code in 200..299) null else codeFor(code)
+            when {
+                code in 200..299 -> null
+                // Spark and some compatible gateways do not expose GET /models.
+                // Report "cannot auto-test" instead of blaming the key; a wrong
+                // base URL also lands here, so the web text mentions both cases.
+                code == 404 || code == 405 -> "PROVIDER_TEST_UNSUPPORTED"
+                else -> codeFor(code)
+            }
         } catch (_: SocketTimeoutException) {
             "PROVIDER_TIMEOUT"
         } catch (_: Exception) {
@@ -323,7 +369,13 @@ object QuizAiClient {
         )
     }
 
-    private fun requestBody(model: String, request: Request, strictRetry: Boolean = false): String {
+    private fun requestBody(
+        model: String,
+        request: Request,
+        strictRetry: Boolean = false,
+        minimal: Boolean = false,
+        zhipu: Boolean = false,
+    ): String {
         val difficulty = request.difficulty.ifBlank { "medium" }
         val isJunior = QuizCurriculum.current()?.stageFor(request.gradeNo)?.id == "junior"
         val audience = if (isJunior) "school-age children" else "children"
@@ -386,7 +438,7 @@ object QuizAiClient {
             Required shape:
             {"questions":[{"prompt":"...","options":["..."],"answerLetter":"A","answerText":"...","explanation":"...","subject":"...","grade":"...","difficulty":"$difficulty","points":${request.points},"recommendedTimeSec":${request.timeLimitSec}}]}
         """.trimIndent() + retryNote
-        return JSONObject()
+        val payload = JSONObject()
             .put("model", model)
             .put(
                 "messages",
@@ -403,13 +455,29 @@ object QuizAiClient {
                     )
                     .put(JSONObject().put("role", "user").put("content", user)),
             )
-            .put("temperature", if (strictRetry) 0.2 else 0.7)
             // Solutions are much longer than a bare answer key; keep the cap at
             // the common 8K output limit so every OpenAI-compatible provider accepts it.
             .put("max_tokens", min(8192, 1200 + request.count * 900))
-            .put("response_format", JSONObject().put("type", "json_object"))
-            .toString()
+        if (!minimal) {
+            payload
+                .put("temperature", if (strictRetry) 0.2 else 0.7)
+                .put("response_format", JSONObject().put("type", "json_object"))
+            if (zhipu) {
+                // GLM reasoning models spend most of the output budget on
+                // hidden reasoning by default. The free flash model then
+                // misses the client's time limit and often truncates JSON;
+                // disabling thinking produced valid five-question batches.
+                // Keep it out of the minimal compatibility retry.
+                payload.put("thinking", JSONObject().put("type", "disabled"))
+            }
+        }
+        return payload.toString()
     }
+
+    /** GLM's native API supports a thinking switch; compatible gateways may not. */
+    private fun isZhipu(base: String): Boolean =
+        base.contains("bigmodel.cn", ignoreCase = true) ||
+            base.contains("z.ai", ignoreCase = true)
 
     private fun extractJsonObject(content: String): String? {
         var text = content.trim()

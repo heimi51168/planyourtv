@@ -3,6 +3,41 @@
 This changelog covers the community source snapshot. Official hosted builds may ship different
 artifacts with the same upstream Aerial base.
 
+## [1.85.011] - 2026-11-10
+
+AI provider and quiz flow update, based on Aerial 1.85 / versionCode 116. Version code
+`116011`.
+
+### Added
+
+- AI provider presets for DeepSeek, Qwen, Kimi, GLM, Doubao/Ark, Hunyuan, ERNIE, Spark,
+  MiniMax, LongCat and StepFun. A preset fills the endpoint and a sample model without
+  overwriting a model the parent typed; the default remains DeepSeek.
+- A free GLM preset (`glm-4.7-flash`), with thinking disabled and longer timeouts so slow
+  free batches can finish.
+- The generation page opens with a ready-to-run default: grade 4, first semester, math,
+  人教版, unit 1 “一 万以上数的认识”. A parent can change it before generating.
+- The quiz intro can be revealed with the remote's direction keys, and the start screen
+  shows saved levels and the current round's net score.
+- Parent settings on the phone page use a heartbeat, release the page after ten seconds of
+  inactivity, and show when another parent is active or has taken over.
+
+### Changed
+
+- The API key field no longer suggests an `sk-` prefix or a provider-specific format. Keys are
+  accepted as the provider issues them, including Spark's `APIKey:APISecret` form.
+- OpenAI-compatible providers that reject optional request fields are retried with a minimal
+  JSON request. Services without `GET /models` show a warning instead of a false key error.
+- Model IDs from gateway providers may contain up to three `vendor/model` segments.
+- Parent password dialogs share a consistent size and position across TV flows.
+
+### Fixed
+
+- Sessions that can no longer be decoded are isolated instead of breaking the quiz, and the
+  `pullCount` value is bounds-checked.
+- Generation tasks keep a 30-minute TTL and retry rate-limited (429) batches, so 20-, 30- and
+  50-question targets do not fail on slow free tiers.
+
 ## [1.85.010] - 2026-11-09
 
 Quiz, curriculum and scoring update, based on Aerial 1.85 / versionCode 116. Version code

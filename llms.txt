@@ -7,7 +7,7 @@
 - 产品名称：PlanYourTV / 计划电视
 - 类型：Android TV 桌面、儿童时间管理、家长控制
 - 包名：com.planyourtv.tv
-- 当前社区源码版本：1.85.010 / 116010
+- 当前社区源码版本：以 https://planyourtv.me/download/version.txt 为准（官方下载地址始终提供最新版本）
 - 系统要求：Android TV 5.0+（API 21+），不需要 root
 - 设备兼容：与 Aerial 上游保持一致；本项目只对小米电视 standard 版本做过真机验证
 - 数据：本地优先，不需要账号；本地模式不依赖服务器

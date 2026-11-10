@@ -24,6 +24,9 @@ import java.util.Locale
  */
 object QuizSessionStore {
     private const val KEY_SESSION = "quiz.session"
+    // Kept when a record cannot be decoded, so a later lenient decoder can
+    // still recover it after the main slot is cleared for the child.
+    private const val KEY_SESSION_UNREADABLE = "quiz.sessionUnreadable.v1"
     private const val KEY_ENABLED = "quiz.enabled"
     private const val KEY_PROVIDER_KEY = "quiz.providerKey"
     private const val KEY_PROVIDER_META = "quiz.providerMeta"
@@ -50,14 +53,45 @@ object QuizSessionStore {
 
     private val lock = Any()
 
-    fun loadSession(): QuizSession? = synchronized(lock) {
-        val raw = TvStore.getString(KEY_SESSION) ?: return null
-        val json = QuizCrypto.decrypt(raw) ?: return null
-        (QuizSessionCodec.decode(json) as? QuizDecodeResult.Success)?.session
+    /**
+     * A decoded record plus why it failed, when it did. Errors are field names
+     * from the codec; the decrypted payload is never returned or logged.
+     */
+    data class SessionInspection(
+        val session: QuizSession?,
+        val hasRecord: Boolean,
+        val decrypted: Boolean,
+        val errors: List<String>,
+    )
+
+    fun inspectSession(): SessionInspection = synchronized(lock) {
+        val raw = TvStore.getString(KEY_SESSION)
+            ?: return SessionInspection(null, false, false, emptyList())
+        val json = QuizCrypto.decrypt(raw)
+            ?: return SessionInspection(null, true, false, emptyList())
+        when (val decoded = QuizSessionCodec.decode(json)) {
+            is QuizDecodeResult.Success ->
+                SessionInspection(decoded.session, true, true, emptyList())
+            is QuizDecodeResult.Failure ->
+                SessionInspection(null, true, true, decoded.errors)
+        }
     }
+
+    fun loadSession(): QuizSession? = inspectSession().session
 
     /** True when a record exists but none of the decode paths produced a session. */
     fun hasStoredSession(): Boolean = TvStore.getString(KEY_SESSION) != null
+
+    /**
+     * Moves an undecodable record out of the active slot without destroying it.
+     * Returns false when the backup could not be written, so the caller keeps
+     * the original rather than losing it to a failed clean-up.
+     */
+    fun quarantineUnreadableSession(): Boolean = synchronized(lock) {
+        val raw = TvStore.getString(KEY_SESSION) ?: return false
+        if (!TvStore.putStringDurable(KEY_SESSION_UNREADABLE, raw)) return false
+        TvStore.removeDurable(KEY_SESSION)
+    }
 
     fun saveSession(session: QuizSession): Boolean = synchronized(lock) {
         // createdAt comes from the phone, while runtime writes use the TV clock.

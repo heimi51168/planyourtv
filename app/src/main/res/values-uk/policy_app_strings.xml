@@ -45,6 +45,10 @@
     <string name="policy_quiz_source_cloud">Джерело: хмарний банк</string>
     <string name="policy_quiz_scope_label">Діапазон питань</string>
     <string name="policy_quiz_level_hint">Перемикання рівня: вгору/вниз</string>
+    <string name="policy_quiz_intro_hint">Натисніть стрілку, щоб побачити рівні</string>
+    <string name="policy_quiz_key_ok">OK</string>
+    <string name="policy_quiz_preparing">Підготовка раунду…</string>
+    <string name="policy_quiz_back_hint">Вихід</string>
     <string name="policy_quiz_level_available">На цьому рівні: %1$d пит.</string>
     <string name="policy_quiz_level_short">На рівні лише %1$d із %2$d питань для раунду</string>
     <string name="policy_quiz_scope_any">Не задано</string>
@@ -251,6 +255,7 @@
     <string name="policy_setup_body">Виберіть 6-значний PIN. До зміни ТВ використовує локальні правила за замовчуванням.</string>
     <string name="policy_setup_pin_title">Задайте PIN</string>
     <string name="policy_setup_pin_again">Повторіть PIN</string>
+    <string name="policy_setup_pin_again_hint">Введіть той самий PIN ще раз для підтвердження.</string>
     <string name="policy_setup_pin_mismatch">PIN не збігаються</string>
     <string name="policy_setup_pin_default">Не використовуйте вбудований PIN за замовчуванням</string>
     <string name="policy_setup_recovery_title">Сфотографуйте код відновлення на телефон</string>

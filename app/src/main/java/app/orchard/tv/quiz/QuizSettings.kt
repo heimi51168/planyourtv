@@ -25,6 +25,15 @@ object QuizSettings {
         if (!enabled) {
             val current = QuizRuntime.refresh().session
             if (current?.status in ACTIVE_STATUSES) return SetResult.SessionRunning
+            if (current == null && QuizSessionStore.hasStoredSession()) {
+                // An undecodable record has no session object to clean up.
+                // Disabling the quiz is an explicit reset from the parent, so
+                // drop it instead of leaving the TV stuck on the setup QR.
+                QuizQuestionCache.releaseOrphans(null)
+                if (!QuizSessionStore.quarantineUnreadableSession()) {
+                    return SetResult.StorageError
+                }
+            }
             if (current != null) {
                 if (QuizChallenge.isCloudSession(current)) {
                     CloudQuizPreparer.discardCloudState(PolicyModeCoordinator.state.value.deviceNo)

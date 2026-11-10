@@ -3,6 +3,7 @@ package app.orchard.tv.ui.policy
 import android.view.KeyEvent as NativeKeyEvent
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -13,6 +14,7 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -64,6 +66,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -81,7 +84,9 @@ import app.orchard.tv.R
 import app.orchard.tv.quiz.CloudQuizPreparer
 import app.orchard.tv.quiz.QuizChallenge
 import app.orchard.tv.quiz.QuizRecovery
+import app.orchard.tv.quiz.QuizResultTone
 import app.orchard.tv.quiz.QuizRuntime
+import app.orchard.tv.system.Sounds
 import app.orchard.tv.ui.components.Pressable
 import app.orchard.tv.ui.components.glassEdge
 import app.orchard.tv.ui.components.isSelect
@@ -112,6 +117,15 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
+
+/**
+ * Quiz-only score colors. Gold means the child earned something (a correct
+ * answer, a reward, an unlock); green means a deduction or an unmet threshold.
+ * Green is a success color everywhere else in the app, so this inversion must
+ * stay local to the quiz and must not be promoted into [Palette].
+ */
+private val QuizGold = Color(0xFFFFD45A)
+private val QuizLoss = Palette.Green
 
 /**
  * The lock-screen quiz entry. It has three faces: the parent setup QR while a
@@ -462,6 +476,257 @@ private fun QuizQrCard(qr: QuizQr, size: Dp, modifier: Modifier = Modifier) {
 }
 
 /**
+ * The shared film-first start surface. The glass card and QR stay hidden until
+ * the film ends or the child presses a direction key. During the film, a
+ * direction key only reveals the card; OK is swallowed so repeated presses can
+ * never pick a level or begin a round. A round starts on a fresh OK press once
+ * the card is visible.
+ */
+@Composable
+private fun QuizStartShell(
+    busy: Boolean,
+    leaving: Boolean,
+    onStart: () -> Unit,
+    onStep: ((Int) -> Unit)?,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    val reduced = LocalReducedMotion.current
+    var revealed by remember { mutableStateOf(false) }
+    var inputReady by remember { mutableStateOf(false) }
+    var okPressed by remember { mutableStateOf(false) }
+    var pendingRelease by remember { mutableStateOf<Int?>(null) }
+    val focus = remember { FocusRequester() }
+    val scope = rememberCoroutineScope()
+
+    fun reveal(byKey: Int?) {
+        if (revealed || leaving) return
+        revealed = true
+        pendingRelease = byKey
+        if (byKey != null) Sounds.focusMoved()
+    }
+
+    LaunchedEffect(Unit) {
+        withFrameNanos { }
+        runCatching { focus.requestFocus() }
+        // A focus request can lose the race with the screen transition; one
+        // quiet retry covers that without stealing focus later.
+        delay(80)
+        runCatching { focus.requestFocus() }
+    }
+    LaunchedEffect(Unit) {
+        delay(ENTRY_INPUT_GUARD_MS)
+        inputReady = true
+    }
+    LaunchedEffect(Unit) {
+        // The player reports its end long before this; the timer only covers a
+        // decoder that never reaches STATE_ENDED.
+        delay(INTRO_FALLBACK_MS)
+        reveal(null)
+    }
+    LaunchedEffect(reduced) {
+        if (reduced) reveal(null)
+    }
+    // A key-up can be lost when the screen is backgrounded mid-press; a short
+    // timer keeps that from locking the card out of navigation and OK.
+    LaunchedEffect(pendingRelease) {
+        val pending = pendingRelease ?: return@LaunchedEffect
+        delay(PRESS_RELEASE_GUARD_MS)
+        if (pendingRelease == pending) pendingRelease = null
+    }
+
+    val revealProgress by animateFloatAsState(
+        targetValue = if (revealed) 1f else 0f,
+        animationSpec = if (reduced) tween(0) else tween(260, easing = Motion.EaseOut),
+        label = "quiz-start-reveal",
+    )
+    var hintReady by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(INTRO_HINT_DELAY_MS)
+        hintReady = true
+    }
+    val hintAlpha by animateFloatAsState(
+        targetValue = if (!revealed && hintReady) 1f else 0f,
+        animationSpec = tween(if (reduced) 0 else 200, easing = Motion.EaseOut),
+        label = "quiz-start-hint",
+    )
+
+    Box(Modifier.fillMaxSize()) {
+        QuizStartBackdrop(
+            fadeOut = busy || leaving,
+            onIntroFinished = {
+                scope.launch {
+                    // Let the final frame land before the card covers part of it.
+                    delay(INTRO_END_BEAT_MS)
+                    reveal(null)
+                }
+            },
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .focusRequester(focus)
+                .focusable()
+                .onPreviewKeyEvent { event ->
+                    val code = event.nativeKeyEvent.keyCode
+                    val down = event.type == KeyEventType.KeyDown
+                    val up = event.type == KeyEventType.KeyUp
+                    val repeat = event.nativeKeyEvent.repeatCount > 0
+                    if (!isStartNavKey(code) && !event.isSelect()) {
+                        return@onPreviewKeyEvent false
+                    }
+
+                    // Swallow the key-up that opened this page and the first
+                    // moments of the transition, so neither can reveal or start.
+                    if (!inputReady) return@onPreviewKeyEvent true
+
+                    if (!revealed) {
+                        // Only a direction key reveals the card. OK is
+                        // swallowed here on purpose: a child mashing OK should
+                        // not reveal the card and then start a round with the
+                        // next press.
+                        if (down && !repeat && isStartNavKey(code)) {
+                            reveal(code)
+                        } else if (up && pendingRelease == code) {
+                            pendingRelease = null
+                        }
+                        return@onPreviewKeyEvent true
+                    }
+
+                    if (pendingRelease != null) {
+                        // The press that revealed the card must be fully
+                        // released before the card accepts navigation or OK.
+                        if (up) pendingRelease = null
+                        return@onPreviewKeyEvent true
+                    }
+
+                    if (busy || leaving) {
+                        okPressed = false
+                        return@onPreviewKeyEvent true
+                    }
+
+                    if (event.isSelect()) {
+                        if (down && !repeat) {
+                            okPressed = true
+                        } else if (up) {
+                            val pressed = okPressed
+                            okPressed = false
+                            if (pressed) {
+                                Sounds.select()
+                                onStart()
+                            }
+                        }
+                        return@onPreviewKeyEvent true
+                    }
+
+                    if (down && !repeat) {
+                        when (code) {
+                            NativeKeyEvent.KEYCODE_DPAD_UP -> onStep?.invoke(-1)
+                            NativeKeyEvent.KEYCODE_DPAD_DOWN -> onStep?.invoke(1)
+                            // Left/right only reveal the card from the film;
+                            // the level wheel stays a vertical up/down list.
+                            else -> Unit
+                        }
+                    }
+                    true
+                },
+        ) {
+            // A light scrim separates the glass card from the moving film
+            // without hiding the picture behind it.
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.12f * revealProgress)),
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        alpha = revealProgress
+                        translationY = (1f - revealProgress) * 14.dp.toPx()
+                    },
+            ) {
+                content()
+            }
+            if (hintAlpha > 0.01f) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 30.dp)
+                        .graphicsLayer { alpha = hintAlpha }
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(Color.Black.copy(alpha = 0.52f))
+                        .padding(horizontal = 18.dp, vertical = 9.dp),
+                ) {
+                    BasicText(
+                        stringResource(R.string.policy_quiz_intro_hint),
+                        style = Type.Caption.copy(color = Palette.Label),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * The footer that replaces the old Start/Back buttons: the keys are physically
+ * on the remote, so the card shows what they will do without adding a focusable
+ * control that could steal the level wheel's keys. It is deliberately flat and
+ * muted so it reads as a caption, not as another button row.
+ */
+@Composable
+private fun QuizKeyHintRow(busy: Boolean) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        QuizKeyHint(
+            key = stringResource(R.string.policy_quiz_key_ok),
+            action = stringResource(
+                if (busy) R.string.policy_quiz_preparing else R.string.policy_quiz_start,
+            ),
+        )
+        Spacer(Modifier.width(24.dp))
+        QuizKeyHint(
+            key = stringResource(R.string.policy_back),
+            action = stringResource(R.string.policy_quiz_back_hint),
+        )
+    }
+}
+
+@Composable
+private fun QuizKeyHint(key: String, action: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        BasicText(
+            key,
+            style = Type.Caption.copy(
+                color = Palette.SecondaryLabel.copy(alpha = 0.9f),
+                fontWeight = FontWeight.SemiBold,
+            ),
+        )
+        Spacer(Modifier.width(6.dp))
+        BasicText(
+            action,
+            style = Type.Caption.copy(color = Palette.SecondaryLabel.copy(alpha = 0.75f)),
+        )
+    }
+}
+
+private fun isStartNavKey(code: Int): Boolean = when (code) {
+    NativeKeyEvent.KEYCODE_DPAD_UP,
+    NativeKeyEvent.KEYCODE_DPAD_DOWN,
+    NativeKeyEvent.KEYCODE_DPAD_LEFT,
+    NativeKeyEvent.KEYCODE_DPAD_RIGHT -> true
+    else -> false
+}
+
+private const val ENTRY_INPUT_GUARD_MS = 350L
+private const val PRESS_RELEASE_GUARD_MS = 700L
+private const val INTRO_FALLBACK_MS = 12_500L
+private const val INTRO_HINT_DELAY_MS = 1_200L
+private const val INTRO_END_BEAT_MS = 200L
+
+/**
  * Unbound start face. The local bank is already populated, so the child sees
  * the same round summary as the cloud start and the parent keeps a small QR to
  * add more questions between rounds.
@@ -488,8 +753,6 @@ private fun QuizBankStartScreen(
     var leaving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
-    val startFocus = remember { FocusRequester() }
-    val backFocus = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
         while (isActive) {
@@ -497,13 +760,13 @@ private fun QuizBankStartScreen(
             withContext(Dispatchers.IO) { QuizRuntime.refresh() }
         }
     }
-    LaunchedEffect(Unit) {
-        withFrameNanos { }
-        runCatching { startFocus.requestFocus() }
-    }
 
     fun choose(delta: Int) {
-        val next = selectedIndex + delta
+        // Read the current selection from state, not the value captured at the
+        // last recomposition: two quick presses can arrive between frames.
+        val current = levels.indexOfFirst { it.id == selectedLevelId }
+            .takeIf { it >= 0 } ?: fallbackIndex
+        val next = current + delta
         if (next !in levels.indices) return
         selectedLevelId = levels[next].id
         error = null
@@ -514,8 +777,10 @@ private fun QuizBankStartScreen(
         busy = true
         error = null
         scope.launch {
+            val levelId = levels.firstOrNull { it.id == selectedLevelId }?.id
+                ?: levels.getOrNull(fallbackIndex)?.id
             val result = withContext(Dispatchers.Default) {
-                QuizChallenge.start(levelId = selected?.id)
+                QuizChallenge.start(levelId = levelId)
             }
             busy = false
             if (result is QuizChallenge.BeginResult.Rejected) {
@@ -536,9 +801,16 @@ private fun QuizBankStartScreen(
         }
     }
 
-    Box(Modifier.fillMaxSize()) {
-        QuizStartBackdrop(fadeOut = busy || leaving)
+    // The parent screen only needs BACK when a round is running; on this face
+    // the fade-out belongs to the local close path.
+    BackHandler { close() }
 
+    QuizStartShell(
+        busy = busy,
+        leaving = leaving,
+        onStart = ::begin,
+        onStep = ::choose,
+    ) {
         Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
@@ -598,56 +870,8 @@ private fun QuizBankStartScreen(
                     modifier = Modifier.widthIn(max = 404.dp),
                 )
             }
-            Spacer(Modifier.height(18.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                LockButton(
-                    label = stringResource(R.string.policy_quiz_start),
-                    onClick = ::begin,
-                    width = 220.dp,
-                    focusRequester = startFocus,
-                    primary = true,
-                    // Up/down browse the parent-designed levels while focus stays
-                    // on Start; Right reaches Back, Left is clamped.
-                    onKey = { event ->
-                        when (event.nativeKeyEvent.keyCode) {
-                            NativeKeyEvent.KEYCODE_DPAD_UP,
-                            NativeKeyEvent.KEYCODE_DPAD_DOWN -> {
-                                if (event.type == KeyEventType.KeyDown &&
-                                    event.nativeKeyEvent.repeatCount == 0
-                                ) {
-                                    choose(
-                                        if (event.nativeKeyEvent.keyCode ==
-                                            NativeKeyEvent.KEYCODE_DPAD_DOWN
-                                        ) {
-                                            1
-                                        } else {
-                                            -1
-                                        },
-                                    )
-                                }
-                                true
-                            }
-                            NativeKeyEvent.KEYCODE_DPAD_LEFT -> true
-                            NativeKeyEvent.KEYCODE_DPAD_RIGHT -> {
-                                if (event.type == KeyEventType.KeyDown &&
-                                    event.nativeKeyEvent.repeatCount == 0
-                                ) {
-                                    runCatching { backFocus.requestFocus() }
-                                }
-                                true
-                            }
-                            else -> false
-                        }
-                    },
-                )
-                LockButton(
-                    label = stringResource(R.string.policy_back),
-                    onClick = ::close,
-                    width = 160.dp,
-                    focusRequester = backFocus,
-                    onKey = linearDpadFocus(previous = startFocus),
-                )
-            }
+            Spacer(Modifier.height(14.dp))
+            QuizKeyHintRow(busy = busy)
         }
 
         Column(
@@ -876,13 +1100,6 @@ private fun QuizReadyScreen(
     var leaving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
-    val startFocus = remember { FocusRequester() }
-    val backFocus = remember { FocusRequester() }
-
-    LaunchedEffect(Unit) {
-        withFrameNanos { }
-        runCatching { startFocus.requestFocus() }
-    }
 
     fun begin() {
         if (busy || leaving) return
@@ -908,9 +1125,14 @@ private fun QuizReadyScreen(
         }
     }
 
-    Box(Modifier.fillMaxSize()) {
-        QuizStartBackdrop(fadeOut = busy || leaving)
+    BackHandler { close() }
 
+    QuizStartShell(
+        busy = busy,
+        leaving = leaving,
+        onStart = ::begin,
+        onStep = null,
+    ) {
         Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
@@ -966,24 +1188,8 @@ private fun QuizReadyScreen(
                     modifier = Modifier.widthIn(max = 404.dp),
                 )
             }
-            Spacer(Modifier.height(18.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                LockButton(
-                    label = stringResource(R.string.policy_quiz_start),
-                    onClick = ::begin,
-                    width = 220.dp,
-                    focusRequester = startFocus,
-                    primary = true,
-                    onKey = linearDpadFocus(next = backFocus),
-                )
-                LockButton(
-                    label = stringResource(R.string.policy_back),
-                    onClick = ::close,
-                    width = 160.dp,
-                    focusRequester = backFocus,
-                    onKey = linearDpadFocus(previous = startFocus),
-                )
-            }
+            Spacer(Modifier.height(14.dp))
+            QuizKeyHintRow(busy = busy)
         }
     }
 }
@@ -1078,7 +1284,7 @@ private fun QuizScoringRuleRow(label: String, reward: Int, penalty: Int) {
         BasicText(
             stringResource(R.string.policy_quiz_rules_reward, reward),
             style = Type.Caption.copy(
-                color = Palette.Green,
+                color = QuizGold,
                 textAlign = TextAlign.End,
             ),
             modifier = Modifier.width(92.dp),
@@ -1090,7 +1296,7 @@ private fun QuizScoringRuleRow(label: String, reward: Int, penalty: Int) {
                 stringResource(R.string.policy_quiz_rules_penalty, penalty)
             },
             style = Type.Caption.copy(
-                color = if (penalty == 0) Palette.SecondaryLabel else Palette.Orange,
+                color = if (penalty == 0) Palette.SecondaryLabel else QuizLoss,
                 textAlign = TextAlign.End,
             ),
             modifier = Modifier.width(120.dp),
@@ -1600,8 +1806,10 @@ private fun Modifier.quizScrollBar(scroll: ScrollState, focused: Boolean): Modif
 
 /**
  * The post-round report is a positive summary, not a punishment screen. It
- * shows the totals, earned time and a warm evaluation; there is no forced wait
- * before the child can start the earned session or go back.
+ * shows the totals, the round's net score and a warm evaluation; there is no
+ * forced wait before the child can start the earned session or go back. The
+ * score is gold only when the round actually unlocked time, so a below-threshold
+ * round reads as "not enough yet" without turning the whole page negative.
  */
 @Composable
 private fun QuizReviewScreen(
@@ -1620,6 +1828,17 @@ private fun QuizReviewScreen(
         QuizScoring.score(session.items, run.submissions, session.config)
     } else {
         null
+    }
+    // The headline is the round's net score, not the granted minutes: below the
+    // unlock threshold the round pays 0 but still has a score to show (for
+    // example a 10-minute threshold with a 5-minute net score). Hosted rounds
+    // have no local score, so they fall back to the backend's earned minutes.
+    val scoreMinutes = score?.cappedMinutes ?: run.earnedMinutes
+    val scoreUnlocked = score?.unlockReached ?: (run.earnedMinutes > 0)
+    val scoreColor = if (QuizResultTone.isGold(scoreMinutes, scoreUnlocked)) {
+        QuizGold
+    } else {
+        QuizLoss
     }
     val correct = run.correctCount.coerceIn(0, total)
     val ratio = if (total > 0) correct.toFloat() / total.toFloat() else 0f
@@ -1748,7 +1967,9 @@ private fun QuizReviewScreen(
                 Spacer(Modifier.height(10.dp))
                 BasicText(
                     gradeTitle,
-                    style = Type.Title.copy(color = if (failed) Palette.Orange else Palette.Green),
+                    // Praise follows accuracy, not the payout; the score stat
+                    // below carries the unlock outcome.
+                    style = Type.Title.copy(color = if (failed) Palette.Orange else Palette.Label),
                 )
                 Spacer(Modifier.height(4.dp))
                 BasicText(
@@ -1765,13 +1986,17 @@ private fun QuizReviewScreen(
             ReportStat(
                 label = stringResource(R.string.policy_quiz_report_correct_label),
                 value = stringResource(R.string.policy_quiz_report_correct_value, correct, total),
-                color = Palette.Green,
+                color = Palette.Label,
                 modifier = Modifier.weight(1f),
             )
             ReportStat(
-                label = stringResource(R.string.policy_quiz_report_minutes_label),
-                value = stringResource(R.string.policy_quiz_report_minutes_value, run.earnedMinutes),
-                color = if (run.earnedMinutes > 0) Palette.Green else Palette.SecondaryLabel,
+                // The net score, even when the threshold means none of it is
+                // granted. Gold marks an unlocked round; green marks a score
+                // that stayed below the line (the threshold hint explains 0
+                // granted minutes).
+                label = stringResource(R.string.policy_quiz_report_score_label),
+                value = stringResource(R.string.policy_quiz_report_minutes_value, scoreMinutes),
+                color = scoreColor,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -1819,7 +2044,7 @@ private fun QuizReviewScreen(
                         score.netMinutes,
                     ),
                     style = Type.Caption.copy(
-                        color = Palette.Orange,
+                        color = QuizLoss,
                         textAlign = TextAlign.Center,
                     ),
                 )
@@ -1917,7 +2142,7 @@ private fun QuizSmallStar(size: Dp, active: Boolean) {
         val radius = this.size.minDimension * 0.48f
         drawPath(
             starPath(center, radius, radius * 0.46f),
-            color = if (active) Color(0xFFFFC83D) else Color.White.copy(alpha = 0.14f),
+            color = if (active) QuizGold else Color.White.copy(alpha = 0.14f),
         )
     }
 }
@@ -2008,7 +2233,7 @@ private fun QuizFeedbackPage(
                 BasicText(
                     title,
                     style = Type.Title.copy(
-                        color = if (correct) Palette.Green else Palette.Orange,
+                        color = if (correct) QuizGold else QuizLoss,
                     ),
                 )
                 Spacer(Modifier.height(2.dp))
@@ -2020,7 +2245,7 @@ private fun QuizFeedbackPage(
             if (correct) {
                 BasicText(
                     stringResource(R.string.policy_quiz_feedback_points, rewardMinutes),
-                    style = Type.Title.copy(color = Palette.Green),
+                    style = Type.Title.copy(color = QuizGold),
                 )
             } else if (penaltyMinutes != null) {
                 BasicText(
@@ -2030,7 +2255,7 @@ private fun QuizFeedbackPage(
                         stringResource(R.string.policy_quiz_feedback_no_penalty)
                     },
                     style = Type.Title.copy(
-                        color = if (penaltyMinutes > 0) Palette.Orange else Palette.SecondaryLabel,
+                        color = if (penaltyMinutes > 0) QuizLoss else Palette.SecondaryLabel,
                     ),
                 )
             }
@@ -2105,14 +2330,17 @@ private fun QuizFeedbackPage(
                 BasicText(
                     selectedText ?: stringResource(R.string.policy_quiz_review_unanswered),
                     style = Type.Body.copy(
-                        color = if (correct) Palette.Green else Palette.Orange,
+                        color = if (correct) QuizGold else QuizLoss,
                     ),
                 )
             }
             FeedbackSection(stringResource(R.string.policy_quiz_review_correct_answer)) {
                 BasicText(
                     correctText,
-                    style = Type.Body.copy(color = Palette.Green),
+                    // The correct option is information, not a score: keeping
+                    // it neutral stops a failed question from reading as a
+                    // green loss or a gold payout.
+                    style = Type.Body.copy(color = Palette.Label),
                 )
             }
             if (item.explanation.isNotBlank()) {
@@ -2199,7 +2427,7 @@ private val QuizRewardTextStyle = Type.LargeTitle.copy(
     // 3× the 26sp LargeTitle: this number is the moment.
     fontSize = 78.sp,
     fontWeight = FontWeight.W900,
-    color = Color(0xFFFFD45A),
+    color = QuizGold,
     shadow = Shadow(
         color = Color(0x99FFB300),
         offset = Offset.Zero,
@@ -2278,16 +2506,18 @@ private fun QuizOopsFace(size: Dp) {
             size = Size(radius * 0.32f, radius * 0.18f),
             style = Stroke(width = radius * 0.06f, cap = StrokeCap.Round),
         )
+        // Cool accents only: the wrong/timeout face must not carry the gold
+        // that the quiz reserves for earned time.
         drawPath(
             starPath(
                 Offset(c.x + radius * 0.86f, c.y - radius * 0.80f),
                 radius * 0.22f,
                 radius * 0.10f,
             ),
-            Color(0xFFFFD54F),
+            Color(0xFF8AA6E8),
         )
         drawCircle(
-            Color(0xFFFFF3C4).copy(alpha = 0.8f),
+            Color(0xFFD6E0FF).copy(alpha = 0.65f),
             radius * 0.035f,
             Offset(c.x - radius * 0.95f, c.y - radius * 0.58f),
         )

@@ -45,6 +45,10 @@
     <string name="policy_quiz_source_cloud">题目来源：云端题库</string>
     <string name="policy_quiz_scope_label">题目范围</string>
     <string name="policy_quiz_level_hint">按上下键切换关卡</string>
+    <string name="policy_quiz_intro_hint">按方向键查看关卡</string>
+    <string name="policy_quiz_key_ok">OK</string>
+    <string name="policy_quiz_preparing">正在准备本轮挑战…</string>
+    <string name="policy_quiz_back_hint">退出</string>
     <string name="policy_quiz_level_available">本关可用 %1$d 题</string>
     <string name="policy_quiz_level_short">本关只有 %1$d 题，本轮需要 %2$d 题</string>
     <string name="policy_quiz_scope_any">未限定</string>
@@ -251,6 +255,7 @@
     <string name="policy_setup_body">设置 6 位家长密码。修改前电视使用默认本地规则。</string>
     <string name="policy_setup_pin_title">设置家长密码</string>
     <string name="policy_setup_pin_again">再次输入</string>
+    <string name="policy_setup_pin_again_hint">请再次输入同一密码以确认。</string>
     <string name="policy_setup_pin_mismatch">两次密码不一致</string>
     <string name="policy_setup_pin_default">请勿使用内置默认密码</string>
     <string name="policy_setup_recovery_title">请用手机拍照保存恢复码</string>

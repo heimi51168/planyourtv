@@ -19,7 +19,12 @@ data class QuizProviderMeta(
     companion object {
         const val DEFAULT_BASE_URL = "https://api.deepseek.com"
         const val DEFAULT_MODEL = "deepseek-flash"
-        private val MODEL_RE = Regex("[A-Za-z0-9._:-]{1,80}")
+        // Some OpenAI-compatible gateways use "vendor/model" IDs (SiliconFlow,
+        // ModelScope, OpenRouter). Keep up to three segments, but reject ".", "..",
+        // empty segments and path-like values so the ID stays a plain JSON field.
+        private val MODEL_SEGMENT_RE = Regex("[A-Za-z0-9._:-]{1,40}")
+        private const val MODEL_MAX_LENGTH = 80
+        private const val MODEL_MAX_SEGMENTS = 3
 
         fun fromJson(raw: String?): QuizProviderMeta {
             if (raw.isNullOrBlank()) return QuizProviderMeta()
@@ -43,7 +48,15 @@ data class QuizProviderMeta(
             return trimmed
         }
 
-        fun normalizeModel(value: String): String? =
-            value.trim().takeIf { MODEL_RE.matches(it) }
+        fun normalizeModel(value: String): String? {
+            val trimmed = value.trim()
+            if (trimmed.isEmpty() || trimmed.length > MODEL_MAX_LENGTH) return null
+            val segments = trimmed.split('/')
+            if (segments.size > MODEL_MAX_SEGMENTS) return null
+            if (segments.any { it == "." || it == ".." || !MODEL_SEGMENT_RE.matches(it) }) {
+                return null
+            }
+            return trimmed
+        }
     }
 }

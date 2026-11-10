@@ -26,6 +26,7 @@ import org.json.JSONArray
  */
 object QuizWebAdmin {
     private const val MAX_JSON_BYTES = 256 * 1024
+    private const val MAX_PROVIDER_KEY_LENGTH = 4096
 
     /**
      * NanoHTTPD keeps one [IHTTPSession] for the whole keep-alive connection,
@@ -64,6 +65,8 @@ object QuizWebAdmin {
                 session.method == Method.POST && path == "/api/quiz/pair" -> pair(session)
                 session.method == Method.POST && path == "/api/quiz/auth/pin" -> pin(session)
                 session.method == Method.POST && path == "/api/quiz/auth/logout" -> logout(session)
+                session.method == Method.POST && path == "/api/quiz/auth/release" -> release(session)
+                session.method == Method.GET && path == "/api/quiz/admin/heartbeat" -> heartbeat(session)
                 session.method == Method.GET && path == "/api/quiz/admin/session" -> readSession(session)
                 session.method == Method.GET && path == "/api/quiz/admin/units" -> readUnitCatalog(session)
                 session.method == Method.PUT && path == "/api/quiz/admin/session" -> putSession(session)
@@ -119,7 +122,10 @@ object QuizWebAdmin {
         val body = jsonBody(session) ?: return error(Response.Status.BAD_REQUEST, "INVALID_JSON")
         val pin = body.optString("pin", "")
         if (pin.length != 6 || pin.any { !it.isDigit() }) return error(Response.Status.BAD_REQUEST, "PIN_INVALID")
-        return when (val result = QuizAccess.authenticate(pin)) {
+        // A parent who explicitly confirms takeover replaces the phone that
+        // currently owns the page; the old token stops working immediately.
+        val takeover = body.optBoolean("takeover", false)
+        return when (val result = QuizAccess.authenticate(pin, takeover = takeover)) {
             is QuizAccess.AuthResult.Ok -> json(
                 Response.Status.OK,
                 JSONObject()
@@ -143,6 +149,27 @@ object QuizWebAdmin {
     private fun logout(session: IHTTPSession): Response {
         adminError(session)?.let { return it }
         QuizAccess.logout(adminToken(session))
+        return json(Response.Status.OK, JSONObject().put("ok", true))
+    }
+
+    /**
+     * Presence probe. The page sends this only while it is visible; [adminError]
+     * refreshes the owner's last-seen time, so the body is intentionally small.
+     */
+    private fun heartbeat(session: IHTTPSession): Response {
+        adminError(session)?.let { return it }
+        return json(Response.Status.OK, JSONObject().put("ok", true))
+    }
+
+    /**
+     * Best-effort unload release. Unlike [logout] this keeps the remembered
+     * token, so the same phone can resume without the PIN when nobody else
+     * took the slot. If the browser never sends this request, the idle timeout
+     * in [QuizAccess] has the same effect about ten seconds later.
+     */
+    private fun release(session: IHTTPSession): Response {
+        adminError(session)?.let { return it }
+        QuizAccess.release(adminToken(session))
         return json(Response.Status.OK, JSONObject().put("ok", true))
     }
 
@@ -733,6 +760,13 @@ object QuizWebAdmin {
                     return error(Response.Status.INTERNAL_ERROR, "STORAGE_ERROR")
                 }
             }
+        } else if (QuizSessionStore.hasStoredSession()) {
+            // The parent asked to delete a record the current codec cannot
+            // read; without this branch the setup screen could never be reset.
+            QuizQuestionCache.releaseOrphans(null)
+            if (!QuizSessionStore.quarantineUnreadableSession()) {
+                return error(Response.Status.INTERNAL_ERROR, "STORAGE_ERROR")
+            }
         }
         QuizRuntime.refresh()
         return json(Response.Status.OK, JSONObject().put("ok", true))
@@ -1009,8 +1043,11 @@ object QuizWebAdmin {
 
     private fun normalizeKey(value: String): String? {
         val key = value.trim()
-        if (key.length !in 8..512) return null
-        if (key.any { it.code < 0x21 || it.code > 0x7E }) return null
+        // Providers use different key shapes (sk-..., id.secret, APIKey:APISecret, JWT),
+        // so do not impose a format. Only reject values that cannot be sent safely in an
+        // HTTP Authorization header: empty, oversized, or containing control characters.
+        if (key.isEmpty() || key.length > MAX_PROVIDER_KEY_LENGTH) return null
+        if (key.any { it.isISOControl() }) return null
         return key
     }
 

@@ -42,13 +42,20 @@ import app.orchard.tv.ui.theme.Motion
  * remains as the whole backdrop when the TV is set to reduce motion or when the
  * film cannot be decoded.
  *
- * [fadeOut] is driven by the start request: the music ducks away while the
+ * [fadeOut] is driven by the start request: the music fades away while the
  * round is being prepared, and comes back if the request is refused. The page
- * does not wait for the fade before it starts the business call.
+ * does not wait for the fade before it starts the business call. The intro
+ * keeps its normal volume while the level card is visible; opening the card
+ * never changes the TV's loudness.
+ *
+ * [onIntroFinished] fires once when the film ends, fails, or is skipped by the
+ * reduce-motion setting; the caller reveals the card, never starts a round
+ * from it.
  */
 @Composable
 internal fun QuizStartBackdrop(
     fadeOut: Boolean,
+    onIntroFinished: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -58,6 +65,7 @@ internal fun QuizStartBackdrop(
     var surface by remember { mutableStateOf<SurfaceView?>(null) }
     var firstFrame by remember { mutableStateOf(false) }
     var failed by remember { mutableStateOf(false) }
+    var finished by remember { mutableStateOf(false) }
 
     val targetVolume = if (fadeOut) 0f else INTRO_VOLUME
     val audioVolume by animateFloatAsState(
@@ -72,9 +80,23 @@ internal fun QuizStartBackdrop(
     )
     val fadeOutNow by rememberUpdatedState(fadeOut)
     val playerNow by rememberUpdatedState(player)
+    val finishedNow by rememberUpdatedState(onIntroFinished)
+
+    val signalFinished = {
+        if (!finished) {
+            finished = true
+            finishedNow()
+        }
+    }
 
     LaunchedEffect(player, audioVolume) {
         player?.volume = audioVolume
+    }
+
+    // The poster is the whole intro when the TV asks to reduce motion; reveal
+    // the card immediately instead of waiting for a player that never starts.
+    LaunchedEffect(reduced) {
+        if (reduced) signalFinished()
     }
 
     DisposableEffect(lifecycle) {
@@ -114,8 +136,13 @@ internal fun QuizStartBackdrop(
                     firstFrame = true
                 }
 
+                override fun onPlaybackStateChanged(playbackState: Int) {
+                    if (playbackState == Player.STATE_ENDED) signalFinished()
+                }
+
                 override fun onPlayerError(error: PlaybackException) {
                     failed = true
+                    signalFinished()
                 }
             })
             surface?.let { setVideoSurfaceView(it) }

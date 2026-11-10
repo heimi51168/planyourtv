@@ -162,6 +162,26 @@ h3 {
 .gate .muted { margin-bottom: 20px; }
 .gate .fineprint { margin: 20px 0 0; padding-top: 16px; border-top: 1px solid var(--line); }
 .gate .notice { margin: 0 0 20px; }
+#gateTakeover { margin: 0 0 10px; }
+
+.gate-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 10px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: 12px;
+  font-weight: 640;
+}
+.gate-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
 
 .notice {
   padding: 12px 14px;
@@ -172,6 +192,9 @@ h3 {
 }
 .notice strong { display: block; margin-bottom: 2px; font-weight: 600; }
 .notice span { color: var(--muted); }
+.gate .notice.wait { background: var(--warn-soft); }
+.gate .notice.wait strong { color: var(--warn); }
+.gate .notice.wait span { color: var(--ink); opacity: 0.74; white-space: pre-line; }
 
 .muted { color: var(--muted); }
 .small { font-size: 12px; }
@@ -185,14 +208,15 @@ h3 {
   font-size: 12px;
   line-height: 1.6;
 }
-.error, .ok {
+.error, .ok, .warn {
   min-height: 0;
   margin: 10px 0 0;
   font-size: 13px;
 }
 .error { color: var(--danger); }
 .ok { color: var(--ok); }
-.error:empty, .ok:empty { display: none; }
+.warn { color: var(--warn); }
+.error:empty, .ok:empty, .warn:empty { display: none; }
 
 label {
   display: block;
@@ -301,6 +325,7 @@ details summary:focus-visible {
 .card > .section-label:first-child { margin-top: 0; }
 
 .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.provider-presets { margin-top: 8px; }
 .choice-chip {
   display: inline-flex;
   align-items: center;

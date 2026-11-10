@@ -20,12 +20,18 @@
 
   <main>
     <section id="gateCard" class="gate card">
+      <p id="gateStatus" class="gate-status hidden">
+        <span class="gate-status-dot" aria-hidden="true"></span>
+        <span data-i18n="gate_in_use_badge"></span>
+      </p>
       <h2 id="gateTitle">—</h2>
       <p id="gateText" class="muted"></p>
       <div id="gateNotice" class="notice hidden" role="status">
         <strong id="gateNoticeTitle"></strong>
         <span id="gateNoticeText"></span>
       </div>
+      <button id="gateTakeover" class="btn secondary block hidden" type="button" data-i18n="gate_takeover_button"></button>
+      <p id="gateTakeoverNote" class="hint hidden" data-i18n="gate_takeover_note"></p>
       <form id="pinForm" class="pin-form hidden">
         <label for="pin" data-i18n="pinLabel"></label>
         <input id="pin" name="pin" type="password" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" required>
@@ -587,15 +593,30 @@
         <div>
           <label for="baseUrl" data-i18n="baseUrl"></label>
           <input id="baseUrl" type="url" autocomplete="off" spellcheck="false">
+          <div id="providerPresets" class="chip-row provider-presets" role="group" data-i18n-aria="providerPresetLabel">
+            <button class="choice-chip" type="button" data-provider-preset="deepseek" aria-pressed="false">DeepSeek</button>
+            <button class="choice-chip" type="button" data-provider-preset="qwen" aria-pressed="false">Qwen</button>
+            <button class="choice-chip" type="button" data-provider-preset="kimi" aria-pressed="false">Kimi</button>
+            <button class="choice-chip" type="button" data-provider-preset="glm" aria-pressed="false">GLM</button>
+            <button class="choice-chip" type="button" data-provider-preset="doubao" aria-pressed="false">Doubao</button>
+            <button class="choice-chip" type="button" data-provider-preset="hunyuan" aria-pressed="false">Hunyuan</button>
+            <button class="choice-chip" type="button" data-provider-preset="ernie" aria-pressed="false">ERNIE</button>
+            <button class="choice-chip" type="button" data-provider-preset="spark" aria-pressed="false">Spark</button>
+            <button class="choice-chip" type="button" data-provider-preset="minimax" aria-pressed="false">MiniMax</button>
+            <button class="choice-chip" type="button" data-provider-preset="longcat" aria-pressed="false">LongCat</button>
+            <button class="choice-chip" type="button" data-provider-preset="stepfun" aria-pressed="false">StepFun</button>
+          </div>
+          <p class="hint" data-i18n="providerPresetNote"></p>
           <p class="hint"><a href="https://platform.deepseek.com" target="_blank" rel="noopener" data-i18n="deepseekKeyHint"></a></p>
         </div>
         <div>
           <label for="model" data-i18n="model"></label>
           <input id="model" type="text" autocomplete="off" spellcheck="false">
+          <p id="providerModelHint" class="hint"></p>
         </div>
       </div>
       <label for="apiKey" data-i18n="apiKey"></label>
-      <input id="apiKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-...">
+      <input id="apiKey" type="password" autocomplete="off" spellcheck="false">
       <p id="keyHint" class="hint"></p>
       <div class="modal-actions">
         <button id="saveProvider" class="btn primary" type="button" data-i18n="saveProvider"></button>
@@ -603,6 +624,7 @@
         <button class="btn text" type="button" data-close-modal data-i18n="close"></button>
       </div>
       <p id="providerError" class="error" role="alert"></p>
+      <p id="providerWarn" class="warn" role="status"></p>
       <p id="providerOk" class="ok" role="status"></p>
     </section>
 

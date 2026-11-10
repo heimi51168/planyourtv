@@ -1,13 +1,13 @@
 # PlanYourTV 安装说明（给 AI 助手）
 
-你在帮用户把 **PlanYourTV** 安装到 Android 电视上，并让它成为开机进入的桌面。PlanYourTV 是一个开源的 Android TV 儿童时间管理桌面，基于 Aerial，支持定时规则、单次计时、学习模式、答题解锁和本地题库。
+你在帮用户把 **PlanYourTV** 安装到 Android 电视上，并让它成为开机进入的桌面。PlanYourTV 是一个开源的 Android TV 儿童时间管理桌面，基于 Aerial，支持定时规则、单次计时、学习模式、答题解锁、本地题库，以及可选的多服务商 AI 出题（DeepSeek、GLM、Kimi 等）。
 
 本文写给能在用户电脑上执行命令的 AI 助手，例如豆包电脑版 / 豆包工作版、WorkBuddy、千问电脑版、Claude Code、Codex、Cursor 或 Trae。手机版、网页版聊天只能把步骤告诉用户，不能执行命令；遇到这种情况，请直接让用户换到电脑版。
 
 - 项目主页：https://github.com/heimi51168/planyourtv
 - 官方下载：https://planyourtv.me/download/
 - 支持系统：Android TV 5.0+（API 21+），不需要 root
-- 当前社区版本：`1.85.010` / 116010
+- 版本：以 https://planyourtv.me/download/version.txt 为准；官方下载地址始终提供最新社区版本，不要使用任何文档里写死的版本号
 
 ## 0. 必须遵守的规则
 
@@ -93,6 +93,12 @@ adb shell getprop ro.build.version.release
 
 ## 4. 下载并安装
 
+官方下载地址始终指向最新社区版本。先读取最新版本号（输出形如 `vX.Y.ZZZ`，不要用任何文档里写死的版本号判断）：
+
+```bash
+curl -fsSL https://planyourtv.me/download/version.txt
+```
+
 只从官方地址下载：
 
 ```bash
@@ -123,6 +129,8 @@ adb install -r planyourtv-guard.apk
 ```bash
 adb shell dumpsys package com.planyourtv.tv | grep versionName
 ```
+
+把输出的 `versionName` 与前面 `version.txt` 的值对比（去掉开头的 `v`，guard 版本再去掉结尾的 `-guard`），两者应一致。不一致说明下载到了旧文件或 CDN 旧缓存：停下来重新下载并核对，不要继续，也不要假装成功。
 
 ## 5. 授予只有 ADB 能给的权限
 
@@ -218,7 +226,7 @@ Windows 上把 `grep` 换成 `findstr`。
 
 - `resolve-activity` 返回的桌面是 `com.planyourtv.tv/...`，或用户实际选择的其他桌面（如果是 guard 版本，可能仍显示原桌面，需要 Home Guard 接管）。
 - `mCurrentFocus` 在按主页键后包含 `com.planyourtv.tv`，或用户已确认看到 PlanYourTV 桌面。
-- `versionName` 是预期版本。
+- `versionName` 与 https://planyourtv.me/download/version.txt 一致（去掉开头的 `v`，guard 版本再去掉结尾的 `-guard`）。
 - `enabled_accessibility_services` 包含 Home Guard（如果启用了）。
 
 没有这些输出，不要说「安装成功」。
@@ -229,7 +237,7 @@ Windows 上把 `grep` 换成 `findstr`。
 2. 首次开启会显示一次性恢复码，让用户拍照保存；恢复码丢失后只能卸载重装。
 3. 在家长中心设置工作日/周末时段、每日额度、单次上限和休息时间。
 4. 勾选可以看的娱乐 App，以及学习 App（学习 App 不计时）。
-5. 在手机设置页配置题库和答题规则。AI 出题是可选的：需要时由家长自己到 DeepSeek 开放平台（或其他 OpenAI 兼容服务）创建 API Key，在手机设置页填写并点「测试连接」；不要向家长索要 Key，也不要把它写进日志或报告。
+5. 在手机设置页配置题库和答题规则。AI 出题是可选的，支持 DeepSeek、GLM、Kimi、通义千问、豆包等 OpenAI 兼容服务商预设：家长选择服务商后，到自己账号的控制台创建 API Key，在手机设置页原样粘贴并点「测试连接」。不同服务商的密钥格式不同，按控制台提供的内容填写即可；不要向家长索要 Key，也不要把它写进日志或报告。
 6. 安装完成后关闭无线 ADB，或至少不要把它暴露到公网。
 
 ## 10. 还原 / 卸载

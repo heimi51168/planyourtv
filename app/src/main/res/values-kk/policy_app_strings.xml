@@ -45,6 +45,10 @@
     <string name="policy_quiz_source_cloud">Дереккөз: бұлттық банк</string>
     <string name="policy_quiz_scope_label">Сұрақ ауқымы</string>
     <string name="policy_quiz_level_hint">Деңгейді ауыстыру: жоғары/төмен</string>
+    <string name="policy_quiz_intro_hint">Деңгейлерді көру үшін көрсеткіні басыңыз</string>
+    <string name="policy_quiz_key_ok">OK</string>
+    <string name="policy_quiz_preparing">Раунд дайындалуда…</string>
+    <string name="policy_quiz_back_hint">Шығу</string>
     <string name="policy_quiz_level_available">Бұл деңгейде: %1$d сұрақ</string>
     <string name="policy_quiz_level_short">Деңгейде раундқа қажет %2$d сұрақтың тек %1$d-і бар</string>
     <string name="policy_quiz_scope_any">Орнатылмаған</string>
@@ -251,6 +255,7 @@
     <string name="policy_setup_body">6 таңбалы PIN таңдаңыз. Өзгергенге дейін ТВ әдепкі жергілікті ережелерді қолданады.</string>
     <string name="policy_setup_pin_title">PIN орнату</string>
     <string name="policy_setup_pin_again">PIN-ді қайталаңыз</string>
+    <string name="policy_setup_pin_again_hint">Растау үшін сол PIN-ді қайта енгізіңіз.</string>
     <string name="policy_setup_pin_mismatch">PIN-дер сәйкес емес</string>
     <string name="policy_setup_pin_default">Кірістірілген әдепкі PIN-ді пайдаланбаңыз</string>
     <string name="policy_setup_recovery_title">Қалпына келтіру кодын телефонға суретке түсіріңіз</string>
