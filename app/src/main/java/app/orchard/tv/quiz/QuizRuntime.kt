@@ -18,13 +18,21 @@ import kotlinx.coroutines.flow.asStateFlow
  * may block on Keystore/storage, so callers run them off the frame thread.
  */
 object QuizRuntime {
-    /** One parent-designed level plus how many bank questions it can use now. */
+    /**
+     * One parent-designed level plus how many bank questions it can use now.
+     * A course level carries [scope]; a custom-tag level carries
+     * [collectionId] and [tagName] instead. Exactly one of the two is set.
+     */
     data class LevelState(
         val id: String,
         val name: String,
-        val scope: QuizAnswerScope,
+        val scope: QuizAnswerScope? = null,
+        val collectionId: String? = null,
+        val tagName: String = "",
         val available: Int,
-    )
+    ) {
+        val isCustom: Boolean get() = collectionId != null
+    }
 
     private val EXPIRY_BOUND_STATUSES = setOf(
         QuizSessionStatus.DRAFT,
@@ -124,7 +132,7 @@ object QuizRuntime {
             QuizRecovery.scopeFor(it, PolicyModeCoordinator.state.value.deviceNo)
         }
         val activeAvailable = activeScope?.let { QuizQuestionCache.availableCount(it) } ?: 0
-        val answerLevels = QuizAnswerScopeStore.levels().map { level: QuizLevel ->
+        val courseLevels = QuizAnswerScopeStore.levels().map { level: QuizLevel ->
             LevelState(
                 id = level.id,
                 name = level.name,
@@ -135,12 +143,28 @@ object QuizRuntime {
                 ),
             )
         }
-        val answerScope = answerLevels.firstOrNull()?.scope
-        // The entry is playable when at least one level can fill a round. The
-        // wheel still shows every level and marks the short ones.
+        // Custom levels always come after course levels. Each draws only from
+        // its own tag; they never gain a curriculum scope.
+        val tagNames = QuizCollectionStore.collections().associate { it.id to it.name }
+        val customLevels = QuizCollectionStore.customLevels().map { level ->
+            LevelState(
+                id = level.id,
+                name = level.name,
+                collectionId = level.collectionId,
+                tagName = tagNames[level.collectionId].orEmpty(),
+                available = QuizQuestionCache.availableCollectionCount(level.collectionId),
+            )
+        }
+        val answerLevels = courseLevels + customLevels
+        // This legacy field always means a curriculum scope; a custom level in
+        // front must not turn it into null for cloud/reporting callers.
+        val answerScope = courseLevels.firstOrNull()?.scope
+        // Keep the start entry visible while any level has questions, even if
+        // none can fill a full round: the start card blocks a short level and
+        // leaves the QR as the parent's recovery path.
         val playable = answerLevels.maxOfOrNull { it.available } ?: 0
-        // v5 has no minimum-correct gate: one available question is enough to
-        // start, and short levels are flagged on the start card instead.
+        // v5 has no minimum-correct gate, but an explicitly picked level must
+        // supply the configured round. Only the empty page is QR-only.
         val bankState = when {
             !enabled -> "disabled"
             playable <= 0 -> "empty"

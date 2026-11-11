@@ -8,8 +8,13 @@ import fi.iki.elonen.NanoHTTPD.Method
 import fi.iki.elonen.NanoHTTPD.Response
 import org.json.JSONObject
 import com.planyourtv.policy.quiz.QuizAnswerScope
+import com.planyourtv.policy.quiz.QuizBankImport
+import com.planyourtv.policy.quiz.QuizCollection
+import com.planyourtv.policy.quiz.QuizCollectionLevel
 import com.planyourtv.policy.quiz.QuizCurriculum
 import com.planyourtv.policy.quiz.QuizDecodeResult
+import com.planyourtv.policy.quiz.QuizImportError
+import com.planyourtv.policy.quiz.QuizImportResult
 import com.planyourtv.policy.quiz.QuizItem
 import com.planyourtv.policy.quiz.QuizLevel
 import com.planyourtv.policy.quiz.QuizSession
@@ -18,6 +23,8 @@ import com.planyourtv.policy.quiz.QuizSessionStatus
 import com.planyourtv.policy.quiz.QuizSessionValidation
 import com.planyourtv.policy.quiz.QuizUnitCatalog
 import org.json.JSONArray
+import java.util.Locale
+import java.util.UUID
 
 /**
  * The quiz page and its small JSON API. PhoneServer hands over only paths below
@@ -26,7 +33,9 @@ import org.json.JSONArray
  */
 object QuizWebAdmin {
     private const val MAX_JSON_BYTES = 256 * 1024
+    private const val MAX_IMPORT_BYTES = 512 * 1024
     private const val MAX_PROVIDER_KEY_LENGTH = 4096
+    private const val IMPORT_PATH = "/api/quiz/admin/bank/import"
 
     /**
      * NanoHTTPD keeps one [IHTTPSession] for the whole keep-alive connection,
@@ -58,7 +67,8 @@ object QuizWebAdmin {
         // handler never reads it, so the next request would start with "{}POST"
         // and fail with "HTTP verb {}POST unhandled". Read the body once per
         // request; jsonBody() serves it to the handler and clears it after.
-        requestBody.set(readJsonBody(session))
+        val bodyLimit = if (path == IMPORT_PATH) MAX_IMPORT_BYTES else MAX_JSON_BYTES
+        requestBody.set(readJsonBody(session, bodyLimit))
         try {
             if (!sameOrigin(session)) return error(Response.Status.FORBIDDEN, "ORIGIN")
             return when {
@@ -74,6 +84,7 @@ object QuizWebAdmin {
                 session.method == Method.POST && path == "/api/quiz/admin/challenge-config" -> saveChallengeConfig(session)
                 session.method == Method.GET && path == "/api/quiz/admin/bank" -> readBank(session)
                 session.method == Method.GET && path == "/api/quiz/admin/bank/facets" -> readBankFacets(session)
+                session.method == Method.POST && path == IMPORT_PATH -> importBank(session)
                 session.method == Method.POST && path == "/api/quiz/admin/bank/clear" -> clearBank(session)
                 session.method == Method.GET && path == "/api/quiz/admin/cache" -> readCache(session)
                 session.method == Method.POST && path == "/api/quiz/admin/cache/clear" -> clearCache(session)
@@ -204,6 +215,52 @@ object QuizWebAdmin {
         // one scope and reads the first level.
         body.put("answerScopeMode", if (answerScope == null) "bound" else "custom")
         body.put("answerScopes", answerLevelsJson(answerLevels))
+        val collections = QuizCollectionStore.collections()
+        val countsByCollection = QuizQuestionCache.collectionCounts(QuizQuestionCache.LOCAL_SCOPE)
+            .associateBy { it.collectionId }
+        body.put(
+            "customLevels",
+            JSONArray().apply {
+                QuizCollectionStore.customLevels().forEach { level ->
+                    put(
+                        JSONObject()
+                            .put("id", level.id)
+                            .put("name", level.name)
+                            .put("collectionId", level.collectionId)
+                            .put("collectionName", QuizCollectionStore.tagName(level.collectionId))
+                            .put(
+                                "available",
+                                QuizQuestionCache.availableCollectionCount(level.collectionId),
+                            ),
+                    )
+                }
+            },
+        )
+        body.put(
+            "collections",
+            JSONArray().apply {
+                collections.forEach { collection ->
+                    val counts = countsByCollection[collection.id]?.counts
+                    put(
+                        JSONObject()
+                            .put("id", collection.id)
+                            .put("name", collection.name)
+                            .put("total", counts?.total ?: 0)
+                            .put(
+                                "unused",
+                                QuizQuestionCache.availableCollectionCount(collection.id),
+                            ),
+                    )
+                }
+            },
+        )
+        val sourceCounts = QuizQuestionCache.sourceCounts(QuizQuestionCache.LOCAL_SCOPE)
+        body.put(
+            "bankSourceCounts",
+            JSONObject()
+                .put("course", sourceCounts.course)
+                .put("custom", sourceCounts.custom),
+        )
         body.put(
             "answerScopeAvailable",
             QuizQuestionCache.availableCount(
@@ -311,8 +368,25 @@ object QuizWebAdmin {
             ?.coerceIn(0, 100_000) ?: 0
         val limit = session.parameters["limit"]?.firstOrNull()?.toIntOrNull()
             ?.coerceIn(1, 100) ?: 50
+        val source = when (session.parameters["source"]?.firstOrNull()?.trim()?.lowercase()) {
+            null, "", "all" -> null
+            "course", "course_ai", "ai" -> QuizQuestionCache.BankSource.COURSE_AI
+            "custom" -> QuizQuestionCache.BankSource.CUSTOM
+            else -> return error(Response.Status.BAD_REQUEST, "INVALID_REQUEST")
+        }
+        val collectionId = session.parameters["collectionId"]?.firstOrNull()
+            ?.trim()?.takeIf { it.isNotEmpty() }
         val now = System.currentTimeMillis()
-        val rows = QuizQuestionCache.listBank(QuizQuestionCache.LOCAL_SCOPE, filter, offset, limit, now)
+        val rows = QuizQuestionCache.listBank(
+            QuizQuestionCache.LOCAL_SCOPE,
+            filter,
+            offset,
+            limit,
+            now,
+            source = source,
+            collectionId = collectionId,
+        )
+        val tagNames = QuizCollectionStore.collections().associate { it.id to it.name }
         val items = JSONArray()
         rows.forEach { row ->
             val question = row.question
@@ -320,6 +394,11 @@ object QuizWebAdmin {
                 JSONObject()
                     .put("cacheId", row.cacheId)
                     .put("questionId", question.questionId)
+                    .put("collectionId", row.collectionId ?: JSONObject.NULL)
+                    .put(
+                        "collectionName",
+                        row.collectionId?.let { tagNames[it] } ?: JSONObject.NULL,
+                    )
                     .put("prompt", question.prompt)
                     .put("options", JSONArray(question.options))
                     .put("answerIndex", question.answerIndex)
@@ -355,6 +434,12 @@ object QuizWebAdmin {
                 .put("limit", limit)
                 .put("items", items)
                 .put("counts", bankCountsJson(counts))
+                .put(
+                    "sourceCounts",
+                    QuizQuestionCache.sourceCounts(QuizQuestionCache.LOCAL_SCOPE).let {
+                        JSONObject().put("course", it.course).put("custom", it.custom)
+                    },
+                )
                 .put("capacity", QuizQuestionCache.BANK_CAPACITY),
         )
     }
@@ -561,6 +646,216 @@ object QuizWebAdmin {
         return JSONObject().apply { counts.forEach { (value, count) -> put(value, count) } }
     }
 
+    /**
+     * Strict manual import into one tag. Existing tags append; a new tag is
+     * created only for a real import and removed again when the write fails,
+     * so a failed batch never leaves an empty tag behind. A dry run never
+     * writes either store.
+     */
+    private fun importBank(session: IHTTPSession): Response {
+        adminError(session)?.let { return it }
+        if (QuizRuntime.refresh().session?.status in ACTIVE_STATUSES) {
+            return error(Response.Status.CONFLICT, "SESSION_RUNNING")
+        }
+        val body = jsonBody(session) ?: return error(Response.Status.BAD_REQUEST, "INVALID_JSON")
+        val collectionId = body.optString("collectionId", "").trim()
+        val newCollectionName = body.optString("newCollectionName", "").trim()
+        if (collectionId.isEmpty() && newCollectionName.isEmpty()) {
+            return error(Response.Status.BAD_REQUEST, "COLLECTION_REQUIRED")
+        }
+        if (collectionId.isNotEmpty() && newCollectionName.isNotEmpty()) {
+            return error(Response.Status.BAD_REQUEST, "COLLECTION_CONFLICT")
+        }
+        val dryRun = body.optBoolean("dryRun", false)
+        val defaultDifficulty = if (body.has("defaultDifficulty") && !body.isNull("defaultDifficulty")) {
+            body.optString("defaultDifficulty", "")
+        } else {
+            null
+        }
+        val format = when (val raw = body.optString("format", "").trim().lowercase(Locale.ROOT)) {
+            "" -> when {
+                body.has("items") -> "json"
+                body.has("text") -> "text"
+                else -> return error(Response.Status.BAD_REQUEST, "INVALID_IMPORT")
+            }
+            "json", "text" -> raw
+            else -> return error(Response.Status.BAD_REQUEST, "INVALID_IMPORT")
+        }
+        val parsed = if (format == "json") {
+            val items = body.optJSONArray("items")
+                ?: return error(Response.Status.BAD_REQUEST, "INVALID_IMPORT")
+            if (items.length() > QuizBankImport.MAX_ITEMS) {
+                return error(Response.Status.BAD_REQUEST, "TOO_MANY_ITEMS")
+            }
+            QuizBankImport.parseJsonItems(items, defaultDifficulty)
+        } else {
+            val text = body.optString("text", "")
+            if (text.isBlank()) return error(Response.Status.BAD_REQUEST, "INVALID_IMPORT")
+            QuizBankImport.parseText(text, defaultDifficulty)
+        }
+        val items = when (parsed) {
+            is QuizImportResult.Success -> parsed.items
+            is QuizImportResult.Failure -> return importFailure(parsed.errors)
+        }
+        if (items.size > QuizBankImport.MAX_ITEMS) {
+            return error(Response.Status.BAD_REQUEST, "TOO_MANY_ITEMS")
+        }
+        if (!QuizQuestionCache.isReady()) {
+            return error(Response.Status.INTERNAL_ERROR, "CACHE_UNAVAILABLE")
+        }
+
+        val existing = if (collectionId.isNotEmpty()) QuizCollectionStore.find(collectionId) else null
+        if (collectionId.isNotEmpty() && existing == null) {
+            return error(Response.Status.NOT_FOUND, "COLLECTION_NOT_FOUND")
+        }
+        var created: QuizCollection? = null
+        val collection = existing ?: run {
+            val cleanName = QuizCollection.normalizeName(newCollectionName)
+                ?: return error(Response.Status.BAD_REQUEST, "INVALID_COLLECTION_NAME")
+            if (QuizCollectionStore.nameExists(cleanName)) {
+                return error(Response.Status.CONFLICT, "COLLECTION_EXISTS")
+            }
+            if (QuizCollectionStore.collections().size >= QuizCollection.MAX_COLLECTIONS) {
+                return error(Response.Status.CONFLICT, "COLLECTION_LIMIT")
+            }
+            if (dryRun) {
+                QuizCollection.create(cleanName)
+                    ?: return error(Response.Status.BAD_REQUEST, "INVALID_COLLECTION_NAME")
+            } else {
+                QuizCollectionStore.addCollection(cleanName)?.also { created = it }
+                    ?: return error(
+                        Response.Status.CONFLICT,
+                        if (QuizCollectionStore.nameExists(cleanName)) {
+                            "COLLECTION_EXISTS"
+                        } else {
+                            "COLLECTION_LIMIT"
+                        },
+                    )
+            }
+        }
+
+        if (dryRun) {
+            val plan = QuizQuestionCache.previewLocalImport(collection.id, items)
+            val canImport = plan.rejected == 0 &&
+                plan.wouldAppend > 0 &&
+                plan.wouldAppend <= plan.remaining
+            return json(
+                Response.Status.OK,
+                JSONObject()
+                    .put("ok", true)
+                    .put("dryRun", true)
+                    .put("collection", collectionJson(collection))
+                    .put("total", plan.total)
+                    .put("fileDuplicates", plan.fileDuplicates)
+                    .put("collectionDuplicates", plan.collectionDuplicates)
+                    .put("crossSourceDuplicates", plan.crossSourceDuplicates)
+                    .put("rejected", plan.rejected)
+                    .put("wouldAppend", plan.wouldAppend)
+                    .put("capacity", QuizQuestionCache.BANK_CAPACITY)
+                    .put("remaining", plan.remaining)
+                    .put("canImport", canImport)
+                    .put("preview", importPreviewJson(plan.preview)),
+            )
+        }
+
+        val result = QuizQuestionCache.importLocalQuestions(
+            collection.id,
+            "import-" + UUID.randomUUID().toString().replace("-", "").take(16),
+            items,
+        )
+        if (result.storageError || result.rejected > 0 || result.capacityReached) {
+            created?.let { QuizCollectionStore.removeCollection(it.id) }
+            return when {
+                result.storageError ->
+                    error(Response.Status.INTERNAL_ERROR, "CACHE_UNAVAILABLE")
+                result.capacityReached -> json(
+                    Response.Status.CONFLICT,
+                    JSONObject()
+                        .put("ok", false)
+                        .put("error", "BANK_FULL")
+                        .put("remaining", result.remaining)
+                        .put("capacity", QuizQuestionCache.BANK_CAPACITY),
+                )
+                else -> error(Response.Status.BAD_REQUEST, "INVALID_IMPORT")
+            }
+        }
+        val state = QuizRuntime.refresh()
+        val collectionCounts = QuizQuestionCache.collectionCounts(QuizQuestionCache.LOCAL_SCOPE)
+            .firstOrNull { it.collectionId == collection.id }?.counts
+            ?: QuizQuestionCache.BankCounts()
+        val sourceCounts = QuizQuestionCache.sourceCounts(QuizQuestionCache.LOCAL_SCOPE)
+        return json(
+            Response.Status.OK,
+            JSONObject()
+                .put("ok", true)
+                .put("dryRun", false)
+                .put("collection", collectionJson(collection))
+                .put("appended", result.appended)
+                .put("fileDuplicates", result.fileDuplicates)
+                .put("collectionDuplicates", result.collectionDuplicates)
+                .put("crossSourceDuplicates", result.crossSourceDuplicates)
+                .put("rejected", result.rejected)
+                .put("capacity", QuizQuestionCache.BANK_CAPACITY)
+                .put("remaining", result.remaining)
+                .put("counts", bankCountsJson(state.bankCounts))
+                .put(
+                    "sourceCounts",
+                    JSONObject()
+                        .put("course", sourceCounts.course)
+                        .put("custom", sourceCounts.custom),
+                )
+                .put(
+                    "collectionCounts",
+                    JSONObject()
+                        .put("total", collectionCounts.total)
+                        .put("unused", collectionCounts.unused),
+                ),
+        )
+    }
+
+    private fun importFailure(errors: List<QuizImportError>): Response {
+        val only = errors.singleOrNull()
+        if (only != null && only.code == "TOO_MANY_ITEMS") {
+            return error(Response.Status.BAD_REQUEST, "TOO_MANY_ITEMS")
+        }
+        return json(
+            Response.Status.BAD_REQUEST,
+            JSONObject()
+                .put("ok", false)
+                .put("error", "INVALID_IMPORT")
+                .put(
+                    "errors",
+                    JSONArray().apply {
+                        errors.take(QuizBankImport.MAX_ERRORS).forEach { error ->
+                            put(
+                                JSONObject()
+                                    .put("index", error.index)
+                                    .put("field", error.field)
+                                    .put("code", error.code),
+                            )
+                        }
+                    },
+                ),
+        )
+    }
+
+    private fun collectionJson(collection: QuizCollection): JSONObject =
+        JSONObject().put("id", collection.id).put("name", collection.name)
+
+    private fun importPreviewJson(items: List<QuizItem>): JSONArray = JSONArray().apply {
+        items.take(20).forEachIndexed { index, item ->
+            put(
+                JSONObject()
+                    .put("index", index)
+                    .put("prompt", item.prompt)
+                    .put("options", JSONArray(item.options))
+                    .put("answerIndex", item.answerIndex)
+                    .put("explanation", item.explanation)
+                    .put("difficulty", item.difficulty),
+            )
+        }
+    }
+
     private fun clearBank(session: IHTTPSession): Response {
         adminError(session)?.let { return it }
         if (QuizRuntime.refresh().session?.status in ACTIVE_STATUSES) {
@@ -575,15 +870,37 @@ object QuizWebAdmin {
             "all" -> QuizQuestionCache.ClearMode.ALL
             else -> return error(Response.Status.BAD_REQUEST, "INVALID_REQUEST")
         }
-        if (!QuizQuestionCache.clearBank(QuizQuestionCache.LOCAL_SCOPE, mode)) {
+        // The default must stay the AI/seed namespace so a cached page or a
+        // habitual cleanup can never delete imported tag rows.
+        val source = when (body.optString("source", "course").trim().lowercase(Locale.ROOT)) {
+            "course", "course_ai", "ai" -> QuizQuestionCache.BankSource.COURSE_AI
+            "custom" -> QuizQuestionCache.BankSource.CUSTOM
+            "all" -> QuizQuestionCache.BankSource.ALL
+            else -> return error(Response.Status.BAD_REQUEST, "INVALID_REQUEST")
+        }
+        val collectionId = body.optString("collectionId", "").trim().takeIf { it.isNotEmpty() }
+        if (!QuizQuestionCache.clearBank(
+                QuizQuestionCache.LOCAL_SCOPE,
+                mode,
+                source = source,
+                collectionId = collectionId,
+            )
+        ) {
             return error(Response.Status.INTERNAL_ERROR, "CACHE_UNAVAILABLE")
         }
         val state = QuizRuntime.refresh()
+        val sourceCounts = QuizQuestionCache.sourceCounts(QuizQuestionCache.LOCAL_SCOPE)
         return json(
             Response.Status.OK,
             JSONObject()
                 .put("ok", true)
                 .put("counts", bankCountsJson(state.bankCounts))
+                .put(
+                    "sourceCounts",
+                    JSONObject()
+                        .put("course", sourceCounts.course)
+                        .put("custom", sourceCounts.custom),
+                )
                 .put("bankState", state.bankState),
         )
     }
@@ -700,6 +1017,29 @@ object QuizWebAdmin {
         if (levels?.any { isCloudJuniorBlocked(it.scope.grade) } == true) {
             return error(Response.Status.CONFLICT, "CLOUD_JUNIOR_UNSUPPORTED")
         }
+        // Custom tag levels are saved under their own key. Either list may be
+        // omitted independently; an explicit null clears that section.
+        val customLevels: List<QuizCollectionLevel>? = if (body.has("customLevels")) {
+            if (body.isNull("customLevels")) {
+                emptyList()
+            } else {
+                QuizCollectionLevel.parseList(body.optJSONArray("customLevels"))
+                    ?: return error(Response.Status.BAD_REQUEST, "INVALID_CUSTOM_LEVEL")
+            }
+        } else {
+            null
+        }
+        if (levels != null || customLevels != null) {
+            val knownTags = QuizCollectionStore.collections().mapTo(HashSet()) { it.id }
+            if (customLevels?.any { it.collectionId !in knownTags } == true) {
+                return error(Response.Status.BAD_REQUEST, "INVALID_CUSTOM_LEVEL")
+            }
+            val courseCount = levels?.size ?: QuizAnswerScopeStore.levels().size
+            val customCount = customLevels?.size ?: QuizCollectionStore.customLevels().size
+            if (courseCount + customCount > QuizLevel.MAX_LEVELS) {
+                return error(Response.Status.BAD_REQUEST, "TOO_MANY_LEVELS")
+            }
+        }
         val previousScopeSignature = if (levels != null) {
             QuizAnswerScopeStore.currentSignature()
         } else {
@@ -709,6 +1049,9 @@ object QuizWebAdmin {
             return error(Response.Status.INTERNAL_ERROR, "STORAGE_ERROR")
         }
         if (levels != null && !QuizAnswerScopeStore.save(levels)) {
+            return error(Response.Status.INTERNAL_ERROR, "STORAGE_ERROR")
+        }
+        if (customLevels != null && !QuizCollectionStore.saveCustomLevels(customLevels)) {
             return error(Response.Status.INTERNAL_ERROR, "STORAGE_ERROR")
         }
         QuizConfigSync.afterLocalEdit()
@@ -1202,13 +1545,13 @@ object QuizWebAdmin {
     @Suppress("UNUSED_PARAMETER")
     private fun jsonBody(session: IHTTPSession): JSONObject? = requestBody.get()
 
-    private fun readJsonBody(session: IHTTPSession): JSONObject? {
+    private fun readJsonBody(session: IHTTPSession, limit: Int = MAX_JSON_BYTES): JSONObject? {
         // NanoHTTPD 2.3.1 only exposes parseBody() results for POST, so a PUT
         // body would disappear. Read exactly Content-Length bytes for every
         // method instead; a missing length is rejected rather than blocking on
         // a keep-alive stream.
         val declared = session.headers["content-length"]?.toLongOrNull() ?: 0L
-        if (declared <= 0 || declared > MAX_JSON_BYTES) return null
+        if (declared <= 0 || declared > limit) return null
         return runCatching {
             val bytes = ByteArray(declared.toInt())
             var offset = 0

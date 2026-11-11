@@ -26,6 +26,7 @@ import app.orchard.tv.guard.GuardSetup
 import app.orchard.tv.system.DiagLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -80,11 +81,37 @@ object Updates {
     /** Where an install started from Control Center has got to. */
     var install by mutableStateOf<Install>(Install.Idle); private set
 
+    /**
+     * The parent center's auto-update switch. Device-level on purpose: it does not depend on the
+     * cloud binding, on child mode or on whether the password row is shown. Default off.
+     */
+    var auto by mutableStateOf(false); private set
+
+    /** The version whose APK has been downloaded and waits for an idle TV, or null. */
+    var autoReady by mutableStateOf<String?>(null); private set
+
+    /** A silent auto-update download is in flight; Control Center must not start a second one. */
+    var autoBusy by mutableStateOf(false); private set
+
     private lateinit var prefs: SharedPreferences
     private lateinit var appContext: Context
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var started = false
     private var checker: UpdateCheck? = null
+
+    private const val KEY_AUTO = "auto"
+    private const val KEY_AUTO_CHOICE = "auto_choice"
+    private const val KEY_AUTO_READY = "auto_ready"
+    private const val KEY_AUTO_TRIED = "auto_tried"
+    /** Another app must stay in front this long before Aerial replaces itself unseen. */
+    private const val AUTO_INSTALL_DELAY_MS = 20_000L
+    /** A failed background download waits this long before Home resumes retry it. */
+    private const val AUTO_RETRY_MS = 30 * 60 * 1000L
+    private var autoDownloading = false
+    private var autoJob: Job? = null
+    private var autoRetryAt = 0L
+    private var autoArmedFor: String? = null
+    private val autoInstall = Runnable { installAuto() }
 
     fun init(context: Context) {
         if (started) return
@@ -92,6 +119,8 @@ object Updates {
         appContext = context.applicationContext
         prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         available = prefs.getString("latest", null)?.takeIf { newer(it, current) }
+        auto = prefs.getBoolean(KEY_AUTO, false)
+        autoReady = prefs.getString(KEY_AUTO_READY, null)?.takeIf { newer(it, current) }
         checker = UpdateCheck(
             scope = scope,
             lastSuccess = { prefs.getLong("checked_at", 0) },
@@ -99,11 +128,14 @@ object Updates {
             save = { latest, checkedAt ->
                 prefs.edit { putString("latest", latest); putLong("checked_at", checkedAt) }
                 available = latest.takeIf { newer(it, current) }
+                dropStaleAutoReady()
                 loadNotes()
+                scheduleAuto()
             },
             log = { Log.i(TAG, it); DiagLog.i("update check: $it") },
         )
         loadNotes()
+        scheduleAuto()
         // A download left from an install that has since finished or been given up.
         scope.launch(Dispatchers.IO) {
             apkFile(context).takeIf { System.currentTimeMillis() - it.lastModified() > 60 * 60 * 1000L }?.delete()
@@ -129,7 +161,156 @@ object Updates {
     }
 
     fun diagnostics(): String = if (!started) "not initialized" else
-        "known=${prefs.getString("latest", null) ?: "unknown"}; notes=${notes.size}; ${checker?.diagnostics}"
+        "known=${prefs.getString("latest", null) ?: "unknown"}; notes=${notes.size}; " +
+            "auto=$auto; ${checker?.diagnostics}"
+
+    /** Whether this install may be replaced with no confirmation page at all. */
+    fun silentInstallSupported(context: Context): Boolean =
+        canInstall(context) && mayInstallSilently(context.applicationContext)
+
+    /** SelfCompile must not reinstall the running APK while an automatic update is in flight. */
+    internal fun autoUpdateBusy(): Boolean =
+        autoDownloading || autoArmedFor != null || awaiting?.auto == true
+
+    /** Whether the parent has already chosen auto update on or off (the first-enable notice is one-time). */
+    fun autoChoiceMade(): Boolean = started && prefs.getBoolean(KEY_AUTO_CHOICE, false)
+
+    /**
+     * The parent center's auto-update switch. The choice belongs to this TV, not to a cloud
+     * binding or to child mode; it is remembered across restarts. Turning it on only downloads
+     * and installs when the system allows a silent replace ([silentInstallSupported]), and only
+     * while another app is in front; everywhere else the update stays in Control Center.
+     */
+    fun setAuto(context: Context, enabled: Boolean) {
+        if (!started) init(context)
+        prefs.edit {
+            putBoolean(KEY_AUTO, enabled)
+            putBoolean(KEY_AUTO_CHOICE, true)
+        }
+        auto = enabled
+        if (enabled) {
+            autoRetryAt = 0
+            scheduleAuto()
+        } else {
+            autoJob?.cancel()
+            autoJob = null
+            autoArmedFor = null
+            main.removeCallbacks(autoInstall)
+            // A blocking download notices cancellation only at the next suspension. Keep
+            // autoDownloading set so a manual install cannot start a second download into the
+            // same cached APK; the job's finally clears it.
+        }
+    }
+
+    /** A Control Center update is downloading, waiting for its session, or showing a page. */
+    private fun manualInstallBusy(): Boolean = when (install) {
+        Install.Idle, is Install.Failed -> false
+        else -> true
+    }
+
+    /** Forgets the downloaded copy of a version the latest release no longer is. */
+    private fun dropStaleAutoReady() {
+        val ready = prefs.getString(KEY_AUTO_READY, null)
+        if (ready != null && ready != available) prefs.edit { remove(KEY_AUTO_READY) }
+        autoReady = ready?.takeIf { it == available }
+    }
+
+    /**
+     * Starts the background download for [available] when auto update is on and this install can
+     * put it in place silently. Runs on the main thread, from an update check, Home resume and
+     * the switch itself; a failed download waits [AUTO_RETRY_MS] before another try.
+     */
+    private fun scheduleAuto() {
+        if (!started || !auto) return
+        val latest = available ?: return
+        if (latest == prefs.getString(KEY_AUTO_TRIED, null)) return
+        if (autoDownloading || awaiting != null || manualInstallBusy()) return
+        if (autoReady == latest) {
+            armAutoInstall()
+            return
+        }
+        if (autoReady != null) dropStaleAutoReady()
+        if (SystemClock.elapsedRealtime() < autoRetryAt) return
+        val app = appContext.applicationContext
+        // Download only what can be installed without a page. An APK left for the owner to
+        // confirm would expire in the cache and would not make the switch automatic anyway.
+        if (!silentInstallSupported(app)) return
+        if (Build.VERSION.SDK_INT >= 26 && !app.packageManager.canRequestPackageInstalls()) return
+        autoDownloading = true
+        autoBusy = true
+        autoJob = scope.launch {
+            try {
+                val file = apkFile(app)
+                val ready = withContext(Dispatchers.IO) {
+                    verify(app, file)?.takeIf { it.versionName?.substringBefore('-') == latest }
+                        ?: downloadFrom(app, file, report = false)
+                }
+                val ok = ready != null && sameSigner(app, ready) &&
+                    versionCode(ready) >= BuildConfig.VERSION_CODE
+                if (!ok) {
+                    autoRetryAt = SystemClock.elapsedRealtime() + AUTO_RETRY_MS
+                    Log.w(TAG, "auto update: download failed")
+                    DiagLog.i("auto update: download failed")
+                    return@launch
+                }
+                prefs.edit { putString(KEY_AUTO_READY, latest) }
+                autoReady = latest
+                DiagLog.i("auto update: $latest downloaded")
+                armAutoInstall()
+            } finally {
+                autoDownloading = false
+                autoBusy = false
+                autoJob = null
+            }
+        }
+    }
+
+    /** Waits until another app has stayed in front for a while, then installs unseen. */
+    private fun armAutoInstall() {
+        if (!started || !auto) return
+        val version = autoReady ?: return
+        if (version != available) return
+        if (version == prefs.getString(KEY_AUTO_TRIED, null)) return
+        if (!apkFile(appContext).isFile) {
+            prefs.edit { remove(KEY_AUTO_READY) }
+            autoReady = null
+            scheduleAuto()
+            return
+        }
+        autoArmedFor = version
+        main.removeCallbacks(autoInstall)
+        if (!homeInFront) main.postDelayed(autoInstall, AUTO_INSTALL_DELAY_MS)
+    }
+
+    private fun installAuto() {
+        if (Build.VERSION.SDK_INT < 28) return
+        if (!started || !auto) return
+        val version = autoArmedFor ?: return
+        autoArmedFor = null
+        if (homeInFront || version != autoReady || version != available) return
+        if (version == prefs.getString(KEY_AUTO_TRIED, null)) return
+        // A manual update from Control Center, or the self-compile reinstall, may hold the
+        // installer: never put a second session beside it.
+        if (awaiting != null || manualInstallBusy()) return
+        val app = appContext.applicationContext
+        if (!silentInstallSupported(app)) return
+        val file = apkFile(app)
+        if (!file.isFile) {
+            prefs.edit { remove(KEY_AUTO_READY) }
+            autoReady = null
+            return
+        }
+        // One try per version: a firmware that refuses the session must not be retried in a
+        // loop. The APK stays for Control Center's "Download and Install".
+        prefs.edit { putString(KEY_AUTO_TRIED, version) }
+        DiagLog.i("auto update: installing $version while Home is away")
+        if (!installBySession(app, file, withDm = true, auto = true)) {
+            Log.w(TAG, "auto update: the system would not take the update")
+            DiagLog.i("auto update: the system would not take the update")
+            install = Install.Idle
+            autoReady = version
+        }
+    }
 
     /**
      * The release notes for [available], from the copy kept with the version it was read for, else
@@ -243,6 +424,8 @@ object Updates {
         if (install is Install.Downloading || install == Install.Opened) return
         // A second press while the first session's confirmation is awaited (#1004: two sessions).
         if (awaiting != null) return
+        // The background download writes the same cached APK; let it finish rather than race it.
+        if (autoDownloading) return
         val app = context.applicationContext
         if (!canInstall(app)) { install = Install.Failed(Failure.NotOfficial); return }
         if (LegacyUpdateStorage.needsPermission(app)) {
@@ -303,20 +486,37 @@ object Updates {
      * Should a firmware refuse the metadata, the APK alone once more ([withDm]).
      */
     @RequiresApi(28)
-    private fun installBySession(app: Context, file: File, withDm: Boolean = true): Boolean = runCatching {
+    private fun installBySession(app: Context, file: File, withDm: Boolean = true): Boolean =
+        installBySession(app, file, withDm, auto = false)
+
+    /**
+     * [auto]: the switch started this, not the owner. A confirmation page is never put in front
+     * of whatever is playing, and a failure never opens the installer: the APK stays for Control
+     * Center's "Download and Install" instead.
+     */
+    @RequiresApi(28)
+    private fun installBySession(app: Context, file: File, withDm: Boolean, auto: Boolean): Boolean = runCatching {
         val dm = if (withDm) dexMetadata(file) else null
-        val id = commitSession(app, file, dm, Intent(app, UpdateResult::class.java).putExtra(EXTRA_WITH_DM, dm != null))
+        val result = Intent(app, UpdateResult::class.java)
+            .putExtra(EXTRA_WITH_DM, dm != null)
+            .putExtra(EXTRA_AUTO, auto)
+        val id = commitSession(app, file, dm, result)
         Log.i(TAG, "install session $id committed for ${file.length()} bytes, dex metadata ${dm?.size ?: "none"}")
         DiagLog.i("update: session $id, dex metadata ${dm?.size ?: "none"}")
         // Hisense VIDAA_TV / MT9655 (Android 14, #1162) also accepts sessions without answering.
         // Silent updates need time to install and compile, not the short confirmation deadline.
         val timeout = if (mayInstallSilently(app)) SILENT_INSTALL_TIMEOUT_MS else ANSWER_TIMEOUT_MS
-        awaitSession(app, id, timeout, "no answer from session $id")
+        awaitSession(app, id, timeout, "no answer from session $id", auto = auto)
         true
     }.getOrElse {
         if (withDm) {
             Log.w(TAG, "install session with dex metadata failed; without it", it)
-            installBySession(app, file, withDm = false)
+            installBySession(app, file, withDm = false, auto = auto)
+        } else if (auto) {
+            Log.w(TAG, "auto update: no install session", it)
+            DiagLog.i("auto update: no install session")
+            install = Install.Idle
+            false
         } else {
             Log.w(TAG, "no install session; opening the installer", it)
             openInstaller(app, app, file)
@@ -394,6 +594,7 @@ object Updates {
     }.getOrNull()
 
     private const val EXTRA_WITH_DM = "app.orchard.tv.update.WITH_DM"
+    private const val EXTRA_AUTO = "app.orchard.tv.update.AUTO"
     private const val EXTRA_SELF = "app.orchard.tv.update.SELF"
     private const val SELF_ASKED = 1
     private const val SELF_AUTO = 2
@@ -405,7 +606,12 @@ object Updates {
      * worked there. So a session whose page does not come up in time is abandoned for it.
      */
     private var awaiting: Awaiting? = null
-    private class Awaiting(val id: Int, val confirmation: Boolean, val showConfirmation: Runnable?) {
+    private class Awaiting(
+        val id: Int,
+        val confirmation: Boolean,
+        val showConfirmation: Runnable?,
+        val auto: Boolean = false,
+    ) {
         var homeLeft = false
         var timedOut = false
         lateinit var check: Runnable
@@ -435,14 +641,15 @@ object Updates {
     private fun awaitSession(
         app: Context, id: Int, ms: Long, why: String,
         confirmation: Boolean = false, showConfirmation: Runnable? = null,
+        auto: Boolean = false,
     ) {
         awaiting?.let { main.removeCallbacks(it.check) }
-        val a = Awaiting(id, confirmation, showConfirmation)
+        val a = Awaiting(id, confirmation, showConfirmation, auto)
         a.check = Runnable {
             if (awaiting !== a || (a.confirmation && a.homeLeft)) return@Runnable
             a.timedOut = true
             // Do not open an installer over another app or while the TV is asleep.
-            if (homeInFront) giveUpOnSession(app, id, why)
+            if (homeInFront) giveUpOnSession(app, id, why, a.auto)
         }
         awaiting = a
         install = Install.Waiting
@@ -456,10 +663,18 @@ object Updates {
         awaiting = null
     }
 
-    private fun giveUpOnSession(app: Context, id: Int, why: String) {
+    private fun giveUpOnSession(app: Context, id: Int, why: String, auto: Boolean = false) {
         stopAwaiting(id)
         abandoned += id
         runCatching { app.packageManager.packageInstaller.abandonSession(id) }
+        if (auto) {
+            // Nobody asked: never put an installer in front of the app being watched.
+            Log.w(TAG, "$why; auto update left for Control Center")
+            DiagLog.i("auto update: $why; left for Control Center")
+            install = Install.Idle
+            autoReady = available
+            return
+        }
         Log.w(TAG, "$why; abandoned, opening the installer")
         DiagLog.i("update: $why; abandoned, installer")
         val file = apkFile(app)
@@ -473,6 +688,7 @@ object Updates {
         val self = intent.getIntExtra(EXTRA_SELF, 0)
         if (self != 0) return onSelfResult(app, intent, status, auto = self == SELF_AUTO)
         val id = intent.getIntExtra(PackageInstaller.EXTRA_SESSION_ID, -1)
+        val auto = intent.getBooleanExtra(EXTRA_AUTO, false)
         if (id in abandoned) {
             Log.i(TAG, "session $id answered ($status) after it was given up")
             return
@@ -480,6 +696,17 @@ object Updates {
         stopAwaiting(id)
         when (status) {
             PackageInstaller.STATUS_PENDING_USER_ACTION -> {
+                if (auto) {
+                    // A silent session that still wants a page means this firmware will not
+                    // replace Aerial unseen. Abandon it; Control Center keeps the row.
+                    abandoned += id
+                    runCatching { app.packageManager.packageInstaller.abandonSession(id) }
+                    Log.w(TAG, "auto update: session $id asks for a confirmation; left for Control Center")
+                    DiagLog.i("auto update: confirmation needed; left for Control Center")
+                    install = Install.Idle
+                    autoReady = available
+                    return
+                }
                 @Suppress("DEPRECATION")
                 val confirm = intent.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)
                 if (confirm == null) return giveUpOnSession(app, id, "session $id asks to confirm but has no page")
@@ -493,6 +720,7 @@ object Updates {
             PackageInstaller.STATUS_FAILURE_ABORTED -> {
                 Log.i(TAG, "update not confirmed")
                 install = Install.Idle
+                if (auto) autoReady = available
             }
             else -> {
                 val message = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)
@@ -503,7 +731,14 @@ object Updates {
                     Build.VERSION.SDK_INT >= 28 && file.isFile
                 ) {
                     Log.w(TAG, "install session refused the dex metadata ($message); without it")
-                    if (installBySession(app, file, withDm = false)) return
+                    if (installBySession(app, file, withDm = false, auto = auto)) return
+                }
+                if (auto) {
+                    Log.w(TAG, "auto update: session failed ($status, $message); left for Control Center")
+                    DiagLog.i("auto update: session failed ($status); left for Control Center")
+                    install = Install.Idle
+                    autoReady = available
+                    return
                 }
                 Log.w(TAG, "install session failed ($status, $message); opening the installer")
                 DiagLog.i("update: session failed ($status, $message); installer")
@@ -547,6 +782,8 @@ object Updates {
         homeInFront = true
         checker?.setActive(true)
         if (install == Install.Opened) install = Install.Idle
+        main.removeCallbacks(autoInstall)
+        autoArmedFor = null
         awaiting?.let {
             // Only returning from a requested confirmation releases the session's button.
             // Visiting another app while awaiting an answer must not forget the update.
@@ -554,6 +791,8 @@ object Updates {
             else if (it.confirmation && it.homeLeft) stopAwaiting(it.id)
             else if (it.timedOut) it.check.run()
         }
+        // A failed background download is retried here, after the network has likely settled.
+        scheduleAuto()
     }
 
     fun onHomePaused() {
@@ -563,6 +802,8 @@ object Updates {
             it.homeLeft = true
             install = Install.Opened
         }
+        // Another app is in front: the one moment Aerial may replace itself unseen.
+        armAutoInstall()
     }
 
     /** Back to the button, when the update page is left. */
@@ -583,7 +824,7 @@ object Updates {
     @Volatile var testApk: File? = null
 
     /** The website first (reachable in China), then GitHub. Returns the APK's info once it parses. */
-    private suspend fun downloadFrom(context: Context, file: File): PackageInfo? {
+    private suspend fun downloadFrom(context: Context, file: File, report: Boolean = true): PackageInfo? {
         testApk?.takeIf { it.isFile }?.let { test ->
             file.parentFile?.mkdirs()
             test.copyTo(file, overwrite = true)
@@ -596,7 +837,7 @@ object Updates {
             "$GITHUB_BASE/$name",
         )
         for (url in sources) {
-            val ok = runCatching { download(url, file) }
+            val ok = runCatching { download(url, file, report) }
                 .onFailure { Log.w(TAG, "could not download $url", it) }
                 .isSuccess
             if (ok) verify(context, file)?.let { return it }
@@ -605,7 +846,7 @@ object Updates {
         return null
     }
 
-    private suspend fun download(url: String, file: File) {
+    private suspend fun download(url: String, file: File, report: Boolean = true) {
         val directory = checkNotNull(file.parentFile)
         check(directory.isDirectory || directory.mkdirs()) { "Cannot create update directory: $directory" }
         check(directory.canWrite()) { "Cannot write update directory: $directory" }
@@ -639,7 +880,7 @@ object Updates {
                             windowFrom = done
                         }
                         val percent = if (total > 0) (done * 100 / total).toInt() else 0
-                        if (percent != shown) {
+                        if (report && percent != shown) {
                             shown = percent
                             withContext(Dispatchers.Main) { install = Install.Downloading(percent / 100f) }
                         }

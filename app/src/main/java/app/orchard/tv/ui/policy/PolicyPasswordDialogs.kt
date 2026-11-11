@@ -46,6 +46,7 @@ import app.orchard.tv.ui.components.dismissOnTap
 import app.orchard.tv.ui.components.liquidGlass
 import app.orchard.tv.ui.theme.Palette
 import app.orchard.tv.ui.theme.Type
+import com.planyourtv.policy.Activation
 import com.planyourtv.policy.LocalRecovery
 import com.planyourtv.policy.PinResult
 import kotlinx.coroutines.Dispatchers
@@ -873,6 +874,206 @@ internal fun PolicyCloudConsentDialog(
                 width = 280.dp,
                 primary = true,
                 onClick = onAccept,
+            )
+        }
+    }
+}
+
+/**
+ * Confirms a timing-mode switch before the rule set is replaced. Switching to automatic also
+ * explains that the TV quiz entry is manual-only and shows the automatic values that will take
+ * effect. The safe choice is focused first, so a second OK never commits the switch.
+ */
+@Composable
+internal fun PolicyActivationConfirmDialog(
+    keyRouter: PolicyDialogKeyRouter,
+    target: Activation,
+    autoDailyMinutes: Int,
+    autoSessionMinutes: Int,
+    autoRestMinutes: Int,
+    sessionActive: Boolean,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var selected by remember(target) { mutableStateOf(0) } // 0 = cancel, 1 = switch
+
+    fun activate() {
+        Sounds.select()
+        if (selected == 0) onDismiss() else onConfirm()
+    }
+
+    fun handleKey(e: NativeKeyEvent): Boolean {
+        if (handleBackKey(e, true, onDismiss)) return true
+        if (e.action != NativeKeyEvent.ACTION_DOWN) return e.isDialogKey()
+        return when (e.keyCode) {
+            NativeKeyEvent.KEYCODE_DPAD_LEFT -> {
+                if (selected != 0) {
+                    selected = 0
+                    Sounds.focusMoved()
+                }
+                true
+            }
+            NativeKeyEvent.KEYCODE_DPAD_RIGHT -> {
+                if (selected != 1) {
+                    selected = 1
+                    Sounds.focusMoved()
+                }
+                true
+            }
+            NativeKeyEvent.KEYCODE_DPAD_UP,
+            NativeKeyEvent.KEYCODE_DPAD_DOWN,
+            -> true
+            in CONFIRM_KEYS -> {
+                if (e.repeatCount == 0) activate()
+                true
+            }
+            else -> false
+        }
+    }
+
+    PolicyDialogRoot(
+        maxWidth = 620.dp,
+        keyRouter = keyRouter,
+        onDismiss = onDismiss,
+        dismissible = { true },
+        onKey = ::handleKey,
+    ) {
+        BasicText(
+            stringResource(
+                if (target == Activation.AUTO) {
+                    R.string.policy_v6_activation_confirm_auto_title
+                } else {
+                    R.string.policy_v6_activation_confirm_manual_title
+                },
+            ),
+            style = Type.Title,
+        )
+        Spacer(Modifier.height(10.dp))
+        BasicText(
+            if (target == Activation.AUTO) {
+                stringResource(
+                    R.string.policy_v6_activation_confirm_auto_body,
+                    autoDailyMinutes,
+                    autoSessionMinutes,
+                    autoRestMinutes,
+                )
+            } else {
+                stringResource(R.string.policy_v6_activation_confirm_manual_body)
+            },
+            style = Type.Body.copy(fontSize = 14.sp),
+        )
+        if (sessionActive) {
+            Spacer(Modifier.height(8.dp))
+            BasicText(
+                stringResource(R.string.policy_v6_activation_confirm_end_session),
+                style = Type.Body.copy(fontSize = 14.sp, color = Palette.Orange),
+            )
+        }
+        Spacer(Modifier.height(16.dp))
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            DialogTile(
+                label = stringResource(R.string.policy_v6_activation_confirm_cancel),
+                focused = selected == 0,
+                width = 160.dp,
+                onClick = onDismiss,
+            )
+            DialogTile(
+                label = stringResource(R.string.policy_v6_activation_confirm_switch),
+                focused = selected == 1,
+                width = 240.dp,
+                primary = true,
+                onClick = onConfirm,
+            )
+        }
+    }
+}
+
+/**
+ * The first child-mode enable explains that it also turns auto update on. The choice is
+ * device-level and one-time: after this, the parent center's own switch is the only place it
+ * changes, so a parent who turned auto update off is not asked again by child mode.
+ */
+@Composable
+internal fun PolicyAutoUpdateConsentDialog(
+    keyRouter: PolicyDialogKeyRouter,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var selected by remember { mutableStateOf(1) } // 1 = confirm
+
+    fun activate() {
+        Sounds.select()
+        if (selected == 0) onDismiss() else onConfirm()
+    }
+
+    fun handleKey(e: NativeKeyEvent): Boolean {
+        if (handleBackKey(e, true, onDismiss)) return true
+        if (e.action != NativeKeyEvent.ACTION_DOWN) return e.isDialogKey()
+        return when (e.keyCode) {
+            NativeKeyEvent.KEYCODE_DPAD_LEFT -> {
+                if (selected != 0) {
+                    selected = 0
+                    Sounds.focusMoved()
+                }
+                true
+            }
+            NativeKeyEvent.KEYCODE_DPAD_RIGHT -> {
+                if (selected != 1) {
+                    selected = 1
+                    Sounds.focusMoved()
+                }
+                true
+            }
+            NativeKeyEvent.KEYCODE_DPAD_UP,
+            NativeKeyEvent.KEYCODE_DPAD_DOWN,
+            -> true
+            in CONFIRM_KEYS -> {
+                if (e.repeatCount == 0) activate()
+                true
+            }
+            else -> false
+        }
+    }
+
+    PolicyDialogRoot(
+        maxWidth = 680.dp,
+        keyRouter = keyRouter,
+        onDismiss = onDismiss,
+        dismissible = { true },
+        onKey = ::handleKey,
+    ) {
+        BasicText(stringResource(R.string.policy_v6_auto_consent_title), style = Type.Title)
+        Spacer(Modifier.height(10.dp))
+        // Say what the mode is for before explaining the auto-update side effect.
+        BasicText(
+            stringResource(R.string.kids_position),
+            style = Type.Body.copy(fontSize = 14.sp),
+        )
+        Spacer(Modifier.height(10.dp))
+        BasicText(
+            stringResource(R.string.policy_v6_auto_consent_body),
+            style = Type.Body.copy(fontSize = 14.sp),
+        )
+        Spacer(Modifier.height(16.dp))
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            DialogTile(
+                label = stringResource(R.string.policy_v6_auto_consent_cancel),
+                focused = selected == 0,
+                width = 160.dp,
+                onClick = onDismiss,
+            )
+            DialogTile(
+                label = stringResource(R.string.policy_v6_auto_consent_confirm),
+                focused = selected == 1,
+                width = 280.dp,
+                primary = true,
+                onClick = onConfirm,
             )
         }
     }

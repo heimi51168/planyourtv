@@ -19,7 +19,6 @@ import app.orchard.tv.guard.GuardSetup
 import app.orchard.tv.guard.HomeGuardService
 import app.orchard.tv.settings.AerialSettings
 import app.orchard.tv.update.Updates
-import app.orchard.tv.wallpaper.PhoneServer
 import app.orchard.tv.wallpaper.Wallpapers
 import org.json.JSONArray
 import org.json.JSONObject
@@ -119,6 +118,7 @@ object Diagnostics {
         appendLine("Compiled    ${compiled(context)}; self compile ${app.orchard.tv.update.SelfCompile.diagnostics(context)}")
         appendLine("Frames      ${FrameStats.summary()}")
         appendLine("Settings    focus=${AerialSettings.focusStyle.key} one_row=${AerialSettings.oneRowHome} columns=${AerialSettings.homeColumns} peek=${AerialSettings.peekNextRow} names=${AerialSettings.showAllNames} boot_source=${AerialSettings.bootSource != null} boot_app=${AerialSettings.bootApp}")
+        appendLine("            clock_hours=${AerialSettings.clockHours.key} home_locked=${AerialSettings.homeLocked} photo_minutes=${AerialSettings.photoMinutes} cec_switch=${AerialSettings.cecSwitch} hidden_sources=${AerialSettings.hiddenSources.size} volume_fixed=${OutputDevice.volumeFixed(context)} playback_device=${OutputDevice.isPlaybackDevice()}")
         runCatching { app.orchard.tv.wallpaper.AerialStream.usage(context) }.getOrNull()?.let { (used, limit) ->
             appendLine("Films       quality=${AerialSettings.aerialQuality.key} films=${app.orchard.tv.wallpaper.AerialSet.films(context).joinToString(",") { it.id.take(8) }} cache=${used / 1_048_576}/${limit / 1_048_576} MB")
         }
@@ -212,7 +212,10 @@ object Diagnostics {
         val display = context.getSystemService<WindowManager>()?.defaultDisplay ?: return "-"
         val m = DisplayMetrics().also { display.getRealMetrics(it) }
         val modes = if (Build.VERSION.SDK_INT >= 23) display.supportedModes.joinToString { "${it.physicalWidth}x${it.physicalHeight}@${"%.0f".format(it.refreshRate)}" } else "-"
-        return "${m.widthPixels}x${m.heightPixels} ${m.densityDpi}dpi ${"%.0f".format(display.refreshRate)}Hz; modes $modes"
+        // The window can be turned where the display reads landscape: a box set to portrait (#1416).
+        val win = context.resources.displayMetrics
+        return "${m.widthPixels}x${m.heightPixels} ${m.densityDpi}dpi ${"%.0f".format(display.refreshRate)}Hz; modes $modes\n" +
+            "            window ${win.widthPixels}x${win.heightPixels}, pictures ${Wallpapers.screenW}x${Wallpapers.screenH}"
     }
 
     private fun memory(context: Context): String {
@@ -264,11 +267,12 @@ object Diagnostics {
 
     private val IPV4 = Regex("""(?<![\w.])(\d{1,3}\.){3}\d{1,3}(?![\w.])""")
     private val MAC = Regex("""(?i)\b([0-9a-f]{2}:){5}[0-9a-f]{2}\b""")
-    private val PHONE_PAGE = Regex(""":${PhoneServer.PORT}/\w+""")
+    // The phone page picks a free port at runtime (8790 can belong to Aerial), so match any port.
+    private val PHONE_PAGE = Regex(""":(\d{1,5})/\w+""")
 
     /** Addresses out of a log line: a film URL's host stays, a LAN or peer address does not. */
     fun mask(line: String): String = line
-        .replace(PHONE_PAGE, ":${PhoneServer.PORT}/<token>")
+        .replace(PHONE_PAGE) { ":${it.groupValues[1]}/<token>" }
         .replace(IPV4, "<ip>")
         .replace(MAC, "<mac>")
 }

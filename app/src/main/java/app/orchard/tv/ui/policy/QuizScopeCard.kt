@@ -200,7 +200,7 @@ internal fun QuizLevelWheel(
             }
             Spacer(Modifier.height(4.dp))
             BasicText(
-                scopeSummary(selected?.scope),
+                levelSummary(selected),
                 style = Type.Caption.copy(color = Palette.SecondaryLabel),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -230,7 +230,16 @@ private val QuizLevelPillHeight = 30.dp
 
 @Composable
 private fun levelWheelLabel(level: QuizRuntime.LevelState): String =
-    level.name.ifBlank { scopeSummary(level.scope) }
+    level.name.ifBlank { levelSummary(level) }
+
+/** A custom level names its tag; only course levels have a curriculum scope. */
+@Composable
+private fun levelSummary(level: QuizRuntime.LevelState?): String =
+    if (level != null && level.isCustom) {
+        stringResource(R.string.policy_quiz_scope_custom_tag, level.tagName)
+    } else {
+        scopeSummary(level?.scope)
+    }
 
 @Composable
 internal fun scopeSummary(scope: QuizAnswerScope?): String {

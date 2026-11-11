@@ -6,7 +6,7 @@
 
 - 项目主页：https://github.com/heimi51168/planyourtv
 - 官方下载：https://planyourtv.me/download/
-- 支持系统：Android TV 5.0+（API 21+），不需要 root
+- 支持系统：Android TV 5.0+（API 21+）；Android 4.x 不支持；不需要 root
 - 版本：以 https://planyourtv.me/download/version.txt 为准；官方下载地址始终提供最新社区版本，不要使用任何文档里写死的版本号
 - 上游与致谢：基于 Aerial（MIT）；感谢 pengchujin 与 Aerial 贡献者。详见项目 README、LICENSE 和 NOTICE。
 
@@ -14,11 +14,58 @@
 
 1. **亲自在用户的电脑上运行命令**，不要只列步骤。每一步都看真实输出，不要猜。
 2. **不要假装成功。** 最后必须完成「验收」，把原始输出贴给用户。没有看到输出，就不能说装好了。
-3. **只安装 PlanYourTV。** APK 只从 `https://planyourtv.me/download/` 下载。不要下载、安装或推荐任何其他 App，包括应用商店、ADB 开启器、投屏工具、清理工具或“电视助手”。也不要从别的网站找 PlanYourTV 的 APK。
+3. **安装 PlanYourTV。** 推荐在用户的电脑上运行本项目安装器，APK 推荐从 `https://planyourtv.me/download/` 获取；其他安装方式由用户选择，本项目未逐一验证。PlanYourTV 本身就是桌面，但 Android 允许同时安装多个桌面，只有一个默认桌面。安装器会检测其他第三方桌面并默认保留，安装照常继续；装好后把 PlanYourTV 设为默认桌面。**未经用户明确要求，不要卸载任何第三方桌面。** 只有用户明确要求清理时，才使用安装器的 `--remove-launchers` / `-RemoveLaunchers` 或手动卸载；这会删除对方数据，必须先征得同意。
 4. **不要卸载、停用或修改任何系统应用**，包括电视自带桌面。不要恢复出厂设置，不要删除电视上的文件。只能删除这次安装自己下载的临时 APK。
 5. **重启电视前先征得用户同意。** 需要用户在电视上按遥控器时，明确告诉他按哪个键、选哪一项。
-6. **失败就停下来。** 把命令和原始输出给用户看，不要自己换一个 APK、装一个工具或改系统设置硬闯。
+6. **失败就停下来。** 把命令和原始输出给用户看。需要更换 APK、安装其他工具或修改系统设置时，先征求用户同意，不要自行硬闯。
 7. **不要设置或询问用户的家长 PIN，也不要询问 AI 出题的 API Key。** 安装完成后让用户自己在电视上修改默认 PIN，并保存一次性恢复码；AI 出题的 Key 由家长自己在手机设置页填写。
+
+优先使用下面的原生安装器。它已经封装了电视发现、多台选择、APK 下载、授权、标准版到 guard 的已知拒绝回退和验收；除非安装器不适用，不要再让 AI 从头重写这些步骤。
+
+## 0.1 快速路径：原生安装器（优先）
+
+| 用户的电脑 | 入口 | 同目录必需文件 |
+|---|---|---|
+| Windows 10/11 | `install-windows.bat` | `install-windows.ps1` |
+| macOS / Linux | `install-unix.sh` | `install.sh` |
+
+优先从官网下载；打不开时，把基础 URL 换成 GitHub：
+
+| 用途 | 官网基础 URL | GitHub 基础 URL |
+|---|---|---|
+| Windows | `https://planyourtv.me/tools/windows` | `https://raw.githubusercontent.com/heimi51168/planyourtv/main/tools/windows` |
+| macOS / Linux | `https://planyourtv.me/tools` | `https://raw.githubusercontent.com/heimi51168/planyourtv/main/tools` |
+
+Windows 10/11 在 PowerShell 里下载两个文件到同一目录，先做只读发现：
+
+```powershell
+$dir = Join-Path $env:TEMP "planyourtv-install"
+$base = "https://planyourtv.me/tools/windows"
+New-Item -ItemType Directory -Force $dir | Out-Null
+curl.exe -fL "$base/install-windows.bat" -o "$dir\install-windows.bat"
+curl.exe -fL "$base/install-windows.ps1" -o "$dir\install-windows.ps1"
+& "$dir\install-windows.bat" -DiscoverOnly -Json -NonInteractive
+$LASTEXITCODE
+```
+
+macOS/Linux 需要本机已有 `adb`：
+
+```bash
+dir=$(mktemp -d)
+base=https://planyourtv.me/tools
+curl -fsSL "$base/install-unix.sh" -o "$dir/install-unix.sh"
+curl -fsSL "$base/install.sh" -o "$dir/install.sh"
+chmod +x "$dir/install-unix.sh"
+"$dir/install-unix.sh" --discover-only --json --non-interactive
+```
+
+`count == 1` 且 `status == "device"` 时直接安装；多台电视时把候选列给用户选择，再传
+`-Select N` / `--select N` 或 `-TvIp <IP>` / `--ip <IP>`。完整参数、退出码和选择规则以
+https://planyourtv.me/agent.md 为准。安装器默认开启 Keep ADB；需要安装后自己继续验收时，Windows
+加 `-StayConnected`，macOS/Linux 加 `--stay-connected`。安装器默认保留其他第三方桌面；只有用户明确
+要求清理时，才加 `-RemoveLaunchers` / `--remove-launchers`（会删除对方数据，先确认）。
+
+Windows 7/8 不支持原生安装器；仍然可以按下面的手动步骤安装，但不要改用 Bash 版。
 
 ## 1. 准备 adb
 
@@ -43,7 +90,7 @@ adb version
 - macOS：`brew install android-platform-tools`
 - Linux：用系统包管理器安装 `adb` 或 `android-tools`
 
-不要从第三方网站下载 adb 或“一键安装器”。
+推荐从 Google 的 platform-tools 官方页面下载 adb，或使用系统包管理器。
 
 ## 2. 连接电视
 
@@ -78,7 +125,7 @@ adb devices
 
 电视 IP 一般在 设置 → 网络 → 已连接的网络 里。
 
-**打不开 ADB 的机型**：老乐视、荣耀智慧屏、老康佳等，直接告诉用户不支持，不要反复尝试，也不要让用户安装第三方 ADB 开启器。
+**打不开 ADB 的机型**：老乐视、荣耀智慧屏、老康佳等，直接告诉用户不支持，不要反复尝试。
 
 ## 3. 检查 Android 版本
 
@@ -87,12 +134,22 @@ adb shell getprop ro.build.version.sdk
 adb shell getprop ro.build.version.release
 ```
 
-- 第一条是 **21 或更大**：继续安装完整版。
-- 第一条是 **14–20**（Android 4.0–4.4）：当前社区源码不包含 Android 4.x 版本，停止并告诉用户不支持。
-- 第一条小于 14：不支持。
+- 第一条是 **21 或更大**：继续安装，从第 4 步开始。
+- 第一条是 **20 或更小**（Android 4.4 及以下）：停止并说明 PlanYourTV 需要 Android 5.0 或更高版本，Android 4.x 不支持，也不再提供 Lite APK。
 - 没有输出或报错：先检查 `adb devices` 是否仍是 `device`，不要猜版本。
 
 ## 4. 下载并安装
+
+**PlanYourTV 本身就是桌面，但“另一个桌面已安装”不等于安装冲突。** Android 允许同时安装多个桌面，只有默认桌面会在按 Home 时打开。官方安装器会检测 CleanYourTV（`com.gathin.tvhome`）、Aerial / HaloTV（`app.orchard.tv`）、Aerial Lite（`app.orchard.tv.lite`）、Quiet TV（`home.quiet.tv`、`com.coocaa.quiettv`）等第三方桌面并默认保留，安装继续；装好后把 PlanYourTV 设为默认桌面即可。不要因为检测到其他桌面就停止安装，也不要自动卸载它们。电视自带桌面和任何系统应用都不能卸载。
+
+手动安装时，可以先运行下面的检测命令并告知用户；这不是安装前置条件：
+
+```bash
+adb shell pm list packages -3
+adb shell cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME -c android.intent.category.DEFAULT
+```
+
+用户明确要求清理时，只卸载同时满足以下条件的包：在 `pm list packages -3` 的第三方列表中、出现在 HOME 查询结果里（或属于上面的已知包名），且不是 PlanYourTV 自身 `com.planyourtv.tv`。升级时 PlanYourTV 自己也会出现在这些列表里，绝不能卸载它。先告诉用户卸载会删除该桌面的数据；用户确认后运行 `adb shell pm uninstall <包名>`，再用 `adb shell pm path <包名>` 确认没有输出。`cmd` 不可用时，至少逐个检查上面的已知包名。用户没有明确要求时，保留这些桌面，继续安装。
 
 官方下载地址始终指向最新社区版本。先读取最新版本号（输出形如 `vX.Y.ZZZ`，不要用任何文档里写死的版本号判断）。如果命令失败、输出为空或不是 `v` 开头，立即停止，不要继续使用本机残留的旧 APK：
 
@@ -100,7 +157,7 @@ adb shell getprop ro.build.version.release
 curl -fsSL https://planyourtv.me/download/version.txt
 ```
 
-只从官方地址下载。下载前先删除上次可能残留的同名文件，避免下载失败时误装旧包（macOS/Linux 用 `rm -f`，Windows PowerShell 用 `Remove-Item -Force -ErrorAction SilentlyContinue`）：
+推荐从官方地址下载。下载前先删除上次可能残留的同名文件，避免下载失败时误装旧包（macOS/Linux 用 `rm -f`，Windows PowerShell 用 `Remove-Item -Force -ErrorAction SilentlyContinue`）：
 
 ```bash
 rm -f planyourtv-standard.apk
@@ -110,7 +167,9 @@ adb install -r planyourtv-standard.apk
 
 如果 `curl` 失败或 APK 文件不存在，停止并贴出输出，不要继续执行 `adb install`。如果电视上已经装了旧版，直接 `adb install -r` 覆盖升级，数据会保留；不要先卸载。
 
-输出必须是 `Success`。如果固件拒绝安装桌面类 App，改用 guard 版本重试：
+输出必须是 `Success`。如果固件拒绝安装桌面类 App，或返回已知的安装限制错误
+（`INSTALL_FAILED_USER_RESTRICTED`、`INSTALL_FAILED_VERIFICATION_FAILURE`、
+“install apk has be disabled from pm”），改用 guard 版本重试：
 
 ```bash
 rm -f planyourtv-guard.apk
@@ -125,9 +184,9 @@ adb install -r planyourtv-guard.apk
 | 输出 | 处理 |
 |---|---|
 | `INSTALL_FAILED_UPDATE_INCOMPATIBLE` / `INSTALL_PARSE_FAILED_INCONSISTENT_CERTIFICATES` | 电视上已有另一个签名的 PlanYourTV。**不要直接卸载**：卸载会丢失规则、题库、壁纸和照片。先问用户是否接受丢失数据；用户同意后再 `adb uninstall com.planyourtv.tv`，然后重装。 |
-| `INSTALL_FAILED_OLDER_SDK` | 电视低于 Android 5.0，停止。 |
+| `INSTALL_FAILED_OLDER_SDK` | 电视低于 Android 5.0。停止安装，说明 Android 4.x 不受支持，换 APK 也不能解决。 |
 | 固件提示不允许安装桌面类 App | 改用 `planyourtv-guard.apk`；仍失败就停止并贴出输出。 |
-| `INSTALL_FAILED_USER_RESTRICTED` | 可能是厂商限制。停下来把输出给用户，不要自行改系统设置或安装其他工具。 |
+| `INSTALL_FAILED_USER_RESTRICTED` / `INSTALL_FAILED_VERIFICATION_FAILURE` / “install apk has be disabled from pm” | 固件拒绝 standard。改用 guard 重试；仍失败就停止并贴出输出，由用户决定下一步。 |
 
 安装后确认版本：
 
@@ -242,7 +301,7 @@ Windows 上把 `grep` 换成 `findstr`。
 2. 首次开启会显示一次性恢复码，让用户拍照保存；恢复码丢失后只能卸载重装。
 3. 在家长中心设置工作日/周末时段、每日额度、单次上限和休息时间。
 4. 勾选可以看的娱乐 App，以及学习 App（学习 App 不计时）。
-5. 在手机设置页配置题库和答题规则。AI 出题是可选的，支持 DeepSeek、GLM、Kimi、通义千问、豆包等 OpenAI 兼容服务商预设：家长选择服务商后，到自己账号的控制台创建 API Key，在手机设置页原样粘贴并点「测试连接」。不同服务商的密钥格式不同，按控制台提供的内容填写即可；不要向家长索要 Key，也不要把它写进日志或报告。
+5. 在手机设置页配置题库和答题规则。可以手动导入 `.json` / `.txt` 题库或粘贴单选题，也可以选择已有标签或新建标签；导入前会预览重复和剩余容量。AI 出题是可选的，支持 DeepSeek、GLM、Kimi、通义千问、豆包等 OpenAI 兼容服务商预设：家长选择服务商后，到自己账号的控制台创建 API Key，在手机设置页原样粘贴并点「测试连接」。不同服务商的密钥格式不同，按控制台提供的内容填写即可；不要向家长索要 Key，也不要把它写进日志或报告。
 6. 安装完成后关闭无线 ADB，或至少不要把它暴露到公网。
 
 ## 10. 还原 / 卸载
@@ -254,7 +313,7 @@ adb shell am force-stop com.planyourtv.tv
 adb shell pm uninstall com.planyourtv.tv
 ```
 
-卸载会删除本机规则、题库、壁纸和照片。不要删除或停用电视自带桌面；不要动其他无障碍或通知监听服务。
+卸载会删除本机规则、题库、壁纸和照片。电视会回到自带桌面；用安装器清理选项明确卸载的其他第三方桌面不会自动装回。不要删除或停用电视自带桌面；不要动其他无障碍或通知监听服务。
 
 ## 11. 常见问题
 
@@ -266,8 +325,8 @@ adb shell pm uninstall com.planyourtv.tv
 
 ## 12. 不要做的事
 
-- 不要安装应用商店、ADB 开启器、投屏或清理工具。
-- 不要从非官方地址下载 PlanYourTV APK。
+- 推荐通过电脑安装；其他安装方式不禁止，本项目未逐一验证。
+- 推荐从官方下载页获取 PlanYourTV APK。
 - 不要卸载、停用或恢复出厂设置任何系统应用。
 - 不要删除电视上不属于本次安装的文件。
 - 不要把 5555 端口暴露到公网。

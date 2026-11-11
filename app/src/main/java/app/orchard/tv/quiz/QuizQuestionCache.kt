@@ -44,6 +44,16 @@ object QuizQuestionCache {
     private const val RESULT_WRONG = "WRONG"
     private const val TAG = "QuizQuestionCache"
 
+    /**
+     * Column order shared by every row reader. `collection_id` sits after the
+     * scope key so both [readQuestion] and [readBankRow] stay in sync when the
+     * import feature adds its nullable ownership column.
+     */
+    private const val SELECT_COLUMNS =
+        "cache_id, question_json, source_kind, source_ref, scope_key, collection_id, " +
+            "received_at, expires_at, state, last_result, wrong_count, answered_at, " +
+            "last_timed_out, last_selected_index"
+
     private val lock = Any()
     @Volatile private var helper: Helper? = null
 
@@ -53,6 +63,7 @@ object QuizQuestionCache {
         val sourceKind: String,
         val sourceRef: String?,
         val scopeKey: String,
+        val collectionId: String?,
         val receivedAt: Long,
         val expiresAt: Long?,
         val state: String,
@@ -73,6 +84,7 @@ object QuizQuestionCache {
         val sourceKind: String,
         val sourceRef: String?,
         val scopeKey: String,
+        val collectionId: String?,
         val receivedAt: Long,
         val expiresAt: Long?,
         val state: String,
@@ -122,11 +134,51 @@ object QuizQuestionCache {
         val items: List<CachedQuestion> = emptyList(),
     )
 
+    /** Counts a manual import preview/inspection needs, split by namespace. */
+    data class ImportPlan(
+        val total: Int = 0,
+        val fileDuplicates: Int = 0,
+        val collectionDuplicates: Int = 0,
+        val crossSourceDuplicates: Int = 0,
+        val rejected: Int = 0,
+        val wouldAppend: Int = 0,
+        val remaining: Int = 0,
+        val preview: List<QuizItem> = emptyList(),
+    )
+
+    data class ImportResult(
+        val appended: Int = 0,
+        val fileDuplicates: Int = 0,
+        val collectionDuplicates: Int = 0,
+        val crossSourceDuplicates: Int = 0,
+        val rejected: Int = 0,
+        val capacityReached: Boolean = false,
+        val storageError: Boolean = false,
+        val remaining: Int = 0,
+    )
+
+    data class SourceCounts(
+        val course: Int = 0,
+        val custom: Int = 0,
+    )
+
+    data class CollectionCounts(
+        val collectionId: String,
+        val counts: BankCounts,
+    )
+
     enum class ClearMode {
         UNUSED,
         ANSWERED,
         CORRECT,
         WRONG,
+        ALL,
+    }
+
+    /** Where a maintenance clear is allowed to delete. */
+    enum class BankSource {
+        COURSE_AI,
+        CUSTOM,
         ALL,
     }
 
@@ -173,7 +225,7 @@ object QuizQuestionCache {
             try {
                 db.delete(
                     TABLE,
-                    "scope_key = ? AND state IN (?, ?)",
+                    "scope_key = ? AND state IN (?, ?) AND collection_id IS NULL",
                     arrayOf(LOCAL_SCOPE, STATE_AVAILABLE, STATE_RESERVED),
                 )
                 session.items.forEach { item ->
@@ -187,6 +239,7 @@ object QuizQuestionCache {
                         put("source_kind", SOURCE_LOCAL)
                         put("source_ref", sourceRef)
                         put("scope_key", LOCAL_SCOPE)
+                        putNull("collection_id")
                         putScopeFields(stored)
                         put("fingerprint", fingerprint(stored))
                         put("state", STATE_AVAILABLE)
@@ -251,6 +304,7 @@ object QuizQuestionCache {
                     put("source_kind", SOURCE_CLOUD)
                     put("source_ref", sourceRef)
                     put("scope_key", scopeKey)
+                    putNull("collection_id")
                     putScopeFields(stored)
                     put("fingerprint", fingerprint(stored))
                     put("state", STATE_AVAILABLE)
@@ -323,6 +377,7 @@ object QuizQuestionCache {
         minRequired: Int,
         nowMs: Long = System.currentTimeMillis(),
         answerScope: QuizAnswerScope? = null,
+        collectionId: String? = null,
     ): List<CachedQuestion> = synchronized(lock) {
         if (count <= 0 || minRequired <= 0) return emptyList()
         val db = database() ?: throw CacheException("cache not initialized")
@@ -330,10 +385,12 @@ object QuizQuestionCache {
         try {
             expire(db, scopeKey, nowMs)
             val (scopeWhere, scopeArgs) = answerScopeWhere(answerScope)
-            val baseArgs = arrayOf(scopeKey, STATE_AVAILABLE, nowMs.toString()) + scopeArgs
+            val collectionWhere = if (collectionId != null) " AND collection_id = ?" else ""
+            val baseArgs = arrayOf(scopeKey, STATE_AVAILABLE, nowMs.toString()) + scopeArgs +
+                listOfNotNull(collectionId)
             val total = db.rawQuery(
                 "SELECT COUNT(*) FROM $TABLE WHERE scope_key = ? AND state = ? " +
-                    "AND (expires_at IS NULL OR expires_at > ?)$scopeWhere",
+                    "AND (expires_at IS NULL OR expires_at > ?)$scopeWhere$collectionWhere",
                 baseArgs,
             ).use { if (it.moveToFirst()) it.getInt(0) else 0 }
             if (total < minRequired) {
@@ -342,11 +399,9 @@ object QuizQuestionCache {
             }
             val candidates = mutableListOf<CachedQuestion>()
             db.rawQuery(
-                "SELECT cache_id, question_json, source_kind, source_ref, scope_key, " +
-                    "received_at, expires_at, state, last_result, wrong_count, answered_at, " +
-                    "last_timed_out, last_selected_index FROM $TABLE " +
+                "SELECT $SELECT_COLUMNS FROM $TABLE " +
                     "WHERE scope_key = ? AND state = ? " +
-                    "AND (expires_at IS NULL OR expires_at > ?)$scopeWhere " +
+                    "AND (expires_at IS NULL OR expires_at > ?)$scopeWhere$collectionWhere " +
                     "ORDER BY received_at ASC, rowid ASC LIMIT ?",
                 baseArgs + count.toString(),
             ).use { cursor ->
@@ -377,6 +432,20 @@ object QuizQuestionCache {
             db.endTransaction()
         }
     }
+
+    /**
+     * Custom-tag round path. It keeps the same state machine and
+     * `scope_key = local` as course rounds, but selects rows by tag instead of
+     * curriculum scope; difficulty never filters an imported tag.
+     */
+    fun reserveCollectionForRound(
+        count: Int,
+        sessionId: String,
+        collectionId: String,
+        minRequired: Int,
+        nowMs: Long = System.currentTimeMillis(),
+    ): List<CachedQuestion> =
+        reserveForRound(count, sessionId, LOCAL_SCOPE, minRequired, nowMs, collectionId = collectionId)
 
     /**
      * Appends generated questions to the local bank. Duplicates are matched by
@@ -440,6 +509,7 @@ object QuizQuestionCache {
         batchId: String,
         items: List<QuizItem>,
         nowMs: Long,
+        collectionId: String? = null,
     ): AppendResult {
         var remaining = (BANK_CAPACITY - rowCount(db, LOCAL_SCOPE)).coerceAtLeast(0)
         val seen = mutableSetOf<String>()
@@ -463,7 +533,9 @@ object QuizQuestionCache {
                 duplicates++
                 continue
             }
-            if (fingerprintExists(db, LOCAL_SCOPE, fp)) {
+            // The AI/seed namespace is `collection_id IS NULL`; an import never
+            // compares against another tag, so 100 imported questions stay 100.
+            if (fingerprintExists(db, LOCAL_SCOPE, fp, collectionId)) {
                 duplicates++
                 continue
             }
@@ -472,49 +544,70 @@ object QuizQuestionCache {
                 capacityReached = true
                 continue
             }
-            val sourceRef = "local:$batchId:${item.questionId}"
-            if (sourceRefExists(db, SOURCE_LOCAL, sourceRef)) {
+            val ref = sourceRef(batchId, collectionId, item.questionId)
+            if (sourceRefExists(db, SOURCE_LOCAL, ref)) {
                 duplicates++
                 continue
             }
-            val cacheId = UUID.randomUUID().toString()
-            val values = ContentValues().apply {
-                put("cache_id", cacheId)
-                put("question_json", QuizSessionCodec.encodeItem(item).toString())
-                put("question_id", item.questionId)
-                put("source_kind", SOURCE_LOCAL)
-                put("source_ref", sourceRef)
-                put("scope_key", LOCAL_SCOPE)
-                putScopeFields(item)
-                put("fingerprint", fp)
-                put("state", STATE_AVAILABLE)
-                putNull("reserved_by")
-                put("received_at", nowMs)
-                putNull("expires_at")
-                putNull("reserved_at")
-                putNull("consumed_at")
-                put("last_result", null as String?)
-                put("wrong_count", 0)
-                put("answered_at", null as Long?)
-                put("last_round_id", null as String?)
-                put("last_timed_out", 0)
-                put("last_selected_index", null as Int?)
-            }
-            db.insertOrThrow(TABLE, null, values)
+            appended += insertLocalRowLocked(db, batchId, collectionId, item, fp, nowMs)
             remaining--
-            appended += CachedQuestion(
-                cacheId = cacheId,
-                question = item,
-                sourceKind = SOURCE_LOCAL,
-                sourceRef = sourceRef,
-                scopeKey = LOCAL_SCOPE,
-                receivedAt = nowMs,
-                expiresAt = null,
-                state = STATE_AVAILABLE,
-            )
         }
         return AppendResult(appended.size, duplicates, rejected, capacityReached, appended)
     }
+
+    private fun insertLocalRowLocked(
+        db: SQLiteDatabase,
+        batchId: String,
+        collectionId: String?,
+        item: QuizItem,
+        fp: String,
+        nowMs: Long,
+    ): CachedQuestion {
+        val ref = sourceRef(batchId, collectionId, item.questionId)
+        val cacheId = UUID.randomUUID().toString()
+        val values = ContentValues().apply {
+            put("cache_id", cacheId)
+            put("question_json", QuizSessionCodec.encodeItem(item).toString())
+            put("question_id", item.questionId)
+            put("source_kind", SOURCE_LOCAL)
+            put("source_ref", ref)
+            put("scope_key", LOCAL_SCOPE)
+            if (collectionId == null) putNull("collection_id") else put("collection_id", collectionId)
+            putScopeFields(item)
+            put("fingerprint", fp)
+            put("state", STATE_AVAILABLE)
+            putNull("reserved_by")
+            put("received_at", nowMs)
+            putNull("expires_at")
+            putNull("reserved_at")
+            putNull("consumed_at")
+            put("last_result", null as String?)
+            put("wrong_count", 0)
+            put("answered_at", null as Long?)
+            put("last_round_id", null as String?)
+            put("last_timed_out", 0)
+            put("last_selected_index", null as Int?)
+        }
+        db.insertOrThrow(TABLE, null, values)
+        return CachedQuestion(
+            cacheId = cacheId,
+            question = item,
+            sourceKind = SOURCE_LOCAL,
+            sourceRef = ref,
+            scopeKey = LOCAL_SCOPE,
+            collectionId = collectionId,
+            receivedAt = nowMs,
+            expiresAt = null,
+            state = STATE_AVAILABLE,
+        )
+    }
+
+    private fun sourceRef(batchId: String, collectionId: String?, questionId: String): String =
+        if (collectionId == null) {
+            "local:$batchId:$questionId"
+        } else {
+            "local:$collectionId:$batchId:$questionId"
+        }
 
     /**
      * 生成结果暂存时用来标记“已在题库”的题。返回 true 表示该条不可再加入：
@@ -533,8 +626,138 @@ object QuizQuestionCache {
             if (!isValid(item)) return@map true
             val fp = fingerprint(item)
             val fresh = seen.add(fp)
-            !fresh || (db != null && fingerprintExists(db, LOCAL_SCOPE, fp))
+            !fresh || (db != null && fingerprintExists(db, LOCAL_SCOPE, fp, null))
         }
+    }
+
+    /**
+     * Preview of a manual import. It runs the same namespace-aware dedupe as
+     * [importLocalQuestions] but never writes. Cross-source duplicates are
+     * informational: those rows will still be appended to the target tag.
+     */
+    fun previewLocalImport(
+        collectionId: String,
+        items: List<QuizItem>,
+        nowMs: Long = System.currentTimeMillis(),
+    ): ImportPlan = synchronized(lock) {
+        if (collectionId.isBlank() || items.isEmpty()) return ImportPlan()
+        val db = database() ?: return ImportPlan(total = items.size)
+        runCatching {
+            expire(db, LOCAL_SCOPE, nowMs)
+            val plan = planLocalImportLocked(db, collectionId, items)
+            val remaining = (BANK_CAPACITY - rowCount(db, LOCAL_SCOPE)).coerceAtLeast(0)
+            ImportPlan(
+                total = items.size,
+                fileDuplicates = plan.fileDuplicates,
+                collectionDuplicates = plan.collectionDuplicates,
+                crossSourceDuplicates = plan.crossSourceDuplicates,
+                rejected = plan.rejected,
+                wouldAppend = plan.items.size,
+                remaining = remaining,
+                preview = plan.items.take(20).map { it.first },
+            )
+        }.onFailure { Log.e(TAG, "preview local import failed", it) }
+            .getOrDefault(ImportPlan(total = items.size))
+    }
+
+    /**
+     * Strict, all-or-nothing import into one tag. A capacity shortfall or an
+     * invalid row leaves the bank untouched. Duplicate rules match the preview:
+     * same-file and same-tag rows are skipped, other sources are kept.
+     */
+    fun importLocalQuestions(
+        collectionId: String,
+        batchId: String,
+        items: List<QuizItem>,
+        nowMs: Long = System.currentTimeMillis(),
+    ): ImportResult = synchronized(lock) {
+        if (collectionId.isBlank() || batchId.isBlank() || items.isEmpty()) {
+            return ImportResult(rejected = items.size)
+        }
+        val db = database() ?: return ImportResult(rejected = items.size, storageError = true)
+        db.beginTransaction()
+        try {
+            val plan = planLocalImportLocked(db, collectionId, items)
+            val remaining = (BANK_CAPACITY - rowCount(db, LOCAL_SCOPE)).coerceAtLeast(0)
+            val result = ImportResult(
+                fileDuplicates = plan.fileDuplicates,
+                collectionDuplicates = plan.collectionDuplicates,
+                crossSourceDuplicates = plan.crossSourceDuplicates,
+                rejected = plan.rejected,
+                remaining = remaining,
+            )
+            if (plan.rejected > 0) {
+                db.setTransactionSuccessful()
+                return result
+            }
+            if (plan.items.size > remaining) {
+                db.setTransactionSuccessful()
+                return result.copy(capacityReached = true)
+            }
+            plan.items.forEach { (item, fp) ->
+                insertLocalRowLocked(db, batchId, collectionId, item, fp, nowMs)
+            }
+            db.setTransactionSuccessful()
+            result.copy(appended = plan.items.size, remaining = remaining - plan.items.size)
+        } catch (error: Exception) {
+            Log.e(TAG, "import local questions failed", error)
+            ImportResult(rejected = items.size, storageError = true)
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    private data class LocalImportPlan(
+        val items: List<Pair<QuizItem, String>>,
+        val fileDuplicates: Int,
+        val collectionDuplicates: Int,
+        val crossSourceDuplicates: Int,
+        val rejected: Int,
+    )
+
+    private fun planLocalImportLocked(
+        db: SQLiteDatabase,
+        collectionId: String,
+        items: List<QuizItem>,
+    ): LocalImportPlan {
+        val seen = mutableSetOf<String>()
+        val fresh = mutableListOf<Pair<QuizItem, String>>()
+        var fileDuplicates = 0
+        var collectionDuplicates = 0
+        var crossSourceDuplicates = 0
+        var rejected = 0
+        for (candidate in items) {
+            val item = candidate.copy(
+                cacheId = "",
+                sourceKind = SOURCE_LOCAL,
+                sourceRef = "",
+                optionOrder = emptyList(),
+            )
+            if (!isValid(item)) {
+                rejected++
+                continue
+            }
+            val fp = fingerprint(item)
+            if (!seen.add(fp)) {
+                fileDuplicates++
+                continue
+            }
+            if (fingerprintExists(db, LOCAL_SCOPE, fp, collectionId)) {
+                collectionDuplicates++
+                continue
+            }
+            if (fingerprintExistsOutsideCollection(db, LOCAL_SCOPE, fp, collectionId)) {
+                crossSourceDuplicates++
+            }
+            fresh += item to fp
+        }
+        return LocalImportPlan(
+            items = fresh,
+            fileDuplicates = fileDuplicates,
+            collectionDuplicates = collectionDuplicates,
+            crossSourceDuplicates = crossSourceDuplicates,
+            rejected = rejected,
+        )
     }
 
     /** Every local bank row, used by the faceted custom-range picker (capacity is bounded). */
@@ -547,9 +770,7 @@ object QuizQuestionCache {
             expire(db, scopeKey, nowMs)
             val rows = mutableListOf<BankRow>()
             db.rawQuery(
-                "SELECT cache_id, question_json, source_kind, source_ref, scope_key, " +
-                    "received_at, expires_at, state, last_result, wrong_count, answered_at, " +
-                    "last_timed_out, last_selected_index FROM $TABLE WHERE scope_key = ? " +
+                "SELECT $SELECT_COLUMNS FROM $TABLE WHERE scope_key = ? " +
                     "ORDER BY received_at DESC, rowid DESC",
                 arrayOf(scopeKey),
             ).use { cursor ->
@@ -567,6 +788,8 @@ object QuizQuestionCache {
         offset: Int = 0,
         limit: Int = 50,
         nowMs: Long = System.currentTimeMillis(),
+        source: BankSource? = null,
+        collectionId: String? = null,
     ): List<BankRow> = synchronized(lock) {
         val db = database() ?: return emptyList()
         val safeOffset = offset.coerceAtLeast(0)
@@ -582,6 +805,15 @@ object QuizQuestionCache {
                     arrayOf(scopeKey, STATE_CONSUMED, RESULT_CORRECT)
                 else -> "scope_key = ?" to arrayOf(scopeKey)
             }
+            // The maintenance page filters by source; a named tag wins over
+            // the coarse CUSTOM bucket. The default stays unfiltered so legacy
+            // callers keep seeing the whole local bank.
+            val (sourceWhere, sourceArgs) = when {
+                !collectionId.isNullOrBlank() -> " AND collection_id = ?" to arrayOf(collectionId)
+                source == BankSource.COURSE_AI -> " AND collection_id IS NULL" to emptyArray()
+                source == BankSource.CUSTOM -> " AND collection_id IS NOT NULL" to emptyArray()
+                else -> "" to emptyArray<String>()
+            }
             val order = if (filter == "wrong" || filter == "answered") {
                 "answered_at DESC, received_at DESC, rowid DESC"
             } else {
@@ -589,11 +821,9 @@ object QuizQuestionCache {
             }
             val rows = mutableListOf<BankRow>()
             db.rawQuery(
-                "SELECT cache_id, question_json, source_kind, source_ref, scope_key, " +
-                    "received_at, expires_at, state, last_result, wrong_count, answered_at, " +
-                    "last_timed_out, last_selected_index FROM $TABLE WHERE $where " +
+                "SELECT $SELECT_COLUMNS FROM $TABLE WHERE $where$sourceWhere " +
                     "ORDER BY $order LIMIT ? OFFSET ?",
-                args + arrayOf(safeLimit.toString(), safeOffset.toString()),
+                args + sourceArgs + arrayOf(safeLimit.toString(), safeOffset.toString()),
             ).use { cursor ->
                 while (cursor.moveToNext()) {
                     rows += readBankRow(cursor)
@@ -723,18 +953,40 @@ object QuizQuestionCache {
         }.onFailure { Log.e(TAG, "release orphans failed", it) }.getOrDefault(false)
     }
 
-    fun clearBank(scopeKey: String, mode: ClearMode): Boolean = synchronized(lock) {
+    /**
+     * Source-aware cleanup. The default is the AI/seed namespace
+     * (`collection_id IS NULL`), so a legacy caller can never erase imported
+     * rows. A custom clear must name one tag unless the caller explicitly
+     * chose the "all custom" confirmation path.
+     */
+    fun clearBank(
+        scopeKey: String,
+        mode: ClearMode,
+        source: BankSource = BankSource.COURSE_AI,
+        collectionId: String? = null,
+    ): Boolean = synchronized(lock) {
         val db = database() ?: return false
-        val (where, args) = when (mode) {
-            ClearMode.UNUSED -> "scope_key = ? AND state IN (?, ?)" to
-                arrayOf(scopeKey, STATE_AVAILABLE, STATE_EXPIRED)
-            ClearMode.ANSWERED -> "scope_key = ? AND state = ?" to arrayOf(scopeKey, STATE_CONSUMED)
-            ClearMode.CORRECT -> "scope_key = ? AND state = ? AND last_result = ?" to
-                arrayOf(scopeKey, STATE_CONSUMED, RESULT_CORRECT)
-            ClearMode.WRONG -> "scope_key = ? AND state = ? AND last_result = ?" to
-                arrayOf(scopeKey, STATE_CONSUMED, RESULT_WRONG)
-            ClearMode.ALL -> "scope_key = ?" to arrayOf(scopeKey)
+        val (stateWhere, stateArgs) = when (mode) {
+            ClearMode.UNUSED -> " AND state IN (?, ?)" to
+                arrayOf(STATE_AVAILABLE, STATE_EXPIRED)
+            ClearMode.ANSWERED -> " AND state = ?" to arrayOf(STATE_CONSUMED)
+            ClearMode.CORRECT -> " AND state = ? AND last_result = ?" to
+                arrayOf(STATE_CONSUMED, RESULT_CORRECT)
+            ClearMode.WRONG -> " AND state = ? AND last_result = ?" to
+                arrayOf(STATE_CONSUMED, RESULT_WRONG)
+            ClearMode.ALL -> "" to emptyArray()
         }
+        val (sourceWhere, sourceArgs) = when (source) {
+            BankSource.COURSE_AI -> " AND collection_id IS NULL" to emptyArray<String>()
+            BankSource.CUSTOM -> if (collectionId.isNullOrBlank()) {
+                " AND collection_id IS NOT NULL" to emptyArray<String>()
+            } else {
+                " AND collection_id = ?" to arrayOf(collectionId)
+            }
+            BankSource.ALL -> "" to emptyArray<String>()
+        }
+        val where = "scope_key = ?" + stateWhere + sourceWhere
+        val args = arrayOf(scopeKey) + stateArgs + sourceArgs
         return runCatching {
             db.delete(TABLE, where, args)
             true
@@ -818,10 +1070,11 @@ object QuizQuestionCache {
 
     fun clearAvailable(scopeKey: String = LOCAL_SCOPE): Boolean = synchronized(lock) {
         val db = database() ?: return false
+        val legacyOnly = if (scopeKey == LOCAL_SCOPE) " AND collection_id IS NULL" else ""
         return runCatching {
             db.delete(
                 TABLE,
-                "scope_key = ? AND state = ?",
+                "scope_key = ? AND state = ?$legacyOnly",
                 arrayOf(scopeKey, STATE_AVAILABLE),
             )
             true
@@ -830,10 +1083,11 @@ object QuizQuestionCache {
 
     fun clearUnconsumed(scopeKey: String = LOCAL_SCOPE): Boolean = synchronized(lock) {
         val db = database() ?: return false
+        val legacyOnly = if (scopeKey == LOCAL_SCOPE) " AND collection_id IS NULL" else ""
         return runCatching {
             db.delete(
                 TABLE,
-                "scope_key = ? AND state IN (?, ?)",
+                "scope_key = ? AND state IN (?, ?)$legacyOnly",
                 arrayOf(scopeKey, STATE_AVAILABLE, STATE_RESERVED),
             )
             true
@@ -881,6 +1135,97 @@ object QuizQuestionCache {
                 arrayOf(scopeKey, STATE_AVAILABLE, nowMs.toString()) + scopeArgs,
             ).use { if (it.moveToFirst()) it.getInt(0) else 0 }
         }.onFailure { Log.e(TAG, "scoped available count failed", it) }.getOrDefault(0)
+    }
+
+    /**
+     * Available rows in one custom tag. Imported questions carry no curriculum
+     * scope, so this must not reuse [answerScopeWhere].
+     */
+    fun availableCollectionCount(
+        collectionId: String,
+        nowMs: Long = System.currentTimeMillis(),
+        scopeKey: String = LOCAL_SCOPE,
+    ): Int = synchronized(lock) {
+        if (collectionId.isBlank()) return 0
+        val db = database() ?: return 0
+        runCatching {
+            expire(db, scopeKey, nowMs)
+            db.rawQuery(
+                "SELECT COUNT(*) FROM $TABLE WHERE scope_key = ? AND state = ? " +
+                    "AND (expires_at IS NULL OR expires_at > ?) AND collection_id = ?",
+                arrayOf(scopeKey, STATE_AVAILABLE, nowMs.toString(), collectionId),
+            ).use { if (it.moveToFirst()) it.getInt(0) else 0 }
+        }.onFailure { Log.e(TAG, "collection available count failed", it) }.getOrDefault(0)
+    }
+
+    /** All local rows split into the AI/seed namespace and custom tag rows. */
+    fun sourceCounts(
+        scopeKey: String = LOCAL_SCOPE,
+        nowMs: Long = System.currentTimeMillis(),
+    ): SourceCounts = synchronized(lock) {
+        val db = database() ?: return SourceCounts()
+        runCatching {
+            expire(db, scopeKey, nowMs)
+            var course = 0
+            var custom = 0
+            db.rawQuery(
+                "SELECT collection_id IS NULL, COUNT(*) FROM $TABLE " +
+                    "WHERE scope_key = ? GROUP BY collection_id IS NULL",
+                arrayOf(scopeKey),
+            ).use { cursor ->
+                while (cursor.moveToNext()) {
+                    if (cursor.getInt(0) != 0) course += cursor.getInt(1) else custom += cursor.getInt(1)
+                }
+            }
+            SourceCounts(course, custom)
+        }.onFailure { Log.e(TAG, "source counts failed", it) }.getOrDefault(SourceCounts())
+    }
+
+    /** Per-tag state totals; tags without rows are left for the UI to zero-fill. */
+    fun collectionCounts(
+        scopeKey: String = LOCAL_SCOPE,
+    ): List<CollectionCounts> = synchronized(lock) {
+        val db = database() ?: return emptyList()
+        runCatching {
+            val totals = LinkedHashMap<String, IntArray>()
+            db.rawQuery(
+                "SELECT collection_id, state, last_result, COUNT(*) FROM $TABLE " +
+                    "WHERE scope_key = ? AND collection_id IS NOT NULL " +
+                    "GROUP BY collection_id, state, last_result",
+                arrayOf(scopeKey),
+            ).use { cursor ->
+                while (cursor.moveToNext()) {
+                    val id = cursor.getString(0) ?: continue
+                    val counts = totals.getOrPut(id) { IntArray(7) }
+                    val count = cursor.getInt(3)
+                    counts[0] += count
+                    when (cursor.getString(1)) {
+                        STATE_AVAILABLE -> counts[1] += count
+                        STATE_RESERVED -> counts[2] += count
+                        STATE_CONSUMED -> when (if (cursor.isNull(2)) null else cursor.getString(2)) {
+                            RESULT_CORRECT -> counts[3] += count
+                            RESULT_WRONG -> counts[4] += count
+                            else -> counts[5] += count
+                        }
+                        STATE_EXPIRED -> counts[6] += count
+                    }
+                }
+            }
+            totals.map { (id, counts) ->
+                CollectionCounts(
+                    collectionId = id,
+                    counts = BankCounts(
+                        total = counts[0],
+                        unused = counts[1],
+                        inRound = counts[2],
+                        correct = counts[3],
+                        wrong = counts[4],
+                        legacy = counts[5],
+                        expired = counts[6],
+                    ),
+                )
+            }
+        }.onFailure { Log.e(TAG, "collection counts failed", it) }.getOrDefault(emptyList())
     }
 
     /**
@@ -945,10 +1290,41 @@ object QuizQuestionCache {
             arrayOf(scopeKey, state),
         ).use { if (it.moveToFirst()) it.getInt(0) else 0 }
 
-    private fun fingerprintExists(db: SQLiteDatabase, scopeKey: String, fp: String): Boolean =
+    /**
+     * Content identity is scoped to one namespace: AI/seed rows compare only
+     * with `collection_id IS NULL`, an import compares only with its own tag.
+     * Cross-source duplicates are allowed and are counted separately.
+     */
+    private fun fingerprintExists(
+        db: SQLiteDatabase,
+        scopeKey: String,
+        fp: String,
+        collectionId: String?,
+    ): Boolean {
+        val selection = if (collectionId == null) {
+            "scope_key = ? AND fingerprint = ? AND collection_id IS NULL"
+        } else {
+            "scope_key = ? AND fingerprint = ? AND collection_id = ?"
+        }
+        val args = if (collectionId == null) {
+            arrayOf(scopeKey, fp)
+        } else {
+            arrayOf(scopeKey, fp, collectionId)
+        }
+        return db.rawQuery("SELECT 1 FROM $TABLE WHERE $selection LIMIT 1", args)
+            .use { it.moveToFirst() }
+    }
+
+    private fun fingerprintExistsOutsideCollection(
+        db: SQLiteDatabase,
+        scopeKey: String,
+        fp: String,
+        collectionId: String,
+    ): Boolean =
         db.rawQuery(
-            "SELECT 1 FROM $TABLE WHERE scope_key = ? AND fingerprint = ? LIMIT 1",
-            arrayOf(scopeKey, fp),
+            "SELECT 1 FROM $TABLE WHERE scope_key = ? AND fingerprint = ? " +
+                "AND (collection_id IS NULL OR collection_id != ?) LIMIT 1",
+            arrayOf(scopeKey, fp, collectionId),
         ).use { it.moveToFirst() }
 
     private fun sourceRefExists(db: SQLiteDatabase, sourceKind: String, sourceRef: String): Boolean =
@@ -1039,9 +1415,10 @@ object QuizQuestionCache {
             sourceKind = cursor.getString(2) ?: "",
             sourceRef = if (cursor.isNull(3)) null else cursor.getString(3),
             scopeKey = cursor.getString(4),
-            receivedAt = cursor.getLong(5),
-            expiresAt = if (cursor.isNull(6)) null else cursor.getLong(6),
-            state = cursor.getString(7) ?: STATE_AVAILABLE,
+            collectionId = if (cursor.isNull(5)) null else cursor.getString(5),
+            receivedAt = cursor.getLong(6),
+            expiresAt = if (cursor.isNull(7)) null else cursor.getLong(7),
+            state = cursor.getString(8) ?: STATE_AVAILABLE,
         )
     }
 
@@ -1055,14 +1432,15 @@ object QuizQuestionCache {
             sourceKind = cursor.getString(2) ?: "",
             sourceRef = if (cursor.isNull(3)) null else cursor.getString(3),
             scopeKey = cursor.getString(4),
-            receivedAt = cursor.getLong(5),
-            expiresAt = if (cursor.isNull(6)) null else cursor.getLong(6),
-            state = cursor.getString(7) ?: STATE_AVAILABLE,
-            lastResult = if (cursor.isNull(8)) null else cursor.getString(8),
-            wrongCount = cursor.getInt(9),
-            answeredAt = if (cursor.isNull(10)) null else cursor.getLong(10),
-            timedOut = cursor.getInt(11) != 0,
-            selectedIndex = if (cursor.isNull(12)) null else cursor.getInt(12),
+            collectionId = if (cursor.isNull(5)) null else cursor.getString(5),
+            receivedAt = cursor.getLong(6),
+            expiresAt = if (cursor.isNull(7)) null else cursor.getLong(7),
+            state = cursor.getString(8) ?: STATE_AVAILABLE,
+            lastResult = if (cursor.isNull(9)) null else cursor.getString(9),
+            wrongCount = cursor.getInt(10),
+            answeredAt = if (cursor.isNull(11)) null else cursor.getLong(11),
+            timedOut = cursor.getInt(12) != 0,
+            selectedIndex = if (cursor.isNull(13)) null else cursor.getInt(13),
         )
     }
 
@@ -1106,6 +1484,7 @@ object QuizQuestionCache {
                     "source_kind TEXT NOT NULL, " +
                     "source_ref TEXT, " +
                     "scope_key TEXT NOT NULL, " +
+                    "collection_id TEXT, " +
                     "scope_grade INTEGER, " +
                     "scope_semester INTEGER, " +
                     "scope_subject TEXT NOT NULL DEFAULT '', " +
@@ -1155,6 +1534,34 @@ object QuizQuestionCache {
             if (oldVersion < 3) {
                 addScopeColumns(db)
             }
+        }
+
+        /**
+         * `collection_id` deliberately does not bump DB_VERSION: an old APK can
+         * still open the shared database after a downgrade. Every open checks
+         * the column (new installs already have it) and creates the namespace
+         * dedupe index once the column exists.
+         */
+        override fun onOpen(db: SQLiteDatabase) {
+            super.onOpen(db)
+            ensureCollectionColumn(db)
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS idx_qc_scope_collection_fp " +
+                    "ON $TABLE(scope_key, collection_id, fingerprint)",
+            )
+        }
+
+        private fun ensureCollectionColumn(db: SQLiteDatabase) {
+            var present = false
+            db.rawQuery("PRAGMA table_info($TABLE)", null).use { cursor ->
+                while (cursor.moveToNext()) {
+                    if (cursor.getString(1) == "collection_id") {
+                        present = true
+                        break
+                    }
+                }
+            }
+            if (!present) addColumn(db, "collection_id", "TEXT")
         }
 
         private fun addScopeColumns(db: SQLiteDatabase) {

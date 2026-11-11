@@ -2448,7 +2448,6 @@
       levelListCount: "{n}/{max}",
       levelEmptyTitle: "还没有设置关卡",
       levelEmptyText: "添加一个答题范围，孩子就能在电视上像选关一样答题。",
-      levelAdd: "添加关卡",
       levelMaxHint: "最多设置 {n} 个关卡。",
       levelUndo: "撤销",
       levelDeleted: "已删除「{name}」",
@@ -2482,7 +2481,6 @@
       levelListCount: "{n}/{max}",
       levelEmptyTitle: "No levels yet",
       levelEmptyText: "Add an answer range so your child can pick it on the TV like a game level.",
-      levelAdd: "Add level",
       levelMaxHint: "Up to {n} levels.",
       levelUndo: "Undo",
       levelDeleted: "Deleted “{name}”",
@@ -2516,7 +2514,6 @@
       levelListCount: "{n}/{max}",
       levelEmptyTitle: "Уровней пока нет",
       levelEmptyText: "Добавьте диапазон вопросов, чтобы ребёнок мог выбрать его на ТВ как уровень игры.",
-      levelAdd: "Добавить уровень",
       levelMaxHint: "Можно добавить не больше {n} уровней.",
       levelUndo: "Отменить",
       levelDeleted: "Удалён уровень «{name}»",
@@ -2550,7 +2547,6 @@
       levelListCount: "{n}/{max}",
       levelEmptyTitle: "Рівнів ще немає",
       levelEmptyText: "Додайте діапазон питань, щоб дитина могла вибрати його на ТБ як рівень гри.",
-      levelAdd: "Додати рівень",
       levelMaxHint: "Можна додати щонайбільше {n} рівнів.",
       levelUndo: "Скасувати",
       levelDeleted: "Видалено рівень «{name}»",
@@ -2584,7 +2580,6 @@
       levelListCount: "{n}/{max}",
       levelEmptyTitle: "Деңгейлер әзірге жоқ",
       levelEmptyText: "Бала ТВ-де ойын деңгейі ретінде таңдай алатындай сұрақ ауқымын қосыңыз.",
-      levelAdd: "Деңгей қосу",
       levelMaxHint: "Ең көбі {n} деңгей қосуға болады.",
       levelUndo: "Қайтару",
       levelDeleted: "«{name}» деңгейі жойылды",
@@ -2721,9 +2716,899 @@
     },
   };
 
+  const V22_TEXTS = {
+    zh: {
+      bankImport: "导入题库",
+      bankEmptyImportTitle: "题库还是空的。可以手动导入题目，或让 AI 生成。",
+      bankSourceLine: "课程/AI {course} 道 · 自定义 {custom} 道 · 总 {total} / {capacity}",
+      bankSourceCustomTag: "标签：{name}",
+      goImportBank: "导入题库",
+      importTitle: "导入题库",
+      importSingleOnlyBadge: "仅支持单选",
+      importSingleOnlyHint: "仅导入单选题；多选、填空、听力、图片题和无答案题不会入库。",
+      importCloudNotice: "绑定云端题库时不能导入本地题目。请先解绑云端。",
+      importTargetLabel: "导入到标签",
+      importTagPlaceholder: "输入或选择标签",
+      importTagCount: "共 {n} 道",
+      importTagSuggestEmpty: "输入新名称可直接新建标签",
+      importTagSuggestNew: "＋ 新建标签「{name}」",
+      importTagSuggestAria: "已有标签建议",
+      importTagClear: "清空标签名称",
+      importNoTagsHint: "还没有标签，正式导入成功后会创建。",
+      importTargetHint: "将导入到已有标签「{name}」",
+      importTargetNewHint: "将新建标签「{name}」，正式导入成功后保存",
+      importTargetNone: "请选择已有标签，或输入新名称。",
+      importTargetBadgeNew: "新建",
+      importTargetBadgeExisting: "已有",
+      importInputLabel: "题目内容",
+      importChooseFile: "选择 .json 或 .txt 文件",
+      importPasteLabel: "也可以直接粘贴题目",
+      importTextPlaceholder: "粘贴规范 JSON，或编号文本（1. 题干 / A. 选项 / 答案：B）",
+      importDownloadTemplate: "下载 JSON 模板",
+      importCopyPrompt: "复制 AI 整理提示词",
+      importViewPrompt: "查看整理提示词",
+      importAiHint: "可先把照片、PDF 或杂乱的文字交给常用的 AI 网页助手整理；导入前请删除姓名、学校、学号等隐私。导入器只校验文本，不会上传内容。",
+      importDefaultDifficulty: "题目没写难度时使用",
+      importParse: "解析并预览",
+      importParsing: "正在解析…",
+      importEmptyInput: "请先选择文件或粘贴题目。",
+      importTooLarge: "文件超过 512 KB，请拆成更小的文件。",
+      importTooMany: "一次最多导入 {max} 道题，请拆成多个文件。",
+      importJsonInvalid: "JSON 格式不正确，请检查引号、逗号和括号。",
+      importNoQuestions: "没有找到题目。",
+      importFileReadFailed: "文件读取失败，请换一个文件或直接粘贴。",
+      importSelectTagFirst: "请先选择已有标签，或输入新名称。",
+      importNewTagInvalid: "标签名称需要 1–20 个字。",
+      importNewTagExists: "已经有同名标签，请换一个名称。",
+      importNewTagLimit: "最多只能有 20 个标签。",
+      importErrorAt: "第 {n} 题",
+      importPreviewTitle: "导入预览",
+      importPreviewTarget: "目标标签",
+      importPreviewTotal: "文件总题数",
+      importPreviewFileDup: "文件内重复",
+      importPreviewCollectionDup: "本标签已有",
+      importPreviewCrossDup: "其他来源重复（仍会保留）",
+      importPreviewAppend: "将新增",
+      importPreviewRemaining: "题库剩余",
+      importPreviewRemainingValue: "{remaining} / {capacity} 道",
+      importPreviewNoNew: "没有新题；文件内和本标签的题都已存在。",
+      importPreviewRejected: "有 {n} 道题未通过校验，请检查答案和选项。",
+      importPreviewNotEnough: "题库容量不足，还差 {n} 道。请先到「我的 → 题库维护」清理。",
+      importPreviewCrossNote: "其他来源已有 {n} 道同内容题；它们仍会作为本标签的独立副本导入。",
+      importConfirm: "导入 {n} 道题",
+      importImporting: "正在导入…",
+      importResultTitle: "已导入 {n} 道到「{name}」",
+      importResultDetail: "文件内重复 {file} 道 · 本标签已有 {collection} 道",
+      importResultCross: "其他来源重复 {n} 道（已保留）",
+      importResultRemaining: "题库剩余 {remaining} / {capacity} 道",
+      importPromptCopied: "提示词已复制。",
+      importCopyFailed: "复制失败，请展开提示词后手动复制。",
+      importField_item: "题目",
+      importField_items: "题目列表",
+      importField_text: "文本",
+      importField_prompt: "题干",
+      importField_options: "选项",
+      importField_answer: "答案",
+      importField_explanation: "解析",
+      importField_difficulty: "难度",
+      importCode_TYPE: "字段类型不对",
+      importCode_UNKNOWN_FIELD: "不支持的字段",
+      importCode_DUPLICATE: "内容重复",
+      importCode_REQUIRED: "缺少必填内容",
+      importCode_ORDER: "内容顺序不正确",
+      importCode_FORMAT: "格式不正确",
+      importCode_COUNT: "选项数量必须是 2–6 个",
+      importCode_INVALID_TEXT: "内容为空或超出长度",
+      importCode_TOO_LONG: "内容太长",
+      importCode_ANSWER_FORMAT: "只支持单选：答案须是一个字母（A–F）或一个选项原文",
+      importCode_ANSWER_RANGE: "答案不在选项范围内",
+      importCode_ANSWER_CONFLICT: "answer 和 answerIndex 不能同时填写",
+      importCode_INVALID_DIFFICULTY: "难度只能是 easy、medium 或 hard",
+      importCode_NO_ITEMS: "没有题目",
+      importCode_TOO_MANY_ITEMS: "一次最多 200 道题",
+      levelAddCourseTitle: "教材关卡",
+      levelAddCourseMeta: "年级 · 学科 · 单元",
+      levelAddCustomTitle: "自定义关卡",
+      levelAddCustomMeta: "从导入标签取题",
+      levelAddCustomMetaNoTags: "先导入题目",
+      levelAddCustomMetaCloud: "云端模式下不可用",
+      customLevelListTitle: "自定义关卡",
+      customLevelListLead: "从你导入的标签中取题；不按课程单元或难度过滤。",
+      customLevelNameHint: "留空时显示标签名称；最多 10 个字。",
+      customLevelTagLabel: "题目来源标签",
+      customLevelTagHint: "每个标签只能建一个关卡。",
+      customLevelEmptyTitle: "还没有可用的标签",
+      customLevelEmptyText: "先导入题目并创建标签，才能建立自定义关卡。",
+      customLevelCloudHint: "绑定云端题库时不能修改本地自定义关卡。",
+      customLevelBadge: "自定义",
+      customLevelTagLine: "来源：{name}",
+      customLevelFallbackName: "自定义关卡",
+      customLevelNameFallback: "自定义 · {name}",
+      customLevelTagCounts: "{total} 道 · 可用 {unused}",
+      customLevelTagCountsEmpty: "{total} 道",
+      customLevelEditorAvailable: "「{name}」可用 {n} 道题",
+      customLevelEditorNoAvailable: "「{name}」暂时没有未使用的题。",
+      customLevelAddTitle: "新建自定义关卡",
+      customLevelDeleteConfirm: "确定删除自定义关卡「{name}」？题目和标签不会删除。",
+      customLevelTagDuplicate: "这个标签已经建过关卡。",
+      customLevelTagRequired: "请选择标签。",
+      customLevelSaved: "自定义关卡已保存。",
+      customLevelDeleted: "自定义关卡已删除。",
+      levelsTotalHint: "关卡 {used} / {max}",
+      customLevelCombined: "课程与自定义关卡合计 {used} / {max}。",
+      maintenanceSourceLabel: "清理范围",
+      maintenanceSourceCourse: "课程/AI",
+      maintenanceSourceCustom: "自定义",
+      maintenanceSourceAll: "全部",
+      maintenanceSourceCourseHint: "只清理课程/AI 题库，不会动自定义标签。",
+      maintenanceSourceCustomHint: "只清理选中的标签，不影响其他标签和课程/AI 题库。",
+      maintenanceSourceAllHint: "会同时清理课程/AI 和自定义题库（自定义 {custom} 道），请谨慎操作。",
+      maintenanceSourceNoTags: "还没有自定义标签。",
+      maintenanceTagOption: "{name}（{total} 道，可用 {unused}）",
+      confirmClearAllMixed: "注意：本次会同时清理课程/AI 和自定义题（自定义 {n} 道）。",
+      confirmClearCustom: "本次只清理标签「{name}」。",
+      err_COLLECTION_CONFLICT: "标签已存在或正在使用，请换个名称。",
+      err_COLLECTION_EXISTS: "已有同名标签。",
+      err_COLLECTION_LIMIT: "最多只能有 20 个标签。",
+      err_COLLECTION_NOT_FOUND: "标签不存在，请刷新后重试。",
+      err_COLLECTION_REQUIRED: "请先选择或新建标签。",
+      err_INVALID_COLLECTION_NAME: "标签名称需要 1–20 个字。",
+      err_INVALID_CUSTOM_LEVEL: "自定义关卡配置不正确。",
+      err_INVALID_IMPORT: "导入内容有错误，请按提示修改。",
+      err_TOO_MANY_ITEMS: "一次最多导入 200 道题。",
+      err_TOO_MANY_LEVELS: "课程关卡和自定义关卡合计最多 6 个。",
+      err_INVALID_INDEX: "题目位置不正确，请重新解析。",
+      importAiPrompt: `你是题库整理助手。请把我给你的题目资料整理成学习机能导入的 JSON，只输出 JSON。只整理单选题。
+
+输出格式（必须严格遵守）：
+{
+  "version": 1,
+  "items": [
+    {
+      "prompt": "题干",
+      "options": ["选项1", "选项2", "选项3", "选项4"],
+      "answer": "B",
+      "explanation": "解析，没有就省略这个字段",
+      "difficulty": "easy、medium 或 hard，不确定就省略"
+    }
+  ]
+}
+
+规则：
+1. 只输出 JSON 本身：不要解释，不要 Markdown 代码块，不要前后缀。
+2. prompt：原题题干，去掉题号，不改写、不补全、不合并；不超过 200 字。
+3. options：2–6 个，保持原题顺序；去掉“A.”“B、”“C）”等前缀；不要编号；每项不超过 60 字；内容不能重复。
+4. answer：只写一个大写字母（A–F），对应正确选项；不要写选项内容，不要写多个字母。
+5. explanation：原题有解析才写，最多 600 字；没有就省略，禁止自己编解析。
+6. difficulty：只能是 easy/medium/hard；原题没标就不写。
+7. 判断题写成两个选项 ["正确","错误"]，answer 写对应字母；组合选项（如 A. ①②）算单选，可以保留。
+8. 只保留单选题：多选题、不定项选择题、填空题、听力题、需要图片才能作答的题、缺少答案的题，整题跳过，不要猜答案；不要从多个正确项中任选一个，也不要把多选题改写成单选题。
+9. 不要生成资料里没有的题，不要修改题干里的数字、单位和选项。
+10. 一次最多输出 100 道。资料超过 100 道时，先输出前 100 道；我回复“继续”后，再输出下一批，不要重复已经输出的题。
+11. 输出前自检：每道题只有一个正确答案，题干没有要求选择多个；JSON 可解析；引号是英文双引号；没有尾逗号；每个 answer 都在 options 范围内；items 数量与整理出的题数一致。
+
+示例：
+{"version":1,"items":[{"prompt":"12 + 8 = ?","options":["18","20","22","24"],"answer":"B","explanation":"12 + 8 = 20","difficulty":"easy"}]}
+
+下面是要整理的资料：
+（在这里粘贴题目文字。如果是图片或 PDF，请先完整识别文字再整理；看不清的字用“□”代替，不要猜测。）`,
+    },
+    en: {
+      bankImport: "Import bank",
+      bankEmptyImportTitle: "The bank is empty. Import questions manually or generate them with AI.",
+      bankSourceLine: "Course/AI {course} · Custom {custom} · Total {total} / {capacity}",
+      bankSourceCustomTag: "Tag: {name}",
+      goImportBank: "Import bank",
+      importTitle: "Import question bank",
+      importSingleOnlyBadge: "Single choice only",
+      importSingleOnlyHint: "Only single-choice questions are imported; multiple-answer, fill-in, listening, image-based and answerless questions are skipped.",
+      importCloudNotice: "Local imports are unavailable while a cloud bank is linked. Unlink it first.",
+      importTargetLabel: "Import into tag",
+      importTagPlaceholder: "Type or choose a tag",
+      importTagCount: "{n} questions",
+      importTagSuggestEmpty: "Type a new name to create a tag",
+      importTagSuggestNew: "+ New tag “{name}”",
+      importTagSuggestAria: "Existing tag suggestions",
+      importTagClear: "Clear tag name",
+      importNoTagsHint: "There are no tags yet; importing will create one.",
+      importTargetHint: "Importing into existing tag “{name}”",
+      importTargetNewHint: "A tag “{name}” will be created and saved after the import succeeds",
+      importTargetNone: "Choose an existing tag or type a new name.",
+      importTargetBadgeNew: "New",
+      importTargetBadgeExisting: "Existing",
+      importInputLabel: "Question content",
+      importChooseFile: "Choose a .json or .txt file",
+      importPasteLabel: "Or paste questions directly",
+      importTextPlaceholder: "Paste canonical JSON or numbered text (1. question / A. option / Answer: B)",
+      importDownloadTemplate: "Download JSON template",
+      importCopyPrompt: "Copy AI organizing prompt",
+      importViewPrompt: "View organizing prompt",
+      importAiHint: "You can first have a familiar AI web assistant organize photos, PDFs, or messy text; remove names, school, student numbers, and other private data before importing. The importer only validates text and uploads nothing.",
+      importDefaultDifficulty: "Used when a question has no difficulty",
+      importParse: "Parse and preview",
+      importParsing: "Parsing…",
+      importEmptyInput: "Choose a file or paste questions first.",
+      importTooLarge: "The file is larger than 512 KB; split it into smaller files.",
+      importTooMany: "At most {max} questions can be imported at once; split the file.",
+      importJsonInvalid: "Invalid JSON; check quotes, commas, and brackets.",
+      importNoQuestions: "No questions were found.",
+      importFileReadFailed: "Could not read the file. Choose another file or paste the text.",
+      importSelectTagFirst: "Choose an existing tag or type a new name first.",
+      importNewTagInvalid: "A tag name must be 1–20 characters.",
+      importNewTagExists: "A tag with that name already exists.",
+      importNewTagLimit: "You can have at most 20 tags.",
+      importErrorAt: "Question {n}",
+      importPreviewTitle: "Import preview",
+      importPreviewTarget: "Target tag",
+      importPreviewTotal: "Questions in file",
+      importPreviewFileDup: "Duplicates in file",
+      importPreviewCollectionDup: "Already in this tag",
+      importPreviewCrossDup: "Duplicates in other sources (kept)",
+      importPreviewAppend: "Will add",
+      importPreviewRemaining: "Bank space left",
+      importPreviewRemainingValue: "{remaining} / {capacity} questions",
+      importPreviewNoNew: "No new questions; every item already exists in the file or this tag.",
+      importPreviewRejected: "{n} questions failed validation; check answers and options.",
+      importPreviewNotEnough: "Not enough bank space; {n} more rows are needed. Clear some in Me → Bank maintenance.",
+      importPreviewCrossNote: "{n} items already exist in other sources; they will still be added as independent copies under this tag.",
+      importConfirm: "Import {n} questions",
+      importImporting: "Importing…",
+      importResultTitle: "Imported {n} questions into “{name}”",
+      importResultDetail: "Duplicates in file: {file} · already in this tag: {collection}",
+      importResultCross: "Duplicates in other sources: {n} (kept)",
+      importResultRemaining: "Bank space left: {remaining} / {capacity}",
+      importPromptCopied: "Prompt copied.",
+      importCopyFailed: "Copy failed. Open the prompt and copy it manually.",
+      importField_item: "Question",
+      importField_items: "Question list",
+      importField_text: "Text",
+      importField_prompt: "Prompt",
+      importField_options: "Options",
+      importField_answer: "Answer",
+      importField_explanation: "Solution",
+      importField_difficulty: "Difficulty",
+      importCode_TYPE: "Wrong field type",
+      importCode_UNKNOWN_FIELD: "Unsupported field",
+      importCode_DUPLICATE: "Duplicate content",
+      importCode_REQUIRED: "Required content is missing",
+      importCode_ORDER: "Content is in the wrong order",
+      importCode_FORMAT: "Wrong format",
+      importCode_COUNT: "There must be 2–6 options",
+      importCode_INVALID_TEXT: "Text is empty or too long",
+      importCode_TOO_LONG: "Text is too long",
+      importCode_ANSWER_FORMAT: "Single choice only: use one letter (A–F) or one exact option text",
+      importCode_ANSWER_RANGE: "The answer is outside the options",
+      importCode_ANSWER_CONFLICT: "answer and answerIndex cannot be used together",
+      importCode_INVALID_DIFFICULTY: "Difficulty must be easy, medium, or hard",
+      importCode_NO_ITEMS: "No questions",
+      importCode_TOO_MANY_ITEMS: "At most 200 questions at a time",
+      levelAddCourseTitle: "Textbook levels",
+      levelAddCourseMeta: "Grade · subject · unit",
+      levelAddCustomTitle: "Custom levels",
+      levelAddCustomMeta: "From imported tags",
+      levelAddCustomMetaNoTags: "Import questions first",
+      levelAddCustomMetaCloud: "Unavailable in cloud mode",
+      customLevelListTitle: "Custom levels",
+      customLevelListLead: "Draws from your imported tags; no course-unit or difficulty filter.",
+      customLevelNameHint: "Leave blank to show the tag name; at most 10 characters.",
+      customLevelTagLabel: "Question source tag",
+      customLevelTagHint: "Each tag can back only one level.",
+      customLevelEmptyTitle: "No usable tags yet",
+      customLevelEmptyText: "Import questions and create a tag first, then you can add a custom level.",
+      customLevelCloudHint: "Local custom levels cannot be changed while a cloud bank is linked.",
+      customLevelBadge: "Custom",
+      customLevelTagLine: "Source: {name}",
+      customLevelFallbackName: "Custom level",
+      customLevelNameFallback: "Custom · {name}",
+      customLevelTagCounts: "{total} questions · {unused} available",
+      customLevelTagCountsEmpty: "{total} questions",
+      customLevelEditorAvailable: "“{name}” has {n} available questions",
+      customLevelEditorNoAvailable: "“{name}” has no unused questions right now.",
+      customLevelAddTitle: "New custom level",
+      customLevelDeleteConfirm: "Delete the custom level “{name}”? Questions and the tag are kept.",
+      customLevelTagDuplicate: "This tag already backs a level.",
+      customLevelTagRequired: "Choose a tag.",
+      customLevelSaved: "Custom level saved.",
+      customLevelDeleted: "Custom level deleted.",
+      levelsTotalHint: "Levels {used} / {max}",
+      customLevelCombined: "Course and custom levels: {used} / {max}.",
+      maintenanceSourceLabel: "Clear scope",
+      maintenanceSourceCourse: "Course/AI",
+      maintenanceSourceCustom: "Custom",
+      maintenanceSourceAll: "All",
+      maintenanceSourceCourseHint: "Clears only the course/AI bank; custom tags are untouched.",
+      maintenanceSourceCustomHint: "Clears only the selected tag; other tags and the course/AI bank are untouched.",
+      maintenanceSourceAllHint: "Clears both the course/AI and custom banks ({custom} custom questions). Use with care.",
+      maintenanceSourceNoTags: "There are no custom tags yet.",
+      maintenanceTagOption: "{name} ({total} questions, {unused} available)",
+      confirmClearAllMixed: "Warning: this also clears custom questions ({n} custom rows).",
+      confirmClearCustom: "This clears only the tag “{name}”.",
+      err_COLLECTION_CONFLICT: "The tag already exists or is in use; choose another name.",
+      err_COLLECTION_EXISTS: "A tag with that name already exists.",
+      err_COLLECTION_LIMIT: "You can have at most 20 tags.",
+      err_COLLECTION_NOT_FOUND: "The tag no longer exists; refresh and try again.",
+      err_COLLECTION_REQUIRED: "Choose or create a tag first.",
+      err_INVALID_COLLECTION_NAME: "A tag name must be 1–20 characters.",
+      err_INVALID_CUSTOM_LEVEL: "The custom level settings are invalid.",
+      err_INVALID_IMPORT: "The import contains errors; fix them using the messages.",
+      err_TOO_MANY_ITEMS: "At most 200 questions can be imported at once.",
+      err_TOO_MANY_LEVELS: "Course and custom levels together cannot exceed 6.",
+      err_INVALID_INDEX: "The question position is invalid; parse the import again.",
+      importAiPrompt: `You organize question banks. Turn the material I give you into JSON that a study device can import. Output only JSON. Include single-choice questions only.
+
+Output format (strictly follow this):
+{
+  "version": 1,
+  "items": [
+    {
+      "prompt": "question stem",
+      "options": ["option 1", "option 2", "option 3", "option 4"],
+      "answer": "B",
+      "explanation": "solution; omit this field if there is none",
+      "difficulty": "easy, medium or hard; omit if unsure"
+    }
+  ]
+}
+
+Rules:
+1. Output only the JSON itself: no explanation, no Markdown code fence, no prefix or suffix.
+2. prompt: the original stem without the question number. Do not rewrite, complete, or merge questions; at most 200 characters.
+3. options: 2–6 entries in the original order. Remove prefixes such as "A.", "B、", "C)". Do not number them; each at most 60 characters; no duplicate content.
+4. answer: one uppercase letter (A–F) for the correct option. Do not write option text or multiple letters.
+5. explanation: include only if the source has one, at most 600 characters; otherwise omit it. Never invent a solution.
+6. difficulty: only easy/medium/hard; omit if the source does not mark it.
+7. True/false questions: use two options ["True","False"] and the matching letter in answer. Combination options such as A. ①② are single-choice and may stay.
+8. Keep single-choice questions only. Skip multiple-answer, multiple-select, fill-in-the-blank, listening, image-dependent, and answerless questions entirely. Never guess, never pick one answer from a multiple-answer question, and never rewrite a multiple-answer question as single-choice.
+9. Do not create questions that are not in the material, and do not change numbers, units, or options in the stem.
+10. Output at most 100 questions at a time. If the material has more, output the first 100; wait for me to reply "continue" before the next batch, and do not repeat questions already output.
+11. Self-check before output: each question has exactly one correct answer and its stem does not ask for more than one selection; JSON parses; quotes are ASCII double quotes; no trailing commas; every answer is within options; items count matches the questions you organized.
+
+Example:
+{"version":1,"items":[{"prompt":"12 + 8 = ?","options":["18","20","22","24"],"answer":"B","explanation":"12 + 8 = 20","difficulty":"easy"}]}
+
+Material to organize:
+(paste the question text here. If it is an image or PDF, recognize all text first; replace unclear characters with "□", do not guess.)`,
+    },
+    ru: {
+      bankImport: "Импорт банка",
+      bankEmptyImportTitle: "Банк пуст. Импортируйте вопросы вручную или создайте их с помощью ИИ.",
+      bankSourceLine: "Курс/ИИ {course} · Свои {custom} · Всего {total} / {capacity}",
+      bankSourceCustomTag: "Тег: {name}",
+      goImportBank: "Импортировать банк",
+      importTitle: "Импорт банка вопросов",
+      importSingleOnlyBadge: "Только один ответ",
+      importSingleOnlyHint: "Импортируются только вопросы с одним ответом; вопросы с несколькими ответами, пропусками, аудированием, изображениями и без ответа пропускаются.",
+      importCloudNotice: "При привязке к облачному банку импорт локальных вопросов недоступен. Сначала отвяжите облако.",
+      importTargetLabel: "Импортировать в тег",
+      importTagPlaceholder: "Введите или выберите тег",
+      importTagCount: "{n} вопр.",
+      importTagSuggestEmpty: "Введите новое название, чтобы создать тег",
+      importTagSuggestNew: "+ Новый тег «{name}»",
+      importTagSuggestAria: "Подсказки существующих тегов",
+      importTagClear: "Очистить название тега",
+      importNoTagsHint: "Тегов пока нет; при импорте он будет создан.",
+      importTargetHint: "Импорт в существующий тег «{name}»",
+      importTargetNewHint: "Тег «{name}» будет создан и сохранён после успешного импорта",
+      importTargetNone: "Выберите существующий тег или введите новое название.",
+      importTargetBadgeNew: "Новый",
+      importTargetBadgeExisting: "Существующий",
+      importInputLabel: "Содержимое вопросов",
+      importChooseFile: "Выбрать файл .json или .txt",
+      importPasteLabel: "Или вставьте вопросы",
+      importTextPlaceholder: "Вставьте канонический JSON или нумерованный текст (1. вопрос / A. вариант / Ответ: B)",
+      importDownloadTemplate: "Скачать шаблон JSON",
+      importCopyPrompt: "Копировать промпт для ИИ",
+      importViewPrompt: "Показать промпт",
+      importAiHint: "Фото, PDF или неаккуратный текст можно сначала упорядочить в обычном веб-помощнике ИИ; перед импортом удалите имена, школу, номер ученика и другие личные данные. Импортёр только проверяет текст и ничего не загружает.",
+      importDefaultDifficulty: "Использовать, если сложность не указана",
+      importParse: "Проверить и показать",
+      importParsing: "Проверка…",
+      importEmptyInput: "Сначала выберите файл или вставьте вопросы.",
+      importTooLarge: "Файл больше 512 КБ; разделите его на части.",
+      importTooMany: "За один раз можно импортировать не более {max} вопросов; разделите файл.",
+      importJsonInvalid: "Неверный JSON: проверьте кавычки, запятые и скобки.",
+      importNoQuestions: "Вопросы не найдены.",
+      importFileReadFailed: "Не удалось прочитать файл. Выберите другой или вставьте текст.",
+      importSelectTagFirst: "Сначала выберите существующий тег или введите новое название.",
+      importNewTagInvalid: "Название тега должно содержать 1–20 символов.",
+      importNewTagExists: "Тег с таким названием уже есть.",
+      importNewTagLimit: "Можно создать не более 20 тегов.",
+      importErrorAt: "Вопрос {n}",
+      importPreviewTitle: "Предпросмотр импорта",
+      importPreviewTarget: "Целевой тег",
+      importPreviewTotal: "Вопросов в файле",
+      importPreviewFileDup: "Повторы в файле",
+      importPreviewCollectionDup: "Уже есть в теге",
+      importPreviewCrossDup: "Повторы из других источников (сохраняются)",
+      importPreviewAppend: "Будет добавлено",
+      importPreviewRemaining: "Остаток банка",
+      importPreviewRemainingValue: "{remaining} / {capacity} вопр.",
+      importPreviewNoNew: "Новых вопросов нет: все уже есть в файле или теге.",
+      importPreviewRejected: "{n} вопросов не прошли проверку; проверьте ответы и варианты.",
+      importPreviewNotEnough: "Не хватает места: нужно ещё {n}. Освободите место в «Я → Обслуживание банка».",
+      importPreviewCrossNote: "В других источниках уже есть {n} таких вопросов; они будут добавлены как отдельные копии этого тега.",
+      importConfirm: "Импортировать {n} вопр.",
+      importImporting: "Импорт…",
+      importResultTitle: "Импортировано {n} в «{name}»",
+      importResultDetail: "Повторов в файле: {file} · уже в теге: {collection}",
+      importResultCross: "Повторов из других источников: {n} (сохранены)",
+      importResultRemaining: "Осталось {remaining} / {capacity}",
+      importPromptCopied: "Промпт скопирован.",
+      importCopyFailed: "Не удалось скопировать. Откройте промпт и скопируйте вручную.",
+      importField_item: "Вопрос",
+      importField_items: "Список вопросов",
+      importField_text: "Текст",
+      importField_prompt: "Условие",
+      importField_options: "Варианты",
+      importField_answer: "Ответ",
+      importField_explanation: "Решение",
+      importField_difficulty: "Сложность",
+      importCode_TYPE: "Неверный тип поля",
+      importCode_UNKNOWN_FIELD: "Неподдерживаемое поле",
+      importCode_DUPLICATE: "Повторяющееся содержимое",
+      importCode_REQUIRED: "Не хватает обязательных данных",
+      importCode_ORDER: "Неверный порядок данных",
+      importCode_FORMAT: "Неверный формат",
+      importCode_COUNT: "Должно быть 2–6 вариантов",
+      importCode_INVALID_TEXT: "Пустой текст или превышена длина",
+      importCode_TOO_LONG: "Слишком длинный текст",
+      importCode_ANSWER_FORMAT: "Только один ответ: одна заглавная буква A–F или точный текст варианта",
+      importCode_ANSWER_RANGE: "Ответ вне диапазона вариантов",
+      importCode_ANSWER_CONFLICT: "answer и answerIndex нельзя указывать вместе",
+      importCode_INVALID_DIFFICULTY: "Сложность: только easy, medium или hard",
+      importCode_NO_ITEMS: "Нет вопросов",
+      importCode_TOO_MANY_ITEMS: "Не более 200 вопросов за раз",
+      levelAddCourseTitle: "Учебные уровни",
+      levelAddCourseMeta: "Класс · предмет · раздел",
+      levelAddCustomTitle: "Свои уровни",
+      levelAddCustomMeta: "Из импортированных тегов",
+      levelAddCustomMetaNoTags: "Сначала импортируйте вопросы",
+      levelAddCustomMetaCloud: "Недоступно в облачном режиме",
+      customLevelListTitle: "Свои уровни",
+      customLevelListLead: "Вопросы берутся из импортированных тегов; фильтров по разделу курса и сложности нет.",
+      customLevelNameHint: "Если пусто, показывается название тега; до 10 символов.",
+      customLevelTagLabel: "Тег источника вопросов",
+      customLevelTagHint: "Для каждого тега можно создать один уровень.",
+      customLevelEmptyTitle: "Пока нет доступных тегов",
+      customLevelEmptyText: "Сначала импортируйте вопросы и создайте тег, затем можно создать свой уровень.",
+      customLevelCloudHint: "При облачном банке локальные свои уровни изменять нельзя.",
+      customLevelBadge: "Свой",
+      customLevelTagLine: "Источник: {name}",
+      customLevelFallbackName: "Свой уровень",
+      customLevelNameFallback: "Свой · {name}",
+      customLevelTagCounts: "{total} вопр. · свободно {unused}",
+      customLevelTagCountsEmpty: "{total} вопр.",
+      customLevelEditorAvailable: "«{name}»: доступно {n} вопросов",
+      customLevelEditorNoAvailable: "В «{name}» сейчас нет неиспользованных вопросов.",
+      customLevelAddTitle: "Новый свой уровень",
+      customLevelDeleteConfirm: "Удалить свой уровень «{name}»? Вопросы и тег останутся.",
+      customLevelTagDuplicate: "Для этого тега уже есть уровень.",
+      customLevelTagRequired: "Выберите тег.",
+      customLevelSaved: "Свой уровень сохранён.",
+      customLevelDeleted: "Свой уровень удалён.",
+      levelsTotalHint: "Уровни {used} / {max}",
+      customLevelCombined: "Курсовые и свои уровни: {used} / {max}.",
+      maintenanceSourceLabel: "Область очистки",
+      maintenanceSourceCourse: "Курс/ИИ",
+      maintenanceSourceCustom: "Свои",
+      maintenanceSourceAll: "Все",
+      maintenanceSourceCourseHint: "Очищается только банк курса/ИИ; свои теги не затрагиваются.",
+      maintenanceSourceCustomHint: "Очищается только выбранный тег; другие теги и курс/ИИ не затрагиваются.",
+      maintenanceSourceAllHint: "Будут очищены и курс/ИИ, и свои вопросы (своих: {custom}). Действуйте осторожно.",
+      maintenanceSourceNoTags: "Своих тегов пока нет.",
+      maintenanceTagOption: "{name} ({total} вопр., свободно {unused})",
+      confirmClearAllMixed: "Внимание: будут очищены и курс/ИИ, и свои вопросы (своих: {n}).",
+      confirmClearCustom: "Будет очищен только тег «{name}».",
+      err_COLLECTION_CONFLICT: "Тег уже существует или используется. Выберите другое название.",
+      err_COLLECTION_EXISTS: "Тег с таким названием уже есть.",
+      err_COLLECTION_LIMIT: "Можно создать не более 20 тегов.",
+      err_COLLECTION_NOT_FOUND: "Тег не найден. Обновите страницу.",
+      err_COLLECTION_REQUIRED: "Сначала выберите или создайте тег.",
+      err_INVALID_COLLECTION_NAME: "Название тега должно содержать 1–20 символов.",
+      err_INVALID_CUSTOM_LEVEL: "Неверная настройка своего уровня.",
+      err_INVALID_IMPORT: "В импортируемых данных есть ошибки. Исправьте их по подсказкам.",
+      err_TOO_MANY_ITEMS: "Не более 200 вопросов за один раз.",
+      err_TOO_MANY_LEVELS: "Всего можно создать не более 6 курсовых и своих уровней.",
+      err_INVALID_INDEX: "Неверная позиция вопроса. Проверьте импорт заново.",
+      importAiPrompt: `Ты помощник по упорядочиванию банка вопросов. Преврати присланный материал в JSON, который можно импортировать на учебное устройство. Выводи только JSON. Оставляй только вопросы с одним правильным ответом.
+
+Формат вывода (строго):
+{
+  "version": 1,
+  "items": [
+    {
+      "prompt": "условие вопроса",
+      "options": ["вариант 1", "вариант 2", "вариант 3", "вариант 4"],
+      "answer": "B",
+      "explanation": "решение; если его нет, опусти поле",
+      "difficulty": "easy, medium или hard; если не уверен, опусти"
+    }
+  ]
+}
+
+Правила:
+1. Выводи только сам JSON: без объяснений, без блока Markdown и без префиксов/суффиксов.
+2. prompt: исходное условие без номера вопроса. Не переписывай, не дополняй и не объединяй вопросы; не более 200 символов.
+3. options: 2–6 вариантов в исходном порядке. Удали префиксы «A.», «B、», «C)». Не нумеруй; каждый не длиннее 60 символов; содержимое не должно повторяться.
+4. answer: одна заглавная буква (A–F), соответствующая верному варианту. Не пиши текст варианта и не пиши несколько букв.
+5. explanation: только если в исходнике есть решение, не более 600 символов; иначе опусти. Никогда не придумывай решение.
+6. difficulty: только easy/medium/hard; если в исходнике не указано, не пиши.
+7. Вопросы «верно/неверно» оформи как два варианта ["Верно","Неверно"] и укажи соответствующую букву. Составные варианты вроде «A. ①②» считаются одним ответом и допустимы.
+8. Оставляй только вопросы с одним правильным ответом. Вопросы с несколькими ответами, выбором нескольких вариантов, пропусками, аудированием, зависимостью от картинки или без ответа целиком пропускай. Не угадывай, не выбирай один ответ из нескольких и не переделывай вопрос с несколькими ответами в один.
+9. Не создавай вопросов, которых нет в материале, и не меняй числа, единицы и варианты в условии.
+10. Выводи не более 100 вопросов за раз. Если материала больше, выведи первые 100; после моего ответа «продолжай» выведи следующую партию и не повторяй уже выведенные вопросы.
+11. Перед выводом проверь: у каждого вопроса ровно один правильный ответ и в условии не требуется выбрать несколько; JSON разбирается; кавычки — прямые двойные; нет лишних запятых; каждый answer входит в options; число items совпадает с числом вопросов.
+
+Пример:
+{"version":1,"items":[{"prompt":"12 + 8 = ?","options":["18","20","22","24"],"answer":"B","explanation":"12 + 8 = 20","difficulty":"easy"}]}
+
+Материал для обработки:
+(вставь сюда текст вопросов. Если это фото или PDF, сначала полностью распознай текст; неразборчивые символы замени на «□», не угадывай.)`,
+    },
+    uk: {
+      bankImport: "Імпорт банку",
+      bankEmptyImportTitle: "Банк порожній. Імпортуйте питання вручну або створіть їх за допомогою ШІ.",
+      bankSourceLine: "Курс/ШІ {course} · Власні {custom} · Усього {total} / {capacity}",
+      bankSourceCustomTag: "Тег: {name}",
+      goImportBank: "Імпортувати банк",
+      importTitle: "Імпорт банку питань",
+      importSingleOnlyBadge: "Лише одна відповідь",
+      importSingleOnlyHint: "Імпортуються лише питання з однією відповіддю; питання з кількома відповідями, пропусками, аудіюванням, зображеннями та без відповіді пропускаються.",
+      importCloudNotice: "Під час прив’язки до хмарного банку імпорт локальних питань недоступний. Спершу відв’яжіть хмару.",
+      importTargetLabel: "Імпортувати в тег",
+      importTagPlaceholder: "Введіть або виберіть тег",
+      importTagCount: "{n} пит.",
+      importTagSuggestEmpty: "Введіть нову назву, щоб створити тег",
+      importTagSuggestNew: "+ Новий тег «{name}»",
+      importTagSuggestAria: "Підказки наявних тегів",
+      importTagClear: "Очистити назву тегу",
+      importNoTagsHint: "Тегів ще немає; під час імпорту його буде створено.",
+      importTargetHint: "Імпорт у наявний тег «{name}»",
+      importTargetNewHint: "Тег «{name}» буде створено й збережено після успішного імпорту",
+      importTargetNone: "Виберіть наявний тег або введіть нову назву.",
+      importTargetBadgeNew: "Новий",
+      importTargetBadgeExisting: "Наявний",
+      importInputLabel: "Вміст питань",
+      importChooseFile: "Вибрати файл .json або .txt",
+      importPasteLabel: "Або вставте питання",
+      importTextPlaceholder: "Вставте канонічний JSON або нумерований текст (1. питання / A. варіант / Відповідь: B)",
+      importDownloadTemplate: "Завантажити шаблон JSON",
+      importCopyPrompt: "Копіювати промпт для ШІ",
+      importViewPrompt: "Показати промпт",
+      importAiHint: "Фото, PDF або неохайний текст можна спершу впорядкувати у звичайному веб-помічнику ШІ; перед імпортом видаліть імена, школу, номер учня та інші особисті дані. Імпортер лише перевіряє текст і нічого не завантажує.",
+      importDefaultDifficulty: "Використовувати, якщо складність не вказана",
+      importParse: "Перевірити й показати",
+      importParsing: "Перевірка…",
+      importEmptyInput: "Спершу виберіть файл або вставте питання.",
+      importTooLarge: "Файл більший за 512 КБ; розділіть його на частини.",
+      importTooMany: "За один раз можна імпортувати не більше {max} питань; розділіть файл.",
+      importJsonInvalid: "Неправильний JSON: перевірте лапки, коми та дужки.",
+      importNoQuestions: "Питань не знайдено.",
+      importFileReadFailed: "Не вдалося прочитати файл. Виберіть інший або вставте текст.",
+      importSelectTagFirst: "Спершу виберіть наявний тег або введіть нову назву.",
+      importNewTagInvalid: "Назва тегу має містити 1–20 символів.",
+      importNewTagExists: "Тег із такою назвою вже є.",
+      importNewTagLimit: "Можна створити не більше 20 тегів.",
+      importErrorAt: "Питання {n}",
+      importPreviewTitle: "Попередній перегляд імпорту",
+      importPreviewTarget: "Цільовий тег",
+      importPreviewTotal: "Питань у файлі",
+      importPreviewFileDup: "Повтори у файлі",
+      importPreviewCollectionDup: "Уже є в тезі",
+      importPreviewCrossDup: "Повтори з інших джерел (зберігаються)",
+      importPreviewAppend: "Буде додано",
+      importPreviewRemaining: "Залишок банку",
+      importPreviewRemainingValue: "{remaining} / {capacity} пит.",
+      importPreviewNoNew: "Нових питань немає: усі вже є у файлі або тезі.",
+      importPreviewRejected: "{n} питань не пройшли перевірку; перевірте відповіді та варіанти.",
+      importPreviewNotEnough: "Не вистачає місця: потрібно ще {n}. Звільніть місце в «Я → Обслуговування банку».",
+      importPreviewCrossNote: "В інших джерелах уже є {n} таких питань; вони будуть додані як окремі копії цього тегу.",
+      importConfirm: "Імпортувати {n} пит.",
+      importImporting: "Імпорт…",
+      importResultTitle: "Імпортовано {n} у «{name}»",
+      importResultDetail: "Повторів у файлі: {file} · уже в тезі: {collection}",
+      importResultCross: "Повторів з інших джерел: {n} (збережено)",
+      importResultRemaining: "Залишилось {remaining} / {capacity}",
+      importPromptCopied: "Промпт скопійовано.",
+      importCopyFailed: "Не вдалося скопіювати. Розгорніть промпт і скопіюйте вручну.",
+      importField_item: "Питання",
+      importField_items: "Список питань",
+      importField_text: "Текст",
+      importField_prompt: "Умова",
+      importField_options: "Варіанти",
+      importField_answer: "Відповідь",
+      importField_explanation: "Розв’язання",
+      importField_difficulty: "Складність",
+      importCode_TYPE: "Неправильний тип поля",
+      importCode_UNKNOWN_FIELD: "Непідтримуване поле",
+      importCode_DUPLICATE: "Повторюваний вміст",
+      importCode_REQUIRED: "Бракує обов’язкових даних",
+      importCode_ORDER: "Неправильний порядок даних",
+      importCode_FORMAT: "Неправильний формат",
+      importCode_COUNT: "Повинно бути 2–6 варіантів",
+      importCode_INVALID_TEXT: "Порожній текст або перевищена довжина",
+      importCode_TOO_LONG: "Текст задовгий",
+      importCode_ANSWER_FORMAT: "Лише одна відповідь: одна велика літера A–F або точний текст варіанта",
+      importCode_ANSWER_RANGE: "Відповідь поза діапазоном варіантів",
+      importCode_ANSWER_CONFLICT: "answer і answerIndex не можна вказувати разом",
+      importCode_INVALID_DIFFICULTY: "Складність: лише easy, medium або hard",
+      importCode_NO_ITEMS: "Немає питань",
+      importCode_TOO_MANY_ITEMS: "Не більше 200 питань за раз",
+      levelAddCourseTitle: "Навчальні рівні",
+      levelAddCourseMeta: "Клас · предмет · розділ",
+      levelAddCustomTitle: "Власні рівні",
+      levelAddCustomMeta: "З імпортованих тегів",
+      levelAddCustomMetaNoTags: "Спершу імпортуйте питання",
+      levelAddCustomMetaCloud: "Недоступно в хмарному режимі",
+      customLevelListTitle: "Власні рівні",
+      customLevelListLead: "Питання беруться з імпортованих тегів; фільтрів за розділом курсу і складністю немає.",
+      customLevelNameHint: "Якщо порожньо, показується назва тегу; до 10 символів.",
+      customLevelTagLabel: "Тег джерела питань",
+      customLevelTagHint: "Для кожного тегу можна створити один рівень.",
+      customLevelEmptyTitle: "Ще немає доступних тегів",
+      customLevelEmptyText: "Спершу імпортуйте питання й створіть тег, потім можна створити власний рівень.",
+      customLevelCloudHint: "Під час хмарного банку локальні власні рівні змінювати не можна.",
+      customLevelBadge: "Власний",
+      customLevelTagLine: "Джерело: {name}",
+      customLevelFallbackName: "Власний рівень",
+      customLevelNameFallback: "Власний · {name}",
+      customLevelTagCounts: "{total} пит. · доступно {unused}",
+      customLevelTagCountsEmpty: "{total} пит.",
+      customLevelEditorAvailable: "«{name}»: доступно {n} питань",
+      customLevelEditorNoAvailable: "У «{name}» зараз немає невикористаних питань.",
+      customLevelAddTitle: "Новий власний рівень",
+      customLevelDeleteConfirm: "Видалити власний рівень «{name}»? Питання й тег залишаться.",
+      customLevelTagDuplicate: "Для цього тегу вже є рівень.",
+      customLevelTagRequired: "Виберіть тег.",
+      customLevelSaved: "Власний рівень збережено.",
+      customLevelDeleted: "Власний рівень видалено.",
+      levelsTotalHint: "Рівні {used} / {max}",
+      customLevelCombined: "Курсові та власні рівні: {used} / {max}.",
+      maintenanceSourceLabel: "Область очищення",
+      maintenanceSourceCourse: "Курс/ШІ",
+      maintenanceSourceCustom: "Власні",
+      maintenanceSourceAll: "Усі",
+      maintenanceSourceCourseHint: "Очищається лише банк курсу/ШІ; власні теги не зачіпаються.",
+      maintenanceSourceCustomHint: "Очищається лише вибраний тег; інші теги й курс/ШІ не зачіпаються.",
+      maintenanceSourceAllHint: "Буде очищено і курс/ШІ, і власні питання (власних: {custom}). Дійте обережно.",
+      maintenanceSourceNoTags: "Власних тегів ще немає.",
+      maintenanceTagOption: "{name} ({total} пит., доступно {unused})",
+      confirmClearAllMixed: "Увага: буде очищено і курс/ШІ, і власні питання (власних: {n}).",
+      confirmClearCustom: "Буде очищено лише тег «{name}».",
+      err_COLLECTION_CONFLICT: "Тег уже існує або використовується. Виберіть іншу назву.",
+      err_COLLECTION_EXISTS: "Тег із такою назвою вже є.",
+      err_COLLECTION_LIMIT: "Можна створити не більше 20 тегів.",
+      err_COLLECTION_NOT_FOUND: "Тег не знайдено. Оновіть сторінку.",
+      err_COLLECTION_REQUIRED: "Спершу виберіть або створіть тег.",
+      err_INVALID_COLLECTION_NAME: "Назва тегу має містити 1–20 символів.",
+      err_INVALID_CUSTOM_LEVEL: "Неправильні налаштування власного рівня.",
+      err_INVALID_IMPORT: "В імпортованих даних є помилки. Виправте їх за підказками.",
+      err_TOO_MANY_ITEMS: "Не більше 200 питань за один раз.",
+      err_TOO_MANY_LEVELS: "Усього можна створити не більше 6 курсових і власних рівнів.",
+      err_INVALID_INDEX: "Неправильна позиція питання. Перевірте імпорт ще раз.",
+      importAiPrompt: `Ти помічник з упорядкування банку питань. Перетвори надісланий матеріал на JSON, який можна імпортувати на навчальний пристрій. Виводь лише JSON. Залишай лише питання з однією правильною відповіддю.
+
+Формат виводу (суворо):
+{
+  "version": 1,
+  "items": [
+    {
+      "prompt": "умова питання",
+      "options": ["варіант 1", "варіант 2", "варіант 3", "варіант 4"],
+      "answer": "B",
+      "explanation": "розв’язання; якщо його немає, опусти поле",
+      "difficulty": "easy, medium або hard; якщо не впевнений, опусти"
+    }
+  ]
+}
+
+Правила:
+1. Виводь лише сам JSON: без пояснень, без блоку Markdown і без префіксів/суфіксів.
+2. prompt: початкова умова без номера питання. Не переписуй, не доповнюй і не об’єднуй питання; не більше 200 символів.
+3. options: 2–6 варіантів у початковому порядку. Видали префікси «A.», «B、», «C)». Не нумеруй; кожен не довший за 60 символів; вміст не має повторюватися.
+4. answer: одна велика літера (A–F), що відповідає правильному варіанту. Не пиши текст варіанта й не пиши кілька літер.
+5. explanation: лише якщо в джерелі є розв’язання, не більше 600 символів; інакше опусти. Ніколи не вигадуй розв’язання.
+6. difficulty: лише easy/medium/hard; якщо в джерелі не позначено, не пиши.
+7. Питання «правильно/неправильно» оформлюй як два варіанти ["Правильно","Неправильно"] і вкажи відповідну літеру. Складені варіанти на кшталт «A. ①②» вважаються однією відповіддю і допустимі.
+8. Залишай лише питання з однією правильною відповіддю. Питання з кількома відповідями, вибором кількох варіантів, пропусками, аудіюванням, залежністю від зображення або без відповіді повністю пропускай. Не вгадуй, не вибирай одну відповідь із кількох і не переробляй питання з кількома відповідями на одноваріантне.
+9. Не створюй питань, яких немає в матеріалі, і не змінюй числа, одиниці та варіанти в умові.
+10. Виводь не більше 100 питань за раз. Якщо матеріалу більше, виведи перші 100; після моєї відповіді «продовжуй» виведи наступну партію й не повторюй уже виведені питання.
+11. Перед виводом перевір: у кожного питання рівно одна правильна відповідь і умова не вимагає вибрати кілька; JSON розбирається; лапки — прямі подвійні; немає зайвих ком; кожен answer входить до options; кількість items збігається з кількістю питань.
+
+Приклад:
+{"version":1,"items":[{"prompt":"12 + 8 = ?","options":["18","20","22","24"],"answer":"B","explanation":"12 + 8 = 20","difficulty":"easy"}]}
+
+Матеріал для обробки:
+(встав сюди текст питань. Якщо це фото або PDF, спершу повністю розпізнай текст; нерозбірливі символи заміни на «□», не вгадуй.)`,
+    },
+    kk: {
+      bankImport: "Банкіні импорттау",
+      bankEmptyImportTitle: "Банк бос. Сұрақтарды қолмен импорттаңыз немесе AI арқылы жасаңыз.",
+      bankSourceLine: "Курс/AI {course} · Жеке {custom} · Барлығы {total} / {capacity}",
+      bankSourceCustomTag: "Тег: {name}",
+      goImportBank: "Банкіні импорттау",
+      importTitle: "Сұрақ банкін импорттау",
+      importSingleOnlyBadge: "Тек бір жауап",
+      importSingleOnlyHint: "Тек бір жауапты сұрақтар импортталады; бірнеше жауапты, бос орынды, тыңдауға арналған, суретке тәуелді және жауабы жоқ сұрақтар өткізіп жіберіледі.",
+      importCloudNotice: "Бұлтты банкке байланғанда жергілікті сұрақтарды импорттауға болмайды. Алдымен бұлтты ажыратыңыз.",
+      importTargetLabel: "Тегке импорттау",
+      importTagPlaceholder: "Тегті енгізіңіз немесе таңдаңыз",
+      importTagCount: "{n} сұрақ",
+      importTagSuggestEmpty: "Жаңа атауды енгізіп, тег жасауға болады",
+      importTagSuggestNew: "+ Жаңа тег «{name}»",
+      importTagSuggestAria: "Бар тегтер бойынша ұсыныстар",
+      importTagClear: "Тег атауын тазалау",
+      importNoTagsHint: "Әзірге тег жоқ; импорт кезінде ол жасалады.",
+      importTargetHint: "«{name}» бар тегіне импортталады",
+      importTargetNewHint: "«{name}» тегі импорт сәтті аяқталған соң жасалып, сақталады",
+      importTargetNone: "Бар тегті таңдаңыз немесе жаңа атау енгізіңіз.",
+      importTargetBadgeNew: "Жаңа",
+      importTargetBadgeExisting: "Бар",
+      importInputLabel: "Сұрақ мазмұны",
+      importChooseFile: ".json немесе .txt файлын таңдау",
+      importPasteLabel: "Немесе сұрақтарды тікелей қойыңыз",
+      importTextPlaceholder: "Канондық JSON немесе нөмірленген мәтін қойыңыз (1. сұрақ / A. нұсқа / Жауап: B)",
+      importDownloadTemplate: "JSON үлгісін жүктеу",
+      importCopyPrompt: "AI реттеу промптын көшіру",
+      importViewPrompt: "Реттеу промптын көру",
+      importAiHint: "Фото, PDF немесе ретсіз мәтінді алдымен әдеттегі AI веб-көмекшісіне реттетуге болады; импорттау алдында аты-жөні, мектеп, оқушы нөмірі сияқты жеке деректерді жойыңыз. Импорттаушы тек мәтінді тексереді, ештеңе жүктемейді.",
+      importDefaultDifficulty: "Сұрақта қиындық көрсетілмесе қолданылады",
+      importParse: "Тексеріп, алдын ала көру",
+      importParsing: "Тексерілуде…",
+      importEmptyInput: "Алдымен файл таңдаңыз немесе сұрақтарды қойыңыз.",
+      importTooLarge: "Файл 512 КБ-тан үлкен; оны бөліктерге бөліңіз.",
+      importTooMany: "Бір ретте ең көбі {max} сұрақ импорттауға болады; файлды бөліңіз.",
+      importJsonInvalid: "JSON дұрыс емес: тырнақшаларды, үтірлерді және жақшаларды тексеріңіз.",
+      importNoQuestions: "Сұрақтар табылмады.",
+      importFileReadFailed: "Файлды оқу мүмкін болмады. Басқа файл таңдаңыз немесе мәтінді қойыңыз.",
+      importSelectTagFirst: "Алдымен бар тегті таңдаңыз немесе жаңа атау енгізіңіз.",
+      importNewTagInvalid: "Тег атауы 1–20 таңбадан тұруы керек.",
+      importNewTagExists: "Осындай атаулы тег бар.",
+      importNewTagLimit: "Ең көбі 20 тег жасауға болады.",
+      importErrorAt: "{n}-сұрақ",
+      importPreviewTitle: "Импортты алдын ала көру",
+      importPreviewTarget: "Мақсатты тег",
+      importPreviewTotal: "Файлдағы сұрақ саны",
+      importPreviewFileDup: "Файл ішіндегі қайталаулар",
+      importPreviewCollectionDup: "Тегте бұрыннан бар",
+      importPreviewCrossDup: "Басқа көздердегі қайталаулар (сақталады)",
+      importPreviewAppend: "Қосылады",
+      importPreviewRemaining: "Банк қалдығы",
+      importPreviewRemainingValue: "{remaining} / {capacity} сұрақ",
+      importPreviewNoNew: "Жаңа сұрақ жоқ: барлығы файлда немесе тегте бар.",
+      importPreviewRejected: "{n} сұрақ тексеруден өтпеді; жауаптар мен нұсқаларды тексеріңіз.",
+      importPreviewNotEnough: "Орын жетпейді: тағы {n} керек. «Мен → Банк күтімі» бөлімінде орын босатыңыз.",
+      importPreviewCrossNote: "Басқа көздерде {n} бірдей сұрақ бар; олар осы тегтің жеке көшірмелері ретінде қосылады.",
+      importConfirm: "{n} сұрақты импорттау",
+      importImporting: "Импортталуда…",
+      importResultTitle: "«{name}» тегіне {n} сұрақ импортталды",
+      importResultDetail: "Файлдағы қайталау: {file} · тегте бұрыннан бар: {collection}",
+      importResultCross: "Басқа көздердегі қайталау: {n} (сақталды)",
+      importResultRemaining: "Банкте қалды: {remaining} / {capacity}",
+      importPromptCopied: "Промпт көшірілді.",
+      importCopyFailed: "Көшіру сәтсіз. Промптты ашып, қолмен көшіріңіз.",
+      importField_item: "Сұрақ",
+      importField_items: "Сұрақтар тізімі",
+      importField_text: "Мәтін",
+      importField_prompt: "Шарт",
+      importField_options: "Нұсқалар",
+      importField_answer: "Жауап",
+      importField_explanation: "Шешім",
+      importField_difficulty: "Қиындық",
+      importCode_TYPE: "Өрістің түрі дұрыс емес",
+      importCode_UNKNOWN_FIELD: "Қолдау көрсетілмейтін өріс",
+      importCode_DUPLICATE: "Мазмұн қайталанады",
+      importCode_REQUIRED: "Міндетті мазмұн жоқ",
+      importCode_ORDER: "Мазмұн реті дұрыс емес",
+      importCode_FORMAT: "Формат дұрыс емес",
+      importCode_COUNT: "2–6 нұсқа болуы керек",
+      importCode_INVALID_TEXT: "Мәтін бос немесе ұзындығы асып кеткен",
+      importCode_TOO_LONG: "Мәтін тым ұзын",
+      importCode_ANSWER_FORMAT: "Тек бір жауап: A–F аралығындағы бір бас әріп немесе нұсқаның нақты мәтіні",
+      importCode_ANSWER_RANGE: "Жауап нұсқалар ауқымынан тыс",
+      importCode_ANSWER_CONFLICT: "answer және answerIndex бірге болмайды",
+      importCode_INVALID_DIFFICULTY: "Қиындық тек easy, medium немесе hard болуы керек",
+      importCode_NO_ITEMS: "Сұрақ жоқ",
+      importCode_TOO_MANY_ITEMS: "Бір ретте ең көбі 200 сұрақ",
+      levelAddCourseTitle: "Оқу деңгейлері",
+      levelAddCourseMeta: "Сынып · пән · бөлім",
+      levelAddCustomTitle: "Жеке деңгейлер",
+      levelAddCustomMeta: "Импортталған тегтерден",
+      levelAddCustomMetaNoTags: "Алдымен сұрақтарды импорттаңыз",
+      levelAddCustomMetaCloud: "Бұлт режимінде қолжетімсіз",
+      customLevelListTitle: "Жеке деңгейлер",
+      customLevelListLead: "Импортталған тегтерден сұрақ алады; курстық бөлім немесе қиындық сүзгісі жоқ.",
+      customLevelNameHint: "Бос болса тег атауы көрсетіледі; ең көбі 10 таңба.",
+      customLevelTagLabel: "Сұрақ көзінің тегі",
+      customLevelTagHint: "Әр тегке тек бір деңгей жасауға болады.",
+      customLevelEmptyTitle: "Қолжетімді тег жоқ",
+      customLevelEmptyText: "Алдымен сұрақтарды импорттап, тег жасаңыз, содан кейін жеке деңгей жасай аласыз.",
+      customLevelCloudHint: "Бұлтты банк кезінде жергілікті жеке деңгейлерді өзгертуге болмайды.",
+      customLevelBadge: "Жеке",
+      customLevelTagLine: "Көзі: {name}",
+      customLevelFallbackName: "Жеке деңгей",
+      customLevelNameFallback: "Жеке · {name}",
+      customLevelTagCounts: "{total} сұрақ · қолжетімді {unused}",
+      customLevelTagCountsEmpty: "{total} сұрақ",
+      customLevelEditorAvailable: "«{name}»: {n} сұрақ қолжетімді",
+      customLevelEditorNoAvailable: "«{name}» тегінде әзірге пайдаланылмаған сұрақ жоқ.",
+      customLevelAddTitle: "Жаңа жеке деңгей",
+      customLevelDeleteConfirm: "«{name}» жеке деңгейін жою керек пе? Сұрақтар мен тег сақталады.",
+      customLevelTagDuplicate: "Бұл тегке деңгей бұрыннан бар.",
+      customLevelTagRequired: "Тег таңдаңыз.",
+      customLevelSaved: "Жеке деңгей сақталды.",
+      customLevelDeleted: "Жеке деңгей жойылды.",
+      levelsTotalHint: "Деңгейлер {used} / {max}",
+      customLevelCombined: "Курстық және жеке деңгейлер: {used} / {max}.",
+      maintenanceSourceLabel: "Тазалау аясы",
+      maintenanceSourceCourse: "Курс/AI",
+      maintenanceSourceCustom: "Жеке",
+      maintenanceSourceAll: "Барлығы",
+      maintenanceSourceCourseHint: "Тек курс/AI банкі тазаланады; жеке тегтерге тимейді.",
+      maintenanceSourceCustomHint: "Тек таңдалған тег тазаланады; басқа тегтер мен курс/AI банкіне тимейді.",
+      maintenanceSourceAllHint: "Курс/AI мен жеке сұрақтар бірге тазаланады (жеке: {custom}). Абайлап орындаңыз.",
+      maintenanceSourceNoTags: "Жеке тегтер әзірге жоқ.",
+      maintenanceTagOption: "{name} ({total} сұрақ, қолжетімді {unused})",
+      confirmClearAllMixed: "Назар аударыңыз: курс/AI мен жеке сұрақтар бірге тазаланады (жеке: {n}).",
+      confirmClearCustom: "Тек «{name}» тегі тазаланады.",
+      err_COLLECTION_CONFLICT: "Тег бұрыннан бар немесе қолданылуда. Басқа атау таңдаңыз.",
+      err_COLLECTION_EXISTS: "Осындай атаулы тег бар.",
+      err_COLLECTION_LIMIT: "Ең көбі 20 тег жасауға болады.",
+      err_COLLECTION_NOT_FOUND: "Тег табылмады. Бетті жаңартып, қайталаңыз.",
+      err_COLLECTION_REQUIRED: "Алдымен тег таңдаңыз немесе жасаңыз.",
+      err_INVALID_COLLECTION_NAME: "Тег атауы 1–20 таңбадан тұруы керек.",
+      err_INVALID_CUSTOM_LEVEL: "Жеке деңгей баптауы дұрыс емес.",
+      err_INVALID_IMPORT: "Импортталған деректерде қателер бар. Нұсқаулар бойынша түзетіңіз.",
+      err_TOO_MANY_ITEMS: "Бір ретте ең көбі 200 сұрақ импорттауға болады.",
+      err_TOO_MANY_LEVELS: "Курстық және жеке деңгейлердің барлығы 6-дан аспауы керек.",
+      err_INVALID_INDEX: "Сұрақ орны дұрыс емес. Импортты қайта тексеріңіз.",
+      importAiPrompt: `Сен сұрақ банкін реттеуші көмекшісің. Маған берілген материалды оқу құрылғысына импорттауға болатын JSON-ға айналдыр. Тек JSON шығар. Тек бір дұрыс жауабы бар сұрақтарды ғана қалдыр.
+
+Шығыс форматы (қатаң сақта):
+{
+  "version": 1,
+  "items": [
+    {
+      "prompt": "сұрақ шарты",
+      "options": ["нұсқа 1", "нұсқа 2", "нұсқа 3", "нұсқа 4"],
+      "answer": "B",
+      "explanation": "шешім; жоқ болса өрісті өткізіп жібер",
+      "difficulty": "easy, medium немесе hard; сенімді болмасаң өткізіп жібер"
+    }
+  ]
+}
+
+Ережелер:
+1. Тек JSON-ның өзін шығар: түсіндірме жоқ, Markdown блогы жоқ, алдыңғы/соңғы қосымша мәтін жоқ.
+2. prompt: сұрақ нөмірінсіз бастапқы мәтін. Сұрақты қайта жазба, толықтырма және біріктірме; 200 таңбадан аспасын.
+3. options: 2–6 нұсқа, бастапқы ретімен. «A.», «B、», «C)» сияқты префикстерді жой. Нөмірлеме; әрқайсысы 60 таңбадан аспасын; мазмұны қайталанбасын.
+4. answer: дұрыс нұсқаға сәйкес бір бас әріп (A–F). Нұсқа мәтінін немесе бірнеше әріп жазба.
+5. explanation: бастапқы материалда шешім болса ғана жаз, 600 таңбадан аспасын; әйтпесе өткізіп жібер. Шешімді өзің ойлап таппа.
+6. difficulty: тек easy/medium/hard; бастапқы материалда көрсетілмесе жазба.
+7. «Дұрыс/бұрыс» сұрақтарын екі нұсқамен ["Дұрыс","Бұрыс"] жаз және сәйкес әріпті көрсет. «A. ①②» сияқты құрама нұсқалар бір жауап болып саналады және қалдыруға болады.
+8. Тек бір дұрыс жауабы бар сұрақтарды ғана қалдыр. Бірнеше жауапты, бірнеше нұсқаны таңдауды талап ететін, бос орынды, тыңдауға арналған, суретке тәуелді немесе жауабы жоқ сұрақтарды толығымен өткізіп жібер. Жауапты болжама, бірнеше жауаптың бірін таңдама және көп жауапты сұрақты бір жауапты етіп қайта жазба.
+9. Материалда жоқ сұрақтарды жасама, шарттағы сандарды, өлшем бірліктерін және нұсқаларды өзгертпе.
+10. Бір ретте ең көбі 100 сұрақ шығар. Материал көп болса, алдымен 100 сұрақты шығар; мен «жалғастыр» деп жазған соң келесі топтаманы шығар және бұрын шығарылған сұрақтарды қайталама.
+11. Шығарар алдында өзіңді тексер: әр сұрақтың дәл бір дұрыс жауабы бар және шарт бірнеше нұсқаны таңдауды талап етпейді; JSON талданады; тырнақшалар тік қос тырнақша; артық үтір жоқ; әрбір answer options ауқымында; items саны реттелген сұрақ санына сәйкес.
+
+Мысал:
+{"version":1,"items":[{"prompt":"12 + 8 = ?","options":["18","20","22","24"],"answer":"B","explanation":"12 + 8 = 20","difficulty":"easy"}]}
+
+Реттелетін материал:
+(сұрақ мәтінін осында қой. Егер фото немесе PDF болса, алдымен мәтінді толық таны; анық емес таңбаларды «□»-пен алмастыр, болжама.)`,
+    },
+  };
+
   const LANGS = ["zh", "en", "ru", "uk", "kk"];
   for (const code of LANGS) {
-    Object.assign(TEXTS[code], V17_TEXTS[code], V19_TEXTS[code], V20_TEXTS[code], V21_TEXTS[code]);
+    Object.assign(
+      TEXTS[code],
+      V17_TEXTS[code],
+      V19_TEXTS[code],
+      V20_TEXTS[code],
+      V21_TEXTS[code],
+      V22_TEXTS[code],
+    );
   }
 
   // Local days are normally 24h; allow the 25h DST fall-back day.
@@ -2784,10 +3669,16 @@
     gen: "genConfigPage",
     answer: "answerConfigPage",
     level: "levelEditorPage",
+    customLevel: "customLevelEditorPage",
     questions: "questionsPage",
   };
   const MAX_LEVELS = 6;
   const LEVEL_NAME_MAX = 10;
+  const TAG_NAME_MAX = 20;
+  const IMPORT_MAX_BYTES = 512 * 1024;
+  const IMPORT_MAX_ITEMS = 200;
+  const IMPORT_PREVIEW_LIMIT = 10;
+  const MAX_TAGS = 20;
   const BANK_PAGE_SIZE = 40;
   const SUBJECT_LABEL_KEYS = {
     chinese: "subjectChinese",
@@ -2917,12 +3808,34 @@
   // hidden until a parent confirms it on this TV.
   let pendingEnter = false;
   let activeTab = "generate";
+  let bankPage = "home";
   let bankFilter = "all";
   let bankItems = [];
   let bankOffset = 0;
   let bankHasMore = false;
   let bankLoading = false;
   let bankRequest = 0;
+  // V22 local tags and the levels that draw from them. Course levels stay in
+  // answerLevels; the two lists are only merged for display and limits.
+  let importCollections = [];
+  let importTagSuggestItems = [];
+  let importTagActiveIndex = -1;
+  let importTagComposing = false;
+  let importDefaultDifficulty = "medium";
+  let importPreview = null;
+  let importRequest = null;
+  let importResult = null;
+  let importBusy = false;
+  let importFileName = "";
+  let customLevels = [];
+  let customLevelEditingId = null;
+  let customLevelDraftTag = "";
+  let customLevelSaving = false;
+  let customLevelMessageTimer = 0;
+  let bankSourceCounts = { course: 0, custom: 0 };
+  let localBankActive = true;
+  let clearSource = "course";
+  let clearCollectionId = "";
   let targetCount = 20;
   let genState = idleGeneration();
   let genTimer = null;
@@ -3611,8 +4524,11 @@
     renderMaintenance();
     renderBankCounts();
     renderBank();
+    renderCustomLevels();
+    renderBankImport();
     if (genPage === "answer") renderAnswerPage();
     if (genPage === "level") renderLevelEditor();
+    if (genPage === "customLevel") renderCustomLevelEditor();
     if (genPage === "questions") renderQuestions();
     updateToggleState();
   }
@@ -3668,7 +4584,10 @@
 
     const entries = levels.map((level, index) => ({
       ordinal: index + 1,
-      name: String(level.name || "").trim() || scopeSummaryText(level.scope),
+      name: String(level.name || "").trim() ||
+        (level.collectionId
+          ? t("customLevelNameFallback", { name: customLevelTagName(level) })
+          : scopeSummaryText(level.scope)),
     }));
     if (!entries.length) {
       host.classList.add("empty");
@@ -3745,12 +4664,13 @@
     const config = currentConfig();
     const pull = Number(config.pullCount || 5);
     const scopeModeLabel = $("homeAnswerScopeMode");
+    const totalLevels = allLevelCount();
     if (scopeModeLabel) {
-      scopeModeLabel.textContent = answerLevels.length
-        ? t("levelCountLabel", { n: answerLevels.length })
+      scopeModeLabel.textContent = totalLevels
+        ? t("levelCountLabel", { n: totalLevels })
         : t("levelNoneLabel");
     }
-    renderAnswerSummary(answerLevels);
+    renderAnswerSummary(answerLevels.concat(customLevels));
     const scoring = scoringValues(config);
     $("homeAnswerSub").textContent = t("homeAnswerSub", {
       n: pull,
@@ -3910,6 +4830,16 @@
     });
   }
 
+  // The generation flow and the bank import page share the same full-screen
+  // subpage look. A generate subpage can stay open in the background when the
+  // custom-level entry jumps to the bank import page, so only the subpage of
+  // the tab actually on screen may hide the top bar and bottom navigation.
+  function syncSubpageClass() {
+    const bankImport = activeTab === "bank" && bankPage === "import";
+    const genSubpage = activeTab === "generate" && genPage !== "home";
+    document.body.classList.toggle("subpage-open", genSubpage || bankImport);
+  }
+
   function showGenPage(page) {
     if (!GEN_PAGE_IDS[page]) page = "home";
     genPage = page;
@@ -3917,10 +4847,21 @@
       const el = $(id);
       if (el) el.classList.toggle("hidden", name !== page);
     }
-    document.body.classList.toggle("subpage-open", page !== "home");
+    syncSubpageClass();
     if (page === "questions") renderQuestions();
     if (page === "answer") renderAnswerPage();
     if (page === "level") renderLevelEditor();
+    if (page === "customLevel") renderCustomLevelEditor();
+    window.scrollTo({ top: 0 });
+  }
+
+  function showBankPage(page) {
+    bankPage = page === "import" ? "import" : "home";
+    if ($("bankHome")) $("bankHome").classList.toggle("hidden", bankPage !== "home");
+    if ($("bankImportPage")) {
+      $("bankImportPage").classList.toggle("hidden", bankPage !== "import");
+    }
+    syncSubpageClass();
     window.scrollTo({ top: 0 });
   }
 
@@ -4395,6 +5336,14 @@
         answered: counts.answered,
       });
     }
+    if ($("bankSourceCounts")) {
+      $("bankSourceCounts").textContent = t("bankSourceLine", {
+        course: bankSourceCounts.course,
+        custom: bankSourceCounts.custom,
+        total: counts.total,
+        capacity: bankCapacity,
+      });
+    }
     if ($("bankInRoundNotice")) {
       $("bankInRoundNotice").classList.toggle("hidden", counts.inRound <= 0);
     }
@@ -4430,7 +5379,18 @@
     const prompt = document.createElement("p");
     prompt.className = "prompt";
     prompt.textContent = item.prompt;
-    head.append(prompt, statusChip(item));
+    const badges = document.createElement("span");
+    badges.className = "bank-badges";
+    if (item.collectionId) {
+      const source = document.createElement("span");
+      source.className = "source-badge custom";
+      source.textContent = t("bankSourceCustomTag", {
+        name: item.collectionName || item.collectionId,
+      });
+      badges.appendChild(source);
+    }
+    badges.appendChild(statusChip(item));
+    head.append(prompt, badges);
     card.appendChild(head);
 
     const options = document.createElement("ol");
@@ -4501,6 +5461,10 @@
     renderBankList($("bankList"), bankItems, emptyKey, bankHasMore, bankLoading);
     $("bankMore").classList.toggle("hidden", !bankHasMore);
     $("bankMore").disabled = bankLoading;
+    const empty = !bankItems.length && !bankLoading;
+    if ($("bankEmptyActions")) {
+      $("bankEmptyActions").classList.toggle("hidden", !empty || bankFilter !== "all");
+    }
     document.querySelectorAll("#bankFilters [data-filter]").forEach((button) => {
       button.setAttribute("aria-pressed", String(button.dataset.filter === bankFilter));
     });
@@ -4509,6 +5473,829 @@
   function renderMaintenance() {
     if (!$("maintenanceCounts")) return;
     $("maintenanceCounts").textContent = t("meMaintenanceHint");
+  }
+
+  // Manual import keeps the tag lifecycle separate from the question write:
+  // a dry run never creates a tag, and a real import removes a just-created
+  // tag again if the strict cache write fails.
+  // The tag input is the only target source. Suggestions are a shortcut that
+  // fills the input with an existing name; there is no hidden selected tag id.
+  function importTagName() {
+    return $("importTagName") ? normalizeTagName($("importTagName").value) : "";
+  }
+
+  function importTagState() {
+    const name = importTagName();
+    if (!name) return { name: "", empty: true };
+    const collection = importCollections.find(
+      (item) => item.name.toLowerCase() === name.toLowerCase(),
+    );
+    if (collection) return { collection, name: collection.name, isNew: false };
+    const error = validateNewTagName(name);
+    return error ? { name, isNew: true, error } : { name, isNew: true };
+  }
+
+  function importTarget() {
+    const state = importTagState();
+    if (state.empty || state.error) return null;
+    return state.collection
+      ? { collection: state.collection, name: state.collection.name, isNew: false }
+      : { name: state.name, isNew: true };
+  }
+
+  function updateImportTargetHint() {
+    if (!$("importTargetHint")) return;
+    const state = importTagState();
+    const hint = $("importTargetHint");
+    hint.classList.remove("empty", "warn");
+    if (state.error) {
+      hint.textContent = state.error;
+      hint.classList.add("warn");
+      return;
+    }
+    if (state.collection) {
+      hint.textContent = t("importTargetHint", { name: state.name });
+      return;
+    }
+    if (state.isNew) {
+      hint.textContent = t("importTargetNewHint", { name: state.name });
+      return;
+    }
+    hint.classList.add("empty");
+    hint.textContent = importCollections.length
+      ? t("importTargetNone")
+      : t("importNoTagsHint");
+  }
+
+  function importTagMatches() {
+    const query = importTagName().toLowerCase();
+    if (!query) return importCollections.slice();
+    const matches = importCollections.filter(
+      (item) => item.name.toLowerCase().includes(query),
+    );
+    const prefix = matches.filter(
+      (item) => item.name.toLowerCase().startsWith(query),
+    );
+    const rest = matches.filter(
+      (item) => !item.name.toLowerCase().startsWith(query),
+    );
+    return prefix.concat(rest);
+  }
+
+  function renderImportTagSuggest() {
+    const list = $("importTagSuggestList");
+    if (!list) return;
+    const state = importTagState();
+    importTagSuggestItems = importTagMatches();
+    importTagActiveIndex = -1;
+    list.replaceChildren();
+    importTagSuggestItems.forEach((collection, index) => {
+      const selected = Boolean(
+        state.collection && state.collection.id === collection.id,
+      );
+      const row = document.createElement("button");
+      row.type = "button";
+      row.id = "importTagOption" + index;
+      row.className = "tag-suggest-row";
+      row.dataset.tagId = collection.id;
+      row.setAttribute("role", "option");
+      row.setAttribute("tabindex", "-1");
+      row.setAttribute("aria-selected", String(selected));
+      row.title = collection.name;
+      const name = document.createElement("span");
+      name.className = "tag-suggest-name";
+      name.textContent = collection.name;
+      const meta = document.createElement("span");
+      meta.className = "tag-suggest-meta";
+      meta.textContent = t("importTagCount", { n: collection.total });
+      if (selected) {
+        const check = document.createElement("span");
+        check.className = "tag-suggest-check";
+        check.textContent = "✓";
+        check.setAttribute("aria-hidden", "true");
+        row.append(name, check, meta);
+      } else {
+        row.append(name, meta);
+      }
+      row.addEventListener("click", () => chooseImportTag(collection));
+      list.appendChild(row);
+    });
+    const foot = $("importTagSuggestFoot");
+    if (foot) {
+      foot.classList.remove("warn", "hidden");
+      if (state.error) {
+        foot.textContent = state.error;
+        foot.classList.add("warn");
+      } else if (!importTagName()) {
+        foot.textContent = t("importTagSuggestEmpty");
+      } else if (state.isNew) {
+        foot.textContent = t("importTagSuggestNew", { name: state.name });
+      } else {
+        foot.textContent = "";
+        foot.classList.add("hidden");
+      }
+    }
+    if ($("importTagName")) $("importTagName").removeAttribute("aria-activedescendant");
+  }
+
+  function fitImportTagSuggest() {
+    const panel = $("importTagSuggest");
+    const field = $("importTagField");
+    if (!panel || !field || panel.classList.contains("hidden")) return;
+    const viewport = window.visualViewport;
+    const bottom = viewport
+      ? viewport.offsetTop + viewport.height
+      : window.innerHeight;
+    const rect = field.getBoundingClientRect();
+    const available = Math.max(
+      96,
+      Math.min(220, Math.floor(bottom - rect.bottom - 12)),
+    );
+    panel.style.setProperty("--tag-suggest-max", available + "px");
+  }
+
+  function openImportTagSuggest() {
+    const panel = $("importTagSuggest");
+    const input = $("importTagName");
+    if (!panel || !input || !$("importTagSuggestList")) return;
+    if (!importCollections.length && !importTagName()) {
+      closeImportTagSuggest();
+      return;
+    }
+    panel.classList.remove("hidden");
+    input.setAttribute("aria-expanded", "true");
+    renderImportTagSuggest();
+    fitImportTagSuggest();
+  }
+
+  function closeImportTagSuggest() {
+    const panel = $("importTagSuggest");
+    const input = $("importTagName");
+    if (!panel) return;
+    panel.classList.add("hidden");
+    if (input) {
+      input.setAttribute("aria-expanded", "false");
+      input.removeAttribute("aria-activedescendant");
+    }
+    importTagSuggestItems = [];
+    importTagActiveIndex = -1;
+  }
+
+  function setImportTagActive(index) {
+    importTagActiveIndex = index;
+    const rows = $("importTagSuggestList")
+      ? $("importTagSuggestList").querySelectorAll(".tag-suggest-row")
+      : [];
+    rows.forEach((row, rowIndex) => {
+      row.classList.toggle("active", rowIndex === index);
+    });
+    const input = $("importTagName");
+    if (!input) return;
+    if (index >= 0 && rows[index]) {
+      input.setAttribute("aria-activedescendant", rows[index].id);
+    } else {
+      input.removeAttribute("aria-activedescendant");
+    }
+  }
+
+  function chooseImportTag(collection) {
+    const input = $("importTagName");
+    if (!input || !collection) return;
+    input.value = collection.name;
+    $("clearImportTag").classList.remove("hidden");
+    closeImportTagSuggest();
+    input.blur();
+    invalidateImportPreview();
+    updateImportTargetHint();
+  }
+
+  function clearImportTagName() {
+    const input = $("importTagName");
+    if (!input) return;
+    input.value = "";
+    $("clearImportTag").classList.add("hidden");
+    closeImportTagSuggest();
+    invalidateImportPreview();
+    updateImportTargetHint();
+    input.focus();
+    openImportTagSuggest();
+  }
+
+  function onImportTagInput() {
+    const input = $("importTagName");
+    if (!input) return;
+    $("clearImportTag").classList.toggle("hidden", !normalizeTagName(input.value));
+    // Filtering on pinyin letters would show a misleading "new tag" state;
+    // wait for compositionend before resolving the target.
+    if (importTagComposing) return;
+    invalidateImportPreview();
+    updateImportTargetHint();
+    if (document.activeElement === input ||
+        !$("importTagSuggest").classList.contains("hidden")) {
+      openImportTagSuggest();
+    }
+  }
+
+  function onImportTagBlur() {
+    setTimeout(() => {
+      const field = $("importTagField");
+      const active = document.activeElement;
+      if (!field || !active || !field.contains(active)) {
+        closeImportTagSuggest();
+      }
+    }, 140);
+  }
+
+  function onImportTagKeydown(event) {
+    if (event.isComposing) return;
+    const panelOpen = !$("importTagSuggest").classList.contains("hidden");
+    if (event.key === "Escape") {
+      if (panelOpen) {
+        event.preventDefault();
+        closeImportTagSuggest();
+      }
+      return;
+    }
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      if (!panelOpen) openImportTagSuggest();
+      if (!importTagSuggestItems.length) return;
+      event.preventDefault();
+      const delta = event.key === "ArrowDown" ? 1 : -1;
+      const next = importTagActiveIndex < 0
+        ? (delta > 0 ? 0 : importTagSuggestItems.length - 1)
+        : (importTagActiveIndex + delta + importTagSuggestItems.length) %
+          importTagSuggestItems.length;
+      setImportTagActive(next);
+      const rows = $("importTagSuggestList")
+        ? $("importTagSuggestList").querySelectorAll(".tag-suggest-row")
+        : [];
+      if (rows[next] && rows[next].scrollIntoView) {
+        rows[next].scrollIntoView({ block: "nearest" });
+      }
+      return;
+    }
+    if (event.key === "Enter" && panelOpen) {
+      if (importTagActiveIndex >= 0 && importTagSuggestItems[importTagActiveIndex]) {
+        event.preventDefault();
+        chooseImportTag(importTagSuggestItems[importTagActiveIndex]);
+      } else {
+        closeImportTagSuggest();
+      }
+    }
+  }
+
+  function renderBankImport() {
+    if (!$("importTagName")) return;
+    $("clearImportTag").classList.toggle("hidden", !importTagName());
+    $("importCloudNotice").classList.toggle("hidden", localBankActive);
+    $("importFileName").textContent = importFileName;
+    $("promptText").textContent = t("importAiPrompt");
+    document.querySelectorAll("#importDifficultyChips [data-import-difficulty]").forEach((button) => {
+      button.setAttribute(
+        "aria-pressed",
+        String(button.dataset.importDifficulty === importDefaultDifficulty),
+      );
+    });
+    $("parseImport").disabled = importBusy;
+    $("parseImport").textContent = t(importBusy ? "importParsing" : "importParse");
+    updateImportTargetHint();
+    if (!$("importTagSuggest").classList.contains("hidden")) {
+      renderImportTagSuggest();
+    }
+    renderMaintenanceSource();
+    renderImportPreview();
+    renderImportResult();
+  }
+
+  function clearImportPayload() {
+    importFileName = "";
+    closeImportTagSuggest();
+    $("importText").value = "";
+    $("importFile").value = "";
+    $("importFileName").textContent = "";
+    $("importCopyState").textContent = "";
+    $("importError").textContent = "";
+    renderImportErrors([]);
+  }
+
+  function openBankImport() {
+    // Every entry starts with a clean payload. Keep the target tag and default
+    // difficulty so several batches can be imported to the same tag in a row.
+    importPreview = null;
+    importResult = null;
+    importRequest = null;
+    clearImportPayload();
+    showBankPage("import");
+    renderBankImport();
+  }
+
+  function backFromImport() {
+    closeImportTagSuggest();
+    $("importError").textContent = "";
+    renderImportErrors([]);
+    if (importResult) resetImportState();
+    showBankPage("home");
+    loadBank(true);
+  }
+
+  function renderImportErrors(errors) {
+    const list = $("importErrorList");
+    if (!list) return;
+    list.replaceChildren();
+    (errors || []).forEach((item) => {
+      const li = document.createElement("li");
+      const field = importFieldLabel(item.field);
+      const code = importCodeText(item.code);
+      const wholeFile = item.field === "items" || item.field === "text";
+      const prefix = !wholeFile && Number(item.index) >= 0
+        ? t("importErrorAt", { n: Number(item.index) + 1 })
+        : "";
+      li.textContent = [prefix, field, code].filter(Boolean).join(" · ");
+      list.appendChild(li);
+    });
+    list.classList.toggle("hidden", !errors || !errors.length);
+  }
+
+  function importFieldLabel(field) {
+    const key = "importField_" + String(field || "");
+    const text = t(key);
+    return text === key ? String(field || "") : text;
+  }
+
+  function importCodeText(code) {
+    const key = "importCode_" + String(code || "");
+    const text = t(key);
+    return text === key ? String(code || "") : text;
+  }
+
+  function showImportError(error) {
+    const data = error && error.data ? error.data : null;
+    let message = errorText(error);
+    if (error && error.code === "BANK_FULL" && data && data.remaining !== undefined) {
+      message = t("err_BANK_FULL") + " " + t("importPreviewRemainingValue", {
+        remaining: Number(data.remaining || 0),
+        capacity: Number(data.capacity || bankCapacity),
+      });
+    }
+    $("importError").textContent = message;
+    renderImportErrors(data && Array.isArray(data.errors) ? data.errors : []);
+  }
+
+  function normalizeImportText(raw) {
+    let text = String(raw || "").replace(/^﻿/, "").trim();
+    const fence = /^```(?:json)?\s*\n?([\s\S]*?)\n?```$/i.exec(text);
+    if (fence) text = fence[1].trim();
+    return text;
+  }
+
+  function utf8Bytes(text) {
+    try {
+      return new Blob([text]).size;
+    } catch (_) {
+      return unescape(encodeURIComponent(text)).length;
+    }
+  }
+
+  function readImportPayload() {
+    const raw = String($("importText").value || "");
+    if (!raw.trim()) return { error: t("importEmptyInput") };
+    if (utf8Bytes(raw) > IMPORT_MAX_BYTES) {
+      return { error: t("importTooLarge") };
+    }
+    const text = normalizeImportText(raw);
+    let format = "text";
+    let items = null;
+    if (text.startsWith("{") || text.startsWith("[")) {
+      format = "json";
+      let parsed;
+      try {
+        parsed = JSON.parse(text);
+      } catch (_) {
+        return { error: t("importJsonInvalid") };
+      }
+      items = Array.isArray(parsed)
+        ? parsed
+        : (parsed && Array.isArray(parsed.items) ? parsed.items : null);
+      if (!items) return { error: t("importJsonInvalid") };
+      if (items.length === 0) return { error: t("importNoQuestions") };
+      if (items.length > IMPORT_MAX_ITEMS) {
+        return { error: t("importTooMany", { max: IMPORT_MAX_ITEMS }) };
+      }
+    }
+    return { format, items, text, raw };
+  }
+
+  async function loadImportFile(file) {
+    if (!file) return;
+    if (file.size > IMPORT_MAX_BYTES) {
+      $("importFile").value = "";
+      importFileName = "";
+      $("importFileName").textContent = "";
+      $("importError").textContent = t("importTooLarge");
+      return;
+    }
+    try {
+      const text = await file.text();
+      $("importText").value = text;
+      importFileName = file.name || "";
+      $("importFileName").textContent = importFileName;
+      $("importError").textContent = "";
+      invalidateImportPreview();
+      updateImportTargetHint();
+    } catch (_) {
+      $("importError").textContent = t("importFileReadFailed");
+    }
+  }
+
+  function importRequestBody(target, payload, dryRun) {
+    const body = {
+      defaultDifficulty: importDefaultDifficulty,
+      dryRun,
+    };
+    if (target.isNew) body.newCollectionName = target.name;
+    else body.collectionId = target.collection.id;
+    if (payload.format === "json") {
+      body.format = "json";
+      body.items = payload.items;
+    } else {
+      body.format = "text";
+      body.text = payload.text;
+    }
+    return body;
+  }
+
+  function invalidateImportPreview() {
+    if (!importPreview && !importResult && !$("importError").textContent) return;
+    importPreview = null;
+    importResult = null;
+    importRequest = null;
+    $("importError").textContent = "";
+    renderImportErrors([]);
+    renderImportPreview();
+    renderImportResult();
+    updateImportTargetHint();
+  }
+
+  async function parseImport() {
+    if (importBusy) return;
+    $("importError").textContent = "";
+    renderImportErrors([]);
+    const targetState = importTagState();
+    if (targetState.empty || targetState.error) {
+      $("importError").textContent = targetState.error || t("importSelectTagFirst");
+      $("importTagName").focus();
+      openImportTagSuggest();
+      return;
+    }
+    const target = importTarget();
+    if (!target) {
+      $("importError").textContent = t("importSelectTagFirst");
+      return;
+    }
+    if (target.isNew) {
+      const nameError = validateNewTagName(target.name);
+      if (nameError) {
+        $("importError").textContent = nameError;
+        return;
+      }
+    }
+    const payload = readImportPayload();
+    if (payload.error) {
+      $("importError").textContent = payload.error;
+      return;
+    }
+    importBusy = true;
+    importPreview = null;
+    importResult = null;
+    renderBankImport();
+    try {
+      const body = importRequestBody(target, payload, true);
+      const data = await api("/api/quiz/admin/bank/import", {
+        method: "POST",
+        admin: true,
+        body,
+      });
+      importPreview = data;
+      importRequest = importRequestBody(target, payload, false);
+      renderImportPreview();
+    } catch (error) {
+      showImportError(error);
+    } finally {
+      importBusy = false;
+      renderBankImport();
+    }
+  }
+
+  async function confirmImport() {
+    if (importBusy || !importPreview || !importRequest) return;
+    if (!importPreview.canImport) return;
+    importBusy = true;
+    $("importError").textContent = "";
+    renderImportErrors([]);
+    renderImportPreview();
+    try {
+      const data = await api("/api/quiz/admin/bank/import", {
+        method: "POST",
+        admin: true,
+        body: importRequest,
+      });
+      importResult = data;
+      importPreview = null;
+      importRequest = null;
+      // The payload and target tag are one-shot. Keep the default difficulty,
+      // and make the next batch choose an existing tag or enter a new one.
+      clearImportPayload();
+      if ($("importTagName")) $("importTagName").value = "";
+      if (data.counts) applyBankCounts(data.counts);
+      if (data.sourceCounts) {
+        bankSourceCounts = {
+          course: Math.max(0, Number(data.sourceCounts.course || 0)),
+          custom: Math.max(0, Number(data.sourceCounts.custom || 0)),
+        };
+      }
+      if (data.capacity) bankCapacity = Number(data.capacity);
+      renderBankCounts();
+      renderImportResult();
+      try {
+        await loadAdminSession();
+      } catch (_) {
+        // The questions are already stored; a stale session only delays the
+        // tag list until the next refresh.
+      }
+    } catch (error) {
+      showImportError(error);
+    } finally {
+      importBusy = false;
+      renderBankImport();
+    }
+  }
+
+  function renderImportActions() {
+    const bar = $("importActions");
+    if (!bar) return;
+    const hasPreview = Boolean(importPreview);
+    bar.classList.toggle("hidden", Boolean(importResult));
+    $("parseImport").classList.toggle("hidden", hasPreview);
+    $("confirmImport").classList.toggle("hidden", !hasPreview);
+  }
+
+  function renderImportPreview() {
+    const card = $("importPreview");
+    if (!card) return;
+    const preview = importPreview;
+    card.classList.toggle("hidden", !preview);
+    renderImportActions();
+    if (!preview) return;
+    const targetName = preview.collection ? preview.collection.name : "";
+    const targetIsNew = Boolean(importRequest && importRequest.newCollectionName);
+    $("previewTarget").textContent = targetName;
+    if ($("previewTargetBadge")) {
+      $("previewTargetBadge").textContent = targetIsNew
+        ? t("importTargetBadgeNew")
+        : t("importTargetBadgeExisting");
+      $("previewTargetBadge").classList.toggle("new", targetIsNew);
+      $("previewTargetBadge").classList.toggle("hidden", !targetName);
+    }
+    $("previewTotal").textContent = String(Number(preview.total || 0));
+    $("previewFileDup").textContent = String(Number(preview.fileDuplicates || 0));
+    $("previewCollectionDup").textContent = String(Number(preview.collectionDuplicates || 0));
+    $("previewCrossDup").textContent = String(Number(preview.crossSourceDuplicates || 0));
+    $("previewAppend").textContent = String(Number(preview.wouldAppend || 0));
+    $("previewRemaining").textContent = t("importPreviewRemainingValue", {
+      remaining: Number(preview.remaining || 0),
+      capacity: Number(preview.capacity || bankCapacity),
+    });
+    const wouldAppend = Number(preview.wouldAppend || 0);
+    const remaining = Number(preview.remaining || 0);
+    const rejected = Number(preview.rejected || 0);
+    let note = "";
+    if (rejected > 0) {
+      note = t("importPreviewRejected", { n: rejected });
+    } else if (wouldAppend === 0) {
+      note = t("importPreviewNoNew");
+    } else if (wouldAppend > remaining) {
+      note = t("importPreviewNotEnough", { n: wouldAppend - remaining });
+    } else if (Number(preview.crossSourceDuplicates || 0) > 0) {
+      note = t("importPreviewCrossNote", {
+        n: Number(preview.crossSourceDuplicates || 0),
+      });
+    }
+    $("importPreviewNote").textContent = note;
+    renderImportPreviewItems(preview.preview || []);
+    $("confirmImport").textContent = t(
+      importBusy ? "importImporting" : "importConfirm",
+      { n: wouldAppend },
+    );
+    $("confirmImport").disabled = importBusy || !preview.canImport;
+  }
+
+  function renderImportPreviewItems(items) {
+    const host = $("importPreviewList");
+    if (!host) return;
+    host.replaceChildren();
+    (items || []).slice(0, IMPORT_PREVIEW_LIMIT).forEach((item) => {
+      const card = document.createElement("article");
+      card.className = "import-preview-item";
+      const prompt = document.createElement("p");
+      prompt.className = "prompt";
+      prompt.textContent = String(item.prompt || "");
+      card.appendChild(prompt);
+      const options = document.createElement("ol");
+      options.className = "bank-options";
+      (item.options || []).forEach((option, index) => {
+        const li = document.createElement("li");
+        li.textContent = String(option || "");
+        if (index === Number(item.answerIndex)) li.className = "correct";
+        options.appendChild(li);
+      });
+      card.appendChild(options);
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      const difficulty = document.createElement("span");
+      difficulty.textContent = t(
+        DIFFICULTY_LABEL_KEYS[item.difficulty] || "difficultyMedium",
+      );
+      meta.appendChild(difficulty);
+      card.appendChild(meta);
+      const explanation = String(item.explanation || "").trim();
+      if (explanation) {
+        const details = document.createElement("details");
+        details.className = "solution";
+        const summary = document.createElement("summary");
+        summary.textContent = t("solution");
+        const body = document.createElement("p");
+        body.textContent = explanation;
+        details.append(summary, body);
+        card.appendChild(details);
+      }
+      host.appendChild(card);
+    });
+  }
+
+  function renderImportResult() {
+    const card = $("importResult");
+    if (!card) return;
+    const result = importResult;
+    card.classList.toggle("hidden", !result);
+    renderImportActions();
+    if (!result) return;
+    const name = result.collection ? result.collection.name : "";
+    $("importResultTitle").textContent = t("importResultTitle", {
+      n: Number(result.appended || 0),
+      name,
+    });
+    $("importResultFileDup").textContent = t("importResultDetail", {
+      file: Number(result.fileDuplicates || 0),
+      collection: Number(result.collectionDuplicates || 0),
+    });
+    const cross = Number(result.crossSourceDuplicates || 0);
+    $("importResultCross").textContent = cross > 0
+      ? t("importResultCross", { n: cross })
+      : "";
+    $("importResultRemaining").textContent = t("importResultRemaining", {
+      remaining: Number(result.remaining || 0),
+      capacity: Number(result.capacity || bankCapacity),
+    });
+  }
+
+  function validateNewTagName(raw) {
+    const name = normalizeTagName(raw);
+    const length = tagNameLength(name);
+    if (length < 1 || length > TAG_NAME_MAX) return t("importNewTagInvalid");
+    if (importCollections.some(
+      (item) => item.name.toLowerCase() === name.toLowerCase(),
+    )) {
+      return t("importNewTagExists");
+    }
+    if (importCollections.length >= MAX_TAGS) return t("importNewTagLimit");
+    return "";
+  }
+
+  function resetImportState() {
+    importPreview = null;
+    importResult = null;
+    importRequest = null;
+    importBusy = false;
+    importTagComposing = false;
+    importDefaultDifficulty = "medium";
+    clearImportPayload();
+  }
+
+  function downloadTextFile(filename, text, type) {
+    const blob = new Blob([text], { type });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function downloadImportTemplate() {
+    const template = {
+      version: 1,
+      items: [
+        {
+          prompt: "12 + 8 = ?",
+          options: ["18", "20", "22", "24"],
+          answer: "B",
+          explanation: "12 + 8 = 20",
+          difficulty: "easy",
+        },
+      ],
+    };
+    downloadTextFile(
+      "planyourtv-quiz-template.json",
+      JSON.stringify(template, null, 2),
+      "application/json",
+    );
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise((resolve, reject) => {
+      const area = document.createElement("textarea");
+      area.value = text;
+      area.setAttribute("readonly", "");
+      area.style.position = "fixed";
+      area.style.opacity = "0";
+      document.body.appendChild(area);
+      area.select();
+      const ok = document.execCommand("copy");
+      area.remove();
+      ok ? resolve() : reject(new Error("COPY_FAILED"));
+    });
+  }
+
+  async function copyImportPrompt() {
+    try {
+      await copyText(t("importAiPrompt"));
+      $("importCopyState").textContent = t("importPromptCopied");
+      setTimeout(() => {
+        if ($("importCopyState")) $("importCopyState").textContent = "";
+      }, 2600);
+    } catch (_) {
+      $("promptFold").open = true;
+      $("importCopyState").textContent = "";
+      $("importError").textContent = t("importCopyFailed");
+    }
+  }
+
+  function startImportFromCustomLevel() {
+    setTab("bank", true);
+    openBankImport();
+  }
+
+  function renderMaintenanceSource() {
+    if (!$("maintenanceSource")) return;
+    document.querySelectorAll("#maintenanceSource [data-clear-source]").forEach((button) => {
+      button.setAttribute(
+        "aria-pressed",
+        String(button.dataset.clearSource === clearSource),
+      );
+    });
+    if (!importCollections.some((item) => item.id === clearCollectionId)) {
+      clearCollectionId = importCollections.length ? importCollections[0].id : "";
+    }
+    const select = $("maintenanceCollection");
+    select.replaceChildren();
+    importCollections.forEach((collection) => {
+      const option = document.createElement("option");
+      option.value = collection.id;
+      option.textContent = t("maintenanceTagOption", {
+        name: collection.name,
+        total: collection.total,
+        unused: collection.unused,
+      });
+      select.appendChild(option);
+    });
+    select.value = clearCollectionId;
+    select.classList.toggle("hidden", clearSource !== "custom");
+    select.disabled = clearSource !== "custom";
+    let hint = "";
+    if (clearSource === "course") {
+      hint = t("maintenanceSourceCourseHint");
+    } else if (clearSource === "custom") {
+      hint = importCollections.length
+        ? t("maintenanceSourceCustomHint")
+        : t("maintenanceSourceNoTags");
+    } else {
+      hint = t("maintenanceSourceAllHint", { custom: bankSourceCounts.custom });
+    }
+    $("maintenanceSourceHint").textContent = hint;
+    const blocked = clearSource === "custom" && !clearCollectionId;
+    document.querySelectorAll(".maintenance-grid .btn").forEach((button) => {
+      button.disabled = blocked;
+    });
+  }
+
+  function setClearSource(source) {
+    clearSource = ["course", "custom", "all"].includes(source) ? source : "course";
+    renderMaintenanceSource();
   }
 
   function updateToggleState() {
@@ -4646,6 +6433,23 @@
     bankHasMore = false;
     bankLoading = false;
     bankRequest++;
+    bankPage = "home";
+    importCollections = [];
+    resetImportState();
+    if ($("importTagName")) $("importTagName").value = "";
+    if ($("clearImportTag")) $("clearImportTag").classList.add("hidden");
+    customLevels = [];
+    customLevelEditingId = null;
+    customLevelDraftTag = "";
+    customLevelSaving = false;
+    if (customLevelMessageTimer) {
+      clearTimeout(customLevelMessageTimer);
+      customLevelMessageTimer = 0;
+    }
+    bankSourceCounts = { course: 0, custom: 0 };
+    localBankActive = true;
+    clearSource = "course";
+    clearCollectionId = "";
     providerState = { aiSupported: true, consentAccepted: false, configured: false, baseUrl: "", model: "" };
     providerMsg = null;
     pendingGenerate = false;
@@ -4701,6 +6505,7 @@
     $("generateProgress").textContent = "";
     $("questionError").textContent = "";
     showGenPage("home");
+    showBankPage("home");
     renderSettings();
     renderGenerate();
     renderHome();
@@ -4771,6 +6576,9 @@
     if (!TAB_VIEWS[tab]) tab = "generate";
     if (!force && activeTab === tab) return;
     if (!force) showGenPage("home");
+    // Leaving or re-entering the bank always returns to its list; the import
+    // subpage is reached only through its own button.
+    showBankPage("home");
     activeTab = tab;
     for (const name of Object.keys(TAB_VIEWS)) {
       $(TAB_VIEWS[name]).classList.toggle("hidden", name !== tab);
@@ -4822,6 +6630,22 @@
         applyAnswerScope(data.answerScope, data.answerScopeMode);
       }
     }
+    // The tag list and custom levels live outside the cloud scope protocol;
+    // an older TV that omits them simply leaves the local lists empty.
+    importCollections = Array.isArray(data.collections)
+      ? data.collections.map((item) => ({
+        id: String(item && item.id || ""),
+        name: String(item && item.name || ""),
+        total: Math.max(0, Number(item && item.total || 0)),
+        unused: Math.max(0, Number(item && item.unused || 0)),
+      })).filter((item) => item.id && item.name)
+      : [];
+    applyCustomLevels(data.customLevels);
+    bankSourceCounts = {
+      course: Math.max(0, Number(data.bankSourceCounts && data.bankSourceCounts.course || 0)),
+      custom: Math.max(0, Number(data.bankSourceCounts && data.bankSourceCounts.custom || 0)),
+    };
+    localBankActive = data.localBankActive !== false;
     syncState = data.syncState || null;
     cloudManaged = Boolean(data.cloudManaged);
     bankCapacity = Number(data.bankCapacity || 6000);
@@ -4830,8 +6654,12 @@
     renderStock();
     renderBankCounts();
     renderMaintenance();
+    renderMaintenanceSource();
     renderGenConfig(false);
     renderGenerate();
+    renderHome();
+    renderBankImport();
+    if (genPage === "answer") renderAnswerPage();
   }
 
   async function loadProvider() {
@@ -6426,10 +8254,7 @@
       n: answerLevels.length,
       max: MAX_LEVELS,
     });
-    $("addLevel").classList.toggle("hidden", answerLevels.length >= MAX_LEVELS);
-    $("addLevel").disabled = levelSaving;
-    $("levelMaxHint").classList.toggle("hidden", answerLevels.length < MAX_LEVELS);
-    $("levelMaxHint").textContent = t("levelMaxHint", { n: MAX_LEVELS });
+    renderCustomLevels();
     renderLevelUndo();
   }
 
@@ -6468,6 +8293,215 @@
     scopeLoaded = true;
     if ($("answerTabs")) renderAnswerPage();
     renderHome();
+  }
+
+  function applyCustomLevels(rawLevels) {
+    customLevels = (Array.isArray(rawLevels) ? rawLevels : [])
+      .map((item) => ({
+        id: String(item && item.id || ""),
+        name: String(item && item.name || "").trim(),
+        collectionId: String(item && item.collectionId || ""),
+        collectionName: String(item && item.collectionName || ""),
+        available: Math.max(0, Number(item && item.available || 0)),
+      }))
+      .filter((item) => item.id && item.collectionId)
+      .slice(0, MAX_LEVELS);
+    if (genPage === "answer") renderCustomLevels();
+    if (genPage === "customLevel") renderCustomLevelEditor();
+  }
+
+  function allLevelCount() {
+    return answerLevels.length + customLevels.length;
+  }
+
+  function customLevelTagName(level) {
+    return String(level && level.collectionName || "").trim() ||
+      String(level && level.collectionId || "");
+  }
+
+  function scheduleCustomLevelMessage(text) {
+    if ($("customLevelState")) $("customLevelState").textContent = text;
+    if (customLevelMessageTimer) clearTimeout(customLevelMessageTimer);
+    customLevelMessageTimer = setTimeout(() => {
+      customLevelMessageTimer = 0;
+      if ($("customLevelState")) $("customLevelState").textContent = "";
+    }, 2600);
+  }
+
+  function renderCustomLevels() {
+    const list = $("customLevelList");
+    if (!list) return;
+    list.replaceChildren();
+    const pull = Number(currentConfig().pullCount || 5);
+    customLevels.forEach((level, index) => {
+      const row = document.createElement("div");
+      row.className = "level-row custom";
+      row.dataset.customLevelId = level.id;
+      if (level.available < pull) row.classList.add("short");
+
+      const main = document.createElement("button");
+      main.type = "button";
+      main.className = "level-main";
+      main.dataset.customLevelEdit = level.id;
+
+      const badge = document.createElement("span");
+      badge.className = "level-index level-index-custom";
+      badge.textContent = String(index + 1);
+      main.appendChild(badge);
+
+      const copy = document.createElement("span");
+      copy.className = "level-copy";
+      const titleRow = document.createElement("span");
+      titleRow.className = "level-title-row";
+      const title = document.createElement("span");
+      title.className = "level-title";
+      title.textContent = level.name || customLevelTagName(level) ||
+        t("customLevelFallbackName");
+      const customBadge = document.createElement("span");
+      customBadge.className = "level-custom-badge";
+      customBadge.textContent = t("customLevelBadge");
+      titleRow.append(title, customBadge);
+      const tagLine = document.createElement("span");
+      tagLine.className = "level-meta";
+      tagLine.textContent = t("customLevelTagLine", {
+        name: customLevelTagName(level),
+      });
+      const available = document.createElement("span");
+      available.className = "level-available";
+      if (level.available < pull) {
+        available.textContent = t("levelShort", { available: level.available, pull });
+        available.classList.add("warn");
+      } else {
+        available.textContent = t("levelAvailable", { n: level.available });
+      }
+      copy.append(titleRow, tagLine, available);
+      main.appendChild(copy);
+      row.appendChild(main);
+
+      const actions = document.createElement("div");
+      actions.className = "level-actions";
+      const editable = localBankActive && !customLevelSaving;
+      const label = level.name || customLevelTagName(level) || t("customLevelFallbackName");
+      const addAction = (attr, text, aria) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "level-action";
+        button.setAttribute(attr, level.id);
+        button.setAttribute("aria-label", t(aria, { name: label }));
+        button.textContent = text;
+        button.disabled = !editable;
+        actions.appendChild(button);
+        return button;
+      };
+      const up = addAction("data-custom-level-up", "↑", "levelMoveUpAria");
+      up.disabled = !editable || index === 0;
+      const down = addAction("data-custom-level-down", "↓", "levelMoveDownAria");
+      down.disabled = !editable || index === customLevels.length - 1;
+      addAction("data-custom-level-delete", "×", "levelDeleteAria");
+      row.appendChild(actions);
+      list.appendChild(row);
+    });
+
+    const noTags = importCollections.length === 0;
+    $("customLevelEmpty").classList.toggle("hidden", !noTags);
+    $("customLevelListCount").textContent = String(customLevels.length);
+    // The right card explains why it is unavailable instead of leaving a
+    // disabled control without context.
+    if ($("addCustomLevelMeta")) {
+      $("addCustomLevelMeta").textContent = !localBankActive
+        ? t("levelAddCustomMetaCloud")
+        : noTags
+          ? t("levelAddCustomMetaNoTags")
+          : t("levelAddCustomMeta");
+    }
+    const used = allLevelCount();
+    $("levelsTotalHint").textContent = t("levelsTotalHint", { used, max: MAX_LEVELS });
+    $("levelsTotalHint").classList.toggle("warn", used > MAX_LEVELS);
+    $("customLevelCombined").textContent = t("customLevelCombined", {
+      used,
+      max: MAX_LEVELS,
+    });
+    const atMax = used >= MAX_LEVELS;
+    $("addLevel").disabled = levelSaving || atMax;
+    $("addCustomLevel").disabled = !localBankActive || customLevelSaving || atMax;
+    $("levelMaxHint").classList.toggle("hidden", !atMax);
+    $("levelMaxHint").textContent = t("levelMaxHint", { n: MAX_LEVELS });
+  }
+
+  function renderCustomLevelEditor() {
+    if (!$("customLevelEditorPage")) return;
+    const level = customLevelEditingId
+      ? customLevels.find((item) => item.id === customLevelEditingId)
+      : null;
+    if (customLevelEditingId && !level) {
+      customLevelEditingId = null;
+      customLevelDraftTag = "";
+    }
+    $("customLevelEditorTitle").textContent = t(
+      customLevelEditingId ? "levelEditTitle" : "customLevelAddTitle",
+    );
+    const noTags = importCollections.length === 0;
+    $("customLevelEditorEmpty").classList.toggle("hidden", !noTags);
+    $("customLevelTagField").classList.toggle("hidden", noTags);
+    $("customLevelEditorCloudHint").classList.toggle("hidden", localBankActive);
+    $("saveCustomLevel").disabled = noTags || !localBankActive || customLevelSaving;
+    if (noTags) {
+      $("customLevelEditorAvailable").textContent = "";
+      return;
+    }
+    const host = $("customLevelTags");
+    host.replaceChildren();
+    if (!importCollections.some((item) => item.id === customLevelDraftTag)) {
+      customLevelDraftTag = importCollections[0].id;
+    }
+    importCollections.forEach((collection) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "tag-choice";
+      button.dataset.customTagId = collection.id;
+      button.setAttribute("aria-pressed", String(collection.id === customLevelDraftTag));
+      const name = document.createElement("span");
+      name.className = "tag-choice-name";
+      name.textContent = collection.name;
+      const meta = document.createElement("span");
+      meta.className = "tag-choice-meta";
+      meta.textContent = collection.unused > 0
+        ? t("customLevelTagCounts", {
+          total: collection.total,
+          unused: collection.unused,
+        })
+        : t("customLevelTagCountsEmpty", { total: collection.total });
+      button.append(name, meta);
+      host.appendChild(button);
+    });
+    const selected = importCollections.find((item) => item.id === customLevelDraftTag);
+    $("customLevelEditorAvailable").textContent = selected
+      ? (selected.unused > 0
+        ? t("customLevelEditorAvailable", {
+          name: selected.name,
+          n: selected.unused,
+        })
+        : t("customLevelEditorNoAvailable", { name: selected.name }))
+      : "";
+    if (level && document.activeElement !== $("customLevelName")) {
+      $("customLevelName").value = level.name;
+    }
+  }
+
+  function openCustomLevelEditor(id, presetTagId) {
+    const level = id ? customLevels.find((item) => item.id === id) : null;
+    if (id && !level) return false;
+    customLevelEditingId = level ? level.id : null;
+    customLevelDraftTag = level
+      ? level.collectionId
+      : (presetTagId ||
+        (importCollections[0] ? importCollections[0].id : ""));
+    $("customLevelName").value = level ? level.name : "";
+    $("customLevelEditorError").textContent = "";
+    $("customLevelState").textContent = "";
+    showGenPage("customLevel");
+    renderCustomLevelEditor();
+    return true;
   }
 
   function renderLevelEditor() {
@@ -6652,6 +8686,149 @@
     const moved = next.splice(index, 1)[0];
     next.splice(target, 0, moved);
     await postLevels(next, "levelOrderSaved");
+  }
+
+  function customLevelPayload(level) {
+    const payload = {
+      name: String(level.name || ""),
+      collectionId: String(level.collectionId || ""),
+    };
+    if (level.id) payload.id = level.id;
+    return payload;
+  }
+
+  async function postCustomLevels(levels, successKey) {
+    if (customLevelSaving) return false;
+    if (!challengeConfig) {
+      $("customLevelError").textContent = t("settingsLoading");
+      try {
+        await loadAdminSession();
+      } catch (error) {
+        $("customLevelError").textContent = errorText(error);
+        return false;
+      }
+      if (!challengeConfig) return false;
+    }
+    customLevelSaving = true;
+    $("customLevelError").textContent = "";
+    $("saveCustomLevel").disabled = true;
+    renderCustomLevels();
+    try {
+      const data = await api("/api/quiz/admin/challenge-config", {
+        method: "POST",
+        admin: true,
+        body: {
+          config: readSettingsConfig(),
+          customLevels: levels.map(customLevelPayload),
+        },
+      });
+      challengeConfig = normalizeConfig(data.config || currentConfig());
+      if (Array.isArray(data.answerScopes)) applyAnswerLevels(data.answerScopes);
+      answerDirty = false;
+      syncState = data.syncState || syncState;
+      renderSync();
+      renderSettings();
+      // The save response omits custom levels; fetch the assigned ids and
+      // refreshed availability before leaving the editor.
+      await loadAdminSession();
+      renderHome();
+      renderAnswerPage();
+      if (successKey) scheduleCustomLevelMessage(t(successKey));
+      return true;
+    } catch (error) {
+      $("customLevelError").textContent = errorText(error);
+      $("customLevelEditorError").textContent = errorText(error);
+      return false;
+    } finally {
+      customLevelSaving = false;
+      renderCustomLevels();
+      if (genPage === "customLevel") renderCustomLevelEditor();
+    }
+  }
+
+  function normalizeTagName(value) {
+    return String(value || "").trim();
+  }
+
+  function tagNameLength(value) {
+    return Array.from(String(value || "")).length;
+  }
+
+  async function saveCustomLevelDraft() {
+    if (customLevelSaving) return;
+    $("customLevelEditorError").textContent = "";
+    if (!localBankActive) {
+      $("customLevelEditorError").textContent = t("customLevelCloudHint");
+      return;
+    }
+    const name = normalizeTagName($("customLevelName").value);
+    if (tagNameLength(name) > LEVEL_NAME_MAX) {
+      $("customLevelEditorError").textContent = t("levelNameTooLong");
+      return;
+    }
+    if (!customLevelDraftTag) {
+      $("customLevelEditorError").textContent = t("customLevelTagRequired");
+      return;
+    }
+    const collection = importCollections.find(
+      (item) => item.id === customLevelDraftTag,
+    );
+    if (!collection) {
+      $("customLevelEditorError").textContent = t("customLevelTagRequired");
+      return;
+    }
+    const duplicate = customLevels.some((level) =>
+      level.id !== customLevelEditingId && level.collectionId === customLevelDraftTag);
+    if (duplicate) {
+      $("customLevelEditorError").textContent = t("customLevelTagDuplicate");
+      return;
+    }
+    if (!customLevelEditingId && allLevelCount() >= MAX_LEVELS) {
+      $("customLevelEditorError").textContent = t("levelMaxHint", { n: MAX_LEVELS });
+      return;
+    }
+    let next;
+    if (customLevelEditingId) {
+      next = customLevels.map((level) => level.id === customLevelEditingId
+        ? Object.assign({}, level, { name, collectionId: collection.id })
+        : level);
+    } else {
+      next = customLevels.concat([{
+        id: "",
+        name,
+        collectionId: collection.id,
+        collectionName: collection.name,
+        available: collection.unused,
+      }]);
+    }
+    const saved = await postCustomLevels(next, "customLevelSaved");
+    if (!saved) return;
+    customLevelEditingId = null;
+    customLevelDraftTag = "";
+    showGenPage("answer");
+  }
+
+  async function deleteCustomLevel(id) {
+    if (customLevelSaving) return;
+    const level = customLevels.find((item) => item.id === id);
+    if (!level) return;
+    const name = level.name || customLevelTagName(level) || t("customLevelFallbackName");
+    if (!confirm(t("customLevelDeleteConfirm", { name }))) return;
+    await postCustomLevels(
+      customLevels.filter((item) => item.id !== id),
+      "customLevelDeleted",
+    );
+  }
+
+  async function moveCustomLevel(id, delta) {
+    if (customLevelSaving) return;
+    const index = customLevels.findIndex((level) => level.id === id);
+    const target = index + delta;
+    if (index < 0 || target < 0 || target >= customLevels.length) return;
+    const next = customLevels.slice();
+    const moved = next.splice(index, 1)[0];
+    next.splice(target, 0, moved);
+    await postCustomLevels(next, "levelOrderSaved");
   }
 
   function setAnswerTab(tab) {
@@ -7276,6 +9453,12 @@
       bankOffset = bankItems.length;
       bankHasMore = items.length >= Number(data.limit || BANK_PAGE_SIZE);
       applyBankCounts(data.counts);
+      if (data.sourceCounts) {
+        bankSourceCounts = {
+          course: Math.max(0, Number(data.sourceCounts.course || 0)),
+          custom: Math.max(0, Number(data.sourceCounts.custom || 0)),
+        };
+      }
       renderBankCounts();
       renderMaintenance();
       renderStock();
@@ -7367,20 +9550,45 @@
   async function clearBank(mode, confirmKey) {
     $("maintenanceError").textContent = "";
     $("maintenanceState").textContent = "";
-    if (!confirm(t(confirmKey))) return;
+    const collection = importCollections.find((item) => item.id === clearCollectionId);
+    if (clearSource === "custom" && !collection) {
+      $("maintenanceError").textContent = t("maintenanceSourceNoTags");
+      return;
+    }
+    let message = t(confirmKey);
+    if (clearSource === "all") {
+      message = t("confirmClearAllMixed", { n: bankSourceCounts.custom }) + "\n" + message;
+    } else if (clearSource === "custom") {
+      message = t("confirmClearCustom", { name: collection.name }) + "\n" + message;
+    }
+    if (!confirm(message)) return;
+    const body = { mode, source: clearSource };
+    if (clearSource === "custom") body.collectionId = collection.id;
     try {
       const data = await api("/api/quiz/admin/bank/clear", {
         method: "POST",
         admin: true,
-        body: { mode },
+        body,
       });
       applyBankCounts(data.counts);
+      if (data.sourceCounts) {
+        bankSourceCounts = {
+          course: Math.max(0, Number(data.sourceCounts.course || 0)),
+          custom: Math.max(0, Number(data.sourceCounts.custom || 0)),
+        };
+      }
       if (publicState && data.bankState) publicState.bankState = data.bankState;
       $("maintenanceState").textContent = t("clearDone");
       renderStock();
       renderBankCounts();
+      renderMaintenanceSource();
       renderMaintenance();
       await refreshStatus();
+      try {
+        await loadAdminSession();
+      } catch (_) {
+        // The clear already succeeded; the tag counts catch up next refresh.
+      }
       if (activeTab === "bank") loadBank(true);
     } catch (error) {
       $("maintenanceError").textContent = errorText(error);
@@ -7600,6 +9808,54 @@
     });
     $("levelEmptyConfig").addEventListener("click", openGenConfigPage);
 
+    $("addCustomLevel").addEventListener("click", () => {
+      // Without a tag there is nothing to draw questions from, so send the
+      // parent to the import page instead of an editor with an empty tag list.
+      if (!importCollections.length) {
+        startImportFromCustomLevel();
+        return;
+      }
+      openCustomLevelEditor(null);
+    });
+    $("customLevelList").addEventListener("click", (event) => {
+      const edit = event.target.closest("[data-custom-level-edit]");
+      if (edit && !edit.disabled) {
+        openCustomLevelEditor(edit.dataset.customLevelEdit);
+        return;
+      }
+      const up = event.target.closest("[data-custom-level-up]");
+      if (up && !up.disabled) {
+        moveCustomLevel(up.dataset.customLevelUp, -1);
+        return;
+      }
+      const down = event.target.closest("[data-custom-level-down]");
+      if (down && !down.disabled) {
+        moveCustomLevel(down.dataset.customLevelDown, 1);
+        return;
+      }
+      const remove = event.target.closest("[data-custom-level-delete]");
+      if (remove && !remove.disabled) {
+        deleteCustomLevel(remove.dataset.customLevelDelete);
+      }
+    });
+    $("backFromCustomLevel").addEventListener("click", () => {
+      customLevelEditingId = null;
+      customLevelDraftTag = "";
+      showGenPage("answer");
+      renderAnswerPage();
+    });
+    $("customLevelName").addEventListener("input", () => {
+      $("customLevelError").textContent = "";
+    });
+    $("customLevelTags").addEventListener("click", (event) => {
+      const choice = event.target.closest("[data-custom-tag-id]");
+      if (!choice || choice.disabled) return;
+      customLevelDraftTag = choice.dataset.customTagId;
+      renderCustomLevelEditor();
+    });
+    bindReliableTap($("saveCustomLevel"), saveCustomLevelDraft);
+    $("customLevelEditorGoImport").addEventListener("click", startImportFromCustomLevel);
+
     $("roundWheel").addEventListener("scroll", () => {
       const wheel = $("roundWheel");
       const index = Math.round(wheel.scrollTop / ROUND_ITEM_HEIGHT);
@@ -7664,6 +9920,63 @@
     });
     $("refreshBank").addEventListener("click", () => loadBank(true));
     $("bankMore").addEventListener("click", () => loadBank(false));
+    $("openBankImport").addEventListener("click", openBankImport);
+    $("bankEmptyImport").addEventListener("click", openBankImport);
+    $("bankEmptyGenerate").addEventListener("click", () => {
+      setTab("generate", true);
+      openGenConfigPage();
+    });
+    $("backFromImport").addEventListener("click", backFromImport);
+    $("importTagName").addEventListener("focus", openImportTagSuggest);
+    // Escape or a blur leaves the input focused in some browsers; a tap on the
+    // already-focused input must still reopen the suggestion list.
+    $("importTagName").addEventListener("click", openImportTagSuggest);
+    $("importTagName").addEventListener("input", onImportTagInput);
+    $("importTagName").addEventListener("keydown", onImportTagKeydown);
+    $("importTagName").addEventListener("blur", onImportTagBlur);
+    $("importTagName").addEventListener("compositionstart", () => {
+      importTagComposing = true;
+    });
+    $("importTagName").addEventListener("compositionend", () => {
+      importTagComposing = false;
+      onImportTagInput();
+    });
+    $("clearImportTag").addEventListener("click", clearImportTagName);
+    document.addEventListener("pointerdown", (event) => {
+      const field = $("importTagField");
+      if (!field || !field.contains(event.target)) closeImportTagSuggest();
+    });
+    window.addEventListener("resize", fitImportTagSuggest);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", fitImportTagSuggest);
+    }
+    $("importText").addEventListener("input", () => {
+      importFileName = "";
+      $("importFileName").textContent = "";
+      if ($("importFile").value) $("importFile").value = "";
+      invalidateImportPreview();
+    });
+    $("importFile").addEventListener("change", () => {
+      loadImportFile($("importFile").files && $("importFile").files[0]);
+    });
+    $("downloadTemplate").addEventListener("click", downloadImportTemplate);
+    $("copyPrompt").addEventListener("click", copyImportPrompt);
+    $("importDifficultyChips").addEventListener("click", (event) => {
+      const chip = event.target.closest("[data-import-difficulty]");
+      if (!chip) return;
+      importDefaultDifficulty = chip.dataset.importDifficulty;
+      invalidateImportPreview();
+      renderBankImport();
+    });
+    bindReliableTap($("parseImport"), parseImport);
+    bindReliableTap($("confirmImport"), confirmImport);
+    $("maintenanceSource").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-clear-source]");
+      if (button) setClearSource(button.dataset.clearSource);
+    });
+    $("maintenanceCollection").addEventListener("change", () => {
+      clearCollectionId = $("maintenanceCollection").value;
+    });
 
     $("clearUnused").addEventListener("click", () => clearBank("unused", "confirmClearUnused"));
     $("clearAnswered").addEventListener("click", () => clearBank("answered", "confirmClearAnswered"));

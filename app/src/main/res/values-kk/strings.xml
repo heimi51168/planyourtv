@@ -112,9 +112,12 @@
     <string name="wx_thunder">Нөсер</string>
     <string name="wp_daily_latest">Әрқашан бүгінгісі</string>
     <string name="wp_live">Аэрожиын · басты экранның жоғарғы қатарында ойнайды (екі қатарлы көріністе — екі қатарда да)</string>
-    <string name="wp_photos_rotate">Күніне біреуі</string>
+    <string name="wp_photos_rotate">Кезекпен</string>
     <string name="wp_daily_note">Bing күн суреті, күн сайын жаңасына ауысады.</string>
-    <string name="wp_photos_rotate_note">Күн сайын фотоларыңыздың басқасы.</string>
+    <string name="wp_photos_rotate_note">Фотоларыңыз кезекпен: келесісі күн сайын немесе төменде таңдағаныңыздай жиі.</string>
+    <string name="st_photo_every">Келесі фото</string>
+    <string name="st_photo_every_day">Күн сайын</string>
+    <string name="st_photo_every_hint">Басты экран келесі фотоға қаншалықты жиі ауысады.</string>
     <string name="wp_photo_note">Сіздің фотоңыз. Телефоннан тағы жіберу үшін оң жақтағы кодты сканерлеңіз.</string>
     <string name="wp_auto_note">Жарық таңдалған қолданбаның суретінен алынады.</string>
     <string name="wp_screensaver">Экран қорғаушы</string>
@@ -155,6 +158,11 @@
     <string name="st_clock_small">Кіші</string>
     <string name="st_clock_large">Үлкен</string>
     <string name="st_clock_size_hint">«Кіші» уақыт пен ауа райын бұрышта бір жолда көрсетеді. «Үлкен» экранның жоғарғы жағына үлкен сағатты, оның үстіне күнді, астына ауа райын қояды.</string>
+    <string name="st_clock_hours">Уақыт пішімі</string>
+    <string name="st_clock_hours_system">ТД сияқты</string>
+    <string name="st_clock_hours_24">24 сағат</string>
+    <string name="st_clock_hours_12">12 сағат</string>
+    <string name="st_clock_hours_hint">«ТД сияқты» теледидардың уақыт параметріне сүйенеді, ол болмаса 24 сағатты көрсетеді.</string>
     <string name="st_names">Қолданба атаулары</string>
     <string name="st_names_focused">Таңдалған қолданба</string>
     <string name="st_names_all">Барлық қолданбалар</string>
@@ -177,6 +185,9 @@
     <string name="st_off">Өшірулі</string>
     <string name="st_hidden_apps">Жасырын қолданбалар</string>
     <string name="st_hidden_apps_hint">Басты экраннан жасырылған қолданбалар қайтару үшін осында сақталады. Ата-аналық PIN-код орнатылған болса, алдымен сол сұралады.</string>
+    <string name="st_home_lock">Экранды бекіту</string>
+    <string name="st_home_lock_hint">Қосулы болса, қолданбада OK түймесін басып тұру немесе «Мәзір» мәзірді ашпайды, сондықтан қолданбаларды байқаусызда жылжыту, жасыру не жою мүмкін емес. Ата-ана PIN коды болса, өшіру үшін PIN керек.</string>
+    <string name="home_locked_notice">Экран бекітілген. Қолданбаларды реттеу үшін «Жекелендіру» бөлімінде «Экранды бекіту» параметрін өшіріңіз.</string>
     <string name="st_hidden_none">Жоқ</string>
     <string name="st_hidden_count">%d</string>
     <string name="st_focus_high">Жоғары контраст</string>
@@ -190,6 +201,10 @@
     <string name="st_effects_hint">Жеңіл: панельдер қарапайым, таңдалған қолданбада жылтыр жоқ, экран 60 Гц-те қалады. Кідіретін теледидарларға арналған.</string>
     <string name="st_effects_auto_lite_hint">Бұл теледидарда жад аз немесе Android ескі, сондықтан «Авто» жеңілді таңдайды.</string>
     <string name="cc_inputs_settings">Көздер параметрлері</string>
+    <string name="cc_inputs_list">Тізімде көрсету</string>
+    <string name="cc_inputs_list_hint">Теледидарда жоқ немесе пайдаланбайтын көздерден белгіні алыңыз. Олар тізімнен және басты экраннан жоғалады.</string>
+    <string name="cc_inputs_cec">Құрылғы қосылғанда ауысу</string>
+    <string name="cc_inputs_cec_hint">Консоль немесе приставка HDMI-CEC арқылы қосылғанда (One Touch Play), теледидар оның көзіне ауысады, өзінің басты экраны сияқты. Әр теледидар бұл туралы хабарламайды; Amlogic теледидарлары (көптеген Xiaomi) хабарлайды.</string>
     <string name="cc_inputs_pin">Басты экранда көрсету (кез келген саны)</string>
     <string name="cc_inputs_boot">Теледидар қосылғанда (біреу)</string>
     <string name="cc_inputs_boot_none">Ештеңе, PlanYourTV-де қалу</string>
@@ -247,6 +262,7 @@
     <string name="weather_rain">Жаңбыр</string>
     <string name="weather_snow">Қар</string>
     <string name="weather_thunder">Найзағай</string>
+    <string name="weather_temperature">%1$d°</string>
     <string name="weather_high_low">Макс.: %1$d°  Мин.: %2$d°</string>
     <string name="st_columns">Қатардағы қолданбалар</string>
     <string name="st_columns_hint">Басты экранда және қалталарда бір қатарға қанша қолданба сыяды. Алты — бірден көбірек көрінеді; төрт — үлкенірек, алыстан жақсы көрінеді.</string>
@@ -281,6 +297,7 @@
     <!-- Kids and Elders mode (settings/Restricted) -->
     <string name="kids_title">Балалар мен қарттар</string>
     <string name="kids_hint">Басты экранда тек таңдалған қолданбалар, ештеңені орнынан жылжыту мүмкін емес. Шығу үшін ата-ана PIN коды керек; заставка қосылғанда немесе теледидар ұйықтағанда режим өзі қайтады.</string>
+    <string name="kids_position">PlanYourTV баланың экран уақытын басқаруға және өзін-өзі тәртіпке баулуға көмектеседі. Режимді қоспас бұрын баламен сөйлесіңіз.</string>
     <string name="kids_kind">Кімге</string>
     <string name="kids_kind_kids">Балалар</string>
     <string name="kids_kind_elders">Қарттар</string>
@@ -332,4 +349,18 @@
     <string name="kids_blocked">«%s» мұнда қолжетімсіз</string>
     <string name="kids_warn">%d мин қалды</string>
     <string name="kids_warn_break">%d минуттан кейін үзіліс</string>
+
+    <!-- PlanYourTV туралы: нұсқа, Aerial-ға алғыс және MIT лицензиясы. -->
+    <string name="about_section">Бағдарлама туралы</string>
+    <string name="about_title">PlanYourTV туралы</string>
+    <string name="about_open">Толығырақ</string>
+    <string name="about_row_hint">Нұсқа %1$s · Aerial (MIT) негізінде</string>
+    <string name="about_version">Нұсқа %1$s (%2$d)</string>
+    <string name="about_built_on">PlanYourTV — ашық бастапқы кодты Aerial лаунчеріне негізделген тәуелсіз жоба. Aerial авторы pengchujin мен барлық үлес қосушыларға рахмет.</string>
+    <string name="about_not_official">Бұл Aerial-дың ресми шығарылымы емес. Жоба Apple, Xiaomi, TCL және басқа компаниялармен байланысты емес және олардың қолдауына ие емес.</string>
+    <string name="about_project">planyourtv.me · github.com/heimi51168/planyourtv</string>
+    <string name="about_license_title">MIT лицензиясы</string>
+    <string name="about_license_hint">Aerial MIT лицензиясымен таратылады. Мәтінді жоғары және төмен көрсеткілермен оқыңыз.</string>
+    <string name="about_license_missing">Лицензия мәтіні қолжетімсіз.</string>
+    <string name="about_hint">Жабу үшін Артқа басыңыз</string>
 </resources>

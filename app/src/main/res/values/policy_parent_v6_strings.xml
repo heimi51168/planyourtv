@@ -73,6 +73,13 @@
     <string name="policy_v6_activation_manual">Manual</string>
     <string name="policy_v6_activation_manual_hint">Quiz or single-use unlock; the parent sets each segment\'s length.</string>
     <string name="policy_v6_activation_tab_hint">Each mode keeps its own schedule, limits, rest and screen-off buffer. Select a tab to switch; the settings below belong to that mode only.</string>
+    <string name="policy_v6_activation_confirm_auto_title">Switch to Automatic mode?</string>
+    <string name="policy_v6_activation_confirm_auto_body">The TV cannot start a quiz challenge in Automatic mode. Current automatic rules: up to %1$d minutes per day, up to %2$d minutes per session, with %3$d minutes of rest between sessions.</string>
+    <string name="policy_v6_activation_confirm_manual_title">Switch to Manual mode?</string>
+    <string name="policy_v6_activation_confirm_manual_body">In Manual mode, a parent starts each session on the lock screen; quiz challenges are available.</string>
+    <string name="policy_v6_activation_confirm_end_session">The current timing session will end immediately.</string>
+    <string name="policy_v6_activation_confirm_cancel">Cancel</string>
+    <string name="policy_v6_activation_confirm_switch">Switch</string>
     <string name="policy_v6_quiz_challenge">Quiz challenge</string>
     <string name="policy_v6_quiz_hint">In Manual mode, correct answers unlock TV time. When off, the lock screen hides the quiz entry.</string>
     <string name="policy_v6_quiz_busy">A quiz round is running. Change this after it ends.</string>
@@ -82,6 +89,13 @@
     <string name="policy_v6_apps_shared_hint">Entertainment and study apps are shared by automatic and manual modes; switching timing mode does not change them.</string>
     <string name="policy_v6_study_saved">Study apps saved</string>
     <string name="policy_v6_apps_in_study">This app is a study app. Remove it from Study apps first.</string>
+
+    <string name="policy_v6_source_section">Other entries</string>
+    <string name="policy_v6_source_entries">Show source entries</string>
+    <string name="policy_v6_source_entries_on">Shown in kids mode</string>
+    <string name="policy_v6_source_entries_off">Hidden in kids mode</string>
+    <string name="policy_v6_source_entries_hint">Only Aerial\'s own entries are controlled; the TV\'s native Source key or CEC may still switch inputs.</string>
+    <string name="policy_v6_source_entries_saved">Source entry setting saved</string>
 
     <string name="policy_v6_switch_off_confirm">Press OK again to turn off</string>
     <string name="policy_v6_switch_off_migrating">Migration is not finished. Turn it on again to continue.</string>
@@ -93,4 +107,10 @@
     <string name="policy_v6_consent_body">With remote management on, this TV uploads its parent-center settings (including the parent password verifier), time progress and quiz records to the PlanYourTV cloud for remote management and record viewing on your phone, not for advertising or other purposes. The AI model key (API Key) stored on this TV is never uploaded. You can unbind on the phone at any time; uploading stops and the TV keeps its local settings. By continuing, you confirm that you are authorized to manage this TV.</string>
     <string name="policy_v6_consent_agree">Agree and show QR code</string>
     <string name="policy_v6_consent_cancel">Not now</string>
+
+    <string name="policy_v6_auto_update">Auto update</string>
+    <string name="policy_v6_auto_consent_title">Turn on child mode and auto update?</string>
+    <string name="policy_v6_auto_consent_body">Turning on child mode also turns on Auto Update, so this TV gets new versions and fixes promptly. New versions download and install automatically while the TV is idle, without interrupting viewing. You can turn Auto Update off at any time in Parent Center.</string>
+    <string name="policy_v6_auto_consent_confirm">Turn both on</string>
+    <string name="policy_v6_auto_consent_cancel">Cancel</string>
 </resources>

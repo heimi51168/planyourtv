@@ -17,7 +17,7 @@
 <img alt="Android TV 5.0+" src="https://img.shields.io/badge/Android%20TV-5.0%2B-3ddc84?style=flat-square&logo=android&logoColor=white">
 <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.x-7f52ff?style=flat-square&logo=kotlin&logoColor=white">
 <img alt="Jetpack Compose" src="https://img.shields.io/badge/Jetpack-Compose-4285f4?style=flat-square&logo=jetpackcompose&logoColor=white">
-<img alt="基于 Aerial 1.85" src="https://img.shields.io/badge/%E5%9F%BA%E4%BA%8E-Aerial%201.85-1f6feb?style=flat-square">
+<img alt="基于 Aerial 1.93" src="https://img.shields.io/badge/%E5%9F%BA%E4%BA%8E-Aerial%201.93-1f6feb?style=flat-square">
 
 </div>
 
@@ -27,7 +27,7 @@ PlanYourTV 是一个**桌面级儿童时间管理 App**：它替代电视自带�
 
 > 常见搜索：Android TV 儿童模式、小米电视儿童锁、TCL 电视时间管理、电视屏幕时间、儿童电视桌面、答题解锁电视、Aerial 儿童桌面。
 
-> **当前社区源码版本：`1.85.011`（versionCode 116011），基于 Aerial 1.85。** 小米电视 `standard` 已由本项目真机验证；其他机型和 `guard` 版本沿用 Aerial 上游的支持范围，本项目未逐一验证。
+> **当前社区源码版本：`1.93.000`（versionCode 131000），基于 Aerial 1.93。** 小米电视 `standard` 已由本项目真机验证；其他机型和 `guard` 版本沿用 Aerial 上游的支持范围，本项目未逐一验证。
 
 ## 项目速览
 
@@ -35,12 +35,12 @@ PlanYourTV 是一个**桌面级儿童时间管理 App**：它替代电视自带�
 |---|---|
 | 名称 | PlanYourTV（中文可称「计划电视」） |
 | 类型 | Android TV 桌面 / 儿童时间管理 / 家长控制 |
-| 平台 | Android TV 5.0+（API 21+），不需要 root |
+| 平台 | Android TV 5.0+（API 21+）；Android 4.x 不支持；不需要 root |
 | 包名 | `com.planyourtv.tv` |
-| 当前版本 | `1.85.011` / 116011 |
-| 上游基线 | [Aerial](https://github.com/pengchujin/aerial-tv) 1.85（MIT） |
+| 当前版本 | `1.93.000` / 131000 |
+| 上游基线 | [Aerial](https://github.com/pengchujin/aerial-tv) 1.93（MIT） |
 | 许可证 | MIT |
-| 下载 | [官方 APK](https://planyourtv.me/download/planyourtv-standard.apk) |
+| 下载 | [standard APK](https://planyourtv.me/download/planyourtv-standard.apk) · [guard APK](https://planyourtv.me/download/planyourtv-guard.apk) |
 | 数据 | 本地优先；不需要账号；本地模式不依赖服务器 |
 | 界面语言 | 简体中文、英语、俄语、乌克兰语、哈萨克语 |
 
@@ -62,7 +62,7 @@ PlanYourTV 是一个**桌面级儿童时间管理 App**：它替代电视自带�
 - **每日额度**：每天最多看多少分钟，用完即止。
 - **单次上限**：一次连续观看最多多少分钟，到点自动结束。
 - **休息间隔**：一次会话结束后强制休息一段时间，避免连续刷屏。
-- **自动开始 / 家长确认**：自动模式按规则开始；手动模式由家长在锁屏输入家长 PIN 后开始。
+- **自动开始 / 家长确认**：自动模式按规则开始；手动模式由家长在锁屏输入家长 PIN 后开始。切换自动 / 手动模式前会弹窗确认，说明计时规则会怎样变化。
 - **单次计时**：家长可以在锁屏或家长中心手动开始一段 **5–120 分钟**的观看时间（默认 20 分钟，5 分钟一档），适合周末临时加时。
 - **看得见的倒计时**：剩余时间、休息倒计时、下一次可用时段直接显示在电视上。
 
@@ -94,6 +94,7 @@ PlanYourTV 是一个**桌面级儿童时间管理 App**：它替代电视自带�
 ### 5. 本地题库 + AI 出题 + 错题管理
 
 - **内置 4,900 道题**：1–9 年级上册期中必考，覆盖语文、数学、英语、科学，以及初中道德与法治、历史、地理、生物、物理、化学，开箱即用。
+- **手动导入题库**：家长在手机设置页上传 `.json` / `.txt` 文件或直接粘贴题目，可选择已有标签或新建标签，预览重复题目和剩余容量后导入；只接受单选题。题目和标签只保存在电视上，导入的标签可以直接作为自定义关卡。
 - **按范围出题**：可按 1–9 年级、学期、学科、教材版本、真实单元 / 期中 / 期末 / 复习范围筛选，避免题目超纲；教材目录来自国家中小学智慧教育平台（109 本教材、765 个节点、673 个单元）。
 - **AI 批量出题（可选）**：家长在手机设置页配置自己的 OpenAI 兼容模型服务（默认 DeepSeek 接口，Key 需家长自行到 DeepSeek 开放平台创建），AI 按真实单元标题和课时范围生成 20 / 30 / 50 道题，完成后**自动加入电视本地题库**。
 - **密钥只在电视上**：API Key 保存在电视端，手机页面通过电视代理调用模型；请求只包含学科、年级、难度、数量等出题参数，不包含家庭信息。不配置 AI 也能使用内置题库和手动题库。
@@ -105,8 +106,9 @@ PlanYourTV 是一个**桌面级儿童时间管理 App**：它替代电视自带�
 - **六位家长 PIN**：首次开启会生成一次性恢复码，请拍照保存；忘记 PIN 可用恢复码重置。默认 PIN 会显示风险提示，请先修改。
 - **临时解锁**：家长可以短时间接管电视，家长使用时间不计入孩子的额度。
 - **电视端家长中心**：在电视上直接调整规则、学习 App、计时和答题设置。
+- **自动更新（可选）**：支持静默安装的电视可在家长中心开启自动更新；新版本会在后台下载，并在其他 App 停留一段时间后安装，设置和题库保留。其他电视仍可在控制中心手动下载安装。
 - **手机局域网设置页**：电视运行时，同一 Wi-Fi 下的手机可以打开设置页，管理规则、题库、错题、壁纸和 App 布局；不需要账号，也不经过公网。
-- **Aerial 桌面体验**：App 网格、文件夹、壁纸、屏保、控制中心、HDMI 信号源和按键声音都保留；支持 `standard` 和 `guard` 两种构建。
+- **Aerial 桌面体验**：App 网格、文件夹、壁纸、屏保、控制中心、HDMI 信号源和按键声音都保留；支持 `standard` 和 `guard` 两种构建。控制中心的「信号源设置」可以选择要显示的信号源、是否随 HDMI-CEC 设备开机自动切换，以及开机时进入哪个信号源。
 - **Home Guard**：在固件强行把 Home 键交给自带桌面的电视上，通过无障碍服务守住 PlanYourTV 的入口。
 - **五种界面语言**：简体中文、英语、俄语、乌克兰语、哈萨克语。
 
@@ -116,17 +118,16 @@ PlanYourTV 是一个**桌面级儿童时间管理 App**：它替代电视自带�
 
 ## 兼容性：与 Aerial 保持一致
 
-PlanYourTV 保留 Aerial 的设备适配层和桌面架构，**设备兼容范围与 Aerial 保持一致**。Aerial 支持的 Android TV 5.0+ 设备，通常也可以运行 PlanYourTV；具体机型仍以 Aerial 上游的适配记录为准。
+PlanYourTV 保留 Aerial 的设备适配层和桌面架构，**设备兼容范围与 Aerial 保持一致**。Aerial 支持的 Android TV 5.0+ 设备，通常也可以运行 PlanYourTV；具体机型仍以 Aerial 上游的适配记录为准。项目只发布 Android 5.0+ 版本，Android 4.x 不支持，也不再提供 Lite APK。
 
 | 设备 / 版本 | 状态 |
 |---|---|
 | 小米电视，`standard` 版本 | 本项目真机验证 |
 | Aerial 上游支持的其他 Android TV 5.0+ 设备 | 沿用 Aerial 支持范围；本项目未逐一验证 |
 | `guard` 版本（固件拒绝桌面类 App 时使用） | 沿用 Aerial；本项目未真机验证 |
-| Android 4.0–4.4 / Aerial Lite | 社区源码快照不包含 |
 | LG webOS、三星 Tizen、鸿蒙智慧屏 | 不是 Android TV，不支持 |
 
-安装前请确认电视是 **Android 5.0 及以上**，并且你能通过 ADB 连接电视。替换桌面有风险：请保留电视自带桌面，不要卸载或停用系统应用。
+安装前请确认电视运行 **Android 5.0 或更高版本**，并且你能通过 ADB 连接电视。先装 `standard`；如果固件拒绝桌面类 App，再换 `guard`。安装器会在这类已知拒绝场景自动重试 guard。替换桌面有风险：请保留电视自带桌面，不要卸载或停用系统应用。
 
 ## 安装
 
@@ -143,11 +144,12 @@ PlanYourTV 保留 Aerial 的设备适配层和桌面架构，**设备兼容范�
 请严格按下面的步骤做，并把每一步的真实命令输出保留下来：
 
 1. 运行 adb version。没有 adb 时，从 https://developer.android.com/tools/releases/platform-tools 下载 Google platform-tools，解压后使用其中的 adb。
-2. 运行 adb connect <电视IP>:5555 和 adb devices，确认电视状态是 device。电视没有开 ADB 时，告诉我按遥控器怎么开，不要自己安装任何 ADB 开启器。
-3. 运行 adb shell getprop ro.build.version.sdk。如果小于 21，停止并告诉我：这个社区版本不支持 Android 4.x。
-4. 只从 https://planyourtv.me/download/planyourtv-standard.apk 下载 APK。不要从其他网站下载，不要安装任何其他 App（包括应用商店、ADB 开启器、投屏或清理工具）。
-5. 运行 adb install -r planyourtv-standard.apk。如果固件拒绝安装桌面类 App，改用 https://planyourtv.me/download/planyourtv-guard.apk 重试；不要修改 manifest，不要卸载或停用电视自带的桌面。
-6. 安装成功后，依次运行：
+2. 运行 adb connect <电视IP>:5555 和 adb devices，确认电视状态是 device。电视没有开 ADB 时，告诉我按遥控器怎么开。
+3. 运行 adb shell getprop ro.build.version.sdk。如果小于 21，停止并告诉我 PlanYourTV 需要 Android 5.0 或更高版本，Android 4.x 不支持。最后把命令的原始输出贴给我。
+4. 安装前检查其他第三方桌面：PlanYourTV 本身就是桌面，但 Android 允许同时安装多个桌面，只有默认桌面会在按 Home 时打开。运行 adb shell pm list packages -3 和 adb shell cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME -c android.intent.category.DEFAULT 列出第三方 HOME 应用；默认保留它们并继续安装，不要自动卸载。装好后把 PlanYourTV 设为默认桌面。只有我明确要求清理时，才卸载同时出现在上述第三方包列表和 HOME 查询结果里的包（排除 com.planyourtv.tv）：先告诉我卸载会删除该应用的数据，我确认后运行 adb shell pm uninstall <包名>，再用 adb shell pm path <包名> 确认没有输出。不要卸载电视自带桌面或任何系统应用。
+5. 如果 SDK 是 21 或更大，推荐从 https://planyourtv.me/download/planyourtv-standard.apk 下载 APK。安装推荐用电脑；其他安装方式不禁止，本项目未逐一验证。
+6. 运行 adb install -r planyourtv-standard.apk。如果固件拒绝安装桌面类 App，改用 https://planyourtv.me/download/planyourtv-guard.apk 重试；不要修改 manifest，不要卸载或停用电视自带的桌面。已知的安装拒绝由官方安装器自动处理，手动安装时只需按这条回退。
+7. 安装成功后，依次运行：
 
 adb shell pm grant com.planyourtv.tv android.permission.ACCESS_FINE_LOCATION
 adb shell pm grant com.planyourtv.tv android.permission.WRITE_SECURE_SETTINGS
@@ -161,9 +163,9 @@ adb shell cmd notification allow_listener com.planyourtv.tv/app.orchard.tv.guard
 adb shell am start -W -n com.planyourtv.tv/app.orchard.tv.MainActivity
 
 某一条权限命令报错可以继续，但要记录下来。不要覆盖或删除其他无障碍/通知监听服务。
-7. 等 5 秒，运行 adb shell cmd package compile -m speed -f com.planyourtv.tv。
-8. 请我按遥控器主页键，在系统询问时选择 PlanYourTV。如果固件仍然回到自带桌面，请我在电视的无障碍设置里启用 PlanYourTV 的 Home Guard；不要停用自带桌面。
-9. 验收，并把原始输出贴给我：
+8. 等 5 秒，运行 adb shell cmd package compile -m speed -f com.planyourtv.tv。
+9. 请我按遥控器主页键，在系统询问时选择 PlanYourTV。如果固件仍然回到自带桌面，请我在电视的无障碍设置里启用 PlanYourTV 的 Home Guard；不要停用自带桌面。
+10. 验收，并把原始输出贴给我：
 
 adb shell cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME
 adb shell settings get secure enabled_accessibility_services
@@ -171,9 +173,9 @@ adb shell dumpsys window | grep mCurrentFocus
 adb shell dumpsys package com.planyourtv.tv | grep versionName
 
 Windows 上把 grep 换成 findstr。
-10. 最后提醒我：在电视上打开家长中心，把默认 PIN 123456 改掉，并保存好一次性恢复码。不要替我设置 PIN。
+11. 最后提醒我：在电视上打开家长中心，把默认 PIN 123456 改掉，并保存好一次性恢复码。不要替我设置 PIN。
 
-禁止：卸载或停用任何系统应用；恢复出厂设置；删除电视上的文件；把 5555 端口暴露到公网；重启电视前必须先问我。任何一步失败，停下来把命令和原始输出贴给我，不要自己找别的 APK 或安装其他工具。
+禁止：卸载或停用任何系统应用；恢复出厂设置；删除电视上的文件；把 5555 端口暴露到公网；重启电视前必须先问我。任何一步失败，停下来把命令和原始输出贴给我，由我决定下一步。
 ```
 
 安装完成后，电视上打开 PlanYourTV → 家长中心 → 设置规则 → 修改默认 PIN。完整的 AI 安装说明书（品牌 ADB 开关、权限含义、验收、排错和卸载）见 [docs/AGENT-INSTALL.md](docs/AGENT-INSTALL.md)；人工步骤、Home Guard 和屏保设置见 [docs/INSTALL.md](docs/INSTALL.md)。
@@ -206,8 +208,8 @@ cd planyourtv
 
 ## 升级与卸载
 
-- **升级**：电视上出现「有新版本」时，按提示下载并安装；设置和题库会保留。也可以重新运行安装步骤覆盖安装。
-- **卸载**：先把默认桌面切回电视自带桌面，再运行 `adb uninstall com.planyourtv.tv`。卸载会删除本机规则、题库、壁纸和照片。
+- **升级**：电视上出现「有新版本」时，按提示下载并安装；支持静默安装的电视可以在家长中心开启自动更新。设置和题库都会保留，也可以重新运行安装步骤覆盖安装。
+- **卸载**：先把默认桌面切回电视自带桌面，再运行 `adb uninstall com.planyourtv.tv`。卸载会删除本机规则、题库、壁纸和照片；用安装器清理选项明确卸载的其他第三方桌面不会自动装回。
 - **还原**：不要把电视自带桌面卸载或停用；它是你随时退回原桌面的保险。
 
 ## 隐私与安全
@@ -240,7 +242,7 @@ PlanYourTV 是基于 [Aerial](https://github.com/pengchujin/aerial-tv)（MIT）�
 
 **支持哪些电视？**
 
-Android TV 5.0+，兼容范围与 Aerial 保持一致。小米 `standard` 已真机验证；其他机型未逐一验证。Android 4.x、LG webOS、三星 Tizen 和鸿蒙智慧屏不支持。
+Android TV 5.0+，兼容范围与 Aerial 保持一致。小米 `standard` 已真机验证；其他机型未逐一验证。Android 4.x 不支持。LG webOS、三星 Tizen 和鸿蒙智慧屏不支持。
 
 更多问题见 [docs/FAQ.md](docs/FAQ.md)。
 
@@ -272,7 +274,7 @@ PlanYourTV 与 Apple、小米、TCL、索尼或 Aerial 项目没有隶属、背�
 
 **PlanYourTV is an open-source, desktop-level parental-control launcher for Android TV.** It replaces the TV home screen and enforces screen-time rules at the launcher level: scheduled windows, daily and per-session limits, rest breaks, an app allowlist, a study mode, and a quiz challenge that lets kids earn extra viewing time.
 
-Built on [Aerial](https://github.com/pengchujin/aerial-tv) 1.85 (MIT). Current community source: **`1.85.011`** / 116011. Xiaomi `standard` is verified on a real TV; other devices follow Aerial's upstream support and are not verified by this project.
+Built on [Aerial](https://github.com/pengchujin/aerial-tv) 1.93 (MIT). Current community source: **`1.93.000`** / 131000. Xiaomi `standard` is verified on a real TV; other devices follow Aerial's upstream support and are not verified by this project.
 
 ### Highlights
 
@@ -280,9 +282,10 @@ Built on [Aerial](https://github.com/pengchujin/aerial-tv) 1.85 (MIT). Current c
 - **App-level scope** — only the entertainment apps selected by the parent are allowed during a timed session; learning apps are never timed and are available through Study mode on the lock screen.
 - **Study mode** — shows only the configured learning apps; no timer, no quota, no PIN.
 - **Quiz unlock** — the child picks an answer scope, then answers 5–50 questions (5-question steps, default 5; 60 seconds each). Easy / medium / hard questions carry separate rewards and deductions; a settable minimum net score gates the unlock and a per-round cap limits the payout. Parents can design up to six named levels, and every answer gets feedback and an explanation.
-- **Local question bank + AI generation (optional)** — 4,900 built-in first-semester midterm questions for grades 1–9 across Chinese, math, English, science and junior-high subjects. AI generation targets real textbook units (109 books, 765 nodes, 673 units) and supports 20 / 30 / 50-question batches through the parent's own OpenAI-compatible provider (DeepSeek by default; the parent creates the key); the API key stays on the TV.
+- **Local question bank, manual import + AI generation (optional)** — 4,900 built-in first-semester midterm questions for grades 1–9 across Chinese, math, English, science and junior-high subjects. A parent can also import a `.json` / `.txt` file or paste single-choice questions on the phone page, choose or create a tag, and preview duplicates and free space; imported tags can become custom levels. AI generation targets real textbook units (109 books, 765 nodes, 673 units) and supports 20 / 30 / 50-question batches through the parent's own OpenAI-compatible provider (DeepSeek by default; the parent creates the key); the API key stays on the TV.
 - **Question bank and wrong-answer management** — filters, deduplication, capacity management, wrong-answer review and selective clearing.
-- **Parent controls** — six-digit PIN, one-time recovery code, temporary parent override, TV parent center, and a LAN phone settings page.
+- **Parent controls** — six-digit PIN, one-time recovery code, temporary parent override, TV parent center, and a LAN phone settings page. Switching between automatic and manual modes requires an explicit confirmation that explains how the timing rules change.
+- **Updates and inputs** — optional background auto update on TVs that allow silent installs, keeping settings and question bank, plus configurable input visibility, HDMI-CEC switching and boot input in Control Center.
 - **Aerial desktop experience** — app grid, folders, wallpapers, screensaver, control center, HDMI sources, Home Guard, `standard`/`guard` flavors and five UI languages.
 - **Local-first privacy** — no account, no advertising SDK, no analytics SDK; optional update, weather and wallpaper requests only.
 
@@ -302,11 +305,11 @@ adb shell appops set com.planyourtv.tv SYSTEM_ALERT_WINDOW allow
 adb shell am start -W -n com.planyourtv.tv/app.orchard.tv.MainActivity
 ```
 
-Download: [planyourtv-standard.apk](https://planyourtv.me/download/planyourtv-standard.apk) · Full guide: [docs/INSTALL.md](docs/INSTALL.md)
+Download: [planyourtv-standard.apk](https://planyourtv.me/download/planyourtv-standard.apk) · [planyourtv-guard.apk](https://planyourtv.me/download/planyourtv-guard.apk) when the firmware refuses a home-screen app · Full guide: [docs/INSTALL.md](docs/INSTALL.md)
 
 ### Compatibility
 
-Android TV 5.0+ (API 21+), no root. Device support follows Aerial; only Xiaomi `standard` has been verified by this project. The `guard` flavor is for firmware that refuses a sideloaded home activity. Android 4.x, LG webOS, Samsung Tizen and HarmonyOS TVs are not supported.
+Android TV 5.0+ (API 21+), no root. Device support follows Aerial; only Xiaomi `standard` has been verified by this project. The `guard` flavor is for firmware that refuses a sideloaded home activity. Android 4.x is not supported. Public releases contain only the `standard` and `guard` APKs. LG webOS, Samsung Tizen and HarmonyOS TVs are not supported.
 
 ### Acknowledgements
 

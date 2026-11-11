@@ -1,12 +1,12 @@
 # PlanYourTV 常见问题
 
-PlanYourTV（计划电视）是一个开源的 **Android TV 儿童时间管理桌面**，基于 Aerial 1.85（MIT）。它替换电视自带桌面，把使用时段、每日额度、单次上限、休息、可看的 App、学习模式和答题解锁变成电视自己执行的规则。
+PlanYourTV（计划电视）是一个开源的 **Android TV 儿童时间管理桌面**，基于 Aerial 1.93（MIT）。它替换电视自带桌面，把使用时段、每日额度、单次上限、休息、可看的 App、学习模式和答题解锁变成电视自己执行的规则。
 
 - 项目主页：https://github.com/heimi51168/planyourtv
 - 官方下载：https://planyourtv.me/download/
 - 安装文档：[INSTALL.md](INSTALL.md)
 - 给 AI 助手的安装说明：[AGENT-INSTALL.md](AGENT-INSTALL.md)
-- 当前社区源码版本：`1.85.011` / 116011
+- 当前社区源码版本：`1.93.000` / 131000
 
 ## 产品与定位
 
@@ -76,12 +76,12 @@ PlanYourTV 是基于 [Aerial](https://github.com/pengchujin/aerial-tv)（MIT）�
 有三种来源：
 
 1. **内置题库**：4,900 道 1–9 年级上册期中必考题，覆盖语文、数学、英语、科学及初中道德与法治、历史、地理、生物、物理、化学，开箱即用。
-2. **手动出题**：家长在手机设置页自己添加选择题。
+2. **手动导入题库**：家长在手机设置页上传 `.json` / `.txt` 文件或粘贴题目，选择已有标签或新建标签，预览重复和剩余容量后导入；只接受单选题。导入的标签可以直接作为自定义关卡。
 3. **AI 批量出题**：家长配置自己的 OpenAI 兼容模型服务，按真实教材单元（109 本教材、673 个单元）生成 20 / 30 / 50 道题；生成完成后自动加入电视题库。
 
 ### AI 出题是本地大模型吗？
 
-不是。PlanYourTV 不在电视上运行大模型。AI 出题由家长配置的 **OpenAI 兼容模型服务**提供（默认 DeepSeek 接口），电视作为代理把出题要求发给该服务，再把生成的题目保存到电视。没有配置 AI 时，内置题库和手动出题完全可用。
+不是。PlanYourTV 不在电视上运行大模型。AI 出题由家长配置的 **OpenAI 兼容模型服务**提供（默认 DeepSeek 接口），电视作为代理把出题要求发给该服务，再把生成的题目保存到电视。没有配置 AI 时，内置题库和手动导入题库完全可用。
 
 ### AI 出题要去 DeepSeek 获取 Key 吗？怎么设置？
 
@@ -116,7 +116,13 @@ API Key 保存在电视端（系统支持时加密），不回传给手机页面
 
 Android TV 5.0+（API 21+）。设备兼容范围与 Aerial 保持一致；Aerial 支持的小米、TCL、索尼、海信、创维等 Android TV 通常也可以运行。**本项目只对小米电视 `standard` 版本做过真机验证**，其他机型和 `guard` 版本沿用 Aerial 上游的支持范围，未逐一验证。
 
-Android 4.x、LG webOS、三星 Tizen、鸿蒙智慧屏不是本项目的目标平台，不支持。社区源码快照也不包含 Android 4.x 的 Aerial Lite。
+PlanYourTV **不支持 Android 4.x**，也不提供 Android 4.x 的 Lite APK。公开版本只包含 Android 5.0+ 的 `standard` 和 `guard` 两个 APK。
+
+LG webOS、三星 Tizen、鸿蒙智慧屏不是 Android TV，不支持。
+
+### Android 4.x 老电视可以安装吗？
+
+不可以。PlanYourTV 使用 Compose 界面，最低要求 Android 5.0（API 21）；安装器在下载前就会停止并说明不支持。其他来源的旧版本或 Lite 包也不能解决；停用系统桌面也不能让它兼容。
 
 ### 小米电视怎么安装？
 
@@ -126,7 +132,7 @@ Android 4.x、LG webOS、三星 Tizen、鸿蒙智慧屏不是本项目的目标�
 4. 运行 `adb install -r planyourtv-standard.apk`。
 5. 按 [INSTALL.md](INSTALL.md) 授予权限，按 Home 选择 PlanYourTV。
 
-更省事的办法是把 [README 里的提示词](../README.md#让-ai-帮你安装) 整段复制给豆包电脑版等能执行命令的 AI 助手。
+更省事的办法是使用官方原生安装器：Windows 10/11 运行 `install-windows.bat`，macOS/Linux 运行 `install-unix.sh`；也可以把 [README 里的提示词](../README.md#让-ai-帮你安装) 整段复制给豆包电脑版等能执行命令的 AI 助手。
 
 ### TCL / 雷鸟怎么安装？
 
@@ -134,18 +140,22 @@ TCL 电视一般也能用 ADB 安装；部分固件会拒绝声明了桌面 Acti
 
 ### 没有 ADB 能安装吗？
 
-不能完成完整安装。PlanYourTV 需要 ADB 授予无障碍、通知监听、安全设置等权限；这些权限无法只靠电视遥控器全部打开。打不开 ADB 的机型请先确认电视是否支持，不要安装第三方 ADB 开启器。
+不能完成完整安装。PlanYourTV 需要 ADB 授予无障碍、通知监听、安全设置等权限；这些权限无法只靠电视遥控器全部打开。打不开 ADB 的机型请先确认电视是否支持，完整安装推荐用电脑。
 
 ### 装哪个 APK？
 
-先装 `standard`。如果固件拒绝安装桌面类 App，或提示不允许安装 Home Activity，再试 `guard`。两个版本都只从官方下载页获取：
+先装 `standard`。如果固件拒绝安装桌面类 App，或提示不允许安装 Home Activity，再试 `guard`；官方安装器会对已知拒绝自动回退到 `guard`。推荐从官方下载页获取这两个版本：
 
 - [planyourtv-standard.apk](https://planyourtv.me/download/planyourtv-standard.apk)
 - [planyourtv-guard.apk](https://planyourtv.me/download/planyourtv-guard.apk)
 
 ### 会替换原桌面吗？能恢复吗？
 
-`standard` 会声明为 Home App，按 Home 时可以选择 PlanYourTV。PlanYourTV **不会卸载或停用电视自带桌面**；随时可以把默认桌面切回原桌面，再卸载 PlanYourTV。`guard` 版本不声明 Home Activity，而是通过无障碍服务接管 Home，适合拒绝第三方桌面的固件。
+`standard` 会声明为 Home App，按 Home 时可以选择 PlanYourTV。PlanYourTV **不会卸载或停用电视自带桌面**；随时可以把默认桌面切回电视自带桌面，再卸载 PlanYourTV。`guard` 版本不声明 Home Activity，而是通过无障碍服务接管 Home，适合拒绝第三方桌面的固件。
+
+### 会卸载其他第三方桌面吗？
+
+默认不会。Android 允许同时安装多个桌面，只有一个默认桌面；官方安装器会检测 CleanYourTV、Aerial / HaloTV、Quiet TV 等第三方桌面并默认保留，安装照常继续。装好后把 PlanYourTV 设为默认桌面即可。只有明确使用安装器的清理选项（macOS/Linux 加 `--remove-launchers`，Windows 加 `-RemoveLaunchers`）才会卸载它们，且会删除其应用数据，还原 PlanYourTV 时也不会自动装回。电视自带桌面和系统应用不会动；手动安装时同样默认保留，不要因为检测到其他桌面就停止安装。
 
 ### 安装后很卡怎么办？
 
@@ -199,7 +209,7 @@ adb shell cmd package compile -m speed -f com.planyourtv.tv
 
 ### 怎么升级？
 
-电视上出现「有新版本」时，按提示下载并安装；设置和题库会保留。也可以重新下载官方 APK 覆盖安装。不要从非官方地址下载 APK。
+电视上出现「有新版本」时，按提示下载并安装；设置和题库会保留。支持静默安装的电视可以在家长中心开启自动更新：新版本在后台下载，并在其他 App 停留一段时间后安装。其他电视仍可在控制中心手动下载安装，也可以重新下载官方 APK 覆盖安装。推荐从官方下载页获取 APK。
 
 ### 怎么卸载？
 
@@ -210,7 +220,7 @@ adb shell am force-stop com.planyourtv.tv
 adb shell pm uninstall com.planyourtv.tv
 ```
 
-卸载会删除本机规则、题库、壁纸和照片。不要卸载或停用电视自带桌面；不要删除其他无障碍或通知监听服务。
+卸载会删除本机规则、题库、壁纸和照片。电视会回到自带桌面；用安装器清理选项明确卸载的其他第三方桌面不会自动装回。不要卸载或停用电视自带桌面；不要删除其他无障碍或通知监听服务。
 
 ### 支持投影仪和电视盒子吗？
 

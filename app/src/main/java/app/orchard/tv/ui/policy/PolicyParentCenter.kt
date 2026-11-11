@@ -48,9 +48,11 @@ import app.orchard.tv.policy.PolicyInstalledApp
 import app.orchard.tv.policy.PolicyInstalledApps
 import app.orchard.tv.policy.PolicyModeCoordinator
 import app.orchard.tv.policy.PolicyProduct
+import app.orchard.tv.policy.SourceEntrySettings
 import app.orchard.tv.quiz.QuizSettings
 import app.orchard.tv.system.Sounds
 import app.orchard.tv.ui.components.liquidGlass
+import app.orchard.tv.update.Updates
 import app.orchard.tv.ui.theme.Glyph
 import app.orchard.tv.ui.theme.GlyphIcon
 import app.orchard.tv.ui.theme.Palette
@@ -157,6 +159,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
     }
     var quizEnabled by remember { mutableStateOf(QuizSettings.isEnabled()) }
     var quizChanging by remember { mutableStateOf(false) }
+    var sourceEntriesVisible by remember { mutableStateOf(SourceEntrySettings.isVisible()) }
     var defaultPin by remember { mutableStateOf(false) }
     var pendingSync by remember { mutableStateOf(PolicyRuntime.isPasswordSyncPending()) }
     var savedNotice by remember { mutableStateOf<Int?>(null) }
@@ -166,6 +169,8 @@ fun PolicyParentCenter(onClose: () -> Unit) {
     var showChangePin by remember { mutableStateOf(false) }
     // First local enable: choose the parent PIN before the guard is switched on.
     var showInitialPin by remember { mutableStateOf(false) }
+    // First child-mode enable only: the notice that child mode also turns on auto update.
+    var showAutoConsent by remember { mutableStateOf(false) }
     var cloudConsentAccepted by remember {
         mutableStateOf(PolicyConsentStore.cloudUploadAccepted())
     }
@@ -182,6 +187,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
     var armedRemoveKey by remember { mutableStateOf<String?>(null) }
     var armedRemoveJob by remember { mutableStateOf<Job?>(null) }
     var editingKey by remember { mutableStateOf<String?>(null) }
+    var activationConfirmTarget by remember { mutableStateOf<Activation?>(null) }
     var savedJob by remember { mutableStateOf<Job?>(null) }
     var switching by remember { mutableStateOf(false) }
     var retrying by remember { mutableStateOf(false) }
@@ -207,6 +213,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
     val railSwitchFocus = remember { FocusRequester() }
     val railRemoteFocus = remember { FocusRequester() }
     val railPasswordFocus = remember { FocusRequester() }
+    val railAutoFocus = remember { FocusRequester() }
     val migrationRetryFocus = remember { FocusRequester() }
     val waitRetryFocus = remember { FocusRequester() }
     val summaryReadFocus = remember { FocusRequester() }
@@ -240,6 +247,9 @@ fun PolicyParentCenter(onClose: () -> Unit) {
     } else {
         state.activation
     }
+
+    fun activationTabKey(activation: Activation): String =
+        if (activation == Activation.AUTO) "activation-auto" else "activation-manual"
 
     fun localRequester(key: String): FocusRequester =
         localFocus.getOrPut(key) { FocusRequester() }
@@ -305,6 +315,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
             ParentFocusTarget.Switch,
             ParentFocusTarget.Remote,
             ParentFocusTarget.Password,
+            ParentFocusTarget.AutoUpdate,
             -> ParentZone.RAIL
             else -> ParentZone.PANE
         }
@@ -361,13 +372,8 @@ fun PolicyParentCenter(onClose: () -> Unit) {
         else -> ParentPaneKind.LOCAL
     }
 
-    fun railTargetsNow(): List<ParentFocusTarget> = buildList {
-        add(ParentFocusTarget.Switch)
-        if (childOn) {
-            if (remoteEntryVisible) add(ParentFocusTarget.Remote)
-            if (passwordVisible) add(ParentFocusTarget.Password)
-        }
-    }
+    fun railTargetsNow(): List<ParentFocusTarget> =
+        parentRailTargets(childOn, remoteEntryVisible, passwordVisible)
 
     fun enterPane(pane: ParentPaneKind, origin: ParentRailOrigin) {
         if (!childOn || pane == ParentPaneKind.OFF) {
@@ -488,7 +494,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
         }
     }
 
-    fun enableChild() {
+    fun startChildMode() {
         if (switching) return
         val target = if (bound && PolicyProduct.cloudEnabled) PolicyMode.CLOUD else PolicyMode.LOCAL
         if (target != PolicyMode.LOCAL) {
@@ -506,6 +512,24 @@ fun PolicyParentCenter(onClose: () -> Unit) {
             switching = false
             if (needsPin) showInitialPin = true else switchTo(PolicyMode.LOCAL, "")
         }
+    }
+
+    fun enableChild() {
+        if (switching) return
+        // The first child-mode enable also turns auto update on, after the notice. One-time:
+        // a parent who has already chosen on or off is not asked again.
+        if (!Updates.auto && !Updates.autoChoiceMade()) {
+            cancelInlineConfirm()
+            showAutoConsent = true
+            return
+        }
+        startChildMode()
+    }
+
+    fun toggleAutoUpdate() {
+        cancelInlineConfirm()
+        actionError = null
+        Updates.setAuto(context, !Updates.auto)
     }
 
     fun requestDisable() {
@@ -670,16 +694,23 @@ fun PolicyParentCenter(onClose: () -> Unit) {
 
     fun selectLocalActivation(next: Activation) {
         if (readOnlyLocal) return
-        val tabKey = if (next == Activation.AUTO) "activation-auto" else "activation-manual"
         if (next == displayedActivation) {
             // Selecting the tab already in effect changes nothing; keep focus where the parent
             // pressed OK so the section below stays one press away.
-            focusNow(ParentFocusTarget.LocalRow(tabKey))
+            focusNow(ParentFocusTarget.LocalRow(activationTabKey(next)))
             return
         }
+        // A mode switch replaces the whole timing rule set, so require an explicit confirmation
+        // instead of letting one stray OK change how the TV counts time.
+        activationConfirmTarget = next
+    }
+
+    fun applyLocalActivation(next: Activation): Boolean {
+        if (readOnlyLocal) return false
+        val tabKey = activationTabKey(next)
         if (!PolicyModeCoordinator.setLocalActivation(next)) {
             actionError = R.string.policy_parent_rules_invalid
-            return
+            return false
         }
         // The tab swaps to the other stored rule set. Mirror it here so editing another field
         // next writes into the activation now in effect.
@@ -688,6 +719,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
         editingKey = null
         showSaved(R.string.policy_parent_saved)
         focusNow(ParentFocusTarget.LocalRow(tabKey))
+        return true
     }
 
     fun adjustLocalByKey(key: String, delta: Int) {
@@ -704,6 +736,18 @@ fun PolicyParentCenter(onClose: () -> Unit) {
             key == "rest" -> adjustRest(delta)
             key == "buffer" -> adjustBuffer(delta)
         }
+    }
+
+    fun toggleSourceEntries() {
+        // Presentation only, like the quiz switch: the read-only pane still changes on the phone.
+        if (readOnlyLocal) return
+        val next = !sourceEntriesVisible
+        if (!SourceEntrySettings.setVisible(next)) {
+            actionError = R.string.policy_v6_save_failed
+            return
+        }
+        sourceEntriesVisible = next
+        showSaved(R.string.policy_v6_source_entries_saved)
     }
 
     fun toggleQuizChallenge() {
@@ -853,6 +897,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
             key == "activation-manual" -> selectLocalActivation(Activation.MANUAL)
             // The root key catcher routes OK here, so the row's own Pressable never sees it.
             key == "quiz" -> toggleQuizChallenge()
+            key == "sources" -> toggleSourceEntries()
             key == "apps" -> openAppPicker()
             key == "study" -> openAppPicker(study = true)
             key == "end-session" -> {
@@ -958,7 +1003,8 @@ fun PolicyParentCenter(onClose: () -> Unit) {
     // opens a prompt sets the flag, and the next press can arrive before the recomposition that
     // composes it. A live read routes that press to the router, which buffers it for the prompt.
     fun anyDialogVisible(): Boolean =
-        showChangePin || showInitialPin || showCloudConsent || verifyRequest != null
+        showChangePin || showInitialPin || showCloudConsent || showAutoConsent ||
+            verifyRequest != null || activationConfirmTarget != null
     val dialogOpen = anyDialogVisible()
 
     // Drop leftovers (and a stale handler) once every prompt is gone.
@@ -1050,7 +1096,13 @@ fun PolicyParentCenter(onClose: () -> Unit) {
     ) {
         if (!authenticated) return@LaunchedEffect
         if (!childOn) {
-            if (focusedTarget != ParentFocusTarget.Switch) focusNow(ParentFocusTarget.Switch)
+            // Auto update stays reachable with child mode off: it is a device-level setting,
+            // not part of the child-mode block.
+            if (focusedTarget != ParentFocusTarget.Switch &&
+                focusedTarget != ParentFocusTarget.AutoUpdate
+            ) {
+                focusNow(ParentFocusTarget.Switch)
+            }
             return@LaunchedEffect
         }
         if (focusedTarget == ParentFocusTarget.Password && !passwordVisible) {
@@ -1220,6 +1272,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
                     showChangePin = true
                 }
             }
+            ParentFocusTarget.AutoUpdate -> toggleAutoUpdate()
             ParentFocusTarget.MigrationRetry -> requestHandoff()
             ParentFocusTarget.WaitConfigRetry -> retryRemoteConfig()
             ParentFocusTarget.SummaryRead -> Unit
@@ -1285,14 +1338,14 @@ fun PolicyParentCenter(onClose: () -> Unit) {
         val target = focusedTarget
         // Automatic/Manual is a tab strip, not two stacked rows: Left/Right stay inside the
         // pair (Left from the first tab is the only way back to the rail), Up leaves for the
-        // shared app scope, and Down skips the sibling tab so the selected mode's own first
+        // shared entries, and Down skips the sibling tab so the selected mode's own first
         // parameter row is one press away.
         if (target is ParentFocusTarget.LocalRow &&
             (target.key == "activation-auto" || target.key == "activation-manual")
         ) {
             editingKey = null
             when {
-                isUp -> focusNow(ParentFocusTarget.LocalRow("study"))
+                isUp -> focusNow(ParentFocusTarget.LocalRow("sources"))
                 isDown -> {
                     val pairEnd = targets.indexOf(ParentFocusTarget.LocalRow("activation-manual"))
                     targets.getOrNull(pairEnd + 1)?.let { focusNow(it) }
@@ -1390,7 +1443,6 @@ fun PolicyParentCenter(onClose: () -> Unit) {
         handoff == RemoteHandoffState.PENDING -> stringResource(R.string.policy_v6_pin_migrating)
         else -> stringResource(R.string.policy_v6_password_pending)
     }
-
     val notice = actionError ?: savedNotice
     val noticeText = notice?.let { stringResource(it) }
     val noticeColor = if (actionError != null) Palette.Red else Palette.Green
@@ -1569,6 +1621,20 @@ fun PolicyParentCenter(onClose: () -> Unit) {
                     }
                 }
 
+                // Device-level, so it stays here with child mode off and after a handoff.
+                Spacer(Modifier.height(12.dp))
+                PolicySwitchRow(
+                    title = stringResource(R.string.policy_v6_auto_update),
+                    // The switch itself is the complete state; the one-time consent dialog
+                    // carries the explanation, so the rail stays one line and never reflows.
+                    on = Updates.auto,
+                    focusRequester = railAutoFocus,
+                    highlighted = focusedTarget == ParentFocusTarget.AutoUpdate,
+                    onClick = ::toggleAutoUpdate,
+                    onUp = railUp(ParentFocusTarget.AutoUpdate),
+                    onDown = railDown(ParentFocusTarget.AutoUpdate),
+                )
+
                 Spacer(Modifier.weight(1f))
                 BasicText(
                     stringResource(R.string.policy_v6_rail_hint),
@@ -1596,6 +1662,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
                             rules = displayedRules,
                             activation = displayedActivation,
                             quizEnabled = quizEnabled,
+                            sourceEntriesVisible = sourceEntriesVisible,
                             sessionActive = localSessionActive,
                             readOnly = readOnlyLocal,
                             editingKey = editingKey,
@@ -1612,6 +1679,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
                             onAdjust = ::adjustLocalByKey,
                             onSelectActivation = ::selectLocalActivation,
                             onToggleQuiz = ::toggleQuizChallenge,
+                            onToggleSourceEntries = ::toggleSourceEntries,
                             onRemoveWindow = { weekday, index ->
                                 val key = "${if (weekday) "wd" else "we"}-$index-remove"
                                 if (armedRemoveKey == key) {
@@ -1721,6 +1789,20 @@ fun PolicyParentCenter(onClose: () -> Unit) {
                 },
             )
         }
+        if (showAutoConsent) {
+            PolicyAutoUpdateConsentDialog(
+                keyRouter = dialogKeyRouter,
+                onConfirm = {
+                    showAutoConsent = false
+                    Updates.setAuto(context, true)
+                    startChildMode()
+                },
+                onDismiss = {
+                    showAutoConsent = false
+                    focusNow(ParentFocusTarget.Switch)
+                },
+            )
+        }
         if (showInitialPin) {
             PolicyInitialPinDialog(
                 keyRouter = dialogKeyRouter,
@@ -1791,6 +1873,34 @@ fun PolicyParentCenter(onClose: () -> Unit) {
                             }
                         }
                     }
+                },
+            )
+        }
+        activationConfirmTarget?.let { target ->
+            // Show the automatic rule set that will take effect, not a hard-coded example:
+            // daily/session/rest values are editable and differ between activations.
+            val autoRules = LocalPolicyRuntime.currentRuleSets
+                ?.rulesFor(Activation.AUTO)
+                ?: LocalRules.defaultsFor(Activation.AUTO)
+            PolicyActivationConfirmDialog(
+                keyRouter = dialogKeyRouter,
+                target = target,
+                autoDailyMinutes = autoRules.autoDailyLimitMinutes,
+                autoSessionMinutes = autoRules.sessionLimitMinutes,
+                autoRestMinutes = autoRules.restMinutes,
+                sessionActive = localSessionActive,
+                onConfirm = {
+                    activationConfirmTarget = null
+                    if (!applyLocalActivation(target)) {
+                        focusNow(
+                            ParentFocusTarget.LocalRow(activationTabKey(displayedActivation)),
+                        )
+                    }
+                },
+                onDismiss = {
+                    activationConfirmTarget = null
+                    // Keep the highlight on the mode that is still in effect.
+                    focusNow(ParentFocusTarget.LocalRow(activationTabKey(displayedActivation)))
                 },
             )
         }

@@ -33,6 +33,7 @@ import app.orchard.tv.policy.PolicyProduct
 import app.orchard.tv.policy.PolicyAppInventory
 import app.orchard.tv.policy.PolicyHomeReady
 import app.orchard.tv.policy.PolicyModeCoordinator
+import app.orchard.tv.policy.SourceEntrySettings
 import app.orchard.tv.settings.AerialSettings
 import app.orchard.tv.settings.Restricted
 import app.orchard.tv.system.XgimiBoost
@@ -57,6 +58,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -72,6 +75,8 @@ sealed interface Overlay {
     data class Folder(val id: String) : Overlay
     data object HiddenApps : Overlay
     data object Wallpaper : Overlay
+    /** Version, Aerial credit and the MIT license, from the bottom of Personalize. */
+    data object About : Overlay
     data class Pin(val mode: PinMode, val onDone: () -> Unit) : Overlay
     /** Setting up Kids and Elders mode (Restricted), from Personalize. */
     data object Kids : Overlay
@@ -115,10 +120,14 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     var overlay by mutableStateOf<Overlay>(Overlay.None)
     var movingKey by mutableStateOf<String?>(null); private set
+    /** The folder [movingKey] is being moved inside; null when it moves on Home. */
+    var movingInFolder by mutableStateOf<String?>(null); private set
 
     var network by mutableStateOf(NetworkStatus()); private set
     var volume by mutableStateOf(VolumeStatus()); private set
     var sources by mutableStateOf<List<TvSource>>(emptyList()); private set
+    /** [sources] without the ones the owner took out of the list (AerialSettings.hiddenSources). */
+    val shownSources: List<TvSource> get() = sources.filter { it.id !in AerialSettings.hiddenSources }
     var homeStatus by mutableStateOf(HomeStatus.NotDefault); private set
 
     /** Panel brightness 0..1, or null when Aerial cannot change it on this TV. */
@@ -225,6 +234,13 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         // An app renamed on the phone page.
         viewModelScope.launch { snapshotFlow { AppNames.all }.drop(1).collect { if (loaded) arrange() } }
         viewModelScope.launch { snapshotFlow { AerialSettings.previewApps }.drop(1).collect { if (loaded) arrange() } }
+        // The parent-center source-entry switch and the session gate change whether pinned inputs
+        // join the grid. The policy state ticks every second in a session, so keep only its changes.
+        viewModelScope.launch {
+            combine(SourceEntrySettings.visible, PolicyModeCoordinator.state) { _, _ ->
+                PolicyModeCoordinator.sourceEntriesAllowed()
+            }.distinctUntilChanged().drop(1).collect { if (loaded) arrange() }
+        }
         // Into or out of Kids and Elders mode, or its tiles chosen: another Home.
         viewModelScope.launch {
             snapshotFlow { listOf(Restricted.active, Restricted.enabled, Restricted.allowed, overlay == Overlay.Kids, AerialSettings.pinSet) }.drop(1).collect {
@@ -450,15 +466,15 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun arrange() {
         // Pinned TV inputs share the grid, order and hiding with the apps.
-        val pinned = sources
-            .filter { it.id in AerialSettings.pinnedSources && PolicyModeCoordinator.allowsSource(it.id) }
+        val pinned = shownSources
+            .filter { it.id in AerialSettings.pinnedSources && PolicyModeCoordinator.allowsSourceEntry(it.id) }
             .map { sourceEntry(context, it) }
         AppCatalog.pinnedSources = pinned
-        AppCatalog.sources = sources
+        AppCatalog.sources = shownSources
         // The inputs Android itself lists can play behind Home through a TvView; the ones Aerial
         // makes up for TCL, Skyworth and the like open only in the maker's own player.
         Wallpapers.setSources(
-            sources.filter { (it.kind == SourceKind.Hdmi || it.kind == SourceKind.DisplayPort) && '/' in it.id }
+            shownSources.filter { (it.kind == SourceKind.Hdmi || it.kind == SourceKind.DisplayPort) && '/' in it.id }
                 .map { it.id to (it.deviceName?.let { d -> "${it.label} · $d" } ?: it.label) },
         )
         // Names typed on the phone page stand in for the apps' own, everywhere Home shows one.
@@ -476,7 +492,9 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         // With a PIN set the phone page can set the mode up too.
         val kids = Restricted.enabled || overlay == Overlay.Kids || AerialSettings.pinSet
         kidsCandidates = if (!kids) emptyList() else {
-            val unpinned = sources.filter { it.id !in AerialSettings.pinnedSources }.map { sourceEntry(context, it) }
+            val unpinned = shownSources
+                .filter { it.id !in AerialSettings.pinnedSources && PolicyModeCoordinator.allowsSourceEntry(it.id) }
+                .map { sourceEntry(context, it) }
             arrangement.home.flatMap { e -> e.folder?.let { arrangement.folders[it.id].orEmpty() } ?: listOf(e) } +
                 arrangement.hidden + unpinned
         }
@@ -612,6 +630,12 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Takes [source] out of the inputs list, and off Home, or puts it back (issues #279 #744). */
+    fun setSourceHidden(source: TvSource, hidden: Boolean) {
+        AerialSettings.setSourceHidden(source.id, hidden)
+        arrange()
+    }
+
     /** The phone page pins by input id. */
     private fun pinSourceById(id: String, pinned: Boolean) {
         sources.firstOrNull { it.id == id }?.let { setSourcePinned(it, pinned) }
@@ -737,6 +761,13 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** Runs [action] at once, or after the parental PIN when one is set (issue #10). */
+    /** On a locked Home, says so (where it is unlocked) and returns true: the caller opens no menu. */
+    fun noteHomeLocked(): Boolean {
+        if (!AerialSettings.homeLocked) return false
+        notify(context.getString(R.string.home_locked_notice), Glyph.Shield)
+        return true
+    }
+
     fun whenUnlocked(action: () -> Unit) {
         if (!AerialSettings.locked) action()
         else overlay = Overlay.Pin(PinMode.Unlock) { overlay = Overlay.None; action() }
@@ -752,23 +783,27 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         arrange()
     }
 
-    fun startMove(key: String) {
-        overlay = Overlay.None
+    /** Starts moving [key] on Home, or inside the open folder [folder] (issue #1344). */
+    fun startMove(key: String, folder: String? = null) {
+        overlay = folder?.let { Overlay.Folder(it) } ?: Overlay.None
         movingKey = key
+        movingInFolder = folder
     }
 
-    /** Moves the app being moved by [delta] slots in the visible grid. */
+    /** Moves the app being moved by [delta] slots in the visible grid, or in its folder's. */
     fun moveBy(delta: Int) {
         val key = movingKey ?: return
-        val from = apps.indexOfFirst { it.key == key }
+        val folder = movingInFolder
+        val list = if (folder != null) folderApps[folder].orEmpty() else apps
+        val from = list.indexOfFirst { it.key == key }
         if (from < 0) return
-        val to = (from + delta).coerceIn(0, apps.lastIndex)
+        val to = (from + delta).coerceIn(0, list.lastIndex)
         if (to == from) return
-        store.move(key, apps[to].key)
+        if (folder != null) store.moveInFolder(key, list[to].key) else store.move(key, list[to].key)
         arrange()
     }
 
-    fun endMove() { movingKey = null }
+    fun endMove() { movingKey = null; movingInFolder = null }
 
     /**
      * Home was pressed. On Home itself focus goes back to the top row, as on tvOS; coming back
@@ -779,6 +814,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         AerialSettings.relock()
         overlay = Overlay.None
         movingKey = null
+        movingInFolder = null
         if (resetFocus) homeResetPending = true
     }
 

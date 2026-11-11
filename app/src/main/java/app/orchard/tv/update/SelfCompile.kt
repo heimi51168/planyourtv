@@ -131,6 +131,8 @@ object SelfCompile {
     private val auto = Runnable {
         val context = app ?: return@Runnable
         if (inFront) return@Runnable
+        // A pending automatic update replaces the same package; two sessions must not collide.
+        if (Updates.autoUpdateBusy()) return@Runnable
         if (Build.VERSION.SDK_INT < 31) {
             if (systemWorthIt(context)) Thread({ askSystem(context) }, "self-compile").start()
             return@Runnable

@@ -72,6 +72,13 @@
     <string name="policy_v6_activation_manual">手动</string>
     <string name="policy_v6_activation_manual_hint">支持答题解锁和单次使用；每段时长由家长确认。</string>
     <string name="policy_v6_activation_tab_hint">各模式单独保存时段、时长、休息和息屏缓冲；点选上方标签切换，下方参数只属于当前模式。</string>
+    <string name="policy_v6_activation_confirm_auto_title">切换到自动模式？</string>
+    <string name="policy_v6_activation_confirm_auto_body">自动模式下电视不能开始答题挑战。当前自动规则：每天最多 %1$d 分钟，每次最多 %2$d 分钟，休息间隔 %3$d 分钟。</string>
+    <string name="policy_v6_activation_confirm_manual_title">切换到手动模式？</string>
+    <string name="policy_v6_activation_confirm_manual_body">手动模式由家长在锁屏发起单次计时，并支持答题挑战。</string>
+    <string name="policy_v6_activation_confirm_end_session">本次计时会立即结束。</string>
+    <string name="policy_v6_activation_confirm_cancel">取消</string>
+    <string name="policy_v6_activation_confirm_switch">切换</string>
     <string name="policy_v6_quiz_challenge">答题挑战</string>
     <string name="policy_v6_quiz_hint">手动模式下，答对题目可解锁电视时间；关闭后锁屏不再显示答题入口。</string>
     <string name="policy_v6_quiz_busy">本轮答题进行中，结束后再修改。</string>
@@ -81,6 +88,13 @@
     <string name="policy_v6_apps_shared_hint">娱乐与学习应用由自动和手动共用；切换计时方式不会改变应用范围。</string>
     <string name="policy_v6_study_saved">学习应用已保存</string>
     <string name="policy_v6_apps_in_study">该应用在学习名单中，请先在学习应用里移除。</string>
+
+    <string name="policy_v6_source_section">其他入口</string>
+    <string name="policy_v6_source_entries">显示信号源入口</string>
+    <string name="policy_v6_source_entries_on">儿童模式中显示信号源入口</string>
+    <string name="policy_v6_source_entries_off">儿童模式中隐藏信号源入口</string>
+    <string name="policy_v6_source_entries_hint">仅控制 Aerial 内的入口；部分电视的原生信号源键或 CEC 仍可能切换。</string>
+    <string name="policy_v6_source_entries_saved">信号源设置已保存</string>
 
     <string name="policy_v6_switch_off_confirm">再按 OK 关闭儿童模式</string>
     <string name="policy_v6_switch_off_migrating">迁移尚未完成，关闭后需重新开启才能继续。</string>
@@ -92,4 +106,10 @@
     <string name="policy_v6_consent_body">启用远程管理后，本电视会上传家长中心配置（含家长密码校验值）、时间进度和答题记录至 PlanYourTV 云端，用于手机端远程管理与记录查看，不用于广告或其他用途。电视本地保存的 AI 模型密钥（API Key）不会上传。您可随时解绑，解绑后停止上传并保留本地设置；继续即表示您确认有权管理本电视。</string>
     <string name="policy_v6_consent_agree">同意并显示二维码</string>
     <string name="policy_v6_consent_cancel">暂不</string>
+
+    <string name="policy_v6_auto_update">自动升级</string>
+    <string name="policy_v6_auto_consent_title">开启儿童模式，同时开启自动升级？</string>
+    <string name="policy_v6_auto_consent_body">开启儿童模式时会一并开启「自动升级」，以便及时获得新版本和问题修复。新版本会在电视空闲时自动下载并安装，不影响正常观看。如不需要，可随时在家长中心关闭。</string>
+    <string name="policy_v6_auto_consent_confirm">确认开启</string>
+    <string name="policy_v6_auto_consent_cancel">取消</string>
 </resources>

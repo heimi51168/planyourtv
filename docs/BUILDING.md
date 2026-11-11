@@ -1,7 +1,8 @@
 # Build from source
 
 The project is a standard Gradle Android build. It produces an Android TV app for Android 5.0
-(API 21) and newer. The community snapshot does not include the Aerial Lite module for Android 4.x.
+(API 21) and newer. Public releases contain only the `standard` and `guard` flavors; Android 4.x
+and the former Lite APK are no longer supported or published.
 
 ## Requirements
 
@@ -105,7 +106,7 @@ The version follows the Aerial base version:
 
 - `versionCode = Aerial versionCode * 1000 + productRevision`
 - `versionName = "<Aerial version>.<productRevision padded to 3>"`
-- The community baseline is `1.85.011` / `116011`, based on Aerial 1.85 / 116.
+- The community baseline is `1.93.000` / `131000`, based on Aerial 1.93 / 131.
 
 When rebasing on a newer Aerial release, update the Aerial version in `app/build.gradle.kts` and
 reset the revision to 0. For each later product release, increase the revision by one. Never reuse

@@ -36,6 +36,7 @@ internal fun V6LocalPane(
     rules: LocalRules,
     activation: Activation,
     quizEnabled: Boolean,
+    sourceEntriesVisible: Boolean,
     sessionActive: Boolean,
     readOnly: Boolean,
     editingKey: String?,
@@ -50,6 +51,7 @@ internal fun V6LocalPane(
     onAdjust: (String, Int) -> Unit,
     onSelectActivation: (Activation) -> Unit,
     onToggleQuiz: () -> Unit,
+    onToggleSourceEntries: () -> Unit,
     onRemoveWindow: (Boolean, Int) -> Unit,
     onOpenApps: () -> Unit,
     onOpenStudyApps: () -> Unit,
@@ -190,6 +192,32 @@ internal fun V6LocalPane(
             )
             Spacer(Modifier.height(8.dp))
 
+            // Sources are not apps, but they are another child-mode entry. The switch is shared by
+            // both timing modes and only controls Aerial's own entries, as the hint says.
+            PolicySectionHeader(stringResource(R.string.policy_v6_source_section))
+            PolicySwitchRow(
+                title = stringResource(R.string.policy_v6_source_entries),
+                status = stringResource(
+                    if (sourceEntriesVisible) {
+                        R.string.policy_v6_source_entries_on
+                    } else {
+                        R.string.policy_v6_source_entries_off
+                    },
+                ),
+                on = sourceEntriesVisible,
+                focusRequester = focusFor("sources"),
+                onClick = { if (!readOnly) onToggleSourceEntries() },
+                onUp = upFor("sources"),
+                onDown = {
+                    val tab = if (activation == Activation.MANUAL) "activation-manual" else "activation-auto"
+                    onFocusRow(tab)
+                },
+                onLeft = onFocusRail,
+                highlighted = highlightedKey == "sources",
+            )
+            RuleHint(stringResource(R.string.policy_v6_source_entries_hint))
+            Spacer(Modifier.height(8.dp))
+
             // Automatic and Manual are a tab pair, not a value row: OK selects the focused tab
             // and the section below shows that mode's own windows, limits, rest and buffer.
             PolicySectionHeader(stringResource(R.string.policy_v6_activation_section))
@@ -202,9 +230,10 @@ internal fun V6LocalPane(
                     selected = activation == Activation.AUTO,
                     focusRequester = focusFor("activation-auto"),
                     bringIntoViewRequester = bringFor("activation-auto"),
-                    // Both tabs sit on one row: vertical keys leave the row (up to the app scope,
-                    // down to the first item after the tab pair), horizontal keys move between them.
-                    onUp = { onFocusRow("study") },
+                    // Both tabs sit on one row: vertical keys leave the row (up to the shared
+                    // entries, down to the first item after the tab pair), horizontal keys move
+                    // between them.
+                    onUp = { onFocusRow("sources") },
                     onDown = afterTabs,
                     onLeft = onFocusRail,
                     onRight = { onFocusRow("activation-manual") },
@@ -217,7 +246,7 @@ internal fun V6LocalPane(
                     selected = activation == Activation.MANUAL,
                     focusRequester = focusFor("activation-manual"),
                     bringIntoViewRequester = bringFor("activation-manual"),
-                    onUp = { onFocusRow("study") },
+                    onUp = { onFocusRow("sources") },
                     onDown = afterTabs,
                     onLeft = { onFocusRow("activation-auto") },
                     onRight = null,
@@ -510,9 +539,10 @@ internal fun v6LocalFocusKeys(
     sessionActive: Boolean,
     readOnly: Boolean = false,
 ): List<String> = buildList {
-    // Shared app scope first, then the timing tabs and the selected set's rows.
+    // Shared app and source entries first, then the timing tabs and the selected set's rows.
     add("apps")
     add("study")
+    add("sources")
     add("activation-auto")
     add("activation-manual")
     // The quiz only exists in manual timing; Automatic has no challenge to switch off.

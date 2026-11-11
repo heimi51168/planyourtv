@@ -52,6 +52,7 @@
     <string name="policy_quiz_level_available">This level: %1$d questions</string>
     <string name="policy_quiz_level_short">This level has only %1$d of the %2$d questions a round needs</string>
     <string name="policy_quiz_scope_any">Not set</string>
+    <string name="policy_quiz_scope_custom_tag">Custom tag · %1$s</string>
     <string name="policy_quiz_format_label">Answer format</string>
     <string name="policy_quiz_format_single">Single choice</string>
     <string name="policy_quiz_semester_first">Semester 1</string>

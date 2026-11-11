@@ -72,6 +72,13 @@
     <string name="policy_v6_activation_manual">Ручной</string>
     <string name="policy_v6_activation_manual_hint">Разблокировка квизом или разовым запуском от родителя; длительность сеанса задаёт родитель.</string>
     <string name="policy_v6_activation_tab_hint">Каждый режим хранит собственное расписание, лимиты, отдых и буфер выключения экрана. Выберите вкладку — параметры ниже относятся только к ней.</string>
+    <string name="policy_v6_activation_confirm_auto_title">Переключиться на автоматический режим?</string>
+    <string name="policy_v6_activation_confirm_auto_body">В автоматическом режиме телевизор не может начать викторину. Текущие автоматические правила: до %1$d мин в день, до %2$d мин за сеанс, перерыв %3$d мин между сеансами.</string>
+    <string name="policy_v6_activation_confirm_manual_title">Переключиться на ручной режим?</string>
+    <string name="policy_v6_activation_confirm_manual_body">В ручном режиме родитель запускает каждый сеанс на экране блокировки; доступны викторины.</string>
+    <string name="policy_v6_activation_confirm_end_session">Текущий сеанс немедленно завершится.</string>
+    <string name="policy_v6_activation_confirm_cancel">Отмена</string>
+    <string name="policy_v6_activation_confirm_switch">Переключить</string>
     <string name="policy_v6_quiz_challenge">Викторина</string>
     <string name="policy_v6_quiz_hint">В ручном режиме правильные ответы дают время на телевизоре. Если выключено, экран блокировки больше не показывает вход в викторину.</string>
     <string name="policy_v6_quiz_busy">Идёт раунд викторины. Измените это после его завершения.</string>
@@ -81,6 +88,13 @@
     <string name="policy_v6_apps_shared_hint">Развлекательные и учебные приложения общие для автоматического и ручного режимов; смена режима их не меняет.</string>
     <string name="policy_v6_study_saved">Учебные приложения сохранены</string>
     <string name="policy_v6_apps_in_study">Это приложение уже учебное. Сначала уберите его из учебных.</string>
+
+    <string name="policy_v6_source_section">Другие входы</string>
+    <string name="policy_v6_source_entries">Показывать источники сигнала</string>
+    <string name="policy_v6_source_entries_on">Показываются в детском режиме</string>
+    <string name="policy_v6_source_entries_off">Скрыты в детском режиме</string>
+    <string name="policy_v6_source_entries_hint">Управляются только входы Aerial; собственная кнопка «Источник» на телевизоре или CEC всё ещё могут переключать входы.</string>
+    <string name="policy_v6_source_entries_saved">Настройка источников сохранена</string>
 
     <string name="policy_v6_switch_off_confirm">Нажмите OK ещё раз, чтобы выключить</string>
     <string name="policy_v6_switch_off_migrating">Перенос не завершён. Включите снова, чтобы продолжить.</string>
@@ -92,4 +106,10 @@
     <string name="policy_v6_consent_body">При включённом удалённом управлении телевизор загружает в облако PlanYourTV настройки родительского центра (включая проверочное значение родительского пароля), прогресс времени и записи викторин для удалённого управления и просмотра записей на телефоне, не для рекламы или иных целей. Ключ модели ИИ (API Key), сохранённый на телевизоре, не загружается. Вы можете отвязать устройство в любой момент; загрузка прекратится, а локальные настройки останутся. Продолжая, вы подтверждаете право управлять этим телевизором.</string>
     <string name="policy_v6_consent_agree">Согласиться и показать QR-код</string>
     <string name="policy_v6_consent_cancel">Не сейчас</string>
+
+    <string name="policy_v6_auto_update">Автообновление</string>
+    <string name="policy_v6_auto_consent_title">Включить детский режим и автообновление?</string>
+    <string name="policy_v6_auto_consent_body">При включении детского режима также включается «Автообновление», чтобы телевизор своевременно получал новые версии и исправления. Новые версии загружаются и устанавливаются автоматически, когда телевизор не используется, не мешая просмотру. При необходимости автообновление можно в любой момент отключить в родительском центре.</string>
+    <string name="policy_v6_auto_consent_confirm">Включить оба</string>
+    <string name="policy_v6_auto_consent_cancel">Отмена</string>
 </resources>

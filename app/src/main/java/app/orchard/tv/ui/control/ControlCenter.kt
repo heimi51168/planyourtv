@@ -96,15 +96,18 @@ import app.orchard.tv.apps.SourceLooks
 import app.orchard.tv.guard.GuardHealth
 import app.orchard.tv.policy.PolicyModeCoordinator
 import app.orchard.tv.policy.PolicyProduct
+import app.orchard.tv.policy.SourceEntrySettings
 import app.orchard.tv.settings.AerialSettings
 import app.orchard.tv.settings.Restricted
 import app.orchard.tv.settings.RestrictedKind
 import app.orchard.tv.ui.home.kidsTimeLine
+import app.orchard.tv.system.HisenseLaserPanel
 import app.orchard.tv.system.HomeStatus
 import app.orchard.tv.system.LaunchFallback
 import app.orchard.tv.system.NetKind
 import app.orchard.tv.system.SourceKind
 import app.orchard.tv.system.Sounds
+import app.orchard.tv.system.OutputDevice
 import app.orchard.tv.system.SystemProbe
 import app.orchard.tv.ui.components.Pressable
 import app.orchard.tv.ui.components.consumeTaps
@@ -130,6 +133,7 @@ import com.planyourtv.policy.PolicyMode
 import com.planyourtv.policy.PolicyUiState
 import com.planyourtv.policy.RemotePolicyMode
 import com.planyourtv.policy.SessionState
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import java.time.LocalDateTime
@@ -184,7 +188,7 @@ fun ControlCenter(
         // at 1% while Home is idle, without focus, the first opening is like the second.
         if (warm && !visible) {
             Column(Modifier.graphicsLayer { alpha = 0.01f }.width(300.dp).liquidGlass(24.dp).padding(16.dp)) {
-                MainPage(vm, now, false, onOpen)
+                MainPage(vm, now, takeFocus = false, poll = false, onOpen = onOpen)
             }
         }
         AnimatedVisibility(
@@ -216,7 +220,11 @@ fun ControlCenter(
                         // Closing sets the page back to Main while the panel fades out; that page must
                         // not take focus from the tile Home has just put it back on.
                         when (p) {
-                            CcPage.Main -> if (Restricted.active) KidsPage(vm, now, visible) else MainPage(vm, now, visible, onOpen)
+                            CcPage.Main -> if (Restricted.active) {
+                                KidsPage(vm, now, visible)
+                            } else {
+                                MainPage(vm, now, takeFocus = visible, poll = visible, onOpen = onOpen)
+                            }
                             CcPage.Inputs -> InputsPage(vm, visible, onOpen)
                             CcPage.InputSettings -> InputSettingsPage(vm, visible)
                             CcPage.Update -> UpdatePage(vm, visible)
@@ -254,6 +262,23 @@ private fun rememberChildRestriction(): ChildRestriction {
         initial = childRestrictionOf(PolicyModeCoordinator.state.value),
     )
     return restriction
+}
+
+/**
+ * The parent-center source-entry switch, plus the session/study gate. Recompose only when the
+ * answer changes, not on every policy tick.
+ */
+@Composable
+private fun rememberSourceEntriesAllowed(): Boolean {
+    val flow = remember {
+        combine(SourceEntrySettings.visible, PolicyModeCoordinator.state) { _, _ ->
+            PolicyModeCoordinator.sourceEntriesAllowed()
+        }.distinctUntilChanged()
+    }
+    val allowed by flow.collectAsState(
+        initial = PolicyModeCoordinator.sourceEntriesAllowed(),
+    )
+    return allowed
 }
 
 /**
@@ -353,6 +378,11 @@ private fun ExitTimerDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
 @Composable
 private fun KidsPage(vm: HomeViewModel, now: LocalDateTime, takeFocus: Boolean) {
     val first = remember { FocusRequester() }
+    val context = LocalContext.current
+    val laser = remember { HisenseLaserPanel.usable(context) }
+    val showsVolume = remember { OutputDevice.showsVolume(context) }
+    val showsBrightness = remember { OutputDevice.showsBrightness() }
+    PollBrightness(vm, laser, enabled = takeFocus)
     LaunchedEffect(Unit) {
         if (!takeFocus) return@LaunchedEffect
         withFrameNanos { }
@@ -366,9 +396,12 @@ private fun KidsPage(vm: HomeViewModel, now: LocalDateTime, takeFocus: Boolean) 
             BasicText(it, style = Type.Callout.copy(color = Palette.SecondaryLabel))
         }
         Spacer(Modifier.height(12.dp))
-        VolumeRow(vm, first)
-        Spacer(Modifier.height(6.dp))
-        BrightnessRow(vm)
+        // A box or stick has neither a panel nor, with its volume fixed, a sound level of its own (#1307).
+        if (showsVolume) {
+            VolumeRow(vm, first)
+            Spacer(Modifier.height(6.dp))
+        }
+        if (showsBrightness) BrightnessRow(vm, laser)
         Spacer(Modifier.height(6.dp))
         MenuRow(
             Glyph.Shield,
@@ -380,7 +413,14 @@ private fun KidsPage(vm: HomeViewModel, now: LocalDateTime, takeFocus: Boolean) 
 }
 
 @Composable
-private fun MainPage(vm: HomeViewModel, now: LocalDateTime, takeFocus: Boolean, onOpen: (android.content.Intent) -> Unit) {
+private fun MainPage(
+    vm: HomeViewModel,
+    now: LocalDateTime,
+    takeFocus: Boolean,
+    /** The row polls the picture service, so only the copy that is on screen may do it. */
+    poll: Boolean,
+    onOpen: (android.content.Intent) -> Unit,
+) {
     val context = LocalContext.current
     // A child must not reach the system Settings page: from there apps can be uninstalled,
     // which would remove the guarded player and its allow-list. The whole system row goes with
@@ -391,6 +431,10 @@ private fun MainPage(vm: HomeViewModel, now: LocalDateTime, takeFocus: Boolean, 
     // PARENT_OVERRIDE is parent use, so everything returns.
     val restriction = rememberChildRestriction()
     val childRestricted = restriction != ChildRestriction.NONE
+    // The parent-center switch releases only the source button. Network and Settings stay hidden
+    // whenever the child owns the TV.
+    val sourcesAllowed = rememberSourceEntriesAllowed()
+    val systemRowVisible = !childRestricted || sourcesAllowed
     val ruleSessionActive = rememberRuleSessionActive()
     val parentOverrideActive = rememberParentOverrideActive()
     val guardHealth = vm.guardHealth
@@ -403,15 +447,32 @@ private fun MainPage(vm: HomeViewModel, now: LocalDateTime, takeFocus: Boolean, 
         else -> stringResource(R.string.cc_status_summary_unknown)
     }
     var confirmExitTimer by remember { mutableStateOf(false) }
+    // The laser level belongs to the laser sets only (HisenseLaserPanel); every other TV keeps
+    // the brightness row it had.
+    val laser = remember { HisenseLaserPanel.usable(context) }
+    val showsVolume = remember { OutputDevice.showsVolume(context) }
+    val showsBrightness = remember { OutputDevice.showsBrightness() }
+    PollBrightness(vm, laser, poll)
     val first = remember { FocusRequester() }
     val networkFocus = remember { FocusRequester() }
     val settingsFocus = remember { FocusRequester() }
-    // With no system row, the first control left is the volume slider.
+    // With no system row, the first control left is the volume slider, then brightness, then the
+    // first menu row for a box with neither.
     val volumeFocus = remember { FocusRequester() }
+    val brightnessFocus = remember { FocusRequester() }
+    val menuFocus = remember { FocusRequester() }
+    val noControls = !systemRowVisible && !showsVolume && !showsBrightness
+    val menuFallback = if (noControls) menuFocus else null
+    val initialFocus = when {
+        systemRowVisible -> first
+        showsVolume -> volumeFocus
+        showsBrightness -> brightnessFocus
+        else -> menuFocus
+    }
     // The buttons share one row above a panel-wide slider, so focus searching up from it has three
     // equally near choices and takes the middle one, Network, whichever button Down came from
     // (75A7D). Remember that button and send Up back to it.
-    var cameFrom by remember { mutableStateOf(if (childRestricted) volumeFocus else first) }
+    var cameFrom by remember { mutableStateOf(initialFocus) }
     // Firmwares that list their inputs late (see HomeViewModel.refreshSources): look again while
     // the page is open and still empty. One provider or TvInputManager query every 3 s.
     LaunchedEffect(Unit) {
@@ -420,10 +481,20 @@ private fun MainPage(vm: HomeViewModel, now: LocalDateTime, takeFocus: Boolean, 
             delay(3000)
         }
     }
-    LaunchedEffect(takeFocus, childRestricted) {
+    // childRestricted is in the key for the case where the system row loses Network/Settings but
+    // stays visible, so focus must leave the vanished button for the first one. Volume and
+    // brightness can be absent on a box or a panel-less TV, hence their keys too.
+    LaunchedEffect(takeFocus, systemRowVisible, childRestricted, showsVolume, showsBrightness) {
         if (!takeFocus) return@LaunchedEffect
         withFrameNanos { }
-        runCatching { (if (childRestricted) volumeFocus else first).requestFocus() }
+        val target = when {
+            systemRowVisible -> first
+            showsVolume -> volumeFocus
+            showsBrightness -> brightnessFocus
+            else -> menuFocus
+        }
+        cameFrom = target
+        runCatching { target.requestFocus() }
     }
 
     Column {
@@ -451,31 +522,33 @@ private fun MainPage(vm: HomeViewModel, now: LocalDateTime, takeFocus: Boolean, 
             }
         }
 
-        if (!childRestricted) {
+        if (systemRowVisible) {
             Spacer(Modifier.height(12.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                RoundButton(
-                    Glyph.Input, stringResource(R.string.cc_inputs),
-                    focusRequester = first,
-                    modifier = Modifier.onFocusChanged { if (it.isFocused) cameFrom = first },
-                ) {
-                    // TCL lists no inputs to Android; its own input panel is the next best thing.
-                    vm.overlay = if (vm.sources.isEmpty() && SystemProbe.openInputPicker(context)) Overlay.None
-                    else Overlay.ControlCenter(CcPage.Inputs)
-                }
-                RoundButton(
-                    when (vm.network.kind) { NetKind.Ethernet -> Glyph.Ethernet; NetKind.Offline -> Glyph.Offline; else -> Glyph.Wifi },
-                    stringResource(R.string.cc_network),
-                    focusRequester = networkFocus,
-                    modifier = Modifier.onFocusChanged { if (it.isFocused) cameFrom = networkFocus },
-                ) {
-                    vm.whenUnlocked {
-                        val pages = SystemProbe.networkSettingsIntents(context, ethernet = vm.network.kind == NetKind.Ethernet)
-                        LaunchFallback.arm(pages.drop(1))
-                        onOpen(pages.first())
+                if (!childRestricted || sourcesAllowed) {
+                    RoundButton(
+                        Glyph.Input, stringResource(R.string.cc_inputs),
+                        focusRequester = first,
+                        modifier = Modifier.onFocusChanged { if (it.isFocused) cameFrom = first },
+                    ) {
+                        // TCL lists no inputs to Android; its own input panel is the next best thing.
+                        vm.overlay = if (vm.sources.isEmpty() && SystemProbe.openInputPicker(context)) Overlay.None
+                        else Overlay.ControlCenter(CcPage.Inputs)
                     }
                 }
                 if (!childRestricted) {
+                    RoundButton(
+                        when (vm.network.kind) { NetKind.Ethernet -> Glyph.Ethernet; NetKind.Offline -> Glyph.Offline; else -> Glyph.Wifi },
+                        stringResource(R.string.cc_network),
+                        focusRequester = networkFocus,
+                        modifier = Modifier.onFocusChanged { if (it.isFocused) cameFrom = networkFocus },
+                    ) {
+                        vm.whenUnlocked {
+                            val pages = SystemProbe.networkSettingsIntents(context, ethernet = vm.network.kind == NetKind.Ethernet)
+                            LaunchFallback.arm(pages.drop(1))
+                            onOpen(pages.first())
+                        }
+                    }
                     RoundButton(
                         Glyph.Gear, stringResource(R.string.cc_settings),
                         focusRequester = settingsFocus,
@@ -491,13 +564,21 @@ private fun MainPage(vm: HomeViewModel, now: LocalDateTime, takeFocus: Boolean, 
         }
 
         Spacer(Modifier.height(12.dp))
-        VolumeRow(
-            vm,
-            returnTo = if (childRestricted) volumeFocus else cameFrom,
-            focusRequester = if (childRestricted) volumeFocus else null,
-        )
-        Spacer(Modifier.height(6.dp))
-        BrightnessRow(vm)
+        // A box or stick has neither a panel nor, with its volume fixed, a sound level of its own (#1307).
+        if (showsVolume) {
+            VolumeRow(
+                vm,
+                returnTo = if (systemRowVisible) cameFrom else volumeFocus,
+                focusRequester = if (systemRowVisible) null else volumeFocus,
+            )
+            Spacer(Modifier.height(6.dp))
+        }
+        if (showsBrightness) {
+            BrightnessRow(
+                vm, laser,
+                focusRequester = if (!systemRowVisible && !showsVolume) brightnessFocus else null,
+            )
+        }
 
         Spacer(Modifier.height(6.dp))
         if (childRestricted) {
@@ -507,6 +588,7 @@ private fun MainPage(vm: HomeViewModel, now: LocalDateTime, takeFocus: Boolean, 
                 MenuRow(
                     Glyph.Kids,
                     stringResource(R.string.policy_study_exit),
+                    focusRequester = menuFallback,
                     onClick = {
                         vm.overlay = Overlay.None
                         PolicyModeCoordinator.exitStudyMode()
@@ -518,6 +600,7 @@ private fun MainPage(vm: HomeViewModel, now: LocalDateTime, takeFocus: Boolean, 
                 MenuRow(
                     Glyph.Power,
                     stringResource(R.string.policy_exit_timer),
+                    focusRequester = menuFallback,
                     onClick = { confirmExitTimer = true },
                 )
             }
@@ -527,6 +610,7 @@ private fun MainPage(vm: HomeViewModel, now: LocalDateTime, takeFocus: Boolean, 
                 MenuRow(
                     Glyph.Kids,
                     stringResource(if (Restricted.kind == RestrictedKind.Kids) R.string.cc_kids_back else R.string.cc_elders_back),
+                    focusRequester = menuFallback,
                     onClick = { Restricted.start(); vm.overlay = Overlay.None },
                 )
             }
@@ -534,6 +618,7 @@ private fun MainPage(vm: HomeViewModel, now: LocalDateTime, takeFocus: Boolean, 
             MenuRow(
                 Glyph.Photo,
                 stringResource(R.string.cc_personalize),
+                focusRequester = if (Restricted.enabled && Restricted.suspended) null else menuFallback,
                 onClick = { vm.overlay = Overlay.Wallpaper },
             )
             MenuRow(
@@ -1157,42 +1242,69 @@ private fun VolumeRow(
     )
 }
 
-/**
- * Brightness where Aerial may change it; otherwise a row that opens the TV's picture settings, and
- * says so: a bare "Brightness" with no slider read as broken (Vidda 85V1F-S, FFalcon, issue #130).
+/** Reads the level every 700 ms while the brightness row is on screen. Neither the DLP light
+ * engine nor the picture service announces a change, and the TV's own slider can be moved with the
+ * panel still up, so nothing else would refresh either.
+ *
+ * Only the on-screen copy polls: the closed panel draws this page once at 1 %, so that its first
+ * opening is not its first draw (ControlCenter's warm path), and a LaunchedEffect runs from there
+ * too — that copy would read the picture service for a panel nobody can see.
  */
 @Composable
-private fun BrightnessRow(vm: HomeViewModel) {
+private fun PollBrightness(vm: HomeViewModel, laser: Boolean, enabled: Boolean) {
     val context = LocalContext.current
-    // XGIMI (GMUI): the real brightness is the DLP light-engine level. It reads through the HAL
-    // class (SystemProbe.xgimiBrightnessLevel) and, on this firmware, writes through it too, so the
-    // row is a slider of the light engine's own levels (1..10) rather than a percentage of the
-    // system setting that moves nothing. Poll the HAL while the row is on screen: the level can be
-    // changed from the TV's own overlay, which does not pause Aerial, so no onResume or
-    // screen_brightness observer ever fires for it.
     val xgimi = remember { SystemProbe.xgimiBrightnessLevel() != null }
-    LaunchedEffect(xgimi) {
-        if (!xgimi) return@LaunchedEffect
-        vm.discoverBrightnessBoost()
+    LaunchedEffect(xgimi, laser, enabled) {
+        if (!enabled || (!xgimi && !laser)) return@LaunchedEffect
+        // XGIMI's Boost is discovered once, before the first poll; it has no saying on a laser set.
+        if (xgimi) vm.discoverBrightnessBoost()
         while (isActive) {
             delay(700)
             vm.refreshBrightness()
         }
     }
+}
+
+/**
+ * Brightness where Aerial may change it; otherwise a row that opens the TV's picture settings, and
+ * says so: a bare "Brightness" with no slider read as broken (Vidda 85V1F-S, FFalcon, issue #130).
+ */
+@Composable
+private fun BrightnessRow(vm: HomeViewModel, laser: Boolean, focusRequester: FocusRequester? = null) {
+    val context = LocalContext.current
+    // XGIMI (GMUI): the real brightness is the DLP light-engine level. It reads through the HAL
+    // class (SystemProbe.xgimiBrightnessLevel) and, on this firmware, writes through it too, so the
+    // row is a slider of the light engine's own levels (1..10) rather than a percentage of the
+    // system setting that moves nothing. [laser] comes from the page: it is the light source's own
+    // 0..10 level, which the system setting does not move either.
+    val xgimi = remember { SystemProbe.xgimiBrightnessLevel() != null }
     val level = vm.brightness
     if (level == null) {
         MenuRow(Glyph.Sun, stringResource(R.string.cc_brightness), onClick = {
             vm.overlay = Overlay.None
             SystemProbe.openPictureSettings(context)
-        }, trailing = stringResource(R.string.cc_brightness_in_settings) + " ›")
+        }, focusRequester = focusRequester, trailing = stringResource(R.string.cc_brightness_in_settings) + " ›")
     } else {
         SliderRow(
             glyph = Glyph.Sun,
             level = level,
-            value = if (vm.brightnessBoost == true) "10+" else Math.round(level * 100).toString(),
-            // Brightness.adjust moves 5% a step, and stops at 1%; XGIMI steps its own levels.
-            steps = if (xgimi) SystemProbe.xgimiBrightnessMax else 20,
+            // A laser set's level is 11 notches of its own, not a percentage of anything: show the
+            // notch, the number the TV's own slider shows (4, not 40).
+            value = when {
+                vm.brightnessBoost == true -> "10+"
+                laser -> Math.round(level * HisenseLaserPanel.LEVEL_MAX).toString()
+                else -> Math.round(level * 100).toString()
+            },
+            // Brightness.adjust moves 5% a step, and stops at 1%; XGIMI steps its own levels and a
+            // Hisense laser set its own 11 notches. Only the drag pitch follows this; a key is one
+            // step either way.
+            steps = when {
+                laser -> HisenseLaserPanel.LEVEL_MAX
+                xgimi -> SystemProbe.xgimiBrightnessMax
+                else -> 20
+            },
             onStep = vm::adjustBrightness,
+            focusRequester = focusRequester,
             onClick = {},
         )
     }
@@ -1201,8 +1313,15 @@ private fun BrightnessRow(vm: HomeViewModel) {
 @Composable
 private fun InputsPage(vm: HomeViewModel, takeFocus: Boolean, onOpen: (android.content.Intent) -> Unit) {
     val first = remember { FocusRequester() }
+    val sourceEntriesAllowed = rememberSourceEntriesAllowed()
+    // Closing the switch while this page is open sends the panel back to its main page.
+    LaunchedEffect(sourceEntriesAllowed) {
+        if (!sourceEntriesAllowed) vm.overlay = Overlay.ControlCenter(CcPage.Main)
+    }
+    if (!sourceEntriesAllowed) return
     // Pinning inputs and choosing the boot target are setup, not something a child should change.
     val childRestricted = rememberChildRestriction() != ChildRestriction.NONE
+    val shown = vm.shownSources.filter { PolicyModeCoordinator.allowsSourceEntry(it.id) }
     LaunchedEffect(Unit) {
         if (!takeFocus) return@LaunchedEffect
         withFrameNanos { }
@@ -1211,11 +1330,11 @@ private fun InputsPage(vm: HomeViewModel, takeFocus: Boolean, onOpen: (android.c
     Column(Modifier.heightIn(max = 470.dp).verticalScroll(rememberScrollState())) {
         MenuRow(Glyph.ChevronLeft, stringResource(R.string.cc_inputs), onClick = { vm.overlay = Overlay.ControlCenter(CcPage.Main) })
         Spacer(Modifier.height(8.dp))
-        if (vm.sources.isEmpty()) {
+        if (shown.isEmpty()) {
             BasicText(stringResource(R.string.cc_no_inputs), style = Type.Callout, modifier = Modifier.padding(14.dp))
         }
         val connected = stringResource(R.string.input_connected)
-        vm.sources.forEachIndexed { i, source ->
+        shown.forEachIndexed { i, source ->
             MenuRow(
                 glyph = when (source.kind) {
                     SourceKind.Hdmi, SourceKind.DisplayPort -> Glyph.Hdmi
@@ -1233,9 +1352,14 @@ private fun InputsPage(vm: HomeViewModel, takeFocus: Boolean, onOpen: (android.c
             )
         }
         // Switching is this page's one job; what Aerial does with the inputs is a page further in.
-        if (!childRestricted && vm.sources.isNotEmpty()) {
+        if (!childRestricted && vm.shownSources.isNotEmpty()) {
             Spacer(Modifier.height(10.dp))
-            MenuRow(Glyph.Gear, stringResource(R.string.cc_inputs_settings), onClick = { vm.overlay = Overlay.ControlCenter(CcPage.InputSettings) })
+            MenuRow(
+                Glyph.Gear, stringResource(R.string.cc_inputs_settings),
+                onClick = { vm.overlay = Overlay.ControlCenter(CcPage.InputSettings) },
+                // With every input taken out of the list, the way back in is the first row.
+                focusRequester = if (shown.isEmpty()) first else null,
+            )
         }
     }
 }
@@ -1256,14 +1380,33 @@ private fun InputSettingsPage(vm: HomeViewModel, takeFocus: Boolean) {
     Column(Modifier.heightIn(max = 470.dp).verticalScroll(rememberScrollState())) {
         MenuRow(Glyph.ChevronLeft, stringResource(R.string.cc_inputs_settings), onClick = { vm.overlay = Overlay.ControlCenter(CcPage.Inputs) })
 
+        val shown = vm.shownSources
+        // Which inputs the list has: firmwares list ports the TV does not have (issue #279).
         Spacer(Modifier.height(10.dp))
-        BasicText(stringResource(R.string.cc_inputs_pin), style = Type.Callout, modifier = Modifier.padding(start = 14.dp, bottom = 6.dp))
+        BasicText(stringResource(R.string.cc_inputs_list), style = Type.Callout, modifier = Modifier.padding(start = 14.dp, bottom = 6.dp))
         vm.sources.forEachIndexed { i, source ->
+            val listed = source.id !in AerialSettings.hiddenSources
+            ChoiceRow(
+                text = name(source),
+                selected = listed,
+                focusRequester = if (i == 0) first else null,
+                onClick = { vm.setSourceHidden(source, listed) },
+            )
+        }
+        BasicText(
+            stringResource(R.string.cc_inputs_list_hint),
+            style = Type.Caption,
+            modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 8.dp),
+        )
+
+        Spacer(Modifier.height(18.dp))
+        BasicText(stringResource(R.string.cc_inputs_pin), style = Type.Callout, modifier = Modifier.padding(start = 14.dp, bottom = 6.dp))
+        shown.forEach { source ->
             val pinned = source.id in AerialSettings.pinnedSources
             ChoiceRow(
                 text = name(source),
                 selected = pinned,
-                focusRequester = if (i == 0) first else null,
+                focusRequester = null,
                 onClick = { vm.setSourcePinned(source, !pinned) },
             )
         }
@@ -1290,7 +1433,7 @@ private fun InputSettingsPage(vm: HomeViewModel, takeFocus: Boolean) {
                 onClick = {},
             )
         }
-        vm.sources.forEach { source ->
+        shown.forEach { source ->
             ChoiceRow(
                 text = name(source),
                 selected = source.id == AerialSettings.bootSource,
@@ -1300,6 +1443,17 @@ private fun InputSettingsPage(vm: HomeViewModel, takeFocus: Boolean) {
         }
         BasicText(
             stringResource(R.string.cc_inputs_boot_hint),
+            style = Type.Caption,
+            modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 8.dp),
+        )
+
+        // A device switching itself on over HDMI-CEC takes the TV (issue #1020); off unless chosen.
+        Spacer(Modifier.height(18.dp))
+        BasicText(stringResource(R.string.cc_inputs_cec), style = Type.Callout, modifier = Modifier.padding(start = 14.dp, bottom = 6.dp))
+        ChoiceRow(stringResource(R.string.st_on), AerialSettings.cecSwitch, null) { AerialSettings.chooseCecSwitch(true) }
+        ChoiceRow(stringResource(R.string.st_off), !AerialSettings.cecSwitch, null) { AerialSettings.chooseCecSwitch(false) }
+        BasicText(
+            stringResource(R.string.cc_inputs_cec_hint),
             style = Type.Caption,
             modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 8.dp),
         )

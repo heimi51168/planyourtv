@@ -65,7 +65,11 @@ class QuizQuestionCacheTest {
     fun setUp() {
         val context = RuntimeEnvironment.getApplication()
         assertTrue(QuizQuestionCache.initForTest(context, testDb))
-        QuizQuestionCache.clearBank(QuizQuestionCache.LOCAL_SCOPE, QuizQuestionCache.ClearMode.ALL)
+        QuizQuestionCache.clearBank(
+            QuizQuestionCache.LOCAL_SCOPE,
+            QuizQuestionCache.ClearMode.ALL,
+            QuizQuestionCache.BankSource.ALL,
+        )
         QuizQuestionCache.clearCloudScopes()
         QuizQuestionCache.releaseOrphans(null)
     }
@@ -497,10 +501,167 @@ class QuizQuestionCacheTest {
             val legacy = QuizQuestionCache.listBank(QuizQuestionCache.LOCAL_SCOPE, "answered", nowMs = now)
             assertEquals(1, legacy.size)
             assertEquals("legacy", legacy.single().status(now))
+            // The idempotent onOpen column add is what makes this insert possible.
+            val imported = QuizQuestionCache.importLocalQuestions(
+                "col-migrated",
+                "import-migrated",
+                listOf(item(9)),
+                now,
+            )
+            assertEquals(1, imported.appended)
+            assertEquals(1, QuizQuestionCache.availableCollectionCount("col-migrated", now))
         } finally {
             QuizQuestionCache.closeForTest()
             context.deleteDatabase(dbName)
             assertTrue(QuizQuestionCache.initForTest(context, testDb))
         }
+    }
+
+    @Test
+    fun importedRowsAreOnlyVisibleToTheirTag() {
+        val tag = "col-import-a"
+        val imported = listOf(item(1), item(2), item(3))
+        val preview = QuizQuestionCache.previewLocalImport(tag, imported, now)
+        assertEquals(3, preview.wouldAppend)
+        assertEquals(QuizQuestionCache.BANK_CAPACITY, preview.remaining)
+        assertEquals(3, preview.preview.size)
+
+        val result = QuizQuestionCache.importLocalQuestions(tag, "import-a1", imported, now)
+        assertEquals(3, result.appended)
+        assertEquals(0, result.rejected)
+        assertEquals(QuizQuestionCache.BANK_CAPACITY - 3, result.remaining)
+        assertEquals(3, QuizQuestionCache.availableCollectionCount(tag, now))
+        assertEquals(0, QuizQuestionCache.availableCollectionCount("col-import-b", now))
+
+        val custom = QuizQuestionCache.reserveCollectionForRound(2, "sess_custom", tag, 1, now)
+        assertEquals(2, custom.size)
+        assertTrue(custom.all { it.collectionId == tag })
+
+        QuizQuestionCache.appendLocalQuestions("batch_course", (4..5).map(::scopedItem), now)
+        val scope = QuizAnswerScope.create(
+            grade = 4,
+            semester = 1,
+            subject = "MATH",
+            textbook = "RENJIAO",
+            scopeType = "UNIT",
+            unitNo = 3,
+            difficulty = null,
+        )!!
+        val course = QuizQuestionCache.reserveForRound(
+            count = 5,
+            sessionId = "sess_course",
+            scopeKey = QuizQuestionCache.LOCAL_SCOPE,
+            minRequired = 1,
+            nowMs = now,
+            answerScope = scope,
+        )
+        assertEquals(2, course.size)
+        assertTrue(course.all { it.collectionId == null })
+    }
+
+    @Test
+    fun importSplitsDuplicatesIntoFileTagAndCrossSourceBuckets() {
+        QuizQuestionCache.appendLocalQuestions("batch_ai", listOf(item(1)), now)
+        val tagA = "col-a"
+        val batch = listOf(item(1), item(2), item(2), item(3))
+
+        val first = QuizQuestionCache.importLocalQuestions(tagA, "import-a1", batch, now)
+        assertEquals(3, first.appended)
+        assertEquals(1, first.fileDuplicates)
+        assertEquals(0, first.collectionDuplicates)
+        assertEquals(1, first.crossSourceDuplicates)
+        assertEquals(4, QuizQuestionCache.bankCounts(QuizQuestionCache.LOCAL_SCOPE, now).total)
+
+        val preview = QuizQuestionCache.previewLocalImport(tagA, batch, now)
+        assertEquals(0, preview.wouldAppend)
+        assertEquals(1, preview.fileDuplicates)
+        assertEquals(3, preview.collectionDuplicates)
+
+        val retry = QuizQuestionCache.importLocalQuestions(tagA, "import-a2", batch, now)
+        assertEquals(0, retry.appended)
+        assertEquals(1, retry.fileDuplicates)
+        assertEquals(3, retry.collectionDuplicates)
+        assertEquals(4, QuizQuestionCache.bankCounts(QuizQuestionCache.LOCAL_SCOPE, now).total)
+
+        val other = QuizQuestionCache.importLocalQuestions("col-b", "import-b1", batch, now)
+        assertEquals(3, other.appended)
+        assertEquals(1, other.fileDuplicates)
+        assertEquals(0, other.collectionDuplicates)
+        assertEquals(3, other.crossSourceDuplicates)
+    }
+
+    @Test
+    fun aiDedupeIgnoresImportedRows() {
+        val tag = "col-ai-isolation"
+        QuizQuestionCache.importLocalQuestions(tag, "import-ai-isolation", listOf(item(7)), now)
+        assertEquals(listOf(false, true), QuizQuestionCache.duplicateFlags(listOf(item(7), item(7))))
+    }
+
+    @Test
+    fun clearingTheBankIsSourceAware() {
+        val tagA = "col-clear-a"
+        val tagB = "col-clear-b"
+        QuizQuestionCache.importLocalQuestions(tagA, "import-clear-a", listOf(item(1), item(2)), now)
+        QuizQuestionCache.importLocalQuestions(tagB, "import-clear-b", listOf(item(3)), now)
+        QuizQuestionCache.appendLocalQuestions("batch_clear_ai", listOf(item(4)), now)
+        assertEquals(
+            QuizQuestionCache.SourceCounts(course = 1, custom = 3),
+            QuizQuestionCache.sourceCounts(nowMs = now),
+        )
+
+        assertTrue(
+            QuizQuestionCache.clearBank(
+                QuizQuestionCache.LOCAL_SCOPE,
+                QuizQuestionCache.ClearMode.ALL,
+            ),
+        )
+        assertEquals(
+            QuizQuestionCache.SourceCounts(course = 0, custom = 3),
+            QuizQuestionCache.sourceCounts(nowMs = now),
+        )
+
+        assertTrue(
+            QuizQuestionCache.clearBank(
+                QuizQuestionCache.LOCAL_SCOPE,
+                QuizQuestionCache.ClearMode.ALL,
+                QuizQuestionCache.BankSource.CUSTOM,
+                tagA,
+            ),
+        )
+        assertEquals(0, QuizQuestionCache.availableCollectionCount(tagA, now))
+        assertEquals(1, QuizQuestionCache.availableCollectionCount(tagB, now))
+
+        assertTrue(
+            QuizQuestionCache.clearBank(
+                QuizQuestionCache.LOCAL_SCOPE,
+                QuizQuestionCache.ClearMode.ALL,
+                QuizQuestionCache.BankSource.ALL,
+            ),
+        )
+        assertEquals(0, QuizQuestionCache.bankCounts(QuizQuestionCache.LOCAL_SCOPE, now).total)
+    }
+
+    @Test
+    fun importIsAllOrNothingWhenTheBankIsFull() {
+        val all = (1..QuizQuestionCache.BANK_CAPACITY).map(::bulkItem)
+        assertEquals(
+            QuizQuestionCache.BANK_CAPACITY,
+            QuizQuestionCache.appendLocalQuestions("batch_import_full", all, now).appended,
+        )
+        val tag = "col-full"
+        val preview = QuizQuestionCache.previewLocalImport(tag, listOf(item(1), item(2)), now)
+        assertEquals(0, preview.remaining)
+        assertEquals(2, preview.wouldAppend)
+
+        val result = QuizQuestionCache.importLocalQuestions(
+            tag,
+            "import-full",
+            listOf(item(1), item(2)),
+            now,
+        )
+        assertEquals(0, result.appended)
+        assertTrue(result.capacityReached)
+        assertEquals(QuizQuestionCache.BANK_CAPACITY, QuizQuestionCache.bankCounts(QuizQuestionCache.LOCAL_SCOPE, now).total)
+        assertEquals(0, QuizQuestionCache.availableCollectionCount(tag, now))
     }
 }

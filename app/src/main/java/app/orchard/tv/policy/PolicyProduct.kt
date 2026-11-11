@@ -36,6 +36,8 @@ object PolicyProduct {
         )
         // Voice cues are local policy feedback and must work without a backend too.
         PolicyVoicePlayer.install(context.applicationContext)
+        // Read the source-entry display switch before Home builds its first list.
+        SourceEntrySettings.install(context.applicationContext)
         // The quiz engine reads only this cache. A failure here is logged by the
         // caller at first use (CACHE_UNAVAILABLE); it is never silently replaced.
         QuizQuestionCache.init(context.applicationContext)

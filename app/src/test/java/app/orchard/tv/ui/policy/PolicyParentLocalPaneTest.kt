@@ -25,14 +25,16 @@ class PolicyParentLocalPaneTest {
     @Test
     fun sharedAppsComeBeforeActivationTabs() {
         val keys = v6LocalFocusKeys(LocalRules.DEFAULTS, Activation.MANUAL, sessionActive = false)
-        // The app scope is shared by both activations, so it sits above the timing tabs.
+        // The app scope and source switch are shared by both activations, so they sit above the
+        // timing tabs.
         assertEquals("apps", keys.first())
         assertEquals("study", keys.getOrNull(1))
-        assertEquals("activation-auto", keys.getOrNull(2))
-        assertEquals("activation-manual", keys.getOrNull(3))
+        assertEquals("sources", keys.getOrNull(2))
+        assertEquals("activation-auto", keys.getOrNull(3))
+        assertEquals("activation-manual", keys.getOrNull(4))
         // Manual timing has the quiz switch before the first time row.
-        assertEquals("quiz", keys.getOrNull(4))
-        assertTrue(keys.getOrNull(5)?.startsWith("wd-") == true)
+        assertEquals("quiz", keys.getOrNull(5))
+        assertTrue(keys.getOrNull(6)?.startsWith("wd-") == true)
     }
 
     @Test

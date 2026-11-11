@@ -234,6 +234,26 @@
           </div>
 
           <div id="answerPaneScope">
+            <p id="levelsTotalHint" class="hint levels-total" aria-live="polite"></p>
+
+            <div class="level-add-row">
+              <button id="addLevel" class="level-add-card course" type="button">
+                <span class="level-add-plus" aria-hidden="true">+</span>
+                <span class="level-add-copy">
+                  <span class="level-add-title" data-i18n="levelAddCourseTitle"></span>
+                  <span class="level-add-meta" data-i18n="levelAddCourseMeta"></span>
+                </span>
+              </button>
+              <button id="addCustomLevel" class="level-add-card custom" type="button">
+                <span class="level-add-plus" aria-hidden="true">+</span>
+                <span class="level-add-copy">
+                  <span class="level-add-title" data-i18n="levelAddCustomTitle"></span>
+                  <span id="addCustomLevelMeta" class="level-add-meta" data-i18n="levelAddCustomMeta"></span>
+                </span>
+              </button>
+            </div>
+            <p id="levelMaxHint" class="hint level-max-hint hidden" data-i18n="levelMaxHint"></p>
+
             <div class="level-head">
               <span class="field-label" data-i18n="levelListTitle"></span>
               <span id="levelListCount" class="level-count" aria-live="polite"></span>
@@ -247,9 +267,6 @@
               <p class="muted" data-i18n="levelEmptyText"></p>
             </div>
 
-            <button id="addLevel" class="btn secondary block" type="button" data-i18n="levelAdd"></button>
-            <p id="levelMaxHint" class="hint hidden" data-i18n="levelMaxHint"></p>
-
             <div id="levelUndo" class="level-undo hidden" role="status" aria-live="polite">
               <span id="levelUndoText"></span>
               <button id="levelUndoButton" class="btn text small" type="button" data-i18n="levelUndo"></button>
@@ -257,6 +274,23 @@
 
             <p id="levelState" class="ok" role="status"></p>
             <p id="levelError" class="error" role="alert"></p>
+
+            <div class="level-divider"></div>
+
+            <div class="level-head">
+              <span class="field-label" data-i18n="customLevelListTitle"></span>
+              <span id="customLevelListCount" class="level-count" aria-live="polite"></span>
+            </div>
+            <p class="hint level-lead" data-i18n="customLevelListLead"></p>
+            <p id="customLevelCombined" class="hint levels-combined"></p>
+
+            <div id="customLevelList" class="level-list"></div>
+            <div id="customLevelEmpty" class="empty-state hidden">
+              <p data-i18n="customLevelEmptyTitle"></p>
+              <p class="muted" data-i18n="customLevelEmptyText"></p>
+            </div>
+            <p id="customLevelState" class="ok" role="status"></p>
+            <p id="customLevelError" class="error" role="alert"></p>
           </div>
 
           <div id="answerPaneRules" class="hidden">
@@ -433,6 +467,44 @@
           </div>
         </section>
 
+        <section id="customLevelEditorPage" class="subpage hidden">
+          <header class="page-head">
+            <button id="backFromCustomLevel" class="back-btn" type="button" data-i18n-aria="back">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <h1 id="customLevelEditorTitle"></h1>
+          </header>
+
+          <p id="customLevelEditorCloudHint" class="hint custom-level-cloud hidden" data-i18n="customLevelCloudHint"></p>
+
+          <div class="field">
+            <label id="customLevelNameLabel" for="customLevelName" data-i18n="levelNameLabel"></label>
+            <input id="customLevelName" type="text" maxlength="10" autocomplete="off"
+              aria-labelledby="customLevelNameLabel" data-i18n-placeholder="levelNamePlaceholder">
+            <p class="hint" data-i18n="customLevelNameHint"></p>
+          </div>
+
+          <div id="customLevelEditorEmpty" class="empty-state hidden">
+            <p data-i18n="customLevelEmptyTitle"></p>
+            <p class="muted" data-i18n="customLevelEmptyText"></p>
+            <div class="inline-actions">
+              <button id="customLevelEditorGoImport" class="btn secondary small" type="button" data-i18n="goImportBank"></button>
+            </div>
+          </div>
+
+          <div id="customLevelTagField" class="field">
+            <span class="field-label" data-i18n="customLevelTagLabel"></span>
+            <div id="customLevelTags" class="tag-choice-list" role="radiogroup" data-i18n-aria="customLevelTagLabel"></div>
+            <p class="hint" data-i18n="customLevelTagHint"></p>
+          </div>
+
+          <p id="customLevelEditorAvailable" class="available"></p>
+          <p id="customLevelEditorError" class="error" role="alert"></p>
+          <div class="sticky-bar">
+            <button id="saveCustomLevel" class="btn primary" type="button" data-i18n="levelSave"></button>
+          </div>
+        </section>
+
         <section id="questionsPage" class="subpage hidden">
           <header class="page-head">
             <button id="backFromQuestions" class="back-btn" type="button" data-i18n-aria="back">
@@ -455,23 +527,134 @@
       </section>
 
       <section id="view-bank" class="view hidden">
-        <div class="section-head">
-          <div>
-            <h2 data-i18n="tabBank"></h2>
-            <p id="bankCounts" class="muted"></p>
+        <div id="bankHome">
+          <div class="section-head">
+            <div>
+              <h2 data-i18n="tabBank"></h2>
+              <p id="bankCounts" class="muted"></p>
+              <p id="bankSourceCounts" class="muted"></p>
+            </div>
+            <div class="head-actions">
+              <button id="openBankImport" class="btn secondary small" type="button" data-i18n="bankImport"></button>
+              <button id="refreshBank" class="btn text small" type="button" data-i18n="refresh"></button>
+            </div>
           </div>
-          <button id="refreshBank" class="btn text small" type="button" data-i18n="refresh"></button>
+          <div id="bankFilters" class="segmented" role="group" aria-labelledby="bankFiltersLabel">
+            <span id="bankFiltersLabel" class="hidden" data-i18n="tabBank"></span>
+            <button type="button" data-filter="all" aria-pressed="true" data-i18n="bankFilterAll"></button>
+            <button type="button" data-filter="unused" aria-pressed="false" data-i18n="bankFilterUnused"></button>
+            <button type="button" data-filter="wrong" aria-pressed="false" data-i18n="bankFilterWrong"></button>
+          </div>
+          <p id="bankInRoundNotice" class="hint hidden" data-i18n="inRoundNotice"></p>
+          <div id="bankList" class="bank-list"></div>
+          <div id="bankEmptyActions" class="empty-state hidden">
+            <p data-i18n="bankEmptyImportTitle"></p>
+            <div class="inline-actions">
+              <button id="bankEmptyImport" class="btn secondary small" type="button" data-i18n="bankImport"></button>
+              <button id="bankEmptyGenerate" class="btn text small" type="button" data-i18n="goGenerate"></button>
+            </div>
+          </div>
+          <button id="bankMore" class="btn secondary block hidden" type="button" data-i18n="loadMore"></button>
+          <p id="bankError" class="error" role="alert"></p>
         </div>
-        <div id="bankFilters" class="segmented" role="group" aria-labelledby="bankFiltersLabel">
-          <span id="bankFiltersLabel" class="hidden" data-i18n="tabBank"></span>
-          <button type="button" data-filter="all" aria-pressed="true" data-i18n="bankFilterAll"></button>
-          <button type="button" data-filter="unused" aria-pressed="false" data-i18n="bankFilterUnused"></button>
-          <button type="button" data-filter="wrong" aria-pressed="false" data-i18n="bankFilterWrong"></button>
-        </div>
-        <p id="bankInRoundNotice" class="hint hidden" data-i18n="inRoundNotice"></p>
-        <div id="bankList" class="bank-list"></div>
-        <button id="bankMore" class="btn secondary block hidden" type="button" data-i18n="loadMore"></button>
-        <p id="bankError" class="error" role="alert"></p>
+
+        <section id="bankImportPage" class="subpage hidden">
+          <header class="page-head">
+            <button id="backFromImport" class="back-btn" type="button" data-i18n-aria="back">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <h1 data-i18n="importTitle"></h1>
+          </header>
+
+          <div class="import-scope-note" role="note">
+            <span class="import-scope-badge" data-i18n="importSingleOnlyBadge"></span>
+            <span class="import-scope-text" data-i18n="importSingleOnlyHint"></span>
+          </div>
+
+          <p id="importCloudNotice" class="hint import-cloud-notice hidden" role="status" data-i18n="importCloudNotice"></p>
+
+          <section class="card import-card">
+            <label class="field-label" for="importTagName" data-i18n="importTargetLabel"></label>
+            <div id="importTagField" class="tag-field">
+              <input id="importTagName" class="tag-input" type="text" maxlength="20"
+                autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done"
+                role="combobox" aria-autocomplete="list" aria-expanded="false"
+                aria-controls="importTagSuggestList" aria-haspopup="listbox"
+                data-i18n-placeholder="importTagPlaceholder"
+                data-i18n-aria="importTargetLabel">
+              <button id="clearImportTag" class="tag-clear hidden" type="button"
+                data-i18n-aria="importTagClear">×</button>
+              <div id="importTagSuggest" class="tag-suggest hidden">
+                <div id="importTagSuggestList" class="tag-suggest-list" role="listbox"
+                  data-i18n-aria="importTagSuggestAria"></div>
+                <div id="importTagSuggestFoot" class="tag-suggest-foot hidden"></div>
+              </div>
+            </div>
+            <p id="importTargetHint" class="hint import-target-hint" role="status" aria-live="polite"></p>
+          </section>
+
+          <section class="card import-card">
+            <span class="field-label" data-i18n="importInputLabel"></span>
+            <label class="btn secondary block file-btn" for="importFile">
+              <span data-i18n="importChooseFile"></span>
+            </label>
+            <input id="importFile" class="hidden" type="file"
+              accept=".json,.txt,application/json,text/plain">
+            <p id="importFileName" class="hint import-file-name"></p>
+            <label for="importText" data-i18n="importPasteLabel"></label>
+            <textarea id="importText" rows="8" maxlength="524288"
+              data-i18n-placeholder="importTextPlaceholder"></textarea>
+            <div class="inline-actions import-tools">
+              <button id="downloadTemplate" class="btn text small" type="button" data-i18n="importDownloadTemplate"></button>
+              <button id="copyPrompt" class="btn text small" type="button" data-i18n="importCopyPrompt"></button>
+            </div>
+            <p id="importCopyState" class="ok" role="status"></p>
+            <details id="promptFold" class="import-prompt">
+              <summary data-i18n="importViewPrompt"></summary>
+              <pre id="promptText" class="import-prompt-text"></pre>
+            </details>
+            <p class="hint import-ai-hint" data-i18n="importAiHint"></p>
+          </section>
+
+          <div class="field">
+            <span class="field-label" data-i18n="importDefaultDifficulty"></span>
+            <div id="importDifficultyChips" class="chip-row" role="group" data-i18n-aria="importDefaultDifficulty">
+              <button class="choice-chip" type="button" data-import-difficulty="easy" aria-pressed="false" data-i18n="difficultyEasy"></button>
+              <button class="choice-chip" type="button" data-import-difficulty="medium" aria-pressed="true" data-i18n="difficultyMedium"></button>
+              <button class="choice-chip" type="button" data-import-difficulty="hard" aria-pressed="false" data-i18n="difficultyHard"></button>
+            </div>
+          </div>
+
+          <p id="importError" class="error" role="alert"></p>
+          <ul id="importErrorList" class="import-error-list hidden"></ul>
+
+          <section id="importPreview" class="card import-preview hidden" aria-live="polite">
+            <p class="section-label" data-i18n="importPreviewTitle"></p>
+            <dl class="import-summary">
+              <div><dt data-i18n="importPreviewTarget"></dt><dd><span id="previewTarget"></span><span id="previewTargetBadge" class="import-target-badge hidden"></span></dd></div>
+              <div><dt data-i18n="importPreviewTotal"></dt><dd id="previewTotal"></dd></div>
+              <div><dt data-i18n="importPreviewFileDup"></dt><dd id="previewFileDup"></dd></div>
+              <div><dt data-i18n="importPreviewCollectionDup"></dt><dd id="previewCollectionDup"></dd></div>
+              <div><dt data-i18n="importPreviewCrossDup"></dt><dd id="previewCrossDup"></dd></div>
+              <div class="emphasis"><dt data-i18n="importPreviewAppend"></dt><dd id="previewAppend"></dd></div>
+              <div><dt data-i18n="importPreviewRemaining"></dt><dd id="previewRemaining"></dd></div>
+            </dl>
+            <p id="importPreviewNote" class="hint"></p>
+            <div id="importPreviewList" class="import-preview-list"></div>
+          </section>
+
+          <section id="importResult" class="card import-result hidden" role="status" aria-live="polite">
+            <p id="importResultTitle" class="import-result-title"></p>
+            <p id="importResultFileDup" class="muted"></p>
+            <p id="importResultCross" class="muted"></p>
+            <p id="importResultRemaining" class="hint"></p>
+          </section>
+
+          <div id="importActions" class="sticky-bar">
+            <button id="parseImport" class="btn primary" type="button" data-i18n="importParse"></button>
+            <button id="confirmImport" class="btn primary hidden" type="button"></button>
+          </div>
+        </section>
       </section>
 
       <section id="view-me" class="view hidden">
@@ -495,6 +678,15 @@
                 <span class="chevron" aria-hidden="true">›</span>
               </summary>
               <div class="fold-body">
+                <span class="field-label" data-i18n="maintenanceSourceLabel"></span>
+                <div id="maintenanceSource" class="segmented compact" role="group" data-i18n-aria="maintenanceSourceLabel">
+                  <button type="button" data-clear-source="course" aria-pressed="true" data-i18n="maintenanceSourceCourse"></button>
+                  <button type="button" data-clear-source="custom" aria-pressed="false" data-i18n="maintenanceSourceCustom"></button>
+                  <button type="button" data-clear-source="all" aria-pressed="false" data-i18n="maintenanceSourceAll"></button>
+                </div>
+                <select id="maintenanceCollection" class="tag-select maintenance-tag hidden"
+                  data-i18n-aria="maintenanceSourceLabel"></select>
+                <p id="maintenanceSourceHint" class="hint maintenance-source-hint"></p>
                 <div class="maintenance-grid">
                   <button id="clearUnused" class="btn secondary" type="button" data-i18n="clearUnused"></button>
                   <button id="clearAnswered" class="btn secondary" type="button" data-i18n="clearAnswered"></button>

@@ -14,18 +14,50 @@ desktop AI agent that can run commands. The full Chinese guide for agents, inclu
 instructions, permission explanations, verification and troubleshooting, is
 [docs/AGENT-INSTALL.md](AGENT-INSTALL.md).
 
-Use only the official downloads:
+## Native installers
 
-- [planyourtv-standard.apk](https://planyourtv.me/download/planyourtv-standard.apk)
-- [planyourtv-guard.apk](https://planyourtv.me/download/planyourtv-guard.apk)
+The official installers are the simplest path when you do not want to run each ADB command by
+hand. They discover TVs on the LAN, ask when more than one is available, install the official APK,
+grant the ADB-only permissions and verify the result.
 
-Do not use third-party APK sites, app stores, ADB enablers, or other tools. Do not uninstall or
-disable the stock launcher or any system app.
+- **Windows 10/11**: download
+  [install-windows.bat](https://planyourtv.me/tools/windows/install-windows.bat) and
+  [install-windows.ps1](https://planyourtv.me/tools/windows/install-windows.ps1) into the same
+  directory, then run the BAT. Windows 7/8 are not supported.
+- **macOS / Linux**: download [install-unix.sh](https://planyourtv.me/tools/install-unix.sh) and
+  [install.sh](https://planyourtv.me/tools/install.sh) into the same directory, then run
+  `bash install-unix.sh`. `adb` must already be available on the computer.
+
+If the project site is unreachable, use the same files from
+`https://raw.githubusercontent.com/heimi51168/planyourtv/main/tools/` (Windows files under
+`tools/windows/`). The installers install `standard` first and automatically retry `guard` for
+recognized firmware refusals. For machine-readable discovery, use
+`install-unix.sh --discover-only --json --non-interactive` or
+`install-windows.bat -DiscoverOnly -Json -NonInteractive`.
+
+The official downloads are recommended:
+
+- [planyourtv-standard.apk](https://planyourtv.me/download/planyourtv-standard.apk) — Android 5.0+
+- [planyourtv-guard.apk](https://planyourtv.me/download/planyourtv-guard.apk) — Android 5.0+, when
+  the firmware refuses a home-screen app
+
+A computer is recommended for installation; other installation methods are not prohibited, but
+this project has not verified each one. Do not uninstall or disable the stock launcher or any
+system app.
 
 ## Before installing
 
-- The TV must run Android 5.0 or newer. Android 4.x and the Aerial Lite build are not part of the
-  community source snapshot.
+- PlanYourTV needs Android 5.0 (API 21) or newer. Android 4.x is not supported. Public releases
+  contain only the `standard` and `guard` APKs; there is no separate Lite APK.
+- PlanYourTV is itself a launcher, but Android allows several launchers to be installed at once;
+  only one is the default home screen. The native installers detect CleanYourTV
+  (`com.gathin.tvhome`), Aerial / HaloTV (`app.orchard.tv`, `app.orchard.tv.lite`) and Quiet TV
+  (`home.quiet.tv`, `com.coocaa.quiettv`) and keep them by default while installation continues.
+  After installation, choose PlanYourTV as the home app. They are removed only when you explicitly
+  pass `--remove-launchers` (macOS/Linux) or `-RemoveLaunchers` (Windows); that deletes their app
+  data. The stock launcher and other system apps are never uninstalled. For a manual install,
+  `adb shell pm list packages -3` and the third-party HOME query are detection and reporting only;
+  keep other launchers unless the user explicitly asks to clean them up.
 - Enable developer options and USB or wireless debugging on the TV. Prefer a USB cable. If you use
   wireless ADB, turn it off when you are done and never expose port 5555 to the internet.
 - Install the Android SDK platform tools on your computer and check that `adb devices` shows the TV
@@ -48,7 +80,9 @@ adb install -r planyourtv-standard.apk
 ```
 
 Use the `guard` APK instead if the install fails with a message about a home-screen activity or
-`INSTALL_FAILED_...`. Do not edit the manifest to force it; use the flavor built for that case.
+an install refusal such as `INSTALL_FAILED_USER_RESTRICTED`. The native installers retry `guard`
+automatically for recognized firmware refusals. Do not edit the manifest to force it; use the
+flavor built for that case.
 
 If Android reports a signature mismatch, an app with the same package name was signed by a
 different key. Do not uninstall it blindly: `adb uninstall com.planyourtv.tv` removes the app's
@@ -217,6 +251,7 @@ when finished.
 
 - **`INSTALL_FAILED_UPDATE_INCOMPATIBLE`**: the installed app was signed with another key.
   Uninstall it if you accept losing its data, then install again.
+- **`INSTALL_FAILED_OLDER_SDK`**: the TV is below Android 5.0. PlanYourTV does not support Android 4.x.
 - **Firmware refuses a home-screen app**: use the `guard` APK.
 - **Home Guard is enabled but does not run**: some TCL and Hisense firmware block sideloaded
   accessibility services. Allow PlanYourTV in the TV's security, auto-start and accessibility
@@ -238,8 +273,10 @@ adb shell am force-stop com.planyourtv.tv
 adb shell pm uninstall com.planyourtv.tv
 ```
 
-Uninstalling removes app data. If you keep ADB enabled, also turn it off. Other accessibility and
-notification-listener services are not removed by the app and should be left alone.
+Uninstalling removes app data. The TV returns to its stock Home screen; any third-party launcher
+you explicitly removed with the installer's cleanup option is not reinstalled. If you keep ADB
+enabled, also turn it off. Other accessibility and notification-listener services are not removed
+by the app and should be left alone.
 
 ## Security notes
 

@@ -4,6 +4,7 @@ import android.view.KeyEvent as NativeKeyEvent
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -22,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -77,6 +79,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -747,12 +750,40 @@ private fun QuizBankStartScreen(
     val matchedIndex = levels.indexOfFirst { it.id == selectedLevelId }
     val selectedIndex = if (matchedIndex >= 0) matchedIndex else fallbackIndex
     val selected = levels.getOrNull(selectedIndex)
-    val roundCount = config.pullCount.coerceAtMost(selected?.available ?: 0)
+    // The contract is always the configured round size; a short level must not
+    // silently turn it into a smaller round.
+    val roundCount = config.pullCount
     val qr = rememberQuizQr(scale = 8)
     var busy by remember { mutableStateOf(false) }
     var leaving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var shortShakeTick by remember { mutableIntStateOf(0) }
+    val shortShake = remember { Animatable(0f) }
+    val reduced = LocalReducedMotion.current
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(shortShakeTick) {
+        if (shortShakeTick == 0) return@LaunchedEffect
+        shortShake.snapTo(0f)
+        if (reduced) return@LaunchedEffect
+        // A single damped nudge, matching the lock screen's error shake. It
+        // only moves the short-level warning, never the whole start card.
+        shortShake.animateTo(
+            0f,
+            animationSpec = keyframes {
+                durationMillis = 340
+                -12f at 40
+                12f at 80
+                -8f at 130
+                8f at 180
+                -4f at 240
+                0f at 300
+            },
+        )
+    }
+    LaunchedEffect(selectedIndex) {
+        shortShake.snapTo(0f)
+    }
 
     LaunchedEffect(Unit) {
         while (isActive) {
@@ -774,13 +805,18 @@ private fun QuizBankStartScreen(
 
     fun begin() {
         if (busy || leaving) return
+        if (selected != null && selected.available < config.pullCount) {
+            // Keep the dialog open and point at the reason instead of starting
+            // a round that is shorter than the parent configured.
+            error = null
+            shortShakeTick += 1
+            return
+        }
         busy = true
         error = null
         scope.launch {
-            val levelId = levels.firstOrNull { it.id == selectedLevelId }?.id
-                ?: levels.getOrNull(fallbackIndex)?.id
             val result = withContext(Dispatchers.Default) {
-                QuizChallenge.start(levelId = levelId)
+                QuizChallenge.start(levelId = selected?.id)
             }
             busy = false
             if (result is QuizChallenge.BeginResult.Rejected) {
@@ -859,7 +895,9 @@ private fun QuizBankStartScreen(
                         config.pullCount,
                     ),
                     style = Type.Caption.copy(color = Palette.Orange),
-                    modifier = Modifier.widthIn(max = 404.dp),
+                    modifier = Modifier
+                        .widthIn(max = 404.dp)
+                        .offset { IntOffset(shortShake.value.roundToInt(), 0) },
                 )
             }
             error?.let {

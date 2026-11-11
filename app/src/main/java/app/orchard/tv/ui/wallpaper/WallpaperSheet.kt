@@ -68,8 +68,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import app.orchard.tv.BuildConfig
 import app.orchard.tv.R
 import app.orchard.tv.settings.AerialSettings
+import app.orchard.tv.settings.ClockHours
 import app.orchard.tv.settings.Restricted
 import app.orchard.tv.settings.RestrictedKind
 import app.orchard.tv.settings.FocusStyle
@@ -118,10 +120,13 @@ fun WallpaperSheet(
     onDismiss: () -> Unit,
     hiddenCount: Int,
     onHiddenApps: () -> Unit,
+    onHomeLock: (on: Boolean) -> Unit,
     onStartScreensaver: () -> Unit,
     onPin: (on: Boolean) -> Unit,
     /** Kids and Elders mode's setup (behind the PIN). */
     onKids: () -> Unit,
+    /** Version, Aerial credit and the MIT license. */
+    onAbout: () -> Unit,
     /** The sheet is all the way in (true) or not: Home need not draw under it then ([SheetCovers]). */
     onSettled: (Boolean) -> Unit = {},
     /** Draw the closed sheet once, nearly clear, so that its first opening is not its first draw (HomeScreen). */
@@ -191,6 +196,20 @@ fun WallpaperSheet(
                         AerialSettings.wallpaperAlwaysMoves, AerialSettings::chooseWallpaperAlwaysMoves, first = true,
                     )
                 }
+                // Only for "My Photos, in turn": how often the next photo comes (issue #1314).
+                if (Wallpapers.selectedId == Wallpapers.ROTATE_PHOTOS) Group { note ->
+                    Choices(
+                        R.string.st_photo_every, stringResource(R.string.st_photo_every_hint), note,
+                        AerialSettings.PHOTO_MINUTES.map { m ->
+                            m to when {
+                                m >= AerialSettings.DAY_MINUTES -> stringResource(R.string.st_photo_every_day)
+                                m >= 60 -> stringResource(R.string.kids_h, m / 60)
+                                else -> stringResource(R.string.kids_m, m)
+                            }
+                        },
+                        AerialSettings.photoMinutes, { AerialSettings.choosePhotoMinutes(it); Wallpapers.rotateIfDue() }, first = true,
+                    )
+                }
 
                 Spacer(Modifier.height(6.dp))
                 SectionTitle(R.string.st_home_layout)
@@ -234,6 +253,11 @@ fun WallpaperSheet(
                         R.string.st_clock_size, stringResource(R.string.st_clock_size_hint), note,
                         listOf(false to R.string.st_clock_small, true to R.string.st_clock_large),
                         AerialSettings.largeClock, AerialSettings::chooseLargeClock,
+                    )
+                    Choices(
+                        R.string.st_clock_hours, stringResource(R.string.st_clock_hours_hint), note,
+                        listOf(ClockHours.System to R.string.st_clock_hours_system, ClockHours.H24 to R.string.st_clock_hours_24, ClockHours.H12 to R.string.st_clock_hours_12),
+                        AerialSettings.clockHours, AerialSettings::chooseClockHours,
                     )
                     Choices(
                         R.string.wp_weather, null, note,
@@ -339,6 +363,18 @@ fun WallpaperSheet(
                 SectionTitle(R.string.wp_weather)
                 Group(stringResource(if (Weather.chosen) R.string.wp_weather_chosen else R.string.wp_weather_guessed)) { note ->
                     SettingRow(R.string.wp_weather_city, null, note, first = true) { WeatherValue() }
+                }
+
+                // Last, as on a phone's Settings: one row, and the page behind it does the rest.
+                Spacer(Modifier.height(22.dp))
+                SectionTitle(R.string.about_section)
+                Group { note ->
+                    SettingRow(
+                        R.string.about_title,
+                        stringResource(R.string.about_row_hint, BuildConfig.VERSION_NAME),
+                        note,
+                        first = true,
+                    ) { ActionChip(stringResource(R.string.about_open), Glyph.ChevronRight, onAbout) }
                 }
 
                 Spacer(Modifier.height(24.dp))
@@ -620,7 +656,7 @@ private fun WeatherValue() {
         )
     }
     BasicText(
-        if (w != null) listOfNotNull(place, "${w.celsius}° $kind").joinToString(" · ") else stringResource(R.string.wp_weather_none),
+        if (w != null) listOfNotNull(place, stringResource(R.string.weather_temperature, w.celsius) + " $kind").joinToString(" · ") else stringResource(R.string.wp_weather_none),
         style = Type.Body.copy(color = Palette.SecondaryLabel),
         modifier = Modifier.padding(end = 8.dp),
     )

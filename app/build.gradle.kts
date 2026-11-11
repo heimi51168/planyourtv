@@ -108,12 +108,12 @@ android {
         // Android 5.0. Compose 1.10 and later need 6.0, so the Compose BOM below stays on 1.9.
         minSdk = 21
         targetSdk = 34
-        // Product version: Aerial's version stays the prefix (v1.85 / 116 -> 1.85.000 / 116000).
+        // Product version: Aerial's version stays the prefix (v1.93 / 131 -> 1.93.000 / 131000).
         // On every upstream merge update these two from the Aerial tag and reset the revision to 0.
         // Raise productRevision for each product release; never reuse or decrease it.
-        val aerialVersionName = "1.85"
-        val aerialVersionCode = 116
-        val productRevision = 11
+        val aerialVersionName = "1.93"
+        val aerialVersionCode = 131
+        val productRevision = 0
         require(productRevision in 0..999) { "productRevision must fit in three digits" }
         versionCode = aerialVersionCode * 1000 + productRevision
         versionName = "$aerialVersionName.${productRevision.toString().padStart(3, '0')}"

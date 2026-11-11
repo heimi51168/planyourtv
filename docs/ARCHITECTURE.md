@@ -14,9 +14,6 @@ small, reviewable changes instead of maintaining a second launcher.
 `:app` depends on `:policy`. `:policy` must not depend on `:app`; when it needs something from the
 launcher it uses an interface implemented in `:app`.
 
-The community snapshot does not include the private `lite/` module. The Android 4.x launcher is
-outside this source release.
-
 ## Identity
 
 - Installed application ID: `com.planyourtv.tv`.
@@ -177,6 +174,7 @@ Rules for keeping merges small:
 ## Versions
 
 `versionCode` and `versionName` are derived from the Aerial base version plus a product revision in
-`app/build.gradle.kts`. The community baseline is `1.85.011` / `116011`, based on Aerial 1.85 /
-116. An Aerial base update resets the revision; product releases increase it by one and never
-decrease the code. See [BUILDING.md](BUILDING.md).
+`app/build.gradle.kts`. The community baseline is `1.93.000` / `131000`, based on Aerial 1.93 /
+131. An Aerial base update resets the revision; product releases increase it by one and never
+decrease the code. Public releases ship only the `standard` and `guard` flavors; Android 4.x is
+not supported. See [BUILDING.md](BUILDING.md).

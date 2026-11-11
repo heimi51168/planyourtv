@@ -52,6 +52,7 @@
     <string name="policy_quiz_level_available">Бұл деңгейде: %1$d сұрақ</string>
     <string name="policy_quiz_level_short">Деңгейде раундқа қажет %2$d сұрақтың тек %1$d-і бар</string>
     <string name="policy_quiz_scope_any">Орнатылмаған</string>
+    <string name="policy_quiz_scope_custom_tag">Жеке тег · %1$s</string>
     <string name="policy_quiz_format_label">Жауап форматы</string>
     <string name="policy_quiz_format_single">Бір жауап</string>
     <string name="policy_quiz_semester_first">1-жартыжылдық</string>

@@ -15,6 +15,7 @@ import com.planyourtv.policy.SessionState
 import com.planyourtv.policy.quiz.QUIZ_MAX_EARNED_MINUTES
 import com.planyourtv.policy.quiz.QUIZ_MAX_PULL_COUNT
 import com.planyourtv.policy.quiz.QUIZ_MIN_PULL_COUNT
+import com.planyourtv.policy.quiz.QuizAnswerScope
 import com.planyourtv.policy.quiz.QuizConfig
 import com.planyourtv.policy.quiz.QuizItem
 import com.planyourtv.policy.quiz.QuizRun
@@ -258,6 +259,32 @@ object QuizChallenge {
         return BeginResult.Started
     }
 
+    /** A local level is either a curriculum scope or one custom tag. */
+    private data class LocalLevelTarget(
+        val scope: QuizAnswerScope?,
+        val collectionId: String?,
+    )
+
+    private fun resolveLocalLevel(levelId: String?, nowMs: Long): LocalLevelTarget? {
+        val courseLevels = QuizAnswerScopeStore.levels()
+        if (!levelId.isNullOrBlank()) {
+            courseLevels.firstOrNull { it.id == levelId }?.let {
+                return LocalLevelTarget(it.scope, null)
+            }
+            QuizCollectionStore.customLevel(levelId)?.let {
+                return LocalLevelTarget(null, it.collectionId)
+            }
+            return null
+        }
+        courseLevels.firstOrNull {
+            QuizQuestionCache.availableCount(QuizQuestionCache.LOCAL_SCOPE, nowMs, it.scope) > 0
+        }?.let { return LocalLevelTarget(it.scope, null) }
+        QuizCollectionStore.customLevels().firstOrNull {
+            QuizQuestionCache.availableCollectionCount(it.collectionId, nowMs) > 0
+        }?.let { return LocalLevelTarget(null, it.collectionId) }
+        return null
+    }
+
     /**
      * Local rounds are created at start time from the bank; there is no READY
      * session to publish. The reservation and the session write are paired so a
@@ -265,25 +292,45 @@ object QuizChallenge {
      */
     private fun startLocalRound(nowMs: Long, levelId: String?): BeginResult {
         val config = QuizSessionStore.loadChallengeConfig() ?: QuizConfig()
-        val level = QuizAnswerScopeStore.level(levelId)
         // An explicit level that disappeared while the dialog was open must not
-        // silently start a different one.
-        if (level == null) return BeginResult.Rejected("NO_LEVELS")
+        // silently start a different one. Without an id, take the first level
+        // that can actually fill a round across course levels and custom tags.
+        val target = resolveLocalLevel(levelId, nowMs) ?: return BeginResult.Rejected("NO_LEVELS")
+        val explicitLevel = !levelId.isNullOrBlank()
         val scope = QuizQuestionCache.LOCAL_SCOPE
-        val answerScope = level.scope
-        val unused = QuizQuestionCache.availableCount(scope, nowMs, answerScope)
+        val unused = if (target.collectionId != null) {
+            QuizQuestionCache.availableCollectionCount(target.collectionId, nowMs)
+        } else {
+            QuizQuestionCache.availableCount(scope, nowMs, target.scope)
+        }
         if (unused <= 0) return BeginResult.Rejected("LOCAL_BANK_EMPTY")
-        val count = min(config.pullCount, unused)
+        // A level the child explicitly picked must supply the full configured
+        // round. Keep the old clamp only for legacy callers without a level id.
+        if (explicitLevel && unused < config.pullCount) {
+            return BeginResult.Rejected("LOCAL_BANK_INSUFFICIENT")
+        }
+        val count = if (explicitLevel) config.pullCount else min(config.pullCount, unused)
+        val required = if (explicitLevel) config.pullCount else 1
         val roundId = QbClient.SESSION_ID_PREFIX + UUID.randomUUID().toString().replace("-", "")
         val reserved = try {
-            QuizQuestionCache.reserveForRound(
-                count = count,
-                sessionId = roundId,
-                scopeKey = scope,
-                minRequired = 1,
-                nowMs = nowMs,
-                answerScope = answerScope,
-            )
+            if (target.collectionId != null) {
+                QuizQuestionCache.reserveCollectionForRound(
+                    count = count,
+                    sessionId = roundId,
+                    collectionId = target.collectionId,
+                    minRequired = required,
+                    nowMs = nowMs,
+                )
+            } else {
+                QuizQuestionCache.reserveForRound(
+                    count = count,
+                    sessionId = roundId,
+                    scopeKey = scope,
+                    minRequired = required,
+                    nowMs = nowMs,
+                    answerScope = target.scope,
+                )
+            }
         } catch (_: QuizQuestionCache.CacheException) {
             return BeginResult.Rejected("CACHE_UNAVAILABLE")
         }
@@ -305,9 +352,9 @@ object QuizChallenge {
         }
         // Keep the configured legacy field untouched; v5 ignores it. Only the
         // reserved count is frozen into the round snapshot. The shared codec
-        // still enforces its configured-pull range, so a short level (one to
-        // four unused questions) must not persist a snapshot the next load
-        // rejects as unreadable; the round itself is always driven by [items].
+        // still enforces its configured-pull range, so a legacy no-id start
+        // with a short bank must not persist a snapshot the next load rejects
+        // as unreadable; the round itself is always driven by [items].
         val runtimeConfig = config.copy(
             pullCount = items.size.coerceIn(QUIZ_MIN_PULL_COUNT, QUIZ_MAX_PULL_COUNT),
         )

@@ -52,6 +52,7 @@
     <string name="policy_quiz_level_available">本关可用 %1$d 题</string>
     <string name="policy_quiz_level_short">本关只有 %1$d 题，本轮需要 %2$d 题</string>
     <string name="policy_quiz_scope_any">未限定</string>
+    <string name="policy_quiz_scope_custom_tag">自定义标签 · %1$s</string>
     <string name="policy_quiz_format_label">答题形式</string>
     <string name="policy_quiz_format_single">单选</string>
     <string name="policy_quiz_semester_first">上册</string>

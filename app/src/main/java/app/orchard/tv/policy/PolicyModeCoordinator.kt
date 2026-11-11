@@ -716,6 +716,41 @@ object PolicyModeCoordinator {
         PolicyMode.NONE -> true
     }
 
+    /**
+     * The parent-center source-entry switch. This is a presentation gate: while child mode is on
+     * and the switch is off, Aerial hides every source entry it owns, but the firmware's own
+     * Source key and CEC remain outside it. Turning child mode off restores the entries.
+     *
+     * A local rule set deliberately overrides the old "inputs only when all apps are allowed"
+     * rule: with the switch on, the parent chose to expose sources during an active session.
+     */
+    fun sourceEntriesAllowed(): Boolean = sourceEntryGate("")
+
+    fun allowsSourceEntry(sourceId: String): Boolean = sourceEntryGate(sourceId)
+
+    private fun sourceEntryGate(sourceId: String): Boolean = when (mode) {
+        // The switch lives in the child-mode rules; with child mode off there is nothing to hide.
+        PolicyMode.NONE -> true
+        PolicyMode.CLOUD -> if (ruleGuardActive) {
+            SourceEntrySettings.isVisible() && localSourceEntryAllowed()
+        } else {
+            SourceEntrySettings.isVisible() && PolicyRuntime.allowsSource(sourceId)
+        }
+        PolicyMode.LOCAL -> SourceEntrySettings.isVisible() && localSourceEntryAllowed()
+    }
+
+    private fun localSourceEntryAllowed(): Boolean {
+        val local = LocalPolicyRuntime.state.value
+        if (!local.loaded) return true
+        return when {
+            local.guardState == GuardStatus.PARENT_OVERRIDE -> true
+            local.guardState == GuardStatus.STUDY_MODE -> false
+            local.sessionState == SessionState.ACTIVE &&
+                local.guardState == GuardStatus.ENFORCING -> true
+            else -> false
+        }
+    }
+
     /** Stable fingerprint of what the desktop should currently show, used by the readiness gate. */
     fun accessFingerprint(state: PolicyUiState = _state.value): String {
         if (state.mode == PolicyMode.NONE) return "ALL"

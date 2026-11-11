@@ -267,10 +267,10 @@ internal fun PolicyActionRow(
 @Composable
 internal fun PolicySwitchRow(
     title: String,
-    status: String,
     on: Boolean,
     focusRequester: FocusRequester,
     onClick: () -> Unit,
+    status: String? = null,
     onUp: (() -> Unit)? = null,
     onDown: (() -> Unit)? = null,
     onLeft: (() -> Unit)? = null,
@@ -297,14 +297,16 @@ internal fun PolicySwitchRow(
                     color = if (highlighted) Palette.OnFocus else Palette.Label,
                 ),
             )
-            Spacer(Modifier.size(2.dp))
-            BasicText(
-                status,
-                style = Type.Caption.copy(
-                    fontSize = 12.sp,
-                    color = if (highlighted) Palette.OnFocus.copy(alpha = 0.72f) else Palette.SecondaryLabel,
-                ),
-            )
+            if (status != null) {
+                Spacer(Modifier.size(2.dp))
+                BasicText(
+                    status,
+                    style = Type.Caption.copy(
+                        fontSize = 12.sp,
+                        color = if (highlighted) Palette.OnFocus.copy(alpha = 0.72f) else Palette.SecondaryLabel,
+                    ),
+                )
+            }
         }
         Box(
             modifier = Modifier

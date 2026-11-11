@@ -72,6 +72,13 @@
     <string name="policy_v6_activation_manual">Қолмен</string>
     <string name="policy_v6_activation_manual_hint">Квизбен немесе ата-ананың бір реттік іске қосуымен ашу; әр сеанстың ұзақтығын ата-ана белгілейді.</string>
     <string name="policy_v6_activation_tab_hint">Әр режим өз кестесін, шектеулерін, демалысын және экран сөну буферін бөлек сақтайды. Қойындыны таңдаңыз — төмендегі параметрлер тек сол режимге қатысты.</string>
+    <string name="policy_v6_activation_confirm_auto_title">Автоматты режимге ауыстыру керек пе?</string>
+    <string name="policy_v6_activation_confirm_auto_body">Автоматты режимде теледидар викторинаны бастай алмайды. Ағымдағы автоматты ережелер: күніне %1$d минутқа дейін, бір сеансқа %2$d минутқа дейін, сеанстар арасында %3$d минут демалыс.</string>
+    <string name="policy_v6_activation_confirm_manual_title">Қолмен режимге ауыстыру керек пе?</string>
+    <string name="policy_v6_activation_confirm_manual_body">Қолмен режимде ата-ана құлыптау экранында әр сеансты өзі бастайды; викториналар қолжетімді.</string>
+    <string name="policy_v6_activation_confirm_end_session">Ағымдағы сеанс бірден аяқталады.</string>
+    <string name="policy_v6_activation_confirm_cancel">Болдырмау</string>
+    <string name="policy_v6_activation_confirm_switch">Ауыстыру</string>
     <string name="policy_v6_quiz_challenge">Викторина</string>
     <string name="policy_v6_quiz_hint">Қолмен режимде дұрыс жауаптар теледидар уақытын ашады. Өшірілсе, құлыптау экранында викторинаға кіру көрсетілмейді.</string>
     <string name="policy_v6_quiz_busy">Викторина раунды жүріп жатыр. Ол аяқталғансоң өзгертіңіз.</string>
@@ -81,6 +88,13 @@
     <string name="policy_v6_apps_shared_hint">Ойын-сауық және оқу қолданбалары автоматты және қолмен режимдеріне ортақ; режимді ауыстыру оларды өзгертпейді.</string>
     <string name="policy_v6_study_saved">Оқу қолданбалары сақталды</string>
     <string name="policy_v6_apps_in_study">Бұл қолданба оқу тізімінде. Алдымен оны оқу қолданбаларынан алып тастаңыз.</string>
+
+    <string name="policy_v6_source_section">Басқа кірістер</string>
+    <string name="policy_v6_source_entries">Сигнал көздерін көрсету</string>
+    <string name="policy_v6_source_entries_on">Балалар режимінде көрсетіледі</string>
+    <string name="policy_v6_source_entries_off">Балалар режимінде жасырылады</string>
+    <string name="policy_v6_source_entries_hint">Тек Aerial ішіндегі кіру жолдары басқарылады; теледидардың меншікті «Көз» түймесі немесе CEC кірістерді әлі де ауыстыруы мүмкін.</string>
+    <string name="policy_v6_source_entries_saved">Сигнал көздерінің параметрі сақталды</string>
 
     <string name="policy_v6_switch_off_confirm">Өшіру үшін OK қайта басыңыз</string>
     <string name="policy_v6_switch_off_migrating">Көшіру аяқталмады. Жалғастыру үшін қайта қосыңыз.</string>
@@ -92,4 +106,10 @@
     <string name="policy_v6_consent_body">Қашықтан басқару қосулы кезде теледидар PlanYourTV бұлтына ата-ана орталығының параметрлерін (ата-ана құпиясөзінің тексеру мәнін қоса), уақыт прогресін және викторина жазбаларын телефоннан қашықтан басқару және жазбаларды қарау үшін жүктейді, жарнама немесе басқа мақсаттар үшін емес. Теледидарда сақталған AI моделінің кілті (API Key) жүктелмейді. Құрылғыны кез келген уақытта телефоннан ажыратуға болады; жүктеу тоқтайды, жергілікті параметрлер сақталады. Жалғастыру арқылы сіз осы теледидарды басқаруға құқығыңыз бар екенін растайсыз.</string>
     <string name="policy_v6_consent_agree">Келісемін және QR кодын көрсету</string>
     <string name="policy_v6_consent_cancel">Қазір емес</string>
+
+    <string name="policy_v6_auto_update">Автоматты жаңарту</string>
+    <string name="policy_v6_auto_consent_title">Балалар режимін және автоматты жаңартуды қосу керек пе?</string>
+    <string name="policy_v6_auto_consent_body">Балалар режимін қосқанда «Автоматты жаңарту» да қосылады, сондықтан теледидар жаңа нұсқалар мен түзетулерді уақытында алады. Жаңа нұсқалар теледидар бос тұрғанда автоматты түрде жүктеліп, орнатылады, көруге кедергі жасамайды. Қажет болмаса, автоматты жаңартуды ата-ана орталығында кез келген уақытта өшіруге болады.</string>
+    <string name="policy_v6_auto_consent_confirm">Екеуін де қосу</string>
+    <string name="policy_v6_auto_consent_cancel">Болдырмау</string>
 </resources>

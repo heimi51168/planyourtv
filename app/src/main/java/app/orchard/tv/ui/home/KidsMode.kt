@@ -136,6 +136,14 @@ private fun SetupSettings(hasApps: Boolean, onStart: () -> Unit, modifier: Modif
     val guard = HomeGuardService.isRunning
     Column(modifier.verticalScroll(rememberScrollState())) {
         BasicText(stringResource(R.string.kids_title), style = Type.LargeTitle)
+        // Framed as what it is before the first switch-on: a helper, not a substitute for talking it over.
+        if (kids && !Restricted.enabled) {
+            BasicText(
+                stringResource(R.string.kids_position),
+                style = Type.Body,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
         BasicText(stringResource(R.string.kids_hint), style = Type.Callout, modifier = Modifier.padding(top = 4.dp, bottom = 14.dp))
         Column(Modifier.fillMaxWidth().smoothBackground(Color.White.copy(alpha = 0.05f), 16.dp)) {
             val kindHint = stringResource(if (kids) R.string.kids_kind_kids_hint else R.string.kids_kind_elders_hint)

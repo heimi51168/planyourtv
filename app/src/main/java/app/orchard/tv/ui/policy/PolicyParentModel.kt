@@ -5,10 +5,29 @@ internal sealed interface ParentFocusTarget {
     data object Switch : ParentFocusTarget
     data object Remote : ParentFocusTarget
     data object Password : ParentFocusTarget
+    data object AutoUpdate : ParentFocusTarget
     data object MigrationRetry : ParentFocusTarget
     data object WaitConfigRetry : ParentFocusTarget
     data object SummaryRead : ParentFocusTarget
     data class LocalRow(val key: String) : ParentFocusTarget
+}
+
+/**
+ * The rail, top to bottom. Auto update is a device-level setting and is independent of the
+ * cloud binding and of child mode, so it is always present, below the password row when there
+ * is one and below the child-mode switch otherwise.
+ */
+internal fun parentRailTargets(
+    childOn: Boolean,
+    remoteVisible: Boolean,
+    passwordVisible: Boolean,
+): List<ParentFocusTarget> = buildList {
+    add(ParentFocusTarget.Switch)
+    if (childOn) {
+        if (remoteVisible) add(ParentFocusTarget.Remote)
+        if (passwordVisible) add(ParentFocusTarget.Password)
+    }
+    add(ParentFocusTarget.AutoUpdate)
 }
 
 /** The right-hand pane. The rail no longer selects a guard mode. */

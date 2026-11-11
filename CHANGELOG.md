@@ -3,6 +3,45 @@
 This changelog covers the community source snapshot. Official hosted builds may ship different
 artifacts with the same upstream Aerial base.
 
+## [1.93.000] - 2026-11-11
+
+Question-bank, installer and parent-settings update, based on Aerial 1.93 / versionCode 131.
+Version code `131000`.
+
+### Added
+
+- Manual question-bank import: on the phone settings page, upload a `.json` / `.txt` file or
+  paste questions, choose an existing tag or create a new one, then preview duplicates and free
+  space before importing. Only single-choice questions are accepted. Questions and tags stay on
+  the TV: no AI service and no upload. An imported tag can then be used as a custom level.
+- Auto update in Parent Center. On TVs that allow silent installs, a new version downloads in
+  the background and installs after another app has been in front for a while; all settings are
+  kept. On other TVs the update remains a manual Download and Install in Control Center.
+- A confirmation dialog when switching between automatic and manual modes. It explains how the
+  active timing rules change, so one stray OK cannot replace the parent's setup.
+- Configurable inputs in Control Center → Inputs → Input Settings: choose which ports appear in
+  the list and on Home, whether the TV switches when a connected device turns on over HDMI-CEC,
+  and which input to open when the TV turns on or wakes from standby.
+- Native installers for Windows, macOS and Linux: one entry point per platform, LAN TV discovery,
+  standard-to-guard retry and guided permission setup, with manual ADB steps as the fallback.
+- Launcher preflight in the native installers. PlanYourTV is itself the home screen, but Android
+  allows other launchers to stay installed; the installer detects CleanYourTV, Aerial / HaloTV,
+  Quiet TV and any other third-party HOME app, reports them, and continues without uninstalling by
+  default. An explicit `--remove-launchers` / `-RemoveLaunchers` removes them first and deletes
+  their app data. The TV's stock launcher and system apps are never touched.
+
+### Changed
+
+- Public releases now ship two APKs, `planyourtv-standard.apk` and `planyourtv-guard.apk`. If a
+  firmware refuses the standard launcher build, the installer automatically retries with guard.
+- PlanYourTV requires Android 5.0 (API 21) or later. Android 4.x is not supported, and the
+  separate Lite APK is no longer published.
+
+### Fixed
+
+- The phone settings page starts when port 8790 is already used by another app, as Aerial can be.
+  It falls back to a free port, and the QR code uses the port that was actually bound.
+
 ## [1.85.011] - 2026-11-10
 
 AI provider and quiz flow update, based on Aerial 1.85 / versionCode 116. Version code
