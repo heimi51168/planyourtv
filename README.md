@@ -148,7 +148,7 @@ PlanYourTV 保留 Aerial 的设备适配层和桌面架构，**设备兼容范�
 3. 运行 adb shell getprop ro.build.version.sdk。如果小于 21，停止并告诉我 PlanYourTV 需要 Android 5.0 或更高版本，Android 4.x 不支持。最后把命令的原始输出贴给我。
 4. 安装前检查其他第三方桌面：PlanYourTV 本身就是桌面，但 Android 允许同时安装多个桌面，只有默认桌面会在按 Home 时打开。运行 adb shell pm list packages -3 和 adb shell cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME -c android.intent.category.DEFAULT 列出第三方 HOME 应用；默认保留它们并继续安装，不要自动卸载。装好后把 PlanYourTV 设为默认桌面。只有我明确要求清理时，才卸载同时出现在上述第三方包列表和 HOME 查询结果里的包（排除 com.planyourtv.tv）：先告诉我卸载会删除该应用的数据，我确认后运行 adb shell pm uninstall <包名>，再用 adb shell pm path <包名> 确认没有输出。不要卸载电视自带桌面或任何系统应用。
 5. 如果 SDK 是 21 或更大，推荐从 https://planyourtv.me/download/planyourtv-standard.apk 下载 APK。安装推荐用电脑；其他安装方式不禁止，本项目未逐一验证。
-6. 运行 adb install -r planyourtv-standard.apk。如果固件拒绝安装桌面类 App，改用 https://planyourtv.me/download/planyourtv-guard.apk 重试；不要修改 manifest，不要卸载或停用电视自带的桌面。已知的安装拒绝由官方安装器自动处理，手动安装时只需按这条回退。
+6. 运行 adb install -r -i com.planyourtv.tv planyourtv-standard.apk。-i com.planyourtv.tv 把安装来源标记为 PlanYourTV 自己；省略它，应用内的第一次自动升级不会生效（Android 只允许来源是应用自己的安装静默自更新），需要我手动更新一次后才恢复。如果本机 adb 不认识 -i，去掉它重试，并提醒我装好后先在控制中心手动更新一次。如果固件拒绝安装桌面类 App，改用 https://planyourtv.me/download/planyourtv-guard.apk 重试；不要修改 manifest，不要卸载或停用电视自带的桌面。已知的安装拒绝由官方安装器自动处理，手动安装时只需按这条回退。
 7. 安装成功后，依次运行：
 
 adb shell pm grant com.planyourtv.tv android.permission.ACCESS_FINE_LOCATION
@@ -170,7 +170,7 @@ adb shell am start -W -n com.planyourtv.tv/app.orchard.tv.MainActivity
 adb shell cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME
 adb shell settings get secure enabled_accessibility_services
 adb shell dumpsys window | grep mCurrentFocus
-adb shell dumpsys package com.planyourtv.tv | grep versionName
+adb shell dumpsys package com.planyourtv.tv | grep -E "versionName|installerPackageName"
 
 Windows 上把 grep 换成 findstr。
 11. 最后提醒我：在电视上打开家长中心，把默认 PIN 123456 改掉，并保存好一次性恢复码。不要替我设置 PIN。
@@ -188,11 +188,13 @@ Windows 上把 grep 换成 findstr。
 4. 安装并授权：
 
 ```bash
-adb install -r planyourtv-standard.apk
+adb install -r -i com.planyourtv.tv planyourtv-standard.apk
 adb shell pm grant com.planyourtv.tv android.permission.WRITE_SECURE_SETTINGS
 adb shell appops set com.planyourtv.tv SYSTEM_ALERT_WINDOW allow
 adb shell am start -W -n com.planyourtv.tv/app.orchard.tv.MainActivity
 ```
+
+`-i com.planyourtv.tv` 让 Android 把 PlanYourTV 记为安装来源，这是应用内自动静默升级生效的前提；不带它时，第一次自动升级需要先手动更新一次。
 
 完整命令（包括通知监听、Home Guard、屏保和 TCL/创维等机型的特殊处理）见 [docs/INSTALL.md](docs/INSTALL.md)。
 
@@ -300,11 +302,13 @@ Manual install:
 
 ```bash
 adb connect <TV-IP>:5555
-adb install -r planyourtv-standard.apk
+adb install -r -i com.planyourtv.tv planyourtv-standard.apk
 adb shell pm grant com.planyourtv.tv android.permission.WRITE_SECURE_SETTINGS
 adb shell appops set com.planyourtv.tv SYSTEM_ALERT_WINDOW allow
 adb shell am start -W -n com.planyourtv.tv/app.orchard.tv.MainActivity
 ```
+
+`-i com.planyourtv.tv` records PlanYourTV itself as the installer, which Android requires before the app may install its own updates silently. Without it the first in-app automatic update will not run until one manual update has been done.
 
 Download: [planyourtv-standard.apk](https://planyourtv.me/download/planyourtv-standard.apk) · [planyourtv-guard.apk](https://planyourtv.me/download/planyourtv-guard.apk) when the firmware refuses a home-screen app · Full guide: [docs/INSTALL.md](docs/INSTALL.md)
 

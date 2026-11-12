@@ -174,10 +174,12 @@ curl -fsSL https://planyourtv.me/download/version.txt
 ```bash
 rm -f planyourtv-standard.apk
 curl -fL -o planyourtv-standard.apk https://planyourtv.me/download/planyourtv-standard.apk
-adb install -r planyourtv-standard.apk
+adb install -r -i com.planyourtv.tv planyourtv-standard.apk
 ```
 
-如果 `curl` 失败或 APK 文件不存在，停止并贴出输出，不要继续执行 `adb install`。如果电视上已经装了旧版，直接 `adb install -r` 覆盖升级，数据会保留；不要先卸载。
+如果 `curl` 失败或 APK 文件不存在，停止并贴出输出，不要继续执行 `adb install`。如果电视上已经装了旧版，直接 `adb install -r -i com.planyourtv.tv` 覆盖升级，数据会保留；不要先卸载。
+
+`-i com.planyourtv.tv` 把安装来源标记为 PlanYourTV 自己。Android 只允许来源是应用自己的安装静默自更新，也允许应用更新自己；省略它会让应用内的第一次自动升级失效，需要用户手动更新一次后才恢复。如果本机 adb 报不认识 `-i`，去掉 `-i` 重试，并提醒用户装好后先在控制中心手动更新一次。
 
 输出必须是 `Success`。如果固件拒绝安装桌面类 App，或返回已知的安装限制错误
 （`INSTALL_FAILED_USER_RESTRICTED`、`INSTALL_FAILED_VERIFICATION_FAILURE`、
@@ -186,7 +188,7 @@ adb install -r planyourtv-standard.apk
 ```bash
 rm -f planyourtv-guard.apk
 curl -fL -o planyourtv-guard.apk https://planyourtv.me/download/planyourtv-guard.apk
-adb install -r planyourtv-guard.apk
+adb install -r -i com.planyourtv.tv planyourtv-guard.apk
 ```
 
 不要修改 manifest，不要为了让安装成功去卸载系统桌面。
@@ -200,13 +202,13 @@ adb install -r planyourtv-guard.apk
 | 固件提示不允许安装桌面类 App | 改用 `planyourtv-guard.apk`；仍失败就停止并贴出输出。 |
 | `INSTALL_FAILED_USER_RESTRICTED` / `INSTALL_FAILED_VERIFICATION_FAILURE` / “install apk has be disabled from pm” | 固件拒绝 standard。改用 guard 重试；仍失败就停止并贴出输出，由用户决定下一步。 |
 
-安装后确认版本：
+安装后确认版本和安装来源：
 
 ```bash
-adb shell dumpsys package com.planyourtv.tv | grep versionName
+adb shell dumpsys package com.planyourtv.tv | grep -E "versionName|installerPackageName"
 ```
 
-把输出的 `versionName` 与前面 `version.txt` 的值对比（去掉开头的 `v`，guard 版本再去掉结尾的 `-guard`），两者应一致。不一致说明下载到了旧文件或 CDN 旧缓存：停下来重新下载并核对，不要继续，也不要假装成功。
+把输出的 `versionName` 与前面 `version.txt` 的值对比（去掉开头的 `v`，guard 版本再去掉结尾的 `-guard`），两者应一致。不一致说明下载到了旧文件或 CDN 旧缓存：停下来重新下载并核对，不要继续，也不要假装成功。`installerPackageName` 应该也是 `com.planyourtv.tv`；如果是 `null`，说明没有带上 `-i` 或旧版本覆盖安装还没刷新来源，让用户在控制中心手动更新一次并重新核对。
 
 ## 5. 授予只有 ADB 能给的权限
 

@@ -129,7 +129,7 @@ LG webOS、三星 Tizen、鸿蒙智慧屏不是 Android TV，不支持。
 1. 在电视上打开开发者模式和 ADB 调试。
 2. 电脑安装 Android platform-tools，运行 `adb connect <电视IP>:5555`。
 3. 下载官方 [planyourtv-standard.apk](https://planyourtv.me/download/planyourtv-standard.apk)。
-4. 运行 `adb install -r planyourtv-standard.apk`。
+4. 运行 `adb install -r -i com.planyourtv.tv planyourtv-standard.apk`。`-i com.planyourtv.tv` 让 Android 把 PlanYourTV 记为安装来源，应用内自动静默升级才能生效；不带它时，第一次自动升级需要先手动更新一次。
 5. 按 [INSTALL.md](INSTALL.md) 授予权限，按 Home 选择 PlanYourTV。
 
 更省事的办法是使用官方原生安装器：Windows 10/11 运行 `install-windows.bat`，macOS/Linux 运行 `install-unix.sh`；也可以把 [README 里的提示词](../README.md#让-ai-帮你安装) 整段复制给豆包电脑版等能执行命令的 AI 助手。

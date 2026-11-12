@@ -76,8 +76,13 @@ The two flavors differ only in their manifest:
 ## Install the APK
 
 ```bash
-adb install -r planyourtv-standard.apk
+adb install -r -i com.planyourtv.tv planyourtv-standard.apk
 ```
+
+`-i com.planyourtv.tv` records PlanYourTV itself as the installer of record, which Android requires
+before an app may install its own updates silently. Without it, the first in-app automatic update
+will not run until the user updates once by hand from Control Center. If the local adb does not
+recognize `-i`, install without it and do that one manual update after the install.
 
 Use the `guard` APK instead if the install fails with a message about a home-screen activity or
 an install refusal such as `INSTALL_FAILED_USER_RESTRICTED`. The native installers retry `guard`
@@ -208,7 +213,7 @@ adb shell cmd package resolve-activity --brief \
   -a android.intent.action.MAIN -c android.intent.category.HOME
 adb shell settings get secure enabled_accessibility_services
 adb shell dumpsys window | grep mCurrentFocus
-adb shell dumpsys package com.planyourtv.tv | grep versionName
+adb shell dumpsys package com.planyourtv.tv | grep -E "versionName|installerPackageName"
 ```
 
 - `resolve-activity` should return PlanYourTV for `standard`, or the user's chosen launcher for
@@ -216,6 +221,9 @@ adb shell dumpsys package com.planyourtv.tv | grep versionName
 - After pressing Home, `mCurrentFocus` should contain `com.planyourtv.tv` (or the user confirms the
   PlanYourTV home screen is visible).
 - `versionName` should match the APK you installed.
+- `installerPackageName` should be `com.planyourtv.tv`, so the app can update itself silently. If it
+  is `null` (the APK was installed without `-i`, or an older over-install has not refreshed the
+  source), take one manual update from Control Center and re-check.
 - If Home Guard is enabled, the accessibility setting should contain it, and `dumpsys accessibility`
   should show it is actually bound.
 
