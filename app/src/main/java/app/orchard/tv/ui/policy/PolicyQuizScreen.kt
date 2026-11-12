@@ -111,6 +111,7 @@ import com.planyourtv.policy.quiz.QuizScoring
 import com.planyourtv.policy.quiz.QuizSession
 import com.planyourtv.policy.quiz.QuizSessionStatus
 import com.planyourtv.policy.quiz.QuizSubmission
+import com.planyourtv.policy.quiz.normalizeAnswerHoldSec
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -1456,6 +1457,7 @@ private fun QuizRoundScreen(
                 isLast = run.index >= session.items.size,
                 rewardMinutes = rewardMinutes,
                 penaltyMinutes = penaltyMinutes,
+                answerHoldSec = normalizeAnswerHoldSec(session.config.answerDisplaySec),
             )
             return
         }
@@ -2201,6 +2203,7 @@ private fun QuizFeedbackPage(
     isLast: Boolean,
     rewardMinutes: Int,
     penaltyMinutes: Int?,
+    answerHoldSec: Int,
 ) {
     val scope = rememberCoroutineScope()
     val scroll = rememberScrollState()
@@ -2212,6 +2215,21 @@ private fun QuizFeedbackPage(
     val scrollStep = with(LocalDensity.current) { 84.dp.toPx() }
 
     val correct = submission.correct
+    // A correct answer normally never reaches this page. If a storage failure
+    // falls back here, do not add a hold to the retry path.
+    val holdSec = if (correct) 0 else normalizeAnswerHoldSec(answerHoldSec)
+    val holdDeadlineAt = submission.answeredAt + holdSec * 1_000L
+    var holdRemaining by remember(item.questionId, submission.answeredAt, holdSec) {
+        mutableStateOf(remainingHoldSeconds(holdDeadlineAt))
+    }
+    LaunchedEffect(item.questionId, submission.answeredAt, holdSec) {
+        while (true) {
+            val remaining = remainingHoldSeconds(holdDeadlineAt)
+            holdRemaining = remaining
+            if (remaining == 0) break
+            delay(200)
+        }
+    }
     val selectedText = submission.selectedIndex
         ?.let { index -> item.options.getOrNull(index)?.let { optionLabel(index) + "  " + it } }
     val correctText = optionLabel(item.answerIndex) + "  " + item.options[item.answerIndex]
@@ -2231,14 +2249,18 @@ private fun QuizFeedbackPage(
     )
 
     fun close() {
-        if (busy) return
+        // Recompute from the clock instead of trusting the last polled state, so
+        // a Back press or a late UI frame cannot skip the minimum stay.
+        if (busy || remainingHoldSeconds(holdDeadlineAt) > 0) return
         busy = true
         error = false
         scope.launch {
             val outcome = withContext(Dispatchers.Default) { QuizChallenge.closeFeedback() }
             if (outcome is QuizChallenge.FeedbackOutcome.Failed) {
                 busy = false
-                error = true
+                // The engine agrees with the same deadline; a boundary race is
+                // not a user-visible error, the button simply stays disabled.
+                if (outcome.code != "FEEDBACK_HOLD") error = true
             }
         }
     }
@@ -2407,18 +2429,22 @@ private fun QuizFeedbackPage(
                 modifier = Modifier.weight(1f),
             )
             LockButton(
-                label = stringResource(
-                    if (isLast) {
-                        R.string.policy_quiz_view_result
-                    } else {
-                        R.string.policy_quiz_feedback_continue
-                    },
-                ),
+                label = if (holdRemaining > 0) {
+                    stringResource(R.string.policy_quiz_feedback_wait, holdRemaining)
+                } else {
+                    stringResource(
+                        if (isLast) {
+                            R.string.policy_quiz_view_result
+                        } else {
+                            R.string.policy_quiz_feedback_continue
+                        },
+                    )
+                },
                 onClick = ::close,
                 width = 300.dp,
                 focusRequester = continueFocus,
                 primary = true,
-                enabled = !busy,
+                enabled = !busy && holdRemaining == 0,
                 // Up/Left returns to the explanation; Down/Right stays on the
                 // only button instead of searching the page for another one.
                 onKey = linearDpadFocus(previous = bodyFocus),
@@ -2426,6 +2452,12 @@ private fun QuizFeedbackPage(
         }
     }
 }
+
+/** Ceiling seconds so the countdown never shows 0 before the button is usable. */
+private fun remainingHoldSeconds(
+    deadlineAt: Long,
+    nowMs: Long = System.currentTimeMillis(),
+): Int = (((deadlineAt - nowMs).coerceAtLeast(0L) + 999L) / 1000L).toInt()
 
 @Composable
 private fun FeedbackSection(label: String, content: @Composable () -> Unit) {

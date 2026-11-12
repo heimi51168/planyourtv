@@ -55,7 +55,7 @@ object QuizSessionValidation {
     }
 
     private fun validateConfig(config: QuizConfig, errors: MutableList<String>) {
-        if (config.defaultTimeLimitSec !in 15..300) errors += "config.defaultTimeLimitSec: out of range"
+        if (config.defaultTimeLimitSec !in QUIZ_MIN_TIME_LIMIT_SEC..QUIZ_MAX_TIME_LIMIT_SEC) errors += "config.defaultTimeLimitSec: out of range"
         if (config.minutesPerPoint !in 1..30) errors += "config.minutesPerPoint: out of range"
         if (config.minCorrectCount !in 1..QUIZ_MAX_ITEMS) errors += "config.minCorrectCount: out of range"
         if (config.maxEarnedMinutes !in 1..QUIZ_MAX_EARNED_MINUTES) {
@@ -113,8 +113,8 @@ object QuizSessionValidation {
                 errors += "$prefix.difficulty: invalid"
             }
             if (item.points !in 1..5) errors += "$prefix.points: out of range"
-            if (item.timeLimitSec !in 15..300) errors += "$prefix.timeLimitSec: out of range"
-            if (item.recommendedTimeSec !in 15..300) errors += "$prefix.recommendedTimeSec: out of range"
+            if (item.timeLimitSec !in QUIZ_MIN_TIME_LIMIT_SEC..QUIZ_MAX_TIME_LIMIT_SEC) errors += "$prefix.timeLimitSec: out of range"
+            if (item.recommendedTimeSec !in QUIZ_MIN_TIME_LIMIT_SEC..QUIZ_MAX_TIME_LIMIT_SEC) errors += "$prefix.recommendedTimeSec: out of range"
             if (item.cacheId.length > 64) errors += "$prefix.cacheId: too long"
             if (item.sourceKind.length > 32) errors += "$prefix.sourceKind: too long"
             if (item.sourceRef.length > 128) errors += "$prefix.sourceRef: too long"

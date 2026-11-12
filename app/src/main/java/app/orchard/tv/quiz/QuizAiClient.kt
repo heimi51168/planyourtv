@@ -5,7 +5,9 @@ import com.planyourtv.policy.quiz.QUIZ_MAX_ITEMS
 import com.planyourtv.policy.quiz.QUIZ_MAX_OPTION_CHARS
 import com.planyourtv.policy.quiz.QUIZ_MAX_OPTIONS
 import com.planyourtv.policy.quiz.QUIZ_MAX_PROMPT_CHARS
+import com.planyourtv.policy.quiz.QUIZ_MAX_TIME_LIMIT_SEC
 import com.planyourtv.policy.quiz.QUIZ_MIN_OPTIONS
+import com.planyourtv.policy.quiz.QUIZ_MIN_TIME_LIMIT_SEC
 import com.planyourtv.policy.quiz.QuizCurriculum
 import com.planyourtv.policy.quiz.QuizItem
 import android.util.Log as AndroidLog
@@ -347,7 +349,9 @@ object QuizAiClient {
         val points = intOrNull(raw.opt("points")) ?: request.points
         val timeLimit = intOrNull(raw.opt("recommendedTimeSec")) ?: request.timeLimitSec
         if (points !in 1..5) return ParsedItem(null, "points")
-        if (timeLimit !in 15..300) return ParsedItem(null, "time")
+        if (timeLimit !in QUIZ_MIN_TIME_LIMIT_SEC..QUIZ_MAX_TIME_LIMIT_SEC) {
+            return ParsedItem(null, "time")
+        }
         val subject = cleanText(raw.opt("subject")).ifBlank { request.subject }.take(32)
         val grade = cleanText(raw.opt("grade")).ifBlank { request.grade }
             .take(QuizGeneration.MAX_GRADE_CHARS)

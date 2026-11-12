@@ -80,8 +80,38 @@ class RemoteQuizConfigTest {
         assertNull(RemoteQuizConfig.parse(valid { it.put("minutesPerQuestion", 0) }))
         assertNull(RemoteQuizConfig.parse(valid { it.put("minutesPerQuestion", 31) }))
         assertNull(RemoteQuizConfig.parse(valid { it.put("defaultTimeLimitSec", 14) }))
+        assertNull(
+            RemoteQuizConfig.parse(
+                valid { it.put("defaultTimeLimitSec", QUIZ_MAX_TIME_LIMIT_SEC + 1) },
+            ),
+        )
         assertNull(RemoteQuizConfig.parse(valid { it.put("answerDisplaySec", 121) }))
         assertNull(RemoteQuizConfig.parse(valid { it.put("maxEarnedMinutes", 181) }))
+    }
+
+    @Test
+    fun legacyAutoAdvanceValueNormalizesToTheNewHoldDefault() {
+        // A row written by the old default (30) or a long auto-advance delay
+        // must not turn into a long feedback hold on the TV.
+        for (value in listOf(45, 60, QUIZ_LEGACY_MAX_ANSWER_DISPLAY_SEC)) {
+            val parsed = requireNotNull(
+                RemoteQuizConfig.parse(valid { it.put("answerDisplaySec", value) }),
+            )
+            assertEquals(QUIZ_DEFAULT_ANSWER_DISPLAY_SEC, parsed.answerDisplaySec)
+            assertEquals(
+                QUIZ_DEFAULT_ANSWER_DISPLAY_SEC,
+                parsed.toQuizConfig(QuizConfig()).answerDisplaySec,
+            )
+        }
+    }
+
+    @Test
+    fun acceptsThirtyMinuteTimeLimit() {
+        val parsed = RemoteQuizConfig.parse(
+            valid { it.put("defaultTimeLimitSec", QUIZ_MAX_TIME_LIMIT_SEC) },
+        )
+        requireNotNull(parsed)
+        assertEquals(QUIZ_MAX_TIME_LIMIT_SEC, parsed.defaultTimeLimitSec)
     }
 
     @Test

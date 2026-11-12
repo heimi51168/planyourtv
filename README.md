@@ -27,7 +27,7 @@ PlanYourTV 是一个**桌面级儿童时间管理 App**：它替代电视自带�
 
 > 常见搜索：Android TV 儿童模式、小米电视儿童锁、TCL 电视时间管理、电视屏幕时间、儿童电视桌面、答题解锁电视、Aerial 儿童桌面。
 
-> **当前社区源码版本：`1.93.002`（versionCode 131002），基于 Aerial 1.93。** 小米电视 `standard` 已由本项目真机验证；其他机型和 `guard` 版本沿用 Aerial 上游的支持范围，本项目未逐一验证。
+> **当前社区源码版本：`1.93.003`（versionCode 131003），基于 Aerial 1.93。** 小米电视 `standard` 已由本项目真机验证；其他机型和 `guard` 版本沿用 Aerial 上游的支持范围，本项目未逐一验证。
 
 ## 项目速览
 
@@ -37,7 +37,7 @@ PlanYourTV 是一个**桌面级儿童时间管理 App**：它替代电视自带�
 | 类型 | Android TV 桌面 / 儿童时间管理 / 家长控制 |
 | 平台 | Android TV 5.0+（API 21+）；Android 4.x 不支持；不需要 root |
 | 包名 | `com.planyourtv.tv` |
-| 当前版本 | `1.93.002` / 131002 |
+| 当前版本 | `1.93.003` / 131003 |
 | 上游基线 | [Aerial](https://github.com/pengchujin/aerial-tv) 1.93（MIT） |
 | 许可证 | MIT |
 | 下载 | [standard APK](https://planyourtv.me/download/planyourtv-standard.apk) · [guard APK](https://planyourtv.me/download/planyourtv-guard.apk) · [手机家长端（可选，Android 7.0+）](https://planyourtv.me/download/planyourtv-parent.apk) |
@@ -276,7 +276,7 @@ PlanYourTV 与 Apple、小米、TCL、索尼或 Aerial 项目没有隶属、背�
 
 **PlanYourTV is an open-source, desktop-level parental-control launcher for Android TV.** It replaces the TV home screen and enforces screen-time rules at the launcher level: scheduled windows, daily and per-session limits, rest breaks, an app allowlist, a study mode, and a quiz challenge that lets kids earn extra viewing time.
 
-Built on [Aerial](https://github.com/pengchujin/aerial-tv) 1.93 (MIT). Current community source: **`1.93.002`** / 131002. Xiaomi `standard` is verified on a real TV; other devices follow Aerial's upstream support and are not verified by this project.
+Built on [Aerial](https://github.com/pengchujin/aerial-tv) 1.93 (MIT). Current community source: **`1.93.003`** / 131003. Xiaomi `standard` is verified on a real TV; other devices follow Aerial's upstream support and are not verified by this project.
 
 ### Highlights
 

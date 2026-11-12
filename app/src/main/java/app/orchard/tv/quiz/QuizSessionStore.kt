@@ -2,6 +2,7 @@ package app.orchard.tv.quiz
 
 import com.planyourtv.policy.TvStore
 import com.planyourtv.policy.quiz.QuizAnswerScope
+import com.planyourtv.policy.quiz.QUIZ_DEFAULT_ANSWER_DISPLAY_SEC
 import com.planyourtv.policy.quiz.QuizConfig
 import com.planyourtv.policy.quiz.QuizDecodeResult
 import com.planyourtv.policy.quiz.QuizEngineConfig
@@ -31,6 +32,13 @@ object QuizSessionStore {
     private const val KEY_PROVIDER_KEY = "quiz.providerKey"
     private const val KEY_PROVIDER_META = "quiz.providerMeta"
     private const val KEY_CHALLENGE_CONFIG = "quiz.challengeConfig"
+    // answerDisplaySec changed from an auto-advance delay (default 30) to a
+    // minimum feedback stay (default 3). Migrate once and never reinterpret an
+    // intentionally chosen 30 on a later launch.
+    private const val KEY_ANSWER_DISPLAY_MIGRATED = "quiz.answerDisplayMigrated.v1"
+    // Sessions already stored before the update carry the old value too. They
+    // are separate from the challenge config and need their own one-time pass.
+    private const val KEY_SESSION_ANSWER_DISPLAY_MIGRATED = "quiz.sessionAnswerDisplayMigrated.v1"
     private const val KEY_SOURCE_CONFIG = "quiz.sourceConfig"
     private const val KEY_SYNC_STATE = "quiz.syncState"
     private const val KEY_GENERATION_PREFS = "quiz.generationPrefs"
@@ -66,15 +74,47 @@ object QuizSessionStore {
 
     fun inspectSession(): SessionInspection = synchronized(lock) {
         val raw = TvStore.getString(KEY_SESSION)
-            ?: return SessionInspection(null, false, false, emptyList())
+        if (raw == null) {
+            if (TvStore.isReady) markSessionAnswerDisplayMigrated()
+            return SessionInspection(null, false, false, emptyList())
+        }
         val json = QuizCrypto.decrypt(raw)
             ?: return SessionInspection(null, true, false, emptyList())
         when (val decoded = QuizSessionCodec.decode(json)) {
-            is QuizDecodeResult.Success ->
-                SessionInspection(decoded.session, true, true, emptyList())
+            is QuizDecodeResult.Success -> SessionInspection(
+                migrateSessionAnswerDisplay(decoded.session),
+                true,
+                true,
+                emptyList(),
+            )
             is QuizDecodeResult.Failure ->
                 SessionInspection(null, true, true, decoded.errors)
         }
+    }
+
+    private fun sessionAnswerDisplayMigrated(): Boolean =
+        TvStore.getString(KEY_SESSION_ANSWER_DISPLAY_MIGRATED) == "1"
+
+    private fun markSessionAnswerDisplayMigrated() {
+        TvStore.putStringDurable(KEY_SESSION_ANSWER_DISPLAY_MIGRATED, "1")
+    }
+
+    /**
+     * A session stored before this build carries the old auto-advance value,
+     * often the old default 30. Rewrite it once so a single wrong answer cannot
+     * turn into a 30-second hold. Sessions written after the migration are
+     * marked by [saveSession] and keep an intentional value.
+     */
+    private fun migrateSessionAnswerDisplay(session: QuizSession): QuizSession {
+        if (sessionAnswerDisplayMigrated()) return session
+        val migrated = session.copy(
+            config = session.config.copy(answerDisplaySec = QUIZ_DEFAULT_ANSWER_DISPLAY_SEC),
+        )
+        val encrypted = QuizCrypto.encrypt(QuizSessionCodec.encode(migrated))
+        if (encrypted != null && TvStore.putStringDurable(KEY_SESSION, encrypted)) {
+            markSessionAnswerDisplayMigrated()
+        }
+        return migrated
     }
 
     fun loadSession(): QuizSession? = inspectSession().session
@@ -99,7 +139,11 @@ object QuizSessionStore {
         // updatedAt precedes createdAt: decoding treats that as corrupt.
         val normalized = session.copy(updatedAt = maxOf(session.updatedAt, session.createdAt))
         val encrypted = QuizCrypto.encrypt(QuizSessionCodec.encode(normalized)) ?: return false
-        TvStore.putStringDurable(KEY_SESSION, encrypted)
+        val saved = TvStore.putStringDurable(KEY_SESSION, encrypted)
+        // The session was produced under the new feedback semantics; do not
+        // rewrite its hold on the next inspection.
+        if (saved) markSessionAnswerDisplayMigrated()
+        saved
     }
 
     fun clearSession(): Boolean = synchronized(lock) {
@@ -139,17 +183,48 @@ object QuizSessionStore {
     fun saveProviderMeta(meta: QuizProviderMeta): Boolean =
         TvStore.putStringDurable(KEY_PROVIDER_META, meta.toJson())
 
+    private fun answerDisplayMigrated(): Boolean =
+        TvStore.getString(KEY_ANSWER_DISPLAY_MIGRATED) == "1"
+
+    private fun markAnswerDisplayMigrated() {
+        TvStore.putStringDurable(KEY_ANSWER_DISPLAY_MIGRATED, "1")
+    }
+
     /**
      * Challenge rules survive session deletion so the parent sets them once.
      * This contains no questions, keys, or household data.
+     *
+     * A config written before the feedback-hold semantic change is rewritten
+     * once with the new 3-second default before strict decoding, so an old
+     * 30/45/120 value cannot turn the answer page into a 30-second hold or make
+     * the whole config unreadable.
      */
     fun loadChallengeConfig(): QuizConfig? = synchronized(lock) {
-        val raw = TvStore.getString(KEY_CHALLENGE_CONFIG) ?: return null
-        runCatching { QuizSessionCodec.decodeConfig(JSONObject(raw)) }.getOrNull()
+        val raw = TvStore.getString(KEY_CHALLENGE_CONFIG)
+        if (!answerDisplayMigrated()) {
+            if (raw == null) {
+                if (TvStore.isReady) markAnswerDisplayMigrated()
+                return null
+            }
+            val migrated = runCatching { JSONObject(raw) }.getOrNull() ?: return null
+            migrated.put("answerDisplaySec", QUIZ_DEFAULT_ANSWER_DISPLAY_SEC)
+            if (TvStore.putStringDurable(KEY_CHALLENGE_CONFIG, migrated.toString())) {
+                markAnswerDisplayMigrated()
+            }
+            return runCatching { QuizSessionCodec.decodeConfig(migrated) }.getOrNull()
+        }
+        runCatching { QuizSessionCodec.decodeConfig(JSONObject(raw ?: return null)) }.getOrNull()
     }
 
     fun saveChallengeConfig(config: QuizConfig): Boolean = synchronized(lock) {
-        TvStore.putStringDurable(KEY_CHALLENGE_CONFIG, QuizSessionCodec.encodeConfig(config).toString())
+        val saved = TvStore.putStringDurable(
+            KEY_CHALLENGE_CONFIG,
+            QuizSessionCodec.encodeConfig(config).toString(),
+        )
+        // A config written by this build already uses the new semantics, so a
+        // later launch must not reset an intentional value to the default.
+        if (saved) markAnswerDisplayMigrated()
+        saved
     }
 
     /**

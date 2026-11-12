@@ -88,6 +88,7 @@
     <string name="policy_quiz_question_scroll_hint">Використовуйте ↑/↓, щоб прочитати питання й варіанти повністю</string>
     <string name="policy_quiz_feedback_scroll_hint">Читайте за допомогою ↑/↓; натисніть OK, щоб продовжити</string>
     <string name="policy_quiz_feedback_continue">Зрозуміло — я це вивчив(ла)</string>
+    <string name="policy_quiz_feedback_wait">Продовжити через %1$d с</string>
     <string name="policy_quiz_view_result">Переглянути результат</string>
     <string name="policy_quiz_result_title">Вікторину завершено</string>
     <string name="policy_quiz_result_body">Правильних: %1$d; отримано %2$d хв.</string>

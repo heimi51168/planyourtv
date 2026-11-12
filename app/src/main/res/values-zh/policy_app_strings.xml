@@ -88,6 +88,7 @@
     <string name="policy_quiz_question_scroll_hint">按上下键滚动，查看完整题目和选项</string>
     <string name="policy_quiz_feedback_scroll_hint">按上下键阅读，按 OK 继续</string>
     <string name="policy_quiz_feedback_continue">原来是这样，我学会了</string>
+    <string name="policy_quiz_feedback_wait">%1$d 秒后可继续</string>
     <string name="policy_quiz_view_result">查看挑战结果</string>
     <string name="policy_quiz_result_title">挑战完成</string>
     <string name="policy_quiz_result_body">答对 %1$d 题，获得 %2$d 分钟。</string>

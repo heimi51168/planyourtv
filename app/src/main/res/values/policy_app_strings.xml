@@ -88,6 +88,7 @@
     <string name="policy_quiz_question_scroll_hint">Use Up/Down to read the whole question and scroll the choices</string>
     <string name="policy_quiz_feedback_scroll_hint">Use Up/Down to read; press OK to continue</string>
     <string name="policy_quiz_feedback_continue">Got it — I’ve learned this</string>
+    <string name="policy_quiz_feedback_wait">Continue in %1$d s</string>
     <string name="policy_quiz_view_result">See challenge result</string>
     <string name="policy_quiz_result_title">Challenge complete</string>
     <string name="policy_quiz_result_body">%1$d correct; earned %2$d minutes.</string>

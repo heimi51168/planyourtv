@@ -185,23 +185,19 @@
             </div>
           </div>
 
-          <details id="genAdvanced" class="gen-advanced">
-            <summary>
-              <span data-i18n="genAdvanced"></span>
-              <span id="genAdvancedSummary" class="gen-summary"></span>
-              <span class="chevron" aria-hidden="true">›</span>
-            </summary>
-            <div class="gen-advanced-body">
-              <span class="field-label" id="genOptionsLabel" data-i18n="genOptions"></span>
-              <div id="genOptionsChips" class="chip-row" role="group" aria-labelledby="genOptionsLabel"></div>
-              <div class="gen-prompt-head">
-                <label for="genPrompt" data-i18n="genPromptLabel"></label>
-                <span id="genPromptBadge" class="gen-badge"></span>
-              </div>
-              <textarea id="genPrompt" class="gen-prompt" rows="3" maxlength="400"
-                data-i18n-placeholder="genPromptPlaceholder"></textarea>
+          <div class="field">
+            <span class="field-label" id="genOptionsLabel" data-i18n="genOptions"></span>
+            <div id="genOptionsChips" class="chip-row" role="group" aria-labelledby="genOptionsLabel"></div>
+          </div>
+
+          <div class="field">
+            <div class="gen-prompt-head">
+              <label for="genPrompt" data-i18n="genPromptLabel"></label>
+              <span id="genPromptBadge" class="gen-badge"></span>
             </div>
-          </details>
+            <textarea id="genPrompt" class="gen-prompt" rows="3" maxlength="400"
+              data-i18n-placeholder="genPromptPlaceholder"></textarea>
+          </div>
 
           <label class="toggle-row" for="genAutoAdd">
             <span class="toggle-copy">
@@ -300,29 +296,46 @@
             </div>
 
             <div class="field">
-              <span class="field-label" data-i18n="settingsRound"></span>
-              <div class="round-wheel-wrap">
-                <div class="round-wheel-shell">
-                  <div id="roundWheel" class="round-wheel" role="spinbutton" tabindex="0"
-                       aria-valuemin="5" aria-valuemax="50" aria-valuenow="5"
-                       data-i18n-aria="settingsRound">
-                    <div id="roundWheelTrack" class="round-wheel-track"></div>
-                  </div>
-                  <div class="round-wheel-band" aria-hidden="true"></div>
-                </div>
-                <div class="round-wheel-meta">
-                  <span class="round-wheel-readout">
-                    <b id="roundWheelValue">5</b>
-                    <span data-i18n="roundUnit"></span>
-                  </span>
-                  <span class="round-wheel-hint" data-i18n="settingsRoundHint"></span>
-                </div>
+              <label class="field-label" for="roundInput" data-i18n="settingsRound"></label>
+              <div class="settings-stepper">
+                <button id="roundMinus" class="icon-btn" type="button"
+                        data-i18n-aria="roundDecrease">−</button>
+                <input id="roundInput" type="number" inputmode="numeric"
+                       min="5" max="50" step="5" value="5" aria-describedby="roundHint">
+                <span class="settings-stepper-unit" data-i18n="roundUnit"></span>
+                <button id="roundPlus" class="icon-btn" type="button"
+                        data-i18n-aria="roundIncrease">+</button>
               </div>
+              <p id="roundHint" class="hint" data-i18n="settingsRoundHint"></p>
             </div>
 
             <div class="field">
-              <span class="field-label" data-i18n="settingsCountdown"></span>
-              <div id="timeCounts" class="chip-row" role="group" data-i18n-aria="settingsCountdown"></div>
+              <label id="timeCountdownLabel" class="field-label" for="timeInput"
+                     data-i18n="settingsCountdown"></label>
+              <div class="settings-stepper">
+                <button id="timeMinus" class="icon-btn" type="button"
+                        data-i18n-aria="timeDecrease">−</button>
+                <input id="timeInput" type="number" inputmode="numeric"
+                       min="15" max="1800" step="30" value="60" aria-describedby="timeHint">
+                <span class="settings-stepper-unit" data-i18n="secondsUnit"></span>
+                <button id="timePlus" class="icon-btn" type="button"
+                        data-i18n-aria="timeIncrease">+</button>
+              </div>
+              <p id="timeHint" class="hint" data-i18n="settingsTimeRange"></p>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="answerHoldInput" data-i18n="settingsAnswerHold"></label>
+              <div class="settings-stepper">
+                <button id="answerHoldMinus" class="icon-btn" type="button"
+                        data-i18n-aria="answerHoldDecrease">−</button>
+                <input id="answerHoldInput" type="number" inputmode="numeric"
+                       min="1" max="30" step="1" value="3" aria-describedby="answerHoldHint">
+                <span class="settings-stepper-unit" data-i18n="secondsUnit"></span>
+                <button id="answerHoldPlus" class="icon-btn" type="button"
+                        data-i18n-aria="answerHoldIncrease">+</button>
+              </div>
+              <p id="answerHoldHint" class="hint" data-i18n="settingsAnswerHoldHint"></p>
             </div>
 
             <div class="field">
@@ -360,42 +373,37 @@
             </div>
 
             <div class="field">
-              <span class="field-label" data-i18n="unlockTitle"></span>
-              <div id="unlockCounts" class="chip-row" role="group" data-i18n-aria="unlockTitle"></div>
+              <span class="field-label" data-i18n="unlockThresholdTitle"></span>
+              <div id="unlockCounts" class="chip-row" role="group" data-i18n-aria="unlockThresholdTitle"></div>
               <input id="minUnlock" type="number" min="0" max="180" value="0"
-                inputmode="numeric" data-i18n-aria="unlockTitle">
+                inputmode="numeric" data-i18n-aria="unlockThresholdTitle">
               <p class="hint" data-i18n="unlockHint"></p>
             </div>
 
-            <details id="answerAdvanced" class="gen-advanced">
-              <summary>
-                <span data-i18n="genAdvanced"></span>
-                <span class="chevron" aria-hidden="true">›</span>
-              </summary>
-              <div class="gen-advanced-body">
-                <p id="settingsActiveHint" class="hint hidden" data-i18n="settingsActiveHint"></p>
-                <div class="row">
-                  <div>
-                    <label for="maxEarned" data-i18n="maxEarned"></label>
-                    <input id="maxEarned" type="number" min="1" max="180" value="60">
-                  </div>
-                  <div>
-                    <label class="check" for="shuffle">
-                      <input id="shuffle" type="checkbox" checked>
-                      <span data-i18n="shuffle"></span>
-                    </label>
-                  </div>
+            <div class="field">
+              <p id="settingsActiveHint" class="hint hidden" data-i18n="settingsActiveHint"></p>
+              <div class="row">
+                <div>
+                  <label for="maxEarned" data-i18n="maxEarned"></label>
+                  <input id="maxEarned" type="number" min="1" max="180" value="60">
                 </div>
-                <div class="fold-section">
-                  <p class="section-label" data-i18n="syncTitle"></p>
-                  <p id="syncSummary" class="muted"></p>
-                  <div class="inline-actions">
-                    <button id="syncRetry" class="btn secondary small hidden" type="button" data-i18n="syncRetry"></button>
-                    <button id="syncUseRemote" class="btn text small hidden" type="button" data-i18n="syncUseRemote"></button>
-                  </div>
+                <div>
+                  <label class="check" for="shuffle">
+                    <input id="shuffle" type="checkbox" checked>
+                    <span data-i18n="shuffle"></span>
+                  </label>
                 </div>
               </div>
-            </details>
+            </div>
+
+            <div class="fold-section">
+              <p class="section-label" data-i18n="syncTitle"></p>
+              <p id="syncSummary" class="muted"></p>
+              <div class="inline-actions">
+                <button id="syncRetry" class="btn secondary small hidden" type="button" data-i18n="syncRetry"></button>
+                <button id="syncUseRemote" class="btn text small hidden" type="button" data-i18n="syncUseRemote"></button>
+              </div>
+            </div>
           </div>
 
           <p id="settingsState" class="ok fold-status" role="status"></p>

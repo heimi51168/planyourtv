@@ -22,9 +22,26 @@ const val QUIZ_MAX_SESSION_CHARS = 512 * 1024
 const val QUIZ_MAX_PROMPT_CHARS = 200
 const val QUIZ_MAX_OPTION_CHARS = 60
 const val QUIZ_MAX_EXPLANATION_CHARS = 600
-const val QUIZ_MIN_ANSWER_DISPLAY_SEC = 5
-const val QUIZ_MAX_ANSWER_DISPLAY_SEC = 120
-const val QUIZ_DEFAULT_ANSWER_DISPLAY_SEC = 30
+const val QUIZ_MIN_ANSWER_DISPLAY_SEC = 1
+const val QUIZ_MAX_ANSWER_DISPLAY_SEC = 30
+const val QUIZ_DEFAULT_ANSWER_DISPLAY_SEC = 3
+/** Old cloud rows could still carry the former auto-advance range. */
+const val QUIZ_LEGACY_MAX_ANSWER_DISPLAY_SEC = 120
+
+/**
+ * Answer display is now a minimum stay, not an auto-advance delay. Values left
+ * over from the old range are treated as the new default instead of making an
+ * entire persisted session or cloud config unreadable.
+ */
+fun normalizeAnswerHoldSec(value: Int): Int =
+    if (value in QUIZ_MIN_ANSWER_DISPLAY_SEC..QUIZ_MAX_ANSWER_DISPLAY_SEC) {
+        value
+    } else {
+        QUIZ_DEFAULT_ANSWER_DISPLAY_SEC
+    }
+/** One question's answer window, shared by the web editor and the session codec. */
+const val QUIZ_MIN_TIME_LIMIT_SEC = 15
+const val QUIZ_MAX_TIME_LIMIT_SEC = 30 * 60
 
 enum class QuizSessionStatus {
     DRAFT,
@@ -289,7 +306,11 @@ object QuizSessionCodec {
         val maxEarned = root.requiredInt("maxEarnedMinutes", "config", errors)
         val shuffle = root.requiredBoolean("shuffleOptions", "config", errors)
         // Optional so records written before configurable answer feedback stay readable.
-        val answerDisplay = root.optInt("answerDisplaySec", QUIZ_DEFAULT_ANSWER_DISPLAY_SEC)
+        // The field used to mean an auto-advance delay (5–120); old values are
+        // normalized rather than rejecting the whole config or session.
+        val answerDisplay = normalizeAnswerHoldSec(
+            root.optInt("answerDisplaySec", QUIZ_DEFAULT_ANSWER_DISPLAY_SEC),
+        )
         // v4 fields are optional on read: a v2/v3 record derives them from the
         // legacy fields instead of being rejected.
         val pullCount = root.optInt("pullCount", QUIZ_DEFAULT_PULL_COUNT)
@@ -314,9 +335,6 @@ object QuizSessionCodec {
         if (minutesPerPoint !in 1..30) errors += "config.minutesPerPoint: out of range"
         if (minCorrect !in 1..QUIZ_MAX_ITEMS) errors += "config.minCorrectCount: out of range"
         if (maxEarned !in 1..QUIZ_MAX_EARNED_MINUTES) errors += "config.maxEarnedMinutes: out of range"
-        if (answerDisplay !in QUIZ_MIN_ANSWER_DISPLAY_SEC..QUIZ_MAX_ANSWER_DISPLAY_SEC) {
-            errors += "config.answerDisplaySec: out of range"
-        }
         if (pullCount !in QUIZ_MIN_PULL_COUNT..QUIZ_MAX_PULL_COUNT) {
             errors += "config.pullCount: out of range"
         }
@@ -762,7 +780,7 @@ object QuizSessionCodec {
         return value
     }
 
-    private val TIME_LIMIT_RANGE = 15..300
+    private val TIME_LIMIT_RANGE = QUIZ_MIN_TIME_LIMIT_SEC..QUIZ_MAX_TIME_LIMIT_SEC
     private val DIFFICULTIES = setOf("easy", "medium", "hard")
     private val RUNTIME_STATUSES = setOf(
         QuizSessionStatus.RUNNING,

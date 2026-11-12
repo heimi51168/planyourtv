@@ -215,6 +215,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
     val railRemoteFocus = remember { FocusRequester() }
     val railPasswordFocus = remember { FocusRequester() }
     val railAutoFocus = remember { FocusRequester() }
+    val railQuizFocus = remember { FocusRequester() }
     val migrationRetryFocus = remember { FocusRequester() }
     val waitRetryFocus = remember { FocusRequester() }
     val summaryReadFocus = remember { FocusRequester() }
@@ -322,6 +323,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
             ParentFocusTarget.Remote,
             ParentFocusTarget.Password,
             ParentFocusTarget.AutoUpdate,
+            ParentFocusTarget.QuizSetup,
             -> ParentZone.RAIL
             else -> ParentZone.PANE
         }
@@ -355,8 +357,9 @@ fun PolicyParentCenter(onClose: () -> Unit) {
             sessionActive = localSessionActive,
             readOnly = readOnlyLocal,
         ).map { ParentFocusTarget.LocalRow(it) }
-        // The bind page is display-only and keeps the remote-management rail row focused.
+        // The bind and quiz pages are display-only and keep their rail row focused.
         ParentPaneKind.BIND -> emptyList()
+        ParentPaneKind.QUIZ_SETUP -> emptyList()
         ParentPaneKind.MIGRATION -> listOf(ParentFocusTarget.MigrationRetry)
         ParentPaneKind.WAIT_CONFIG -> listOf(ParentFocusTarget.WaitConfigRetry)
         ParentPaneKind.SUMMARY -> listOf(ParentFocusTarget.SummaryRead)
@@ -395,13 +398,13 @@ fun PolicyParentCenter(onClose: () -> Unit) {
         if (first != null) {
             focusNow(first)
         } else {
-            // A display-only pane (the bind QR page) has no row to focus. Keep the rail row
-            // that opened it highlighted instead of jumping to the child-mode switch.
+            // A display-only pane (the bind or quiz QR page) has no row to focus. Keep the
+            // rail row that opened it highlighted instead of jumping to the switch.
             focusNow(
-                if (origin == ParentRailOrigin.REMOTE) {
-                    ParentFocusTarget.Remote
-                } else {
-                    ParentFocusTarget.Switch
+                when (origin) {
+                    ParentRailOrigin.REMOTE -> ParentFocusTarget.Remote
+                    ParentRailOrigin.QUIZ_SETUP -> ParentFocusTarget.QuizSetup
+                    ParentRailOrigin.SWITCH -> ParentFocusTarget.Switch
                 },
             )
         }
@@ -441,14 +444,22 @@ fun PolicyParentCenter(onClose: () -> Unit) {
         enterPane(defaultPaneKind(), ParentRailOrigin.SWITCH)
     }
 
+    fun enterQuizSetupPane() {
+        if (!childOn) {
+            focusNow(ParentFocusTarget.Switch)
+            return
+        }
+        enterPane(ParentPaneKind.QUIZ_SETUP, ParentRailOrigin.QUIZ_SETUP)
+    }
+
     fun focusRailFromPane() {
         val targets = railTargetsNow()
-        val target = if (railOrigin == ParentRailOrigin.REMOTE &&
-            ParentFocusTarget.Remote in targets
-        ) {
-            ParentFocusTarget.Remote
-        } else {
-            ParentFocusTarget.Switch
+        val target = when {
+            railOrigin == ParentRailOrigin.REMOTE && ParentFocusTarget.Remote in targets ->
+                ParentFocusTarget.Remote
+            railOrigin == ParentRailOrigin.QUIZ_SETUP &&
+                ParentFocusTarget.QuizSetup in targets -> ParentFocusTarget.QuizSetup
+            else -> ParentFocusTarget.Switch
         }
         focusNow(target)
     }
@@ -1029,6 +1040,9 @@ fun PolicyParentCenter(onClose: () -> Unit) {
             armedRemoveKey != null -> cancelRemoveConfirm()
             editingKey != null -> editingKey = null
             activeZone == ParentZone.PANE -> focusRailFromPane()
+            // The quiz page is a display-only detour: Back returns to the default pane first,
+            // and a second Back leaves the parent center like everywhere else.
+            paneKind == ParentPaneKind.QUIZ_SETUP -> paneKind = defaultPaneKind()
             else -> onClose()
         }
         return true
@@ -1181,13 +1195,19 @@ fun PolicyParentCenter(onClose: () -> Unit) {
         // onto the remote row must not open the bind/QR pane behind the privacy notice.
         val remoteContext =
             REMOTE_MANAGEMENT_ENABLED && wantsRemote && (bound || cloudConsentAccepted)
+        val quizSetupOpen = paneKind == ParentPaneKind.QUIZ_SETUP
         val next = when {
             // A finished handoff hides the remote rail entry; never leave the right pane on a
-            // remote view whose entry no longer exists.
-            handoffDone -> ParentPaneKind.LOCAL
+            // remote view whose entry no longer exists. The quiz page is not a remote view and
+            // may stay open after the handoff.
+            handoffDone && !quizSetupOpen -> ParentPaneKind.LOCAL
             remoteContext -> remotePaneKind()
             activeZone == ParentZone.RAIL && focusedTarget == ParentFocusTarget.Switch ->
                 defaultPaneKind()
+            // The quiz page belongs to the rail row, not to the cloud handoff, so it survives
+            // binding and a finished handoff until the switch or remote row is picked.
+            quizSetupOpen -> ParentPaneKind.QUIZ_SETUP
+            handoffDone -> ParentPaneKind.LOCAL
             bound -> ParentPaneKind.LOCAL
             REMOTE_MANAGEMENT_ENABLED && state.mode == PolicyMode.CLOUD -> ParentPaneKind.BIND
             REMOTE_MANAGEMENT_ENABLED && paneKind == ParentPaneKind.BIND -> ParentPaneKind.BIND
@@ -1279,6 +1299,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
                 }
             }
             ParentFocusTarget.AutoUpdate -> toggleAutoUpdate()
+            ParentFocusTarget.QuizSetup -> enterQuizSetupPane()
             ParentFocusTarget.MigrationRetry -> requestHandoff()
             ParentFocusTarget.WaitConfigRetry -> retryRemoteConfig()
             ParentFocusTarget.SummaryRead -> Unit
@@ -1392,12 +1413,13 @@ fun PolicyParentCenter(onClose: () -> Unit) {
             return true
         }
 
-        // Right on the rail only opens the switch/remote panes. Inside a value row it adjusts
-        // only while that row is in the explicit edit state.
+        // Right on the rail only opens the switch/remote/quiz panes. Inside a value row it
+        // adjusts only while that row is in the explicit edit state.
         if (activeZone == ParentZone.RAIL) {
             when (target) {
                 ParentFocusTarget.Switch -> enterPaneFromSwitch()
                 ParentFocusTarget.Remote -> enterRemotePane()
+                ParentFocusTarget.QuizSetup -> enterQuizSetupPane()
                 else -> Unit
             }
             return true
@@ -1531,6 +1553,13 @@ fun PolicyParentCenter(onClose: () -> Unit) {
             }
             paneSummaryColor = if (notice != null) noticeColor else Palette.SecondaryLabel
         }
+        ParentPaneKind.QUIZ_SETUP -> {
+            paneTitle = stringResource(R.string.policy_v6_quiz_setup)
+            paneStatus = stringResource(R.string.policy_v6_quiz_setup_status)
+            paneStatusColor = Palette.SecondaryLabel
+            paneSummary = stringResource(R.string.policy_v6_quiz_setup_summary)
+            paneSummaryColor = Palette.SecondaryLabel
+        }
     }
 
     Box(
@@ -1641,18 +1670,21 @@ fun PolicyParentCenter(onClose: () -> Unit) {
                     onDown = railDown(ParentFocusTarget.AutoUpdate),
                 )
 
-                // Parent-only entry to the local parent page. It stays visible in automatic
-                // mode and with the quiz disabled because the bank is independent of both.
-                // It sits below auto update because this rail is the one part of the parent
-                // center that does not scroll. No focus target: scanning is the only action.
-                if (quizWebQrVisible(
-                        childOn = childOn,
-                        localMode = state.mode == PolicyMode.LOCAL,
-                        bindPaneOpen = paneKind == ParentPaneKind.BIND,
+                // Child-mode entry to the two phone codes. It is a destination row instead of
+                // an always-on card under auto update: the remote-management row takes that
+                // space when it is released, and the right pane can spread the codes apart.
+                if (childOn) {
+                    Spacer(Modifier.height(8.dp))
+                    V6RailRow(
+                        title = stringResource(R.string.policy_v6_quiz_setup),
+                        subtitle = stringResource(R.string.policy_v6_quiz_setup_sub),
+                        focusRequester = railQuizFocus,
+                        highlighted = focusedTarget == ParentFocusTarget.QuizSetup,
+                        onClick = ::enterQuizSetupPane,
+                        onUp = railUp(ParentFocusTarget.QuizSetup),
+                        onDown = railDown(ParentFocusTarget.QuizSetup),
+                        onRight = ::enterQuizSetupPane,
                     )
-                ) {
-                    Spacer(Modifier.height(10.dp))
-                    QuizWebQrCard()
                 }
 
                 Spacer(Modifier.weight(1f))
@@ -1724,6 +1756,9 @@ fun PolicyParentCenter(onClose: () -> Unit) {
                         ParentPaneKind.BIND -> V6BindPane(
                             deviceNo = cloudState.deviceNo,
                             guide = cloudGuide,
+                        )
+                        ParentPaneKind.QUIZ_SETUP -> V6QuizSetupPane(
+                            localMode = state.mode == PolicyMode.LOCAL,
                         )
                         ParentPaneKind.MIGRATION -> V6MigrationPane(
                             busy = handoffBusy,

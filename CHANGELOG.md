@@ -3,6 +3,39 @@
 This changelog covers the community source snapshot. Official hosted builds may ship different
 artifacts with the same upstream Aerial base.
 
+## [1.93.003] - 2026-11-12
+
+Quiz configuration, all-subject question mix and Parent Center update, based on Aerial 1.93 /
+versionCode 131. Version code `131003`.
+
+### Added
+
+- Wrong-answer and timeout feedback can now hold for 1–30 seconds before the next question
+  (default 3 seconds). The TV shows the remaining time and disables Continue until it ends, and
+  the engine rejects an early close. Correct answers still advance immediately. Existing configs
+  and sessions migrate once so an old 30-second default does not become a 30-second hold.
+
+### Changed
+
+- The answer-time limit is now 15 seconds to 30 minutes, in 30-second steps, with direct numeric
+  entry within that range. Policy, AI generation and question import use the same 1,800-second
+  upper limit.
+- The parent web page replaces preset rollers with always-visible steppers for questions per
+  round, answer time and minimum answer display time. Advanced quiz settings and the generation
+  options are expanded instead of hidden behind “More settings”.
+- The parent-web threshold field is labeled “TV time threshold (minutes)” instead of reusing the
+  “Temporary unlock” label.
+- Parent Center moves the two QR codes to a dedicated question-bank settings page: the parent web
+  page and the optional parent app are placed in opposite corners with separate instructions.
+
+### Fixed
+
+- All-subject (`subject=ALL`) question selection now buckets by subject and rotates between them
+  while preserving FIFO order within each subject, so a short round no longer fills with the
+  first subject's questions.
+- The installer and installation docs pass `-i com.planyourtv.tv`, so Android records PlanYourTV
+  as the installer of record and in-app silent updates can work without a manual reinstall.
+
 ## [1.93.002] - 2026-11-12
 
 Parent app, parent-web unlock and textbook coverage update, based on Aerial 1.93 / versionCode

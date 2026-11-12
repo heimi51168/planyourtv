@@ -40,7 +40,7 @@ data class RemoteQuizConfig(
         minutesPerPoint = minutesPerQuestion,
         maxEarnedMinutes = maxEarnedMinutes.coerceIn(1, QUIZ_MAX_EARNED_MINUTES),
         shuffleOptions = shuffleOptions,
-        answerDisplaySec = answerDisplaySec,
+        answerDisplaySec = normalizeAnswerHoldSec(answerDisplaySec),
         pullCount = pullCount,
         minutesPerQuestion = minutesPerQuestion,
         pointsPerQuestion = 1,
@@ -68,9 +68,14 @@ data class RemoteQuizConfig(
             // Any value other than 1 means the contract changed and the TV must not guess.
             if (json.optInt("pointsPerQuestion", 1) != 1) return null
             val timeLimit = json.optInt("defaultTimeLimitSec", -1)
-            if (timeLimit !in MIN_TIME_LIMIT_SEC..MAX_TIME_LIMIT_SEC) return null
+            if (timeLimit !in QUIZ_MIN_TIME_LIMIT_SEC..QUIZ_MAX_TIME_LIMIT_SEC) return null
             val answerDisplay = json.optInt("answerDisplaySec", -1)
-            if (answerDisplay !in QUIZ_MIN_ANSWER_DISPLAY_SEC..QUIZ_MAX_ANSWER_DISPLAY_SEC) return null
+            // Accept the old auto-advance range until every bound TV row is
+            // migrated; toQuizConfig maps anything above the new cap to the
+            // 3-second default instead of rejecting the whole cloud config.
+            if (answerDisplay !in QUIZ_MIN_ANSWER_DISPLAY_SEC..QUIZ_LEGACY_MAX_ANSWER_DISPLAY_SEC) {
+                return null
+            }
             val maxEarnedMinutes = json.optInt("maxEarnedMinutes", -1)
             if (maxEarnedMinutes !in 1..QUIZ_MAX_EARNED_MINUTES) return null
             val familyId = if (json.has("familyId") && !json.isNull("familyId")) {
@@ -95,7 +100,7 @@ data class RemoteQuizConfig(
                 minutesPerQuestion = minutesPerQuestion,
                 pointsPerQuestion = 1,
                 defaultTimeLimitSec = timeLimit,
-                answerDisplaySec = answerDisplay,
+                answerDisplaySec = normalizeAnswerHoldSec(answerDisplay),
                 shuffleOptions = json.optBoolean("shuffleOptions", true),
                 maxEarnedMinutes = maxEarnedMinutes,
                 scope = scope,
@@ -111,7 +116,5 @@ data class RemoteQuizConfig(
 
         const val MIN_MINUTES_PER_QUESTION = 1
         const val MAX_MINUTES_PER_QUESTION = 30
-        const val MIN_TIME_LIMIT_SEC = 15
-        const val MAX_TIME_LIMIT_SEC = 300
     }
 }

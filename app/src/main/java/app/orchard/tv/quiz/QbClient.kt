@@ -7,6 +7,8 @@ import com.planyourtv.policy.PolicyRuntime
 import com.planyourtv.policy.quiz.QUIZ_MAX_EXPLANATION_CHARS
 import com.planyourtv.policy.quiz.QUIZ_MAX_OPTION_CHARS
 import com.planyourtv.policy.quiz.QUIZ_MAX_PROMPT_CHARS
+import com.planyourtv.policy.quiz.QUIZ_MAX_TIME_LIMIT_SEC
+import com.planyourtv.policy.quiz.QUIZ_MIN_TIME_LIMIT_SEC
 import com.planyourtv.policy.quiz.QuizItem
 import com.planyourtv.policy.quiz.QuizSubmission
 import org.json.JSONArray
@@ -204,7 +206,9 @@ object QbClient {
         val points = raw.optInt("points", 1)
         if (points !in 1..5) throw IOException("QB question points is out of range")
         val timeLimit = raw.optInt("timeLimitSec", 60)
-        if (timeLimit !in 15..300) throw IOException("QB question time limit is out of range")
+        if (timeLimit !in QUIZ_MIN_TIME_LIMIT_SEC..QUIZ_MAX_TIME_LIMIT_SEC) {
+            throw IOException("QB question time limit is out of range")
+        }
         return QuizItem(
             questionId = QUESTION_ID_PREFIX + uid,
             prompt = prompt,

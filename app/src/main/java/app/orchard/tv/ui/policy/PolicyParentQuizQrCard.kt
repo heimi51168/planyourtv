@@ -6,10 +6,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
@@ -29,6 +32,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.orchard.tv.R
@@ -42,62 +46,100 @@ import kotlinx.coroutines.withContext
 
 internal const val PARENT_APP_DOWNLOAD_URL = "https://planyourtv.me/download/parent"
 
-private val ParentQrSize = 92.dp
+private val PrimaryQrSize = 156.dp
+private val SecondaryQrSize = 132.dp
 private val QrPlaceholder = Color(0xFF6E6E73)
 
 /**
- * The parent web page is also the local-bank setup page and the lock-screen-only
- * temporary-unlock / one-session entry. It exists only while the local engine owns
- * the guard; automatic timing and a disabled quiz keep the bank editable, so neither
- * hides it. The bind pane is excluded because that pane already owns the QR slot.
- */
-internal fun quizWebQrVisible(
-    childOn: Boolean,
-    localMode: Boolean,
-    bindPaneOpen: Boolean,
-): Boolean = childOn &&
-    localMode &&
-    !bindPaneOpen
-
-/**
- * The small, non-focusable QR pair below auto update. The first code uses the
- * child quiz screen's loader, so it points at the same stable local page and
- * shows the same offline state. The second is a static download link for the
- * optional phone parent app and stays available without the local server.
+ * The right-hand quiz setup pane: the local parent web page and the optional phone parent app.
+ *
+ * The two codes sit in opposite corners of the pane (primary top-left, secondary bottom-right)
+ * so one camera frame is unlikely to comfortably contain both. Their captions say what each
+ * code is for and whether the phone must share the TV's Wi-Fi.
  */
 @Composable
-internal fun QuizWebQrCard(modifier: Modifier = Modifier) {
-    val web = rememberQuizQr(scale = 8)
-    val app = rememberStaticQr(PARENT_APP_DOWNLOAD_URL, scale = 8)
-    val webHint = when {
-        web.bitmap != null -> R.string.policy_v6_quiz_web_hint
-        web.loading -> R.string.policy_quiz_qr_loading
-        else -> R.string.policy_quiz_offline
-    }
+internal fun V6QuizSetupPane(
+    localMode: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val web = rememberQuizQr(scale = 12)
+    val app = rememberStaticQr(PARENT_APP_DOWNLOAD_URL, scale = 12)
 
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(Palette.Fill.copy(alpha = 0.55f))
-            .padding(6.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        QrEntry(
-            bitmap = web.bitmap,
-            loading = web.loading,
-            title = stringResource(R.string.policy_v6_quiz_web_title),
-            hint = stringResource(webHint),
-            failed = {
-                GlyphIcon(Glyph.Offline, Palette.SecondaryLabel, 24.dp)
-            },
-        )
-        QrEntry(
-            bitmap = app.bitmap,
-            loading = app.loading,
-            title = stringResource(R.string.policy_v6_parent_app_title),
-            hint = stringResource(R.string.policy_v6_parent_app_hint),
-            failed = {
+    Box(modifier = modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier.align(Alignment.TopStart),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            QrPlate(
+                bitmap = web.bitmap,
+                loading = web.loading,
+                size = PrimaryQrSize,
+            ) {
+                OfflineQr()
+            }
+            Spacer(Modifier.width(20.dp))
+            Column(modifier = Modifier.widthIn(max = 340.dp)) {
+                BasicText(
+                    stringResource(R.string.policy_v6_quiz_web_title),
+                    style = Type.Headline.copy(fontSize = 18.sp),
+                )
+                Spacer(Modifier.height(6.dp))
+                BasicText(
+                    stringResource(R.string.policy_v6_quiz_web_same_wifi),
+                    style = Type.Body.copy(fontSize = 14.sp, color = Palette.Label),
+                )
+                Spacer(Modifier.height(4.dp))
+                BasicText(
+                    stringResource(R.string.policy_v6_quiz_web_purpose),
+                    style = Type.Caption.copy(fontSize = 12.sp, color = Palette.SecondaryLabel),
+                )
+                if (localMode) {
+                    BasicText(
+                        stringResource(R.string.policy_v6_quiz_web_unlock),
+                        style = Type.Caption.copy(fontSize = 12.sp, color = Palette.SecondaryLabel),
+                    )
+                }
+            }
+        }
+
+        // Keep the download code away from the web code: bottom-right against top-left.
+        Row(
+            modifier = Modifier.align(Alignment.BottomEnd),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(
+                modifier = Modifier.widthIn(max = 300.dp),
+                horizontalAlignment = Alignment.End,
+            ) {
+                BasicText(
+                    stringResource(R.string.policy_v6_parent_app_title),
+                    style = Type.Headline.copy(fontSize = 17.sp, textAlign = TextAlign.End),
+                )
+                Spacer(Modifier.height(5.dp))
+                BasicText(
+                    stringResource(R.string.policy_v6_parent_app_hint),
+                    style = Type.Caption.copy(
+                        fontSize = 12.sp,
+                        color = Palette.SecondaryLabel,
+                        textAlign = TextAlign.End,
+                    ),
+                )
+                Spacer(Modifier.height(3.dp))
+                BasicText(
+                    stringResource(R.string.policy_v6_parent_app_no_wifi),
+                    style = Type.Caption.copy(
+                        fontSize = 12.sp,
+                        color = Palette.SecondaryLabel,
+                        textAlign = TextAlign.End,
+                    ),
+                )
+            }
+            Spacer(Modifier.width(18.dp))
+            QrPlate(
+                bitmap = app.bitmap,
+                loading = app.loading,
+                size = SecondaryQrSize,
+            ) {
                 BasicText(
                     stringResource(R.string.policy_v6_parent_app_qr_failed),
                     style = Type.Caption.copy(
@@ -108,65 +150,60 @@ internal fun QuizWebQrCard(modifier: Modifier = Modifier) {
                     maxLines = 4,
                     overflow = TextOverflow.Ellipsis,
                 )
-            },
-        )
+            }
+        }
     }
 }
 
 @Composable
-private fun QrEntry(
+private fun QrPlate(
     bitmap: ImageBitmap?,
     loading: Boolean,
-    title: String,
-    hint: String,
+    size: Dp,
     failed: @Composable () -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    Box(
+        modifier = Modifier
+            .size(size)
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color.White)
+            .padding(10.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        Box(
-            modifier = Modifier
-                .size(ParentQrSize)
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color.White)
-                .padding(8.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            when {
-                bitmap != null -> Image(
-                    bitmap = bitmap,
-                    contentDescription = null,
-                    contentScale = ContentScale.Fit,
-                    filterQuality = FilterQuality.None,
-                    modifier = Modifier.fillMaxSize(),
-                )
-                loading -> BasicText(
-                    "…",
-                    style = Type.Caption.copy(fontSize = 14.sp, color = QrPlaceholder),
-                )
-                else -> failed()
-            }
+        when {
+            bitmap != null -> Image(
+                bitmap = bitmap,
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                filterQuality = FilterQuality.None,
+                modifier = Modifier.fillMaxSize(),
+            )
+            loading -> BasicText(
+                "…",
+                style = Type.Caption.copy(fontSize = 16.sp, color = QrPlaceholder),
+            )
+            else -> failed()
         }
+    }
+}
 
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            BasicText(
-                title,
-                style = Type.Headline.copy(fontSize = 14.sp, color = Palette.Label),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            BasicText(
-                hint,
-                style = Type.Caption.copy(fontSize = 11.sp, color = Palette.SecondaryLabel),
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
+@Composable
+private fun OfflineQr() {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        GlyphIcon(Glyph.Offline, QrPlaceholder, 30.dp)
+        BasicText(
+            stringResource(R.string.policy_quiz_offline),
+            style = Type.Caption.copy(
+                fontSize = 10.sp,
+                color = QrPlaceholder,
+                textAlign = TextAlign.Center,
+            ),
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 

@@ -194,8 +194,6 @@
       promptScopeFinal: "本学期期末考试范围",
       promptScopeReview: "本学期综合复习范围",
       promptScopeMixed: "全科混合复习",
-      genAdvanced: "更多设置",
-      genSummary: "{n} 题 · {o} 选项 · {d}",
       generateFootnote: "勾选后直接发送到电视，不需要保存草稿。",
       generateN: "生成 {n} 道题",
       genPromptRequired: "请填写出题要求。",
@@ -498,8 +496,6 @@
       promptScopeFinal: "this term's final exam scope",
       promptScopeReview: "this term's overall review scope",
       promptScopeMixed: "a mixed all-subject review",
-      genAdvanced: "More settings",
-      genSummary: "{n} questions · {o} options · {d}",
       generateFootnote: "Tick the questions you want and send them straight to the TV. No draft step.",
       generateN: "Generate {n} questions",
       genPromptRequired: "Add a question request.",
@@ -802,8 +798,6 @@
       promptScopeFinal: "программа итоговой контрольной этого семестра",
       promptScopeReview: "общий обзор программы этого семестра",
       promptScopeMixed: "смешанное повторение по всем предметам",
-      genAdvanced: "Дополнительно",
-      genSummary: "{n} вопр. · {o} вар. · {d}",
       generateFootnote: "Отметьте вопросы и отправьте их сразу на телевизор — без черновика.",
       generateN: "Создать вопросы: {n}",
       genPromptRequired: "Введите запрос на вопросы.",
@@ -1106,8 +1100,6 @@
       promptScopeFinal: "програма підсумкової контрольної цього семестру",
       promptScopeReview: "загальний огляд програми цього семестру",
       promptScopeMixed: "змішане повторення з усіх предметів",
-      genAdvanced: "Додатково",
-      genSummary: "{n} пит. · {o} вар. · {d}",
       generateFootnote: "Позначте питання й одразу надішліть їх на телевізор — без чернетки.",
       generateN: "Створити питань: {n}",
       genPromptRequired: "Введіть запит на питання.",
@@ -1410,8 +1402,6 @@
       promptScopeFinal: "осы тоқсанның қорытынды бақылау бағдарламасы",
       promptScopeReview: "осы тоқсанның жалпы қайталау бағдарламасы",
       promptScopeMixed: "барлық пәндер бойынша аралас қайталау",
-      genAdvanced: "Қосымша",
-      genSummary: "{n} сұрақ · {o} нұсқа · {d}",
       generateFootnote: "Сұрақтарды белгілеп, жобасыз бірден теледидарға жіберіңіз.",
       generateN: "{n} сұрақ жасау",
       genPromptRequired: "Сұрақ талабын жазыңыз.",
@@ -3862,6 +3852,112 @@ Material to organize:
     },
   };
 
+  const V25_TEXTS = {
+    zh: {
+      settingsCountdown: "答题时间",
+      settingsTimeRange: "15 秒 – 30 分钟",
+      timeDecrease: "减少 15 秒",
+      timeIncrease: "增加 15 秒",
+      secondsUnit: "秒",
+    },
+    en: {
+      settingsCountdown: "Answer time",
+      settingsTimeRange: "15 seconds – 30 minutes",
+      timeDecrease: "Decrease by 15 seconds",
+      timeIncrease: "Increase by 15 seconds",
+      secondsUnit: "s",
+    },
+    ru: {
+      settingsCountdown: "Время ответа",
+      settingsTimeRange: "От 15 секунд до 30 минут",
+      timeDecrease: "Уменьшить на 15 секунд",
+      timeIncrease: "Увеличить на 15 секунд",
+      secondsUnit: "с",
+    },
+    uk: {
+      settingsCountdown: "Час відповіді",
+      settingsTimeRange: "Від 15 секунд до 30 хвилин",
+      timeDecrease: "Зменшити на 15 секунд",
+      timeIncrease: "Збільшити на 15 секунд",
+      secondsUnit: "с",
+    },
+    kk: {
+      settingsCountdown: "Жауап уақыты",
+      settingsTimeRange: "15 секундтан 30 минутқа дейін",
+      timeDecrease: "15 секундқа азайту",
+      timeIncrease: "15 секундқа қосу",
+      secondsUnit: "с",
+    },
+  };
+
+  const V26_TEXTS = {
+    zh: {
+      settingsRoundHint: "5–50 题，每次 5 题",
+      unlockThresholdTitle: "答题看电视的时间门槛（分钟）",
+      settingsTimeRange: "15 秒 – 30 分钟，每次 30 秒",
+      settingsAnswerHold: "答案展示最少时间",
+      settingsAnswerHoldHint: "1–30 秒；答错或超时后，至少停留这么久才能继续。答对不受影响。",
+      roundDecrease: "减少 5 题",
+      roundIncrease: "增加 5 题",
+      timeDecrease: "减少 30 秒",
+      timeIncrease: "增加 30 秒",
+      answerHoldDecrease: "减少 1 秒",
+      answerHoldIncrease: "增加 1 秒",
+    },
+    en: {
+      settingsRoundHint: "5–50 questions, step 5",
+      unlockThresholdTitle: "TV time threshold (minutes)",
+      settingsTimeRange: "15 seconds – 30 minutes, step 30 seconds",
+      settingsAnswerHold: "Minimum answer display time",
+      settingsAnswerHoldHint: "1–30 seconds. After a wrong answer or timeout, wait this long before continuing. Correct answers are unaffected.",
+      roundDecrease: "Decrease by 5 questions",
+      roundIncrease: "Increase by 5 questions",
+      timeDecrease: "Decrease by 30 seconds",
+      timeIncrease: "Increase by 30 seconds",
+      answerHoldDecrease: "Decrease by 1 second",
+      answerHoldIncrease: "Increase by 1 second",
+    },
+    ru: {
+      settingsRoundHint: "От 5 до 50 вопросов, шаг 5",
+      unlockThresholdTitle: "Порог времени для ТВ (минуты)",
+      settingsTimeRange: "От 15 секунд до 30 минут, шаг 30 секунд",
+      settingsAnswerHold: "Минимальное время показа ответа",
+      settingsAnswerHoldHint: "От 1 до 30 секунд. После неверного ответа или тайм-аута подождите указанное время. На верные ответы не влияет.",
+      roundDecrease: "Уменьшить на 5 вопросов",
+      roundIncrease: "Увеличить на 5 вопросов",
+      timeDecrease: "Уменьшить на 30 секунд",
+      timeIncrease: "Увеличить на 30 секунд",
+      answerHoldDecrease: "Уменьшить на 1 секунду",
+      answerHoldIncrease: "Увеличить на 1 секунду",
+    },
+    uk: {
+      settingsRoundHint: "Від 5 до 50 питань, крок 5",
+      unlockThresholdTitle: "Поріг часу для ТБ (хвилини)",
+      settingsTimeRange: "Від 15 секунд до 30 хвилин, крок 30 секунд",
+      settingsAnswerHold: "Мінімальний час показу відповіді",
+      settingsAnswerHoldHint: "Від 1 до 30 секунд. Після неправильної відповіді або тайм-ауту зачекайте вказаний час. На правильні відповіді не впливає.",
+      roundDecrease: "Зменшити на 5 питань",
+      roundIncrease: "Збільшити на 5 питань",
+      timeDecrease: "Зменшити на 30 секунд",
+      timeIncrease: "Збільшити на 30 секунд",
+      answerHoldDecrease: "Зменшити на 1 секунду",
+      answerHoldIncrease: "Збільшити на 1 секунду",
+    },
+    kk: {
+      settingsRoundHint: "5–50 сұрақ, қадам 5",
+      unlockThresholdTitle: "Теледидар уақытының шегі (минут)",
+      settingsTimeRange: "15 секундтан 30 минутқа дейін, қадам 30 секунд",
+      settingsAnswerHold: "Жауапты көрсетудің ең аз уақыты",
+      settingsAnswerHoldHint: "1–30 секунд. Қате жауап немесе уақыт біткеннен кейін жалғастырмас бұрын осы уақытты күтіңіз. Дұрыс жауаптарға әсер етпейді.",
+      roundDecrease: "5 сұраққа азайту",
+      roundIncrease: "5 сұраққа қосу",
+      timeDecrease: "30 секундқа азайту",
+      timeIncrease: "30 секундқа қосу",
+      answerHoldDecrease: "1 секундқа азайту",
+      answerHoldIncrease: "1 секундқа қосу",
+    },
+  };
+
   const LANGS = ["zh", "en", "ru", "uk", "kk"];
   for (const code of LANGS) {
     Object.assign(
@@ -3872,6 +3968,8 @@ Material to organize:
       V21_TEXTS[code],
       V22_TEXTS[code],
       V23_TEXTS[code],
+      V25_TEXTS[code],
+      V26_TEXTS[code],
     );
   }
 
@@ -3888,7 +3986,7 @@ Material to organize:
     minutesPerPoint: 5,
     minCorrectCount: 1,
     maxEarnedMinutes: 60,
-    answerDisplaySec: 30,
+    answerDisplaySec: 3,
     shuffleOptions: true,
     pullCount: 5,
     minutesPerQuestion: 5,
@@ -3918,11 +4016,13 @@ Material to organize:
   const ROUND_MIN = 5;
   const ROUND_MAX = 50;
   const ROUND_STEP = 5;
-  const ROUND_ITEM_HEIGHT = 44;
-  const ROUND_VALUES = Array.from(
-    { length: (ROUND_MAX - ROUND_MIN) / ROUND_STEP + 1 },
-    (_, index) => ROUND_MIN + index * ROUND_STEP,
-  );
+  const ANSWER_TIME_MIN_SEC = 15;
+  const ANSWER_TIME_MAX_SEC = 30 * 60;
+  const ANSWER_TIME_STEP_SEC = 30;
+  // Minimum stay on wrong/timeout feedback. Correct answers never wait.
+  const ANSWER_HOLD_MIN_SEC = 1;
+  const ANSWER_HOLD_MAX_SEC = 30;
+  const ANSWER_HOLD_STEP_SEC = 1;
   // A fresh TV opens the generation page on a ready-to-run demo scope instead of
   // an empty requirement, which would block generation until a parent types one.
   // The title matches unit 1 of grade 4 / semester 1 / math / 人教版.
@@ -4163,9 +4263,6 @@ Material to organize:
   let scopeMatched = null;
   let scopeMismatchAckKey = "";
   let selectedBatch = new Set();
-  let roundWheelValue = DEFAULT_CONFIG.pullCount;
-  let roundWheelItems = [];
-  let roundWheelScrollTimer = 0;
   // The page lives under the TV's random token path. A leading "/" would make
   // fetch resolve the API from the host root, which PhoneServer answers with 404.
   const API_ROOT = location.pathname.replace(/\/quiz\/?$/, "/");
@@ -5512,82 +5609,98 @@ Material to organize:
     });
   }
 
+  function normalizeTimeLimit(value, fallback) {
+    if (value === null || value === undefined || String(value).trim() === "") return fallback;
+    const number = Number(value);
+    if (!Number.isInteger(number)) return fallback;
+    return Math.min(ANSWER_TIME_MAX_SEC, Math.max(ANSWER_TIME_MIN_SEC, number));
+  }
+
   function configSeconds(config) {
-    return Number(config.defaultTimeLimitSec || 60);
+    return normalizeTimeLimit(
+      config.defaultTimeLimitSec,
+      DEFAULT_CONFIG.defaultTimeLimitSec,
+    );
   }
 
-  // A saved config may predate the 5-step wheel (the old chips offered 8).
-  // Keep that one value selectable until the parent picks a stepped value.
-  function roundPickerValues(selected) {
-    const value = Number(selected);
-    const values = ROUND_VALUES.slice();
-    if (Number.isInteger(value) && value >= ROUND_MIN && value <= ROUND_MAX &&
-        !values.includes(value)) {
-      values.push(value);
-      values.sort((a, b) => a - b);
-    }
-    return values;
+  function normalizeRoundCount(value, fallback) {
+    if (value === null || value === undefined || String(value).trim() === "") return fallback;
+    const number = Number(value);
+    if (!Number.isInteger(number)) return fallback;
+    return Math.min(ROUND_MAX, Math.max(ROUND_MIN, number));
   }
 
-  function paintRoundWheel(index) {
-    const wheel = $("roundWheel");
-    if (!wheel || index < 0 || index >= roundWheelItems.length) return;
-    const value = Number(roundWheelItems[index].textContent);
-    roundWheelValue = value;
-    roundWheelItems.forEach((item, itemIndex) => {
-      item.setAttribute("aria-selected", String(itemIndex === index));
+  function configRoundCount(config) {
+    return normalizeRoundCount(config.pullCount, DEFAULT_CONFIG.pullCount);
+  }
+
+  function normalizeAnswerHold(value, fallback) {
+    if (value === null || value === undefined || String(value).trim() === "") return fallback;
+    const number = Number(value);
+    if (!Number.isInteger(number)) return fallback;
+    return Math.min(ANSWER_HOLD_MAX_SEC, Math.max(ANSWER_HOLD_MIN_SEC, number));
+  }
+
+  function configAnswerHold(config) {
+    return normalizeAnswerHold(config.answerDisplaySec, DEFAULT_CONFIG.answerDisplaySec);
+  }
+
+  // A saved value may predate stepping (the old round chips offered 8). Move
+  // it to the next grid point in the pressed direction before stepping.
+  function stepNumber(current, delta, min, max, step) {
+    const start = Math.min(max, Math.max(min, Number.isInteger(current) ? current : min));
+    const remainder = ((start % step) + step) % step;
+    const next = remainder === 0
+      ? start + delta
+      : (delta > 0 ? start + (step - remainder) : start - remainder);
+    return Math.min(max, Math.max(min, next));
+  }
+
+  function renderStepper(prefix, value, min, max, step) {
+    const input = $(prefix + "Input");
+    if (!input) return;
+    // Do not rewrite the field while it is being typed into.
+    if (document.activeElement !== input) input.value = String(value);
+    input.min = String(min);
+    input.max = String(max);
+    input.step = String(step);
+    const minus = $(prefix + "Minus");
+    const plus = $(prefix + "Plus");
+    if (minus) minus.disabled = value <= min;
+    if (plus) plus.disabled = value >= max;
+  }
+
+  function bindStepper(prefix, min, max, step, configValue, patch) {
+    const input = $(prefix + "Input");
+    if (!input) return;
+    const read = () => {
+      const raw = input.value.trim();
+      const number = Number(raw);
+      return raw !== "" && Number.isInteger(number) ? number : configValue();
+    };
+    const apply = (value) => {
+      const next = Math.min(max, Math.max(min, value));
+      input.value = String(next);
+      patch(next);
+    };
+    $(prefix + "Minus").addEventListener("click", () => {
+      apply(stepNumber(read(), -step, min, max, step));
     });
-    wheel.dataset.index = String(index);
-    wheel.setAttribute("aria-valuenow", String(value));
-    wheel.setAttribute("aria-valuetext", t("roundN", { n: value }));
-    if ($("roundWheelValue")) $("roundWheelValue").textContent = String(value);
-  }
-
-  function renderRoundWheel(selected) {
-    const wheel = $("roundWheel");
-    const track = $("roundWheelTrack");
-    if (!wheel || !track) return;
-    const value = Number(selected || DEFAULT_CONFIG.pullCount);
-    const values = roundPickerValues(value);
-    const signature = values.join(",");
-    if (track.dataset.values !== signature) {
-      track.dataset.values = signature;
-      const fragment = document.createDocumentFragment();
-      values.forEach((option, index) => {
-        const item = document.createElement("div");
-        item.className = "round-wheel-item";
-        item.setAttribute("role", "option");
-        item.dataset.index = String(index);
-        item.textContent = String(option);
-        fragment.appendChild(item);
-      });
-      track.replaceChildren(fragment);
-    }
-    roundWheelItems = Array.from(track.children);
-    const index = Math.max(0, values.indexOf(value));
-    paintRoundWheel(index);
-    const top = index * ROUND_ITEM_HEIGHT;
-    if (Math.abs(wheel.scrollTop - top) > 1) {
-      wheel.scrollTo({ top, behavior: "auto" });
-    }
-  }
-
-  function commitRoundWheel(index) {
-    const wheel = $("roundWheel");
-    if (!wheel || !roundWheelItems.length) return;
-    const clamped = Math.min(roundWheelItems.length - 1, Math.max(0, index));
-    paintRoundWheel(clamped);
-    wheel.scrollTo({ top: clamped * ROUND_ITEM_HEIGHT, behavior: "smooth" });
-    const config = currentConfig();
-    const pull = Number(config.pullCount || DEFAULT_CONFIG.pullCount);
-    if (pull === roundWheelValue) return;
-    updateRuleConfig({ pullCount: roundWheelValue });
-  }
-
-  function settleRoundWheel() {
-    const wheel = $("roundWheel");
-    if (!wheel || !roundWheelItems.length) return;
-    commitRoundWheel(Math.round(wheel.scrollTop / ROUND_ITEM_HEIGHT));
+    $(prefix + "Plus").addEventListener("click", () => {
+      apply(stepNumber(read(), step, min, max, step));
+    });
+    input.addEventListener("input", () => {
+      const raw = input.value.trim();
+      if (raw === "") return;
+      const number = Number(raw);
+      if (!Number.isInteger(number) || number < min || number > max) return;
+      patch(number);
+    });
+    input.addEventListener("change", () => {
+      const raw = input.value.trim();
+      const number = Number(raw);
+      apply(raw !== "" && Number.isInteger(number) ? number : configValue());
+    });
   }
 
   // Difficulty scoring values are normalized on every render so an old saved
@@ -5704,14 +5817,23 @@ Material to organize:
   }
 
   function renderSettingsChrome() {
-    if (!$("roundWheel")) return;
+    if (!$("roundInput")) return;
     const config = currentConfig();
-    const pull = Number(config.pullCount || DEFAULT_CONFIG.pullCount);
-    const time = configSeconds(config);
-    const timeOptions = Array.from(new Set([30, 45, 60, 90, time].filter((value) => value > 0)))
-      .sort((a, b) => a - b);
-    renderRoundWheel(pull);
-    renderChipRow($("timeCounts"), timeOptions, time, "data-seconds", (value) => t("secondsN", { n: value }));
+    renderStepper(
+      "round",
+      configRoundCount(config),
+      ROUND_MIN, ROUND_MAX, ROUND_STEP,
+    );
+    renderStepper(
+      "time",
+      configSeconds(config),
+      ANSWER_TIME_MIN_SEC, ANSWER_TIME_MAX_SEC, ANSWER_TIME_STEP_SEC,
+    );
+    renderStepper(
+      "answerHold",
+      configAnswerHold(config),
+      ANSWER_HOLD_MIN_SEC, ANSWER_HOLD_MAX_SEC, ANSWER_HOLD_STEP_SEC,
+    );
     renderUnlockChips();
     renderScoringSummary();
     if ($("ruleScope")) {
@@ -7016,11 +7138,6 @@ Material to organize:
     resetScopeOptions();
     selectedBatch = new Set();
     answerTab = "scope";
-    roundWheelValue = DEFAULT_CONFIG.pullCount;
-    if (roundWheelScrollTimer) {
-      clearTimeout(roundWheelScrollTimer);
-      roundWheelScrollTimer = 0;
-    }
     genRequirementValue = DEFAULT_GEN_REQUIREMENT;
     genOptionsValue = 4;
     genAutoAddValue = true;
@@ -7978,11 +8095,6 @@ Material to organize:
       $("genPrompt").value = composeGenerationPrompt();
     }
     updatePromptBadge();
-    $("genAdvancedSummary").textContent = t("genSummary", {
-      n: targetCount,
-      o: genOptionsValue,
-      d: generationDifficultyText(),
-    });
     renderHome();
   }
 
@@ -10028,28 +10140,26 @@ Material to organize:
     return Math.min(max, Math.max(min, value));
   }
 
-  function currentRoundWheelValue() {
-    const fallback = Number(currentConfig().pullCount || DEFAULT_CONFIG.pullCount);
-    if (!$("roundWheel") || !roundWheelItems.length) return fallback;
-    const index = Math.round($("roundWheel").scrollTop / ROUND_ITEM_HEIGHT);
-    const item = roundWheelItems[Math.min(roundWheelItems.length - 1, Math.max(0, index))];
-    return item ? Number(item.textContent) : fallback;
-  }
-
   function readSettingsConfig() {
     const base = currentConfig();
-    const pull = currentRoundWheelValue();
+    // Read the fields rather than the cached config: the parent may press Save
+    // while an input still has focus and its change event has not fired yet.
+    const pull = normalizeRoundCount($("roundInput").value, configRoundCount(base));
+    const time = normalizeTimeLimit($("timeInput").value, configSeconds(base));
+    const answerHold = normalizeAnswerHold(
+      $("answerHoldInput").value,
+      configAnswerHold(base),
+    );
     const scoring = readScoringPatch();
     return Object.assign({}, base, {
-      defaultTimeLimitSec: configSeconds(base),
+      defaultTimeLimitSec: time,
       pullCount: pull,
       // Legacy single-rate fields stay for cloud compatibility; local v5
       // rounds settle from the difficulty table below.
       minutesPerPoint: Number(base.minutesPerPoint || DEFAULT_CONFIG.minutesPerPoint),
       minutesPerQuestion: Number(base.minutesPerQuestion || DEFAULT_CONFIG.minutesPerQuestion),
       maxEarnedMinutes: numberField("maxEarned", 1, 180, Number(base.maxEarnedMinutes || 60)),
-      // No longer parent-editable; keep the stored value for protocol compatibility.
-      answerDisplaySec: Number(base.answerDisplaySec || DEFAULT_CONFIG.answerDisplaySec),
+      answerDisplaySec: answerHold,
       shuffleOptions: $("shuffle").checked,
       pointsPerQuestion: 1,
     }, scoring);
@@ -10412,38 +10522,21 @@ Material to organize:
     bindReliableTap($("saveCustomLevel"), saveCustomLevelDraft);
     $("customLevelEditorGoImport").addEventListener("click", startImportFromCustomLevel);
 
-    $("roundWheel").addEventListener("scroll", () => {
-      const wheel = $("roundWheel");
-      const index = Math.round(wheel.scrollTop / ROUND_ITEM_HEIGHT);
-      if (Number(wheel.dataset.index) !== index) paintRoundWheel(index);
-      if (roundWheelScrollTimer) clearTimeout(roundWheelScrollTimer);
-      roundWheelScrollTimer = setTimeout(settleRoundWheel, 120);
-    }, { passive: true });
-    $("roundWheel").addEventListener("keydown", (event) => {
-      const current = Number($("roundWheel").dataset.index || 0);
-      const last = Math.max(0, roundWheelItems.length - 1);
-      let next = null;
-      if (event.key === "ArrowDown") next = Math.min(last, current + 1);
-      else if (event.key === "ArrowUp") next = Math.max(0, current - 1);
-      else if (event.key === "Home") next = 0;
-      else if (event.key === "End") next = last;
-      if (next === null) return;
-      event.preventDefault();
-      commitRoundWheel(next);
-    });
-    $("roundWheelTrack").addEventListener("click", (event) => {
-      const item = event.target.closest(".round-wheel-item");
-      if (!item) return;
-      const index = Number(item.dataset.index);
-      if (!Number.isInteger(index)) return;
-      $("roundWheel").focus({ preventScroll: true });
-      commitRoundWheel(index);
-    });
-    $("timeCounts").addEventListener("click", (event) => {
-      const chip = event.target.closest("[data-seconds]");
-      if (!chip) return;
-      updateRuleConfig({ defaultTimeLimitSec: Number(chip.dataset.seconds) });
-    });
+    bindStepper(
+      "round", ROUND_MIN, ROUND_MAX, ROUND_STEP,
+      () => configRoundCount(currentConfig()),
+      (value) => updateRuleConfig({ pullCount: value }),
+    );
+    bindStepper(
+      "time", ANSWER_TIME_MIN_SEC, ANSWER_TIME_MAX_SEC, ANSWER_TIME_STEP_SEC,
+      () => configSeconds(currentConfig()),
+      (value) => updateRuleConfig({ defaultTimeLimitSec: value }),
+    );
+    bindStepper(
+      "answerHold", ANSWER_HOLD_MIN_SEC, ANSWER_HOLD_MAX_SEC, ANSWER_HOLD_STEP_SEC,
+      () => configAnswerHold(currentConfig()),
+      (value) => updateRuleConfig({ answerDisplaySec: value }),
+    );
     for (const id of [
       "easyReward", "mediumReward", "hardReward",
       "easyPenalty", "mediumPenalty", "hardPenalty",

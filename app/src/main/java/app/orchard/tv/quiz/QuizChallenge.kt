@@ -23,6 +23,7 @@ import com.planyourtv.policy.quiz.QuizScoring
 import com.planyourtv.policy.quiz.QuizSession
 import com.planyourtv.policy.quiz.QuizSessionStatus
 import com.planyourtv.policy.quiz.QuizSubmission
+import com.planyourtv.policy.quiz.normalizeAnswerHoldSec
 import android.util.Log
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
@@ -506,6 +507,16 @@ object QuizChallenge {
         if (!run.feedbackOpen) return FeedbackOutcome.Failed("STATE")
         val lastSubmission = run.submissions.lastOrNull()
             ?: return FeedbackOutcome.Failed("STATE")
+        // Wrong/timeout feedback is a minimum stay, enforced here rather than
+        // only by the disabled button so Back or any future caller cannot skip
+        // it. Correct answers keep their immediate reward transition.
+        if (!lastSubmission.correct) {
+            val holdSec = normalizeAnswerHoldSec(session.config.answerDisplaySec)
+            val unlockAt = lastSubmission.answeredAt + holdSec * 1_000L
+            if (holdSec > 0 && nowMs < unlockAt) {
+                return FeedbackOutcome.Failed("FEEDBACK_HOLD")
+            }
+        }
 
         val nextItem = session.items.getOrNull(run.index)
         if (nextItem != null) {

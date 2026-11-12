@@ -6,7 +6,7 @@ PlanYourTV（计划电视）是一个开源的 **Android TV 儿童时间管理�
 - 官方下载：https://planyourtv.me/download/
 - 安装文档：[INSTALL.md](INSTALL.md)
 - 给 AI 助手的安装说明：[AGENT-INSTALL.md](AGENT-INSTALL.md)
-- 当前社区源码版本：`1.93.002` / 131002
+- 当前社区源码版本：`1.93.003` / 131003
 
 ## 产品与定位
 

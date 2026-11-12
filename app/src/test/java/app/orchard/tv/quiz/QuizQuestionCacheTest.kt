@@ -49,6 +49,15 @@ class QuizQuestionCacheTest {
         scopeUnitNo = 3,
     )
 
+    private fun midtermItem(index: Int, subject: String, textbook: String) =
+        scopedItem(index, grade = 4).copy(
+            scopeSubject = subject,
+            scopeTextbook = textbook,
+            scopeType = "MIDTERM",
+            scopeUnitNo = null,
+            difficulty = "hard",
+        )
+
     private fun session(id: String, count: Int) = QuizSession(
         id = id,
         source = "web",
@@ -223,6 +232,41 @@ class QuizQuestionCacheTest {
         assertTrue(reserved.all { it.question.scopeGrade == 4 })
         assertEquals(
             setOf("CHINESE", "MATH"),
+            reserved.map { it.question.scopeSubject }.toSet(),
+        )
+    }
+
+    @Test
+    fun wildcardSubjectScopeInterleavesSubjectsEvenWhenOneBlockComesFirst() {
+        // Mirrors the bundled bank: grade 4 midterm hard has a Chinese block
+        // first, then math, English, and science. FIFO alone would reserve only
+        // Chinese questions for a 5-question round.
+        val items = (1..23).map { midtermItem(it, "CHINESE", "BUBIAN") } +
+            (24..68).map { midtermItem(it, "MATH", "RENJIAO") } +
+            (69..89).map { midtermItem(it, "ENGLISH", "RENJIAO") } +
+            (90..113).map { midtermItem(it, "SCIENCE", "KEJIAO") }
+        QuizQuestionCache.appendLocalQuestions("batch_seed_order", items, now)
+        val scope = QuizAnswerScope.create(
+            grade = 4,
+            semester = 1,
+            subject = QuizAnswerScope.SUBJECT_ALL,
+            textbook = QuizAnswerScope.TEXTBOOK_ALL,
+            scopeType = "MIDTERM",
+            unitNo = null,
+            difficulty = "HARD",
+        )!!
+        assertEquals(113, QuizQuestionCache.availableCount(answerScope = scope))
+        val reserved = QuizQuestionCache.reserveForRound(
+            count = 5,
+            sessionId = "sess_seed_order",
+            scopeKey = QuizQuestionCache.LOCAL_SCOPE,
+            minRequired = 5,
+            nowMs = now,
+            answerScope = scope,
+        )
+        assertEquals(5, reserved.size)
+        assertEquals(
+            setOf("CHINESE", "MATH", "ENGLISH", "SCIENCE"),
             reserved.map { it.question.scopeSubject }.toSet(),
         )
     }

@@ -388,28 +388,23 @@ object QuizQuestionCache {
             val collectionWhere = if (collectionId != null) " AND collection_id = ?" else ""
             val baseArgs = arrayOf(scopeKey, STATE_AVAILABLE, nowMs.toString()) + scopeArgs +
                 listOfNotNull(collectionId)
+            val where = "scope_key = ? AND state = ? " +
+                "AND (expires_at IS NULL OR expires_at > ?)$scopeWhere$collectionWhere"
             val total = db.rawQuery(
-                "SELECT COUNT(*) FROM $TABLE WHERE scope_key = ? AND state = ? " +
-                    "AND (expires_at IS NULL OR expires_at > ?)$scopeWhere$collectionWhere",
+                "SELECT COUNT(*) FROM $TABLE WHERE $where",
                 baseArgs,
             ).use { if (it.moveToFirst()) it.getInt(0) else 0 }
             if (total < minRequired) {
                 db.setTransactionSuccessful()
                 return emptyList()
             }
-            val candidates = mutableListOf<CachedQuestion>()
-            db.rawQuery(
-                "SELECT $SELECT_COLUMNS FROM $TABLE " +
-                    "WHERE scope_key = ? AND state = ? " +
-                    "AND (expires_at IS NULL OR expires_at > ?)$scopeWhere$collectionWhere " +
-                    "ORDER BY received_at ASC, rowid ASC LIMIT ?",
-                baseArgs + count.toString(),
-            ).use { cursor ->
-                while (cursor.moveToNext()) {
-                    candidates += readQuestion(cursor)
-                }
+            val picked = if (collectionId == null &&
+                answerScope?.subject.equals(QuizAnswerScope.SUBJECT_ALL, ignoreCase = true)
+            ) {
+                readBalancedCandidates(db, where, baseArgs, count, sessionId)
+            } else {
+                readCandidates(db, where, baseArgs, count)
             }
-            val picked = candidates
             picked.forEach { item ->
                 db.update(
                     TABLE,
@@ -446,6 +441,80 @@ object QuizQuestionCache {
         nowMs: Long = System.currentTimeMillis(),
     ): List<CachedQuestion> =
         reserveForRound(count, sessionId, LOCAL_SCOPE, minRequired, nowMs, collectionId = collectionId)
+
+    private fun readCandidates(
+        db: SQLiteDatabase,
+        where: String,
+        args: Array<String>,
+        count: Int,
+    ): List<CachedQuestion> {
+        val rows = mutableListOf<CachedQuestion>()
+        db.rawQuery(
+            "SELECT $SELECT_COLUMNS FROM $TABLE WHERE $where " +
+                "ORDER BY received_at ASC, rowid ASC LIMIT ?",
+            args + count.toString(),
+        ).use { cursor ->
+            while (cursor.moveToNext()) rows += readQuestion(cursor)
+        }
+        return rows
+    }
+
+    /**
+     * A wildcard subject must not serve one subject's contiguous import block
+     * just because that block was written first. Keep the existing FIFO order
+     * inside each subject and take one row per subject in turn. Specific
+     * subject scopes and the cloud path keep [readCandidates] unchanged.
+     */
+    private fun readBalancedCandidates(
+        db: SQLiteDatabase,
+        where: String,
+        args: Array<String>,
+        count: Int,
+        sessionId: String,
+    ): List<CachedQuestion> {
+        val subjects = mutableListOf<String>()
+        db.rawQuery(
+            "SELECT UPPER(scope_subject) FROM $TABLE WHERE $where " +
+                "GROUP BY UPPER(scope_subject)",
+            args,
+        ).use { cursor ->
+            while (cursor.moveToNext()) subjects += cursor.getString(0).orEmpty()
+        }
+        if (subjects.size <= 1) return readCandidates(db, where, args, count)
+        val buckets = subjects.map { subject ->
+            val rows = mutableListOf<CachedQuestion>()
+            db.rawQuery(
+                "SELECT $SELECT_COLUMNS FROM $TABLE WHERE $where " +
+                    "AND UPPER(scope_subject) = ? " +
+                    "ORDER BY received_at ASC, rowid ASC LIMIT ?",
+                args + subject + count.toString(),
+            ).use { cursor ->
+                while (cursor.moveToNext()) rows += readQuestion(cursor)
+            }
+            rows
+        }
+        val picked = mutableListOf<CachedQuestion>()
+        val cursors = IntArray(buckets.size)
+        // Vary which subject receives the extra question so repeated rounds do
+        // not always give the same subject one more slot.
+        val start = Math.floorMod(sessionId.hashCode(), buckets.size)
+        while (picked.size < count) {
+            var progressed = false
+            for (step in buckets.indices) {
+                if (picked.size >= count) break
+                val index = (start + step) % buckets.size
+                val bucket = buckets[index]
+                val next = cursors[index]
+                if (next < bucket.size) {
+                    picked += bucket[next]
+                    cursors[index] = next + 1
+                    progressed = true
+                }
+            }
+            if (!progressed) break
+        }
+        return picked
+    }
 
     /**
      * Appends generated questions to the local bank. Duplicates are matched by

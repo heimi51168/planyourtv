@@ -88,6 +88,7 @@
     <string name="policy_quiz_question_scroll_hint">Сұрақ пен нұсқаларды толық оқу үшін ↑/↓ пернелерін пайдаланыңыз</string>
     <string name="policy_quiz_feedback_scroll_hint">Оқу үшін ↑/↓ пернелерін пайдаланыңыз; жалғастыру үшін OK басыңыз</string>
     <string name="policy_quiz_feedback_continue">Түсінікті — мен мұны үйрендім</string>
+    <string name="policy_quiz_feedback_wait">%1$d секундтан кейін жалғастыру</string>
     <string name="policy_quiz_view_result">Нәтижені көру</string>
     <string name="policy_quiz_result_title">Викторина аяқталды</string>
     <string name="policy_quiz_result_body">Дұрыс: %1$d; %2$d минут алынды.</string>

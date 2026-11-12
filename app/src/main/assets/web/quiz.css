@@ -796,30 +796,6 @@ details.solution p {
   resize: vertical;
 }
 
-.gen-advanced {
-  margin-top: 18px;
-  padding-top: 10px;
-  border-top: 1px solid var(--line);
-}
-.gen-advanced summary {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 36px;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 560;
-  cursor: pointer;
-  list-style: none;
-}
-.gen-advanced summary::-webkit-details-marker { display: none; }
-.gen-summary { margin-left: auto; font-size: 12px; font-weight: 450; }
-.gen-advanced .chevron { font-size: 18px; }
-.gen-advanced[open] .chevron { transform: rotate(90deg); }
-.gen-advanced-body { display: grid; gap: 2px; padding-top: 8px; }
-.gen-advanced-body label { margin-top: 10px; }
-.gen-advanced-body .row { gap: 10px; }
-
 .privacy-list {
   display: grid;
   gap: 15px;
@@ -1502,90 +1478,34 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
 .scoring-warning:empty { display: none; }
 #minUnlock { margin-top: 8px; }
 
-/* Password-lock style picker: a short vertical drum with a fixed center band. */
-.round-wheel-wrap {
+/* Explicit steppers are easier to operate on a phone than a scroll wheel. */
+.settings-stepper {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
 }
-.round-wheel-shell {
-  position: relative;
+.settings-stepper .icon-btn {
   flex: none;
-  width: 88px;
-  height: 132px;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: var(--surface-2);
-}
-.round-wheel {
-  position: relative;
-  z-index: 1;
-  height: 100%;
-  overflow-y: auto;
-  scroll-snap-type: y mandatory;
-  scrollbar-width: none;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 24%, #000 76%, transparent);
-  mask-image: linear-gradient(to bottom, transparent, #000 24%, #000 76%, transparent);
-  outline: none;
-}
-.round-wheel::-webkit-scrollbar { display: none; }
-.round-wheel:focus-visible { outline: 2px solid var(--select-border); outline-offset: -2px; }
-.round-wheel-track { padding: 44px 0; }
-.round-wheel-item {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 44px;
-  scroll-snap-align: center;
-  color: var(--muted);
-  font-size: 16px;
-  font-weight: 560;
-  font-variant-numeric: tabular-nums;
-  opacity: 0.5;
-  cursor: pointer;
-  user-select: none;
-  transition: color 120ms ease, font-size 120ms ease, opacity 120ms ease;
-}
-.round-wheel-item[aria-selected="true"] {
-  color: var(--ink);
-  font-size: 25px;
-  font-weight: 700;
-  opacity: 1;
-}
-.round-wheel-band {
-  position: absolute;
-  z-index: 0;
-  top: 44px;
-  left: 6px;
-  right: 6px;
-  height: 44px;
-  border-radius: 10px;
-  background: var(--accent-soft);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent);
-  pointer-events: none;
-}
-.round-wheel-meta { display: grid; gap: 5px; min-width: 0; }
-.round-wheel-readout { display: flex; align-items: baseline; gap: 5px; }
-.round-wheel-readout b {
-  font-size: 32px;
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 620;
   line-height: 1;
-  letter-spacing: -0.03em;
+}
+.settings-stepper .icon-btn:disabled { opacity: 0.4; }
+.settings-stepper input {
+  flex: none;
+  width: 104px;
+  min-height: 40px;
+  padding: 8px 10px;
+  text-align: center;
+  font-size: 16px;
   font-variant-numeric: tabular-nums;
 }
-.round-wheel-readout span {
+.settings-stepper-unit {
   color: var(--muted);
   font-size: 13px;
   font-weight: 560;
 }
-.round-wheel-hint {
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.45;
-}
+.settings-stepper + .hint { margin: 7px 0 0; font-size: 12px; }
 
 .field-grid { display: flex; gap: 10px; margin-bottom: 14px; }
 .field-grid > .field { flex: 1; min-width: 0; margin: 0; }
@@ -1724,13 +1644,8 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
 .sticky-bar.split > span b { color: var(--ink); font-weight: 620; }
 .sticky-bar.split .btn { flex: 0 0 168px; }
 
-.gen-advanced { margin-top: 16px; }
-.gen-prompt-head { margin: 12px 0 6px; }
+.gen-prompt-head { margin: 0 0 6px; }
 .gen-prompt-head label { margin: 0; color: var(--ink); font-size: 13.5px; font-weight: 620; }
-.gen-advanced-body .row { margin-bottom: 2px; }
-.gen-advanced-body .hint { margin: 8px 0 0; }
-.gen-advanced-body .fold-section { margin-top: 14px; }
-.gen-advanced-body .check { margin-top: 25px; }
 
 #view-bank .section-head h2 { font-size: 22px; }
 #view-me .card h2 { font-size: 22px; }

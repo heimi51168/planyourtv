@@ -56,7 +56,7 @@ class QuizSessionCodecTest {
             minCorrectCount = 2,
             maxEarnedMinutes = 45,
             shuffleOptions = false,
-            answerDisplaySec = 45,
+            answerDisplaySec = 12,
         )
         assertEquals(config, QuizSessionCodec.decodeConfig(QuizSessionCodec.encodeConfig(config)))
     }
@@ -80,11 +80,62 @@ class QuizSessionCodecTest {
     }
 
     @Test
-    fun rejectsOutOfRangeAnswerDisplayTime() {
-        for (value in listOf(QUIZ_MIN_ANSWER_DISPLAY_SEC - 1, QUIZ_MAX_ANSWER_DISPLAY_SEC + 1)) {
-            val config = QuizSessionCodec.encodeConfig(QuizConfig()).put("answerDisplaySec", value)
-            assertEquals(null, QuizSessionCodec.decodeConfig(config))
+    fun normalizesOutOfRangeAndLegacyAnswerDisplayTime() {
+        val base = QuizSessionCodec.encodeConfig(QuizConfig())
+        // 0 is invalid, 31 is outside the new range, and 45/120 are old
+        // auto-advance values. None may invalidate the config or become a
+        // 45/120-second feedback hold.
+        for (value in listOf(0, QUIZ_MAX_ANSWER_DISPLAY_SEC + 1, 45, 120)) {
+            val decoded = QuizSessionCodec.decodeConfig(
+                JSONObject(base.toString()).put("answerDisplaySec", value),
+            )
+            assertEquals(QUIZ_DEFAULT_ANSWER_DISPLAY_SEC, decoded?.answerDisplaySec)
         }
+        for (value in listOf(QUIZ_MIN_ANSWER_DISPLAY_SEC, QUIZ_MAX_ANSWER_DISPLAY_SEC)) {
+            val decoded = QuizSessionCodec.decodeConfig(
+                JSONObject(base.toString()).put("answerDisplaySec", value),
+            )
+            assertEquals(value, decoded?.answerDisplaySec)
+        }
+    }
+
+    @Test
+    fun acceptsThirtyMinuteTimeLimitAndRejectsBeyondIt() {
+        val config = QuizSessionCodec.encodeConfig(
+            QuizConfig(defaultTimeLimitSec = QUIZ_MAX_TIME_LIMIT_SEC),
+        )
+        assertEquals(
+            QUIZ_MAX_TIME_LIMIT_SEC,
+            QuizSessionCodec.decodeConfig(config)?.defaultTimeLimitSec,
+        )
+        val tooLong = QuizSessionCodec.encodeConfig(QuizConfig())
+            .put("defaultTimeLimitSec", QUIZ_MAX_TIME_LIMIT_SEC + 1)
+        assertNull(QuizSessionCodec.decodeConfig(tooLong))
+    }
+
+    @Test
+    fun acceptsLongPerItemTimeAndRejectsBeyondTheCap() {
+        val longItem = item.copy(
+            timeLimitSec = QUIZ_MAX_TIME_LIMIT_SEC,
+            recommendedTimeSec = QUIZ_MAX_TIME_LIMIT_SEC,
+        )
+        val decoded = QuizSessionCodec.decode(
+            QuizSessionCodec.encode(session(items = listOf(longItem))),
+        )
+        assertTrue(decoded is QuizDecodeResult.Success)
+        assertEquals(
+            QUIZ_MAX_TIME_LIMIT_SEC,
+            (decoded as QuizDecodeResult.Success).session.items[0].timeLimitSec,
+        )
+        val tooLong = longItem.copy(
+            timeLimitSec = QUIZ_MAX_TIME_LIMIT_SEC + 1,
+            recommendedTimeSec = QUIZ_MAX_TIME_LIMIT_SEC + 1,
+        )
+        assertTrue(
+            QuizSessionCodec.decode(
+                QuizSessionCodec.encode(session(items = listOf(tooLong))),
+            ) is QuizDecodeResult.Failure,
+        )
     }
 
     @Test
@@ -242,7 +293,7 @@ class QuizSessionCodecTest {
             minCorrectCount = 2,
             maxEarnedMinutes = 45,
             shuffleOptions = false,
-            answerDisplaySec = 45,
+            answerDisplaySec = 12,
             pullCount = 7,
             minutesPerQuestion = 4,
             pointsPerQuestion = 1,
