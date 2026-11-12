@@ -6,6 +6,7 @@
 
 - 项目主页：https://github.com/heimi51168/planyourtv
 - 官方下载：https://planyourtv.me/download/
+- 手机家长端（可选，Android 7.0+）：https://planyourtv.me/download/planyourtv-parent.apk
 - 支持系统：Android TV 5.0+（API 21+）；Android 4.x 不支持；不需要 root
 - 版本：以 https://planyourtv.me/download/version.txt 为准；官方下载地址始终提供最新社区版本，不要使用任何文档里写死的版本号
 - 上游与致谢：基于 Aerial（MIT）；感谢 pengchujin 与 Aerial 贡献者。详见项目 README、LICENSE 和 NOTICE。
@@ -21,6 +22,17 @@
 7. **不要设置或询问用户的家长 PIN，也不要询问 AI 出题的 API Key。** 安装完成后让用户自己在电视上修改默认 PIN，并保存一次性恢复码；AI 出题的 Key 由家长自己在手机设置页填写。
 
 优先使用下面的原生安装器。它已经封装了电视发现、多台选择、APK 下载、授权、标准版到 guard 的已知拒绝回退和验收；除非安装器不适用，不要再让 AI 从头重写这些步骤。
+
+### 手机家长端（可选）
+
+电视装好后，家长可以用 Android 7.0+ 手机安装一个可选的家长端壳，用它扫码打开电视上的家长中心，之后不用每次重新扫码。它不是电视 APK，**不要装到电视上**；不装也不影响电视端使用。
+
+- 下载：https://planyourtv.me/download/planyourtv-parent.apk
+- GitHub 回退：https://github.com/heimi51168/planyourtv/releases/latest/download/planyourtv-parent.apk
+- 校验值：https://planyourtv.me/download/SHA256SUMS
+- 安装：手机和电视连同一个 Wi-Fi。用手机浏览器打开下载链接，按系统提示允许浏览器安装未知应用；如果浏览器没有直接打开安装器，到手机的「文件管理 / 下载」里打开刚下载的 APK。
+- 配对：打开家长端，扫描电视「家长中心」页面上的二维码。地址会保存在手机上，下次直接进入。
+- 如果 Agent 不能操作手机，把下载链接和以上步骤原样发给用户。不要让用户从第三方站点下载 APK，也不要尝试把家长端安装到电视上。
 
 ## 0.1 快速路径：原生安装器（优先）
 

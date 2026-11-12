@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "curriculumVersion": "2026.3",
+  "curriculumVersion": "2026.5",
   "stages": [
     {
       "id": "primary",
@@ -166,7 +166,7 @@
         {
           "grades": [1, 6],
           "defaultTextbook": "RENJIAO",
-          "textbooks": ["RENJIAO", "BEISHIDA", "SUJIAO", "QINGDAO"]
+          "textbooks": ["RENJIAO", "BEISHIDA", "SUJIAO", "QINGDAO", "XINANDA"]
         },
         {
           "grades": [7, 9],
@@ -187,7 +187,12 @@
       "aliases": ["英语", "english", "английский", "англійська", "ағылшын"],
       "options": [
         {
-          "grades": [1, 6],
+          "grades": [1, 2],
+          "defaultTextbook": "PEP",
+          "textbooks": ["PEP", "WAIYAN"]
+        },
+        {
+          "grades": [3, 6],
           "defaultTextbook": "PEP",
           "textbooks": ["PEP", "WAIYAN", "YILIN"]
         },
@@ -412,6 +417,16 @@
         "ru": "Циндао",
         "uk": "Циндао",
         "kk": "Циндао"
+      }
+    },
+    {
+      "id": "XINANDA",
+      "labels": {
+        "zh": "西南大学版",
+        "en": "SWU edition",
+        "ru": "Синанда",
+        "uk": "Сінанда",
+        "kk": "Синанда"
       }
     },
     {

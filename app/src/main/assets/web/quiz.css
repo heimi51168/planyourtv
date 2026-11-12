@@ -1735,6 +1735,67 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
 #view-bank .section-head h2 { font-size: 22px; }
 #view-me .card h2 { font-size: 22px; }
 
+/* V23: lock-screen actions are compact rows; duration and PIN live in the dialogs. */
+.lock-actions-label {
+  margin-top: 10px;
+  margin-bottom: 4px;
+}
+.lock-action-list { margin-top: 0; }
+.lock-action-row { min-height: 58px; }
+.lock-action-row .setting-value {
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.lock-action-row .setting-value.ok { color: var(--ok); }
+.lock-action-row:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.lock-action-row:disabled .setting-main > span:first-child { color: var(--muted); }
+.lock-action-row:disabled .chevron { opacity: 0.35; }
+
+.manual-stepper {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+}
+.manual-stepper .icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 620;
+  line-height: 1;
+}
+.manual-stepper .icon-btn:disabled { opacity: 0.4; }
+.manual-stepper output {
+  min-width: 2.4em;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+#manualDialog .manual-duration {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 0;
+}
+#manualDialog .manual-duration .field-label {
+  flex: 1;
+  margin: 0;
+}
+#manualDialog .manual-duration .hint {
+  flex: none;
+  margin: 0;
+  white-space: nowrap;
+}
+#unlockDialog .field { margin: 14px 0 0; }
+#manualDialog .field { margin: 14px 0 0; }
+
 @media (max-width: 420px) {
   .home-head h1 { font-size: 25px; }
   .sticky-bar.split .btn { flex-basis: 150px; }

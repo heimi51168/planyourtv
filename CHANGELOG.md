@@ -3,6 +3,54 @@
 This changelog covers the community source snapshot. Official hosted builds may ship different
 artifacts with the same upstream Aerial base.
 
+## [1.93.002] - 2026-11-12
+
+Parent app, parent-web unlock and textbook coverage update, based on Aerial 1.93 / versionCode
+131. Version code `131002`.
+
+### Added
+
+- Optional Android phone parent app (`:parent`, `com.planyourtv.parent`, Android 7.0+). It scans
+  the Parent Center QR code or accepts its full address, remembers the TV, and opens the same
+  parent web page full screen in a WebView. File import, JSON export, clipboard and external
+  links keep working. It has no account or cloud service and only requests `INTERNET` and
+  `CAMERA`; it is an optional third APK in the same GitHub Release, not a TV APK.
+- Temporary unlock on the parent web page. While the TV is on its lock screen, a parent can enter
+  the 6-digit parent password to unlock it temporarily. It does not start, end or pause a timed
+  session, leave study mode, or change the guard or system settings; turning the screen off or
+  restarting the TV restores the guard. The password is used only for that unlock and is not
+  stored by the page.
+- In manual mode, the same “Me” page can start one timed session (5–120 minutes) with the parent
+  password, so the parent does not have to type it on the TV. Temporary unlock and manual start
+  share one failed-attempt limiter.
+- The Parent Center keeps the parent-web QR code visible in local kids mode, in both automatic
+  and manual modes, and even when the quiz is disabled, so the question bank stays reachable. A
+  second static QR code downloads the optional parent app without depending on the TV's local
+  server.
+- Curriculum catalogue 2026.5: 302 textbook volumes across 10 subjects and 43 editions, with
+  2,205 catalogue units (1,970 `UNIT` nodes) and no whitelist gaps. This adds 西南大学版 primary
+  maths grades 1–6, 外研社 English grades 1–6, 中图版 geography grades 7–8, and 北师大版 physics
+  grades 8–9 editor variants; 译林版 English covers grades 3–6 because the source has no grades
+  1–2 books.
+- The preset bank now holds 5,500 first-semester midterm questions in 55 grade / subject /
+  textbook combinations, including 600 new 西南大学版 maths questions for grades 1–6.
+
+### Changed
+
+- Switching between automatic and manual mode now takes effect immediately. A running timed
+  segment and the old mode's rest countdown are ended, so the new mode never inherits the
+  previous break. Daily usage and the configured time windows are unchanged, and the confirmation
+  dialog warns when a running timer or rest countdown will be discarded.
+- Lock-screen actions on the parent web page are consolidated into two rows on the “Me” page:
+  temporary unlock and a timed manual start.
+- Parent app address examples use the RFC 5737 documentation range (`192.0.2.0/24`) instead of a
+  private LAN address, so the public source contains no home-network example.
+
+### Fixed
+
+- A rest countdown started in one mode no longer follows the TV into the other mode or returns
+  after a process restart.
+
 ## [1.93.000] - 2026-11-11
 
 Question-bank, installer and parent-settings update, based on Aerial 1.93 / versionCode 131.

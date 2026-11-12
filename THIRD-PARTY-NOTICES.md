@@ -39,7 +39,7 @@ license texts ship with the artifacts resolved by Gradle.
 | Kotlin standard library and Gradle plugins | Apache License 2.0 |
 | Eclipse Paho MQTT client | Eclipse Public License 2.0 / Eclipse Distribution License 1.0 |
 | NanoHTTPD | BSD 3-Clause |
-| ZXing core | Apache License 2.0 |
+| ZXing core and zxing-android-embedded (parent shell) | Apache License 2.0 |
 | Gradle wrapper | Apache License 2.0 |
 | JUnit 4 (tests) | Eclipse Public License 1.0 |
 | Robolectric (tests) | MIT |

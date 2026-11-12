@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PlanYourTV Родитель</string>
+    <string name="pair_title">Подключение к телевизору</string>
+    <string name="pair_intro">Откройте «Родительский центр» на телевизоре и отсканируйте QR-код. Адрес запомнится, сканировать нужно один раз.</string>
+    <string name="pair_scan">Сканировать QR-код</string>
+    <string name="pair_manual_toggle">Не получается отсканировать? Введите адрес вручную</string>
+    <string name="pair_url_hint">192.0.2.10:8790/abcd2345/quiz</string>
+    <string name="pair_connect">Подключиться</string>
+    <string name="pair_note">Телефон и телевизор должны быть в одной сети Wi-Fi. Приложение открывает только страницу «Родительского центра» с телевизора; у него нет собственной учётной записи или облака.</string>
+    <string name="pair_invalid_url">Введите полный адрес из QR-кода телевизора: IP, порт и код после него.</string>
+    <string name="scan_failed">Не удалось запустить сканер. Повторите попытку.</string>
+    <string name="camera_permission_hint">Разрешите доступ к камере, чтобы сканировать QR-код на телевизоре.</string>
+    <string name="camera_blocked_title">Нужен доступ к камере</string>
+    <string name="camera_blocked_message">Разрешите доступ к камере в настройках, чтобы сканировать QR-код телевизора. Адрес также можно ввести вручную.</string>
+    <string name="open_settings">Открыть настройки</string>
+    <string name="menu_refresh">Обновить</string>
+    <string name="menu_open_browser">Открыть в браузере</string>
+    <string name="menu_repair">Сканировать другой телевизор</string>
+    <string name="repair_title">Сканировать другой телевизор?</string>
+    <string name="repair_message">Сохранённый адрес будет заменён. Сеанс «Родительского центра» на телевизоре не изменится.</string>
+    <string name="repair_confirm">Сканировать снова</string>
+    <string name="repair_cancel">Отмена</string>
+    <string name="loading">Загрузка «Родительского центра»…</string>
+    <string name="error_title">Нет связи с телевизором</string>
+    <string name="error_message">%1$s\n\nПроверьте, что телефон и телевизор в одной сети Wi-Fi и что на телевизоре открыт «Родительский центр».</string>
+    <string name="error_http">Телевизор отклонил запрос (HTTP %1$d).</string>
+    <string name="error_local_only">Телевизор не в локальном режиме. Сначала откройте «Родительский центр» на телевизоре.</string>
+    <string name="error_tls">Сертификат телевизора не является доверенным.</string>
+    <string name="error_unknown">Неизвестная ошибка сети.</string>
+    <string name="error_retry">Повторить</string>
+    <string name="error_repair">Сканировать другой телевизор</string>
+    <string name="scan_prompt">Наведите камеру на QR-код на телевизоре</string>
+    <string name="saved">Загрузка сохранена.</string>
+    <string name="save_failed">Не удалось сохранить загрузку.</string>
+    <string name="download_unsupported">Не удалось открыть эту загрузку. Попробуйте браузер из меню.</string>
+    <string name="file_too_large">Файл слишком большой для сохранения.</string>
+    <string name="external_unavailable">Нет браузера, чтобы открыть эту ссылку.</string>
+</resources>

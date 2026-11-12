@@ -24,8 +24,11 @@ import java.time.ZoneId
  * while nobody took over keeps its remembered token, but the token stops
  * working as soon as another phone takes the slot.
  *
- * This access only configures the quiz. It cannot unlock the TV, pause the
- * guard, or change system settings.
+ * This access configures the quiz. Its guard actions are the lock-screen
+ * temporary unlock and one lock-screen manual start; both need the parent PIN
+ * again and are refused unless the TV is actually showing its lock screen. It
+ * cannot pause the guard, end a timed session, leave study mode, or change
+ * system settings.
  */
 object QuizAccess {
     private const val ADMIN_TTL_MS = 10 * 60 * 1000L
@@ -54,6 +57,11 @@ object QuizAccess {
     private var admin: Proof? = null
     private var pinFailures = 0
     private var pinLockedUntil = 0L
+    // The sensitive page actions (temporary unlock and single-use start) share one PIN
+    // limiter, independent from the page-login counter so a wrong action PIN cannot log the
+    // parent's page out. Sharing also stops switching endpoints from multiplying guesses.
+    private var actionFailures = 0
+    private var actionLockedUntil = 0L
     private val random = SecureRandom()
 
     // Presence of the remembered token. Kept in memory on purpose: after a TV
@@ -110,6 +118,42 @@ object QuizAccess {
                 AuthResult.PinLocked(PIN_LOCK_MS / 1000)
             }
         }
+    }
+
+    /**
+     * Remaining lockout for a sensitive page action (temporary unlock or single-use start),
+     * in seconds. Zero means an attempt may proceed. This counter is separate from
+     * [authenticate] and from the TV's own PIN gate.
+     */
+    @Synchronized
+    fun sensitiveActionLockedSeconds(nowMs: Long = System.currentTimeMillis()): Long {
+        if (actionLockedUntil <= nowMs) {
+            actionLockedUntil = 0L
+            return 0L
+        }
+        return ((actionLockedUntil - nowMs + 999) / 1000).coerceAtLeast(1L)
+    }
+
+    /** Records one sensitive action attempt. Five wrong PINs lock both actions for ten minutes. */
+    @Synchronized
+    fun onSensitiveActionResult(success: Boolean, nowMs: Long = System.currentTimeMillis()) {
+        if (success) {
+            actionFailures = 0
+            actionLockedUntil = 0L
+            return
+        }
+        actionFailures++
+        if (actionFailures >= MAX_PIN_FAILURES) {
+            actionFailures = 0
+            actionLockedUntil = nowMs + PIN_LOCK_MS
+        }
+    }
+
+    /** The TV's own PIN gate is already locked out; keep both page actions locked as well. */
+    @Synchronized
+    fun lockSensitiveActionOut(nowMs: Long = System.currentTimeMillis()) {
+        actionFailures = 0
+        actionLockedUntil = nowMs + PIN_LOCK_MS
     }
 
     /** True while a parent phone is actively using the settings page. */

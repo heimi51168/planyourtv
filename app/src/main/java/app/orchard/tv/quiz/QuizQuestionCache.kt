@@ -24,7 +24,7 @@ object QuizQuestionCache {
     const val LOCAL_SCOPE = "local"
 
     /**
-     * Leaves room for the 4,900 bundled questions plus user-generated batches.
+     * Leaves room for the 5,500 bundled questions plus user-generated batches.
      * The seed import is one transaction; the web lists the bank with paging,
      * so the larger bound does not turn into a larger page.
      */

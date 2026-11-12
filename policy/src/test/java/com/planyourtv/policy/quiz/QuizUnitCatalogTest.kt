@@ -30,6 +30,63 @@ class QuizUnitCatalogTest {
     }
 
     @Test
+    fun xinandaMathEditionCarriesBothGradeFiveVolumes() {
+        val catalog = QuizUnitCatalog.current()!!
+
+        val first = catalog.book(5, 1, "MATH", "XINANDA")
+        assertNotNull(first)
+        assertEquals("上册", first!!.volume)
+        assertEquals(12, first.maxUnitNo)
+        assertEquals("一 小数乘法", first.unitTitle(1))
+        val firstUnit = first.unit(1)
+        assertNotNull(firstUnit)
+        assertTrue(firstUnit!!.lessons.contains("小数乘整数"))
+
+        val second = catalog.book(5, 2, "math", "xinanda")
+        assertNotNull(second)
+        assertEquals("下册", second!!.volume)
+        assertEquals(11, second.maxUnitNo)
+        assertEquals("一 倍数与因数", second.unitTitle(1))
+    }
+
+    @Test
+    fun editorVariantEditionsCarryTheirUnits() {
+        val catalog = QuizUnitCatalog.current()!!
+
+        val waiyanFirst = catalog.book(1, 1, "ENGLISH", "WAIYAN")
+        assertNotNull(waiyanFirst)
+        assertEquals(13, waiyanFirst!!.maxUnitNo)
+        assertEquals("Module 1", waiyanFirst.unitTitle(1))
+        assertTrue(waiyanFirst.unit(1)!!.lessons.contains("Unit 1 Hello!"))
+
+        val waiyanFifth = catalog.book(5, 2, "english", "waiyan")
+        assertNotNull(waiyanFifth)
+        assertEquals(12, waiyanFifth!!.maxUnitNo)
+        assertEquals("Module 1", waiyanFifth.unitTitle(1))
+
+        // The platform only publishes the YILIN primary series from grade 3.
+        assertNull(catalog.book(1, 1, "ENGLISH", "YILIN"))
+        assertNull(catalog.book(2, 2, "ENGLISH", "YILIN"))
+        val yilinThird = catalog.book(3, 1, "ENGLISH", "YILIN")
+        assertNotNull(yilinThird)
+        assertEquals(10, yilinThird!!.maxUnitNo)
+        assertEquals("Unit 1 Hello!", yilinThird.unitTitle(1))
+
+        val geography = catalog.book(7, 1, "GEOGRAPHY", "ZHONGTU")
+        assertNotNull(geography)
+        assertEquals(5, geography!!.maxUnitNo)
+        assertEquals("第1章 认识地球", geography.unitTitle(1))
+
+        val physics = catalog.book(8, 1, "PHYSICS", "BEISHIDA")
+        assertNotNull(physics)
+        assertEquals("全一册", physics!!.volume)
+        assertEquals(12, physics.maxUnitNo)
+        assertEquals("走进物理世界", physics.unitTitle(1))
+        assertEquals(12, catalog.unitMax(8, 2, "PHYSICS", "BEISHIDA"))
+        assertEquals(9, catalog.unitMax(9, 1, "PHYSICS", "BEISHIDA"))
+    }
+
+    @Test
     fun catalogExtendsUnitLimitsPerBookAndEdition() {
         val catalog = QuizUnitCatalog.current()!!
         assertEquals(8, QuizCurriculum.current()!!.unitMax(4))
@@ -37,8 +94,9 @@ class QuizUnitCatalogTest {
         // The authority lists two more top-level nodes than the stage default.
         assertEquals(10, catalog.unitMax(4, 2, "MATH", "RENJIAO"))
         assertEquals(10, catalog.unitMax(4, 2, "math", "renjiao"))
-        // A wildcard takes the largest matching book for that term.
-        assertEquals(11, catalog.unitMax(4, 1, "ALL", "ALL"))
+        // A wildcard takes the largest matching book for that term; the SWU
+        // edition now has fourteen top-level nodes in the first volume.
+        assertEquals(14, catalog.unitMax(4, 1, "ALL", "ALL"))
         // An uncatalogued edition must leave the caller on the stage limit.
         assertNull(catalog.unitMax(4, 1, "SCIENCE", "GENERAL"))
         // Wrong term must not borrow the other volume's limit.

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PlanYourTV 家长端</string>
+    <string name="pair_title">连接电视</string>
+    <string name="pair_intro">在电视上打开家长中心，扫描屏幕上显示的二维码。地址会被记住，只需扫描一次。</string>
+    <string name="pair_scan">扫描电视二维码</string>
+    <string name="pair_manual_toggle">无法扫码？手动输入地址</string>
+    <string name="pair_url_hint">192.0.2.10:8790/abcd2345/quiz</string>
+    <string name="pair_connect">连接</string>
+    <string name="pair_note">手机和电视需要连接同一个 Wi-Fi。本应用只打开电视提供的家长中心网页，没有自己的账号或云服务。</string>
+    <string name="pair_invalid_url">请输入电视二维码中的完整地址，包括 IP、端口和后面的代码。</string>
+    <string name="scan_failed">无法启动扫码，请重试。</string>
+    <string name="camera_permission_hint">请允许使用相机，以便扫描电视上的二维码。</string>
+    <string name="camera_blocked_title">需要相机权限</string>
+    <string name="camera_blocked_message">请在系统设置中允许相机权限，以便扫描电视二维码。你也可以手动输入地址。</string>
+    <string name="open_settings">打开设置</string>
+    <string name="menu_refresh">刷新</string>
+    <string name="menu_open_browser">在浏览器中打开</string>
+    <string name="menu_repair">扫描其他电视</string>
+    <string name="repair_title">扫描其他电视？</string>
+    <string name="repair_message">已保存的地址将被替换，不会影响电视上的家长中心会话。</string>
+    <string name="repair_confirm">重新扫描</string>
+    <string name="repair_cancel">取消</string>
+    <string name="loading">正在加载家长中心…</string>
+    <string name="error_title">无法连接电视</string>
+    <string name="error_message">%1$s\n\n请确认手机和电视连接同一个 Wi-Fi，并且电视上已打开家长中心。</string>
+    <string name="error_http">电视拒绝了请求（HTTP %1$d）。</string>
+    <string name="error_local_only">电视当前不在本地模式，请先在电视上打开家长中心。</string>
+    <string name="error_tls">电视的证书不受信任。</string>
+    <string name="error_unknown">未知网络错误。</string>
+    <string name="error_retry">重试</string>
+    <string name="error_repair">扫描其他电视</string>
+    <string name="scan_prompt">将电视上的二维码放入取景框</string>
+    <string name="saved">下载已保存。</string>
+    <string name="save_failed">保存下载失败。</string>
+    <string name="download_unsupported">无法在此打开该下载，请从菜单选择在浏览器中打开。</string>
+    <string name="file_too_large">文件太大，无法在此保存。</string>
+    <string name="external_unavailable">没有可打开此链接的浏览器。</string>
+</resources>

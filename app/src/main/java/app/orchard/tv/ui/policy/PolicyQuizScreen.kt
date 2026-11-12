@@ -417,7 +417,7 @@ private fun QuizSetupScreen(onClose: () -> Unit) {
     }
 }
 
-private data class QuizQr(
+internal data class QuizQr(
     val url: String?,
     val bitmap: ImageBitmap?,
     val loading: Boolean,
@@ -429,7 +429,7 @@ private data class QuizQr(
  * empty square.
  */
 @Composable
-private fun rememberQuizQr(scale: Int, attempt: Int = 0): QuizQr {
+internal fun rememberQuizQr(scale: Int, attempt: Int = 0): QuizQr {
     val context = LocalContext.current
     var qr by remember { mutableStateOf(QuizQr(null, null, true)) }
     LaunchedEffect(scale, attempt) {

@@ -1,12 +1,14 @@
 package app.orchard.tv.quiz
 
 import android.content.Context
+import app.orchard.tv.policy.ManualSessionLimits
 import app.orchard.tv.policy.PolicyModeCoordinator
 import fi.iki.elonen.NanoHTTPD
 import fi.iki.elonen.NanoHTTPD.IHTTPSession
 import fi.iki.elonen.NanoHTTPD.Method
 import fi.iki.elonen.NanoHTTPD.Response
 import org.json.JSONObject
+import com.planyourtv.policy.PolicyMode
 import com.planyourtv.policy.quiz.QuizAnswerScope
 import com.planyourtv.policy.quiz.QuizBankImport
 import com.planyourtv.policy.quiz.QuizCollection
@@ -47,6 +49,11 @@ object QuizWebAdmin {
     private val requestBody = ThreadLocal<JSONObject?>()
 
     fun handle(context: Context, session: IHTTPSession, path: String): Response? {
+        // PhoneServer still serves wallpaper/setup pages in cloud mode. Only the quiz page
+        // and its API are local-mode features, so gate those paths instead of the server.
+        if (isQuizPath(path) && PolicyModeCoordinator.mode != PolicyMode.LOCAL) {
+            return error(Response.Status.GONE, "LOCAL_ONLY")
+        }
         return when {
             session.method == Method.GET && (path == "/quiz" || path == "/quiz/") ->
                 asset(context, "web/quiz.html", "text/html; charset=utf-8")
@@ -61,6 +68,13 @@ object QuizWebAdmin {
             else -> null
         }
     }
+
+    private fun isQuizPath(path: String): Boolean =
+        path == "/quiz" ||
+            path == "/quiz/" ||
+            path == "/quiz.js" ||
+            path == "/quiz.css" ||
+            path.startsWith("/api/quiz/")
 
     private fun api(session: IHTTPSession, path: String): Response {
         // NanoHTTPD 2.3.1 leaves a POST body on the keep-alive stream when the
@@ -77,6 +91,8 @@ object QuizWebAdmin {
                 session.method == Method.POST && path == "/api/quiz/auth/logout" -> logout(session)
                 session.method == Method.POST && path == "/api/quiz/auth/release" -> release(session)
                 session.method == Method.GET && path == "/api/quiz/admin/heartbeat" -> heartbeat(session)
+                session.method == Method.POST && path == "/api/quiz/admin/unlock" -> unlock(session)
+                session.method == Method.POST && path == "/api/quiz/admin/manual/start" -> manualStart(session)
                 session.method == Method.GET && path == "/api/quiz/admin/session" -> readSession(session)
                 session.method == Method.GET && path == "/api/quiz/admin/units" -> readUnitCatalog(session)
                 session.method == Method.PUT && path == "/api/quiz/admin/session" -> putSession(session)
@@ -165,11 +181,163 @@ object QuizWebAdmin {
 
     /**
      * Presence probe. The page sends this only while it is visible; [adminError]
-     * refreshes the owner's last-seen time, so the body is intentionally small.
+     * refreshes the owner's last-seen time. The lock and manualStart objects let the
+     * page enable or disable both lock-screen actions without polling extra endpoints.
      */
     private fun heartbeat(session: IHTTPSession): Response {
         adminError(session)?.let { return it }
-        return json(Response.Status.OK, JSONObject().put("ok", true))
+        return json(
+            Response.Status.OK,
+            JSONObject()
+                .put("ok", true)
+                .put("lock", lockJson(PolicyModeCoordinator.webUnlockStatus()))
+                .put("manualStart", manualStartJson(PolicyModeCoordinator.webManualStartStatus())),
+        )
+    }
+
+    /**
+     * The lock-screen-only temporary unlock. The coordinator performs the final atomic
+     * check; this handler adds the page's own PIN-attempt limiter and never logs the PIN.
+     */
+    private fun unlock(session: IHTTPSession): Response {
+        adminError(session)?.let { return it }
+        val currentLock = { PolicyModeCoordinator.webUnlockStatus() }
+        val wait = QuizAccess.sensitiveActionLockedSeconds()
+        if (wait > 0) {
+            return json(
+                Response.Status.TOO_MANY_REQUESTS,
+                JSONObject()
+                    .put("ok", false)
+                    .put("error", "PIN_LOCKED")
+                    .put("retryAfterSeconds", wait)
+                    .put("lock", lockJson(currentLock())),
+            )
+        }
+        val body = jsonBody(session) ?: return error(Response.Status.BAD_REQUEST, "INVALID_JSON")
+        val pin = body.optString("pin", "")
+        if (pin.length != 6 || pin.any { !it.isDigit() }) {
+            return error(Response.Status.BAD_REQUEST, "PIN_INVALID")
+        }
+        return when (val result = PolicyModeCoordinator.unlockFromWeb(pin)) {
+            PolicyModeCoordinator.WebUnlockResult.Ok -> {
+                QuizAccess.onSensitiveActionResult(success = true)
+                json(
+                    Response.Status.OK,
+                    JSONObject().put("ok", true).put("lock", lockJson(currentLock())),
+                )
+            }
+            is PolicyModeCoordinator.WebUnlockResult.PinInvalid -> {
+                if (result.locked) {
+                    QuizAccess.lockSensitiveActionOut()
+                } else {
+                    QuizAccess.onSensitiveActionResult(success = false)
+                }
+                val retrySeconds = QuizAccess.sensitiveActionLockedSeconds()
+                if (retrySeconds > 0) {
+                    json(
+                        Response.Status.TOO_MANY_REQUESTS,
+                        JSONObject()
+                            .put("ok", false)
+                            .put("error", "PIN_LOCKED")
+                            .put("retryAfterSeconds", retrySeconds)
+                            .put("lock", lockJson(currentLock())),
+                    )
+                } else {
+                    json(
+                        Response.Status.UNAUTHORIZED,
+                        JSONObject()
+                            .put("ok", false)
+                            .put("error", "PIN_INVALID")
+                            .put("lock", lockJson(currentLock())),
+                    )
+                }
+            }
+            is PolicyModeCoordinator.WebUnlockResult.Rejected -> json(
+                Response.Status.CONFLICT,
+                JSONObject()
+                    .put("ok", false)
+                    .put("error", result.reason.name)
+                    .put("lock", lockJson(currentLock())),
+            )
+        }
+    }
+
+    /**
+     * One lock-screen manual session from the parent page. This is not the temporary
+     * unlock: it starts a timed session and therefore repeats the full lock-screen
+     * eligibility check, requires the parent PIN for every start, and shares the
+     * sensitive-action limiter with the unlock endpoint. The coordinator and runtime
+     * still perform the final atomic checks; this handler only maps typed results.
+     */
+    private fun manualStart(session: IHTTPSession): Response {
+        adminError(session)?.let { return it }
+        val currentStatus = { PolicyModeCoordinator.webManualStartStatus() }
+        val wait = QuizAccess.sensitiveActionLockedSeconds()
+        if (wait > 0) {
+            return json(
+                Response.Status.TOO_MANY_REQUESTS,
+                JSONObject()
+                    .put("ok", false)
+                    .put("error", "PIN_LOCKED")
+                    .put("retryAfterSeconds", wait)
+                    .put("manualStart", manualStartJson(currentStatus())),
+            )
+        }
+        val body = jsonBody(session) ?: return error(Response.Status.BAD_REQUEST, "INVALID_JSON")
+        val pin = body.optString("pin", "")
+        if (pin.length != 6 || pin.any { !it.isDigit() }) {
+            return error(Response.Status.BAD_REQUEST, "PIN_INVALID")
+        }
+        val minutes = body.optInt("minutes", -1)
+        if (!ManualSessionLimits.isValid(minutes)) {
+            return error(Response.Status.BAD_REQUEST, "INVALID_DURATION")
+        }
+        return when (val result = PolicyModeCoordinator.startManualFromWeb(pin, minutes)) {
+            PolicyModeCoordinator.WebManualStartResult.Ok -> {
+                QuizAccess.onSensitiveActionResult(success = true)
+                json(
+                    Response.Status.OK,
+                    JSONObject()
+                        .put("ok", true)
+                        .put("manualStart", manualStartJson(currentStatus())),
+                )
+            }
+            PolicyModeCoordinator.WebManualStartResult.InvalidDuration ->
+                error(Response.Status.BAD_REQUEST, "INVALID_DURATION")
+            is PolicyModeCoordinator.WebManualStartResult.PinInvalid -> {
+                if (result.locked) {
+                    QuizAccess.lockSensitiveActionOut()
+                } else {
+                    QuizAccess.onSensitiveActionResult(success = false)
+                }
+                val retrySeconds = QuizAccess.sensitiveActionLockedSeconds()
+                if (retrySeconds > 0) {
+                    json(
+                        Response.Status.TOO_MANY_REQUESTS,
+                        JSONObject()
+                            .put("ok", false)
+                            .put("error", "PIN_LOCKED")
+                            .put("retryAfterSeconds", retrySeconds)
+                            .put("manualStart", manualStartJson(currentStatus())),
+                    )
+                } else {
+                    json(
+                        Response.Status.UNAUTHORIZED,
+                        JSONObject()
+                            .put("ok", false)
+                            .put("error", "PIN_INVALID")
+                            .put("manualStart", manualStartJson(currentStatus())),
+                    )
+                }
+            }
+            is PolicyModeCoordinator.WebManualStartResult.Rejected -> json(
+                Response.Status.CONFLICT,
+                JSONObject()
+                    .put("ok", false)
+                    .put("error", result.reason.name)
+                    .put("manualStart", manualStartJson(currentStatus())),
+            )
+        }
     }
 
     /**
@@ -1588,6 +1756,23 @@ object QuizWebAdmin {
         val body = context.assets.open(name).bufferedReader().use { it.readText() }
         return newResponse(Response.Status.OK, type, body)
     }
+
+    private fun lockJson(status: PolicyModeCoordinator.WebUnlockStatus): JSONObject =
+        JSONObject()
+            .put("eligible", status.eligible)
+            .put("reason", status.reason.name)
+            .put("unlocked", status.unlocked)
+
+    private fun manualStartJson(status: PolicyModeCoordinator.WebManualStartStatus): JSONObject =
+        JSONObject()
+            .put("eligible", status.eligible)
+            .put("reason", status.reason.name)
+            .put("minMinutes", ManualSessionLimits.MIN_MINUTES)
+            .put("maxMinutes", ManualSessionLimits.MAX_MINUTES)
+            .put("stepMinutes", ManualSessionLimits.STEP_MINUTES)
+            .put("defaultMinutes", ManualSessionLimits.DEFAULT_MINUTES)
+            .put("restRemainingSeconds", status.restRemainingSeconds)
+            .put("remainingSeconds", status.remainingSeconds)
 
     private fun json(status: Response.Status, body: JSONObject): Response =
         newResponse(status, "application/json; charset=utf-8", body.toString())

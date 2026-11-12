@@ -174,7 +174,7 @@ Rules for keeping merges small:
 ## Versions
 
 `versionCode` and `versionName` are derived from the Aerial base version plus a product revision in
-`app/build.gradle.kts`. The community baseline is `1.93.000` / `131000`, based on Aerial 1.93 /
+`app/build.gradle.kts`. The community baseline is `1.93.002` / `131002`, based on Aerial 1.93 /
 131. An Aerial base update resets the revision; product releases increase it by one and never
 decrease the code. Public releases ship only the `standard` and `guard` flavors; Android 4.x is
 not supported. See [BUILDING.md](BUILDING.md).

@@ -23,7 +23,7 @@ import org.json.JSONObject
  */
 object QuizSeedBank {
     /** Bump together with assets/quiz/seed_bank.json. */
-    const val SEED_VERSION = 3
+    const val SEED_VERSION = 4
 
     private const val TAG = "QuizSeedBank"
     private const val ASSET = "quiz/seed_bank.json"

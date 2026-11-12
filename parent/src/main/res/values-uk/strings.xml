@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PlanYourTV Батьки</string>
+    <string name="pair_title">Підключення до телевізора</string>
+    <string name="pair_intro">Відкрийте «Батьківський центр» на телевізорі та відскануйте QR-код. Адресу буде збережено, сканувати потрібно лише раз.</string>
+    <string name="pair_scan">Сканувати QR-код</string>
+    <string name="pair_manual_toggle">Не виходить відсканувати? Введіть адресу вручну</string>
+    <string name="pair_url_hint">192.0.2.10:8790/abcd2345/quiz</string>
+    <string name="pair_connect">Підключитися</string>
+    <string name="pair_note">Телефон і телевізор мають бути в одній мережі Wi-Fi. Застосунок відкриває лише сторінку «Батьківського центру» з телевізора; він не має власного облікового запису чи хмари.</string>
+    <string name="pair_invalid_url">Введіть повну адресу з QR-коду телевізора: IP, порт і код після нього.</string>
+    <string name="scan_failed">Не вдалося запустити сканер. Спробуйте ще раз.</string>
+    <string name="camera_permission_hint">Дозвольте доступ до камери, щоб сканувати QR-код на телевізорі.</string>
+    <string name="camera_blocked_title">Потрібен доступ до камери</string>
+    <string name="camera_blocked_message">Дозвольте доступ до камери в налаштуваннях, щоб сканувати QR-код телевізора. Адресу також можна ввести вручну.</string>
+    <string name="open_settings">Відкрити налаштування</string>
+    <string name="menu_refresh">Оновити</string>
+    <string name="menu_open_browser">Відкрити в браузері</string>
+    <string name="menu_repair">Сканувати інший телевізор</string>
+    <string name="repair_title">Сканувати інший телевізор?</string>
+    <string name="repair_message">Збережену адресу буде замінено. Сеанс «Батьківського центру» на телевізорі не зміниться.</string>
+    <string name="repair_confirm">Сканувати знову</string>
+    <string name="repair_cancel">Скасувати</string>
+    <string name="loading">Завантаження «Батьківського центру»…</string>
+    <string name="error_title">Немає зв\'язку з телевізором</string>
+    <string name="error_message">%1$s\n\nПеревірте, що телефон і телевізор в одній мережі Wi-Fi і що на телевізорі відкрито «Батьківський центр».</string>
+    <string name="error_http">Телевізор відхилив запит (HTTP %1$d).</string>
+    <string name="error_local_only">Телевізор не в локальному режимі. Спершу відкрийте «Батьківський центр» на телевізорі.</string>
+    <string name="error_tls">Сертифікат телевізора не є довіреним.</string>
+    <string name="error_unknown">Невідома помилка мережі.</string>
+    <string name="error_retry">Повторити</string>
+    <string name="error_repair">Сканувати інший телевізор</string>
+    <string name="scan_prompt">Наведіть камеру на QR-код на телевізорі</string>
+    <string name="saved">Завантаження збережено.</string>
+    <string name="save_failed">Не вдалося зберегти завантаження.</string>
+    <string name="download_unsupported">Не вдалося відкрити це завантаження. Спробуйте браузер із меню.</string>
+    <string name="file_too_large">Файл завеликий для збереження.</string>
+    <string name="external_unavailable">Немає браузера, щоб відкрити це посилання.</string>
+</resources>

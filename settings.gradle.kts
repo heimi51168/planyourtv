@@ -36,6 +36,9 @@ dependencyResolutionManagement {
 }
 rootProject.name = "PlanYourTV"
 include(":app")
+// Optional phone shell that opens the TV's local Parent Center page. It is a
+// separate application; it does not share code or permissions with the TV app.
+include(":parent")
 // The public source snapshot ships only the Android 5.0+ app; the private tree keeps Lite too.
 if (file("lite").isDirectory) include(":lite")
 // Product logic. Kept out of :app so upstream Aerial merges stay small.

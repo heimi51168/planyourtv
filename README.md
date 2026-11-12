@@ -27,7 +27,7 @@ PlanYourTV 是一个**桌面级儿童时间管理 App**：它替代电视自带�
 
 > 常见搜索：Android TV 儿童模式、小米电视儿童锁、TCL 电视时间管理、电视屏幕时间、儿童电视桌面、答题解锁电视、Aerial 儿童桌面。
 
-> **当前社区源码版本：`1.93.000`（versionCode 131000），基于 Aerial 1.93。** 小米电视 `standard` 已由本项目真机验证；其他机型和 `guard` 版本沿用 Aerial 上游的支持范围，本项目未逐一验证。
+> **当前社区源码版本：`1.93.002`（versionCode 131002），基于 Aerial 1.93。** 小米电视 `standard` 已由本项目真机验证；其他机型和 `guard` 版本沿用 Aerial 上游的支持范围，本项目未逐一验证。
 
 ## 项目速览
 
@@ -37,10 +37,10 @@ PlanYourTV 是一个**桌面级儿童时间管理 App**：它替代电视自带�
 | 类型 | Android TV 桌面 / 儿童时间管理 / 家长控制 |
 | 平台 | Android TV 5.0+（API 21+）；Android 4.x 不支持；不需要 root |
 | 包名 | `com.planyourtv.tv` |
-| 当前版本 | `1.93.000` / 131000 |
+| 当前版本 | `1.93.002` / 131002 |
 | 上游基线 | [Aerial](https://github.com/pengchujin/aerial-tv) 1.93（MIT） |
 | 许可证 | MIT |
-| 下载 | [standard APK](https://planyourtv.me/download/planyourtv-standard.apk) · [guard APK](https://planyourtv.me/download/planyourtv-guard.apk) |
+| 下载 | [standard APK](https://planyourtv.me/download/planyourtv-standard.apk) · [guard APK](https://planyourtv.me/download/planyourtv-guard.apk) · [手机家长端（可选，Android 7.0+）](https://planyourtv.me/download/planyourtv-parent.apk) |
 | 数据 | 本地优先；不需要账号；本地模式不依赖服务器 |
 | 界面语言 | 简体中文、英语、俄语、乌克兰语、哈萨克语 |
 
@@ -93,9 +93,9 @@ PlanYourTV 是一个**桌面级儿童时间管理 App**：它替代电视自带�
 
 ### 5. 本地题库 + AI 出题 + 错题管理
 
-- **内置 4,900 道题**：1–9 年级上册期中必考，覆盖语文、数学、英语、科学，以及初中道德与法治、历史、地理、生物、物理、化学，开箱即用。
+- **内置 5,500 道题**：1–9 年级上册期中必考，覆盖语文、数学、英语、科学，以及初中道德与法治、历史、地理、生物、物理、化学；小学数学另带西南大学版预设题，开箱即用。
 - **手动导入题库**：家长在手机设置页上传 `.json` / `.txt` 文件或直接粘贴题目，可选择已有标签或新建标签，预览重复题目和剩余容量后导入；只接受单选题。题目和标签只保存在电视上，导入的标签可以直接作为自定义关卡。
-- **按范围出题**：可按 1–9 年级、学期、学科、教材版本、真实单元 / 期中 / 期末 / 复习范围筛选，避免题目超纲；教材目录来自国家中小学智慧教育平台（109 本教材、765 个节点、673 个单元）。
+- **按范围出题**：可按 1–9 年级、学期、学科、教材版本、真实单元 / 期中 / 期末 / 复习范围筛选，避免题目超纲；教材目录来自国家中小学智慧教育平台（302 本教材、2205 个节点、1970 个单元）。
 - **AI 批量出题（可选）**：家长在手机设置页配置自己的 OpenAI 兼容模型服务（默认 DeepSeek 接口，Key 需家长自行到 DeepSeek 开放平台创建），AI 按真实单元标题和课时范围生成 20 / 30 / 50 道题，完成后**自动加入电视本地题库**。
 - **密钥只在电视上**：API Key 保存在电视端，手机页面通过电视代理调用模型；请求只包含学科、年级、难度、数量等出题参数，不包含家庭信息。不配置 AI 也能使用内置题库和手动题库。
 - **题库管理**：查看未使用、已回答、本轮中、答对、答错、旧记录和过期题目；支持去重、容量管理和批量清理。
@@ -114,7 +114,7 @@ PlanYourTV 是一个**桌面级儿童时间管理 App**：它替代电视自带�
 
 ### 7. 远程管理（路线图）
 
-> 通过手机在外网管理电视的**远程管理**目前是路线图功能。社区构建默认关闭并隐藏入口；本地规则、学习模式、计时和答题不依赖它，功能完整。远程服务端和手机家长端源码不在本仓库。
+> 通过手机在外网管理电视的**远程管理**目前是路线图功能。社区构建默认关闭并隐藏入口；本地规则、学习模式、计时和答题不依赖它，功能完整。远程服务端和托管版手机端源码不在本仓库；局域网用的可选手机壳在 `parent/`。
 
 ## 兼容性：与 Aerial 保持一致
 
@@ -238,7 +238,7 @@ PlanYourTV 是基于 [Aerial](https://github.com/pengchujin/aerial-tv)（MIT）�
 
 **AI 出题必须联网吗？**
 
-只有使用 AI 出题时需要联网，并且要由家长配置自己的 OpenAI 兼容模型服务（默认 DeepSeek，Key 需家长自行到 [DeepSeek 开放平台](https://platform.deepseek.com)创建）。内置 4,900 道题和手动题库完全离线可用。
+只有使用 AI 出题时需要联网，并且要由家长配置自己的 OpenAI 兼容模型服务（默认 DeepSeek，Key 需家长自行到 [DeepSeek 开放平台](https://platform.deepseek.com)创建）。内置 5,500 道题和手动题库完全离线可用。
 
 **支持哪些电视？**
 
@@ -274,7 +274,7 @@ PlanYourTV 与 Apple、小米、TCL、索尼或 Aerial 项目没有隶属、背�
 
 **PlanYourTV is an open-source, desktop-level parental-control launcher for Android TV.** It replaces the TV home screen and enforces screen-time rules at the launcher level: scheduled windows, daily and per-session limits, rest breaks, an app allowlist, a study mode, and a quiz challenge that lets kids earn extra viewing time.
 
-Built on [Aerial](https://github.com/pengchujin/aerial-tv) 1.93 (MIT). Current community source: **`1.93.000`** / 131000. Xiaomi `standard` is verified on a real TV; other devices follow Aerial's upstream support and are not verified by this project.
+Built on [Aerial](https://github.com/pengchujin/aerial-tv) 1.93 (MIT). Current community source: **`1.93.002`** / 131002. Xiaomi `standard` is verified on a real TV; other devices follow Aerial's upstream support and are not verified by this project.
 
 ### Highlights
 
@@ -282,9 +282,10 @@ Built on [Aerial](https://github.com/pengchujin/aerial-tv) 1.93 (MIT). Current c
 - **App-level scope** — only the entertainment apps selected by the parent are allowed during a timed session; learning apps are never timed and are available through Study mode on the lock screen.
 - **Study mode** — shows only the configured learning apps; no timer, no quota, no PIN.
 - **Quiz unlock** — the child picks an answer scope, then answers 5–50 questions (5-question steps, default 5; 60 seconds each). Easy / medium / hard questions carry separate rewards and deductions; a settable minimum net score gates the unlock and a per-round cap limits the payout. Parents can design up to six named levels, and every answer gets feedback and an explanation.
-- **Local question bank, manual import + AI generation (optional)** — 4,900 built-in first-semester midterm questions for grades 1–9 across Chinese, math, English, science and junior-high subjects. A parent can also import a `.json` / `.txt` file or paste single-choice questions on the phone page, choose or create a tag, and preview duplicates and free space; imported tags can become custom levels. AI generation targets real textbook units (109 books, 765 nodes, 673 units) and supports 20 / 30 / 50-question batches through the parent's own OpenAI-compatible provider (DeepSeek by default; the parent creates the key); the API key stays on the TV.
+- **Local question bank, manual import + AI generation (optional)** — 5,500 built-in first-semester midterm questions for grades 1–9 across Chinese, math, English, science and junior-high subjects, including a separate SWU (XINANDA) primary-math set. A parent can also import a `.json` / `.txt` file or paste single-choice questions on the phone page, choose or create a tag, and preview duplicates and free space; imported tags can become custom levels. AI generation targets real textbook units (302 books, 2205 nodes, 1970 units) and supports 20 / 30 / 50-question batches through the parent's own OpenAI-compatible provider (DeepSeek by default; the parent creates the key); the API key stays on the TV.
 - **Question bank and wrong-answer management** — filters, deduplication, capacity management, wrong-answer review and selective clearing.
 - **Parent controls** — six-digit PIN, one-time recovery code, temporary parent override, TV parent center, and a LAN phone settings page. Switching between automatic and manual modes requires an explicit confirmation that explains how the timing rules change.
+- **Optional phone shell** — a separate Android 7.0+ app that scans the TV's Parent Center QR code and opens the same page in a browser shell, so it does not need scanning again. It is not a TV APK; download it at <https://planyourtv.me/download/planyourtv-parent.apk> and install it on the phone.
 - **Updates and inputs** — optional background auto update on TVs that allow silent installs, keeping settings and question bank, plus configurable input visibility, HDMI-CEC switching and boot input in Control Center.
 - **Aerial desktop experience** — app grid, folders, wallpapers, screensaver, control center, HDMI sources, Home Guard, `standard`/`guard` flavors and five UI languages.
 - **Local-first privacy** — no account, no advertising SDK, no analytics SDK; optional update, weather and wallpaper requests only.

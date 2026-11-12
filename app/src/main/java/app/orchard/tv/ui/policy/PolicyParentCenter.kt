@@ -63,6 +63,7 @@ import com.planyourtv.policy.GuardStatus
 import com.planyourtv.policy.LocalRules
 import com.planyourtv.policy.LocalRulesError
 import com.planyourtv.policy.LocalTimeWindow
+import com.planyourtv.policy.LockReason
 import com.planyourtv.policy.PinResult
 import com.planyourtv.policy.PolicyConsentStore
 import com.planyourtv.policy.PolicyMode
@@ -235,6 +236,11 @@ fun PolicyParentCenter(onClose: () -> Unit) {
     val unboundCloud = PolicyProduct.cloudEnabled && !bound && state.mode == PolicyMode.CLOUD
     val passwordVisible = childOn && !handoffDone
     val localSessionActive = state.mode == PolicyMode.LOCAL && state.sessionState == SessionState.ACTIVE
+    // The mode switch clears the rest cursor too, so the confirmation must warn when either a
+    // running segment or a rest countdown will be discarded.
+    val localRestActive = state.mode == PolicyMode.LOCAL &&
+        state.lockReason == LockReason.RESTING &&
+        state.restRemainingSeconds > 0L
     // Once the TV is bound, the local pane stays the familiar rule view but becomes read-only;
     // edits are made on the phone. After the handoff the pane mirrors the cloud copy so a phone
     // edit is visible without reopening the center.
@@ -1635,6 +1641,20 @@ fun PolicyParentCenter(onClose: () -> Unit) {
                     onDown = railDown(ParentFocusTarget.AutoUpdate),
                 )
 
+                // Parent-only entry to the local parent page. It stays visible in automatic
+                // mode and with the quiz disabled because the bank is independent of both.
+                // It sits below auto update because this rail is the one part of the parent
+                // center that does not scroll. No focus target: scanning is the only action.
+                if (quizWebQrVisible(
+                        childOn = childOn,
+                        localMode = state.mode == PolicyMode.LOCAL,
+                        bindPaneOpen = paneKind == ParentPaneKind.BIND,
+                    )
+                ) {
+                    Spacer(Modifier.height(10.dp))
+                    QuizWebQrCard()
+                }
+
                 Spacer(Modifier.weight(1f))
                 BasicText(
                     stringResource(R.string.policy_v6_rail_hint),
@@ -1888,7 +1908,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
                 autoDailyMinutes = autoRules.autoDailyLimitMinutes,
                 autoSessionMinutes = autoRules.sessionLimitMinutes,
                 autoRestMinutes = autoRules.restMinutes,
-                sessionActive = localSessionActive,
+                timingActive = localSessionActive || localRestActive,
                 onConfirm = {
                     activationConfirmTarget = null
                     if (!applyLocalActivation(target)) {

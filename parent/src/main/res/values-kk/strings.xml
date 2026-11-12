@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PlanYourTV Ата-ана</string>
+    <string name="pair_title">Теледидарға қосылу</string>
+    <string name="pair_intro">Теледидарда «Ата-ана орталығын» ашып, QR кодты сканерлеңіз. Мекенжай есте сақталады, сканерлеу бір рет қана қажет.</string>
+    <string name="pair_scan">Теледидар QR кодын сканерлеу</string>
+    <string name="pair_manual_toggle">Сканерлеу мүмкін болмады ма? Мекенжайды қолмен енгізіңіз</string>
+    <string name="pair_url_hint">192.0.2.10:8790/abcd2345/quiz</string>
+    <string name="pair_connect">Қосылу</string>
+    <string name="pair_note">Телефон мен теледидар бір Wi-Fi желісінде болуы керек. Бұл қолданба тек теледидар ұсынған «Ата-ана орталығы» бетін ашады; оның өз тіркелгісі немесе бұлт қызметі жоқ.</string>
+    <string name="pair_invalid_url">Теледидар QR кодындағы толық мекенжайды енгізіңіз: IP, порт және одан кейінгі код.</string>
+    <string name="scan_failed">Сканерді іске қосу мүмкін болмады. Қайталап көріңіз.</string>
+    <string name="camera_permission_hint">Теледидардағы QR кодты сканерлеу үшін камераға рұқсат беріңіз.</string>
+    <string name="camera_blocked_title">Камераға рұқсат қажет</string>
+    <string name="camera_blocked_message">Теледидар QR кодын сканерлеу үшін параметрлерде камераға рұқсат беріңіз. Мекенжайды қолмен де енгізуге болады.</string>
+    <string name="open_settings">Параметрлерді ашу</string>
+    <string name="menu_refresh">Жаңарту</string>
+    <string name="menu_open_browser">Браузерде ашу</string>
+    <string name="menu_repair">Басқа теледидарды сканерлеу</string>
+    <string name="repair_title">Басқа теледидарды сканерлеу керек пе?</string>
+    <string name="repair_message">Сақталған мекенжай ауыстырылады. Теледидардағы «Ата-ана орталығы» сессиясына әсер етпейді.</string>
+    <string name="repair_confirm">Қайта сканерлеу</string>
+    <string name="repair_cancel">Болдырмау</string>
+    <string name="loading">«Ата-ана орталығы» жүктелуде…</string>
+    <string name="error_title">Теледидарға қосылу мүмкін емес</string>
+    <string name="error_message">%1$s\n\nТелефон мен теледидардың бір Wi-Fi желісінде екенін және теледидарда «Ата-ана орталығы» ашық екенін тексеріңіз.</string>
+    <string name="error_http">Теледидар сұрауды қабылдамады (HTTP %1$d).</string>
+    <string name="error_local_only">Теледидар жергілікті режимде емес. Алдымен теледидарда «Ата-ана орталығын» ашыңыз.</string>
+    <string name="error_tls">Теледидар сертификаты сенімді емес.</string>
+    <string name="error_unknown">Белгісіз желі қатесі.</string>
+    <string name="error_retry">Қайталау</string>
+    <string name="error_repair">Басқа теледидарды сканерлеу</string>
+    <string name="scan_prompt">Камераны теледидардағы QR кодқа бағыттаңыз</string>
+    <string name="saved">Жүктеу сақталды.</string>
+    <string name="save_failed">Жүктеуді сақтау мүмкін болмады.</string>
+    <string name="download_unsupported">Бұл жүктеуді ашу мүмкін емес. Мәзірден браузерді таңдап көріңіз.</string>
+    <string name="file_too_large">Файл тым үлкен, мұнда сақтау мүмкін емес.</string>
+    <string name="external_unavailable">Бұл сілтемені ашатын браузер жоқ.</string>
+</resources>

@@ -43,6 +43,12 @@ val tvApiBase = (project.findProperty("tvApiBase") as String?)
 val tvOfficialBuild = (project.findProperty("tvOfficialBuild") as String?)
     ?.equals("true", ignoreCase = true) == true
 
+// The dev channel skips R8 and resource shrinking so UI iteration does not wait for the
+// slowest release step. preview/pro keep both: those are the channels used to validate the
+// artifact that actually ships. dev must not be used as a release-verification build.
+val tvFastDev = (project.findProperty("tvFastDev") as String?)
+    ?.equals("true", ignoreCase = true) == true
+
 val tvMqttUrl = mqttValue("tvMqttUrl")
 val tvMqttTopicPrefix = mqttValue("tvMqttTopicPrefix")
 val tvMqttClientPrefix = mqttValue("tvMqttClientPrefix", "tv-app-")
@@ -108,12 +114,12 @@ android {
         // Android 5.0. Compose 1.10 and later need 6.0, so the Compose BOM below stays on 1.9.
         minSdk = 21
         targetSdk = 34
-        // Product version: Aerial's version stays the prefix (v1.93 / 131 -> 1.93.000 / 131000).
+        // Product version: Aerial's version stays the prefix (v1.93 / 131 -> 1.93.002 / 131002).
         // On every upstream merge update these two from the Aerial tag and reset the revision to 0.
         // Raise productRevision for each product release; never reuse or decrease it.
         val aerialVersionName = "1.93"
         val aerialVersionCode = 131
-        val productRevision = 0
+        val productRevision = 2
         require(productRevision in 0..999) { "productRevision must fit in three digits" }
         versionCode = aerialVersionCode * 1000 + productRevision
         versionName = "$aerialVersionName.${productRevision.toString().padStart(3, '0')}"
@@ -178,8 +184,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
+            isMinifyEnabled = !tvFastDev
+            isShrinkResources = !tvFastDev
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.findByName("aerial") ?: signingConfigs.getByName("debug")
         }

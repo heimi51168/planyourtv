@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The same accent the Parent Center page uses. -->
+    <color name="brand">#1F6B57</color>
+    <!-- Cream plate behind the parent app launcher artwork. -->
+    <color name="launcher_background">#FEFFEF</color>
+    <color name="brand_dark">#164D3F</color>
+    <color name="surface">#F7F6F2</color>
+    <color name="surface_raised">#FFFEFA</color>
+    <color name="line">#E3E0D7</color>
+    <color name="ink">#1D1D19</color>
+    <color name="muted">#6B7280</color>
+    <color name="danger">#9D392F</color>
+    <color name="white">#FFFFFF</color>
+</resources>

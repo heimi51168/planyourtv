@@ -510,7 +510,8 @@ object LocalPolicyRuntime {
 
     /**
      * The only activation switch. AUTO follows the scheduler and may start immediately; MANUAL
-     * only changes the lock state because every manual segment needs a parent action.
+     * only changes the lock state because every manual segment needs a parent action. A real
+     * switch also ends the rest cursor earned by the previous activation.
      */
     @Synchronized
     fun setActivation(newActivation: Activation): Boolean {
@@ -526,6 +527,10 @@ object LocalPolicyRuntime {
                 reasonOverride = PolicyEndReason.ACTIVATION_SWITCH,
             )
         }
+        // A rest cursor belongs to the activation that earned it. End it before persisting the
+        // new activation, so the target mode never waits out a break it did not configure and a
+        // process restart cannot inherit the old mode's break.
+        endRestForActivationSwitch()
         activation = newActivation
         LocalPolicyStore.saveActivation(newActivation)
         // Each activation owns its own time-rule set: the switch only swaps which stored set is
@@ -545,6 +550,22 @@ object LocalPolicyRuntime {
         }
         publish()
         return true
+    }
+
+    /**
+     * A mode switch ends the timing state that belongs to the old activation. The caller settles
+     * any running session; this clears its rest cursor so the new mode starts without the old
+     * mode's break. The recovery timestamp is cleared first: if the process dies between the two
+     * writes, initialize() must not rebuild the old rest from it. Daily usage and the configured
+     * windows belong to the day, not the activation, and are deliberately left untouched.
+     */
+    private fun endRestForActivationSwitch() {
+        LocalPolicyStore.saveLastSessionEndedAt(0L)
+        LocalPolicyStore.saveBreakUntil(0L)
+        breakUntil = 0L
+        restRemainingSeconds = 0L
+        lockReason = LockReason.NONE
+        nextWindowLabel = ""
     }
 
     /**
@@ -882,14 +903,18 @@ object LocalPolicyRuntime {
     fun startManualSession(
         durationSeconds: Long,
         expiresAtEpochMs: Long? = null,
-    ): SessionStartResult =
-        startEntertainment(
+    ): SessionStartResult {
+        // Leaving study mode is a separate parent action. A manual start (including the parent
+        // web page) must not clear it as a side effect of commitStart.
+        if (studyMode) return SessionStartResult.Rejected(RejectReason.BUSY)
+        return startEntertainment(
             origin = SessionOrigin.LOCAL,
             durationSeconds = durationSeconds,
             expectedEpoch = null,
             requestedScope = null,
             expiresAtEpochMs = expiresAtEpochMs,
         )
+    }
 
     /**
      * Hosted control plane: arm one manual entertainment segment. This deliberately does not
@@ -1873,6 +1898,36 @@ object LocalPolicyRuntime {
         } else if (studyMode) {
             studyMode = false
         }
+        applyParentOverrideLocked(durationMs)
+    }
+
+    /**
+     * Non-mutating check for the remote parent page's temporary unlock. That unlock path must
+     * only mirror a PIN typed on the lock screen, so every condition here is also enforced by
+     * [tryBeginParentOverrideFromLockScreen].
+     */
+    @Synchronized
+    fun canBeginParentOverrideFromLockScreen(): Boolean =
+        initialized &&
+            guardStatus == GuardStatus.ENFORCING &&
+            session == null &&
+            !studyMode &&
+            !isSetupRequired &&
+            isScreenInteractive()
+
+    /**
+     * Remote form of the lock-screen PIN. Unlike [beginParentOverride] this never ends a
+     * running session or study mode, never starts a timer, and refuses a dark screen: this
+     * unlock path only reproduces the lock-screen temporary unlock.
+     */
+    @Synchronized
+    fun tryBeginParentOverrideFromLockScreen(): Boolean {
+        if (!canBeginParentOverrideFromLockScreen()) return false
+        applyParentOverrideLocked()
+        return true
+    }
+
+    private fun applyParentOverrideLocked(durationMs: Long = 0L) {
         // A parent takeover is not the child's window ending. finishSession() marks the window
         // blocked on a parent stop; leaving that block would strand the child on "this session
         // has ended" after the unlock, even with time and quota left.
@@ -1945,10 +2000,11 @@ object LocalPolicyRuntime {
     }
 
     /**
-     * Starts the rest after a child segment. AUTO and MANUAL share one interval and one
-     * wall-clock cursor: the cursor is the real session end, so a rest never restarts just
-     * because the mode changed or the process died. A parent takeover passes [skipRest] so the
-     * parent can use the TV without starting the child's break.
+     * Starts the rest after a child segment. AUTO and MANUAL use the same configured interval,
+     * but a rest belongs to the mode that earned it: [setActivation] clears this cursor instead
+     * of carrying it across a switch. The cursor is the real session end, so a process restart
+     * resumes the remaining rest instead of restarting it. A parent takeover passes [skipRest]
+     * so the parent can use the TV without starting the child's break.
      *
      * @return true when the lock screen entered [LockReason.RESTING]
      */

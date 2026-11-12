@@ -39,6 +39,14 @@ object QuizRuntime {
         QuizSessionStatus.READY,
     )
 
+    /** Same statuses QuizSettings treats as an ongoing round that must not be disturbed. */
+    private val ACTIVE_ROUND_STATUSES = setOf(
+        QuizSessionStatus.RUNNING,
+        QuizSessionStatus.SETTLING,
+        QuizSessionStatus.STARTING,
+        QuizSessionStatus.START_FAILED,
+    )
+
     data class UiState(
         val loaded: Boolean = false,
         val enabled: Boolean = true,
@@ -195,5 +203,11 @@ object QuizRuntime {
     /** A cheap snapshot for callers that just saved a session and already know its values. */
     fun publishState(next: UiState) {
         _state.value = next
+    }
+
+    /** True while a round may be on screen or still settling; web unlock must not interrupt it. */
+    fun isRoundActive(): Boolean {
+        val status = refresh().session?.status ?: return false
+        return status in ACTIVE_ROUND_STATUSES
     }
 }

@@ -75,6 +75,12 @@ class QuizCurriculumTest {
         assertFalse(data.textbooksFor(7, "ENGLISH").contains("NIUJIN"))
         assertFalse(data.textbooksFor(7, "ENGLISH").contains("LUJIAO"))
         assertFalse(data.textbooksFor(9, "CHEMISTRY").contains("LUKE"))
+        assertTrue(data.textbooksFor(5, "MATH").contains("XINANDA"))
+        assertTrue(data.textbooksFor(1, "ENGLISH").contains("WAIYAN"))
+        assertFalse(data.textbooksFor(1, "ENGLISH").contains("YILIN"))
+        assertFalse(data.textbooksFor(2, "ENGLISH").contains("YILIN"))
+        assertTrue(data.textbooksFor(3, "ENGLISH").contains("YILIN"))
+        assertTrue(data.textbooksFor(6, "ENGLISH").contains("YILIN"))
         assertEquals(listOf("KEJIAO", "SUJIAO", "RENJIAO_EJ"), data.textbooksFor(4, "SCIENCE"))
         assertEquals(
             listOf("HUASHIDA", "HUJIAO", "ZHEJIAO", "GENERAL", "ALL"),
@@ -94,6 +100,12 @@ class QuizCurriculumTest {
         assertEquals("外研社版", data.textbooks.first { it.id == "WAIYAN" }.labels["zh"])
         assertEquals("沪科技版", data.textbooks.first { it.id == "HUIKE" }.labels["zh"])
         assertEquals("华东师大版", data.textbooks.first { it.id == "HUASHIDA" }.labels["zh"])
+        val xinanda = data.textbooks.first { it.id == "XINANDA" }
+        assertEquals("西南大学版", xinanda.labels["zh"])
+        assertEquals("SWU edition", xinanda.labels["en"])
+        assertEquals("Синанда", xinanda.labels["ru"])
+        assertEquals("Сінанда", xinanda.labels["uk"])
+        assertEquals("Синанда", xinanda.labels["kk"])
         assertEquals("生物学", data.subjects.first { it.id == "BIOLOGY" }.labels["zh"])
     }
 
@@ -128,6 +140,9 @@ class QuizCurriculumTest {
     fun juniorScopeAcceptsUnitFifteenAndRejectsGradeTen() {
         val junior = parseWithJuniorFixture()!!
         QuizCurriculum.installForTest(junior)
+        // The bundled catalogue covers grade 8 physics and caps units at the
+        // book value; this test targets the stage-level fallback instead.
+        QuizUnitCatalog.installForTest(null)
         try {
             val scope = QuizAnswerScope.create(
                 grade = 8,
@@ -162,6 +177,7 @@ class QuizCurriculumTest {
                 ),
             )
         } finally {
+            QuizUnitCatalog.clearTestOverride()
             QuizCurriculum.clearTestOverride()
         }
     }

@@ -1,15 +1,20 @@
 package app.orchard.tv.policy
 
 import android.content.Context
+import android.os.PowerManager
 import android.util.Log
 import app.orchard.tv.BuildConfig
+import app.orchard.tv.guard.HomeGuardService
 import app.orchard.tv.quiz.QuizConfigSync
+import app.orchard.tv.quiz.QuizRuntime
 import com.planyourtv.policy.AccessMode
 import com.planyourtv.policy.Activation
 import com.planyourtv.policy.GuardStatus
+import com.planyourtv.policy.LocalPin
 import com.planyourtv.policy.LocalRuleSets
 import com.planyourtv.policy.LocalRules
 import com.planyourtv.policy.LocalRulesError
+import com.planyourtv.policy.LockReason
 import com.planyourtv.policy.ParentAuthSession
 import com.planyourtv.policy.PinResult
 import com.planyourtv.policy.PolicyFlowTrace
@@ -52,6 +57,75 @@ object PolicyModeCoordinator {
         data object PendingMustBeCanceled : SwitchResult
         data class CloudSettlementFailed(val message: String) : SwitchResult
         data object NotReady : SwitchResult
+    }
+
+    /** Why the web page may or may not offer its temporary unlock action. */
+    enum class WebUnlockReason {
+        OK,
+        NOT_LOCAL,
+        NOT_READY,
+        SETUP_REQUIRED,
+        PIN_NOT_SET,
+        STUDY_MODE,
+        ALREADY_UNLOCKED,
+        SESSION_ACTIVE,
+        QUIZ_ACTIVE,
+        SCREEN_OFF,
+        NOT_ON_LOCK_SCREEN,
+        DEFAULT_PIN,
+        STATE_CHANGED,
+    }
+
+    /** Lock state published by the page heartbeat; [eligible] drives the action button. */
+    data class WebUnlockStatus(
+        val eligible: Boolean,
+        val reason: WebUnlockReason,
+        val unlocked: Boolean,
+    )
+
+    /** Result of the page's unlock action. A rejected PIN never changes the guard. */
+    sealed interface WebUnlockResult {
+        data object Ok : WebUnlockResult
+        data class Rejected(val reason: WebUnlockReason) : WebUnlockResult
+        data class PinInvalid(val locked: Boolean) : WebUnlockResult
+    }
+
+    /** Why the web page may or may not start one manual session. */
+    enum class WebManualStartReason {
+        OK,
+        NOT_LOCAL,
+        NOT_READY,
+        SETUP_REQUIRED,
+        PIN_NOT_SET,
+        STUDY_MODE,
+        ALREADY_UNLOCKED,
+        SESSION_ACTIVE,
+        SESSION_PENDING,
+        QUIZ_ACTIVE,
+        SCREEN_OFF,
+        NOT_ON_LOCK_SCREEN,
+        DEFAULT_PIN,
+        AUTO_MODE,
+        RESTING,
+        OUTSIDE_WINDOW,
+        NO_TIMED_APPS,
+        STATE_CHANGED,
+    }
+
+    /** Lock-screen state published to the page; [eligible] drives the single-use action. */
+    data class WebManualStartStatus(
+        val eligible: Boolean,
+        val reason: WebManualStartReason,
+        val restRemainingSeconds: Long = 0L,
+        val remainingSeconds: Long = 0L,
+    )
+
+    /** Result of the page's single-use action. A rejected PIN never starts a session. */
+    sealed interface WebManualStartResult {
+        data object Ok : WebManualStartResult
+        data object InvalidDuration : WebManualStartResult
+        data class Rejected(val reason: WebManualStartReason) : WebManualStartResult
+        data class PinInvalid(val locked: Boolean) : WebManualStartResult
     }
 
     /** Result of the one-time local-to-cloud rule handoff. */
@@ -808,6 +882,16 @@ object PolicyModeCoordinator {
     /** True for the built-in PINs the first-run dialog must reject. */
     fun isDefaultPinValue(pin: String): Boolean = PolicyRuntime.isDefaultPinValue(pin)
 
+    private fun screenInteractive(): Boolean =
+        (context?.getSystemService(Context.POWER_SERVICE) as? PowerManager)?.isInteractive ?: true
+
+    /**
+     * The lock surface is a Compose screen inside Aerial, not a system window, so the guard
+     * state says nothing about what is in front. The parent center shares the same resumed
+     * window, which is fine: it is only reachable through the parent PIN.
+     */
+    private fun lockSurfaceInFront(): Boolean = HomeGuardService.isAerialResumed()
+
     /**
      * First-run LOCAL enable: saves the chosen PIN together with the current/default rules and
      * a recovery code, then shares the PIN proof so turning the guard off does not ask again.
@@ -854,6 +938,232 @@ object PolicyModeCoordinator {
         }
         PolicyMode.LOCAL -> LocalPolicyRuntime.verifyPin(pin)
         PolicyMode.NONE -> PinResult.NOT_SET
+    }
+
+    /**
+     * Lock state for the local parent page. The page can only mirror the lock-screen PIN, so
+     * this uses the same surface rule as the TV: local mode, default guard, no running session,
+     * no study mode and a visible screen. The guard state alone does not prove the lock surface
+     * is on screen, so Aerial must also be the resumed window; another app or the stock
+     * launcher in front is not remotely unlocked. An active quiz round is rejected even though
+     * the guard is idle, because the page must never interrupt it.
+     */
+    @Synchronized
+    fun webUnlockStatus(): WebUnlockStatus {
+        if (mode != PolicyMode.LOCAL) {
+            return WebUnlockStatus(false, WebUnlockReason.NOT_LOCAL, false)
+        }
+        val ui = state.value
+        if (ui.guardState == GuardStatus.PARENT_OVERRIDE) {
+            return WebUnlockStatus(false, WebUnlockReason.ALREADY_UNLOCKED, true)
+        }
+        if (!ui.loaded) return WebUnlockStatus(false, WebUnlockReason.NOT_READY, false)
+        if (ui.setupRequired) {
+            return WebUnlockStatus(false, WebUnlockReason.SETUP_REQUIRED, false)
+        }
+        if (!ui.pinConfigured) {
+            return WebUnlockStatus(false, WebUnlockReason.PIN_NOT_SET, false)
+        }
+        if (ui.guardState == GuardStatus.STUDY_MODE) {
+            return WebUnlockStatus(false, WebUnlockReason.STUDY_MODE, false)
+        }
+        if (ui.guardState != GuardStatus.ENFORCING) {
+            return WebUnlockStatus(false, WebUnlockReason.NOT_READY, false)
+        }
+        if (ui.sessionState == SessionState.ACTIVE) {
+            return WebUnlockStatus(false, WebUnlockReason.SESSION_ACTIVE, false)
+        }
+        if (!screenInteractive()) {
+            return WebUnlockStatus(false, WebUnlockReason.SCREEN_OFF, false)
+        }
+        if (!lockSurfaceInFront()) {
+            return WebUnlockStatus(false, WebUnlockReason.NOT_ON_LOCK_SCREEN, false)
+        }
+        if (QuizRuntime.isRoundActive()) {
+            return WebUnlockStatus(false, WebUnlockReason.QUIZ_ACTIVE, false)
+        }
+        if (isDefaultPin()) {
+            return WebUnlockStatus(false, WebUnlockReason.DEFAULT_PIN, false)
+        }
+        if (!LocalPolicyRuntime.canBeginParentOverrideFromLockScreen()) {
+            return WebUnlockStatus(false, WebUnlockReason.STATE_CHANGED, false)
+        }
+        return WebUnlockStatus(true, WebUnlockReason.OK, false)
+    }
+
+    /**
+     * The page's temporary-unlock action. It intentionally does not call [submitPin]: the
+     * runtime's lock-screen-only path refuses running sessions and study mode, so the web
+     * page cannot end a timer that the TV itself would not end from the lock screen. The
+     * proof is shared only after the atomic transition succeeds.
+     */
+    @Synchronized
+    fun unlockFromWeb(pin: String): WebUnlockResult {
+        if (!LocalPin.isValid(pin)) return WebUnlockResult.PinInvalid(locked = false)
+        val before = webUnlockStatus()
+        if (!before.eligible) return WebUnlockResult.Rejected(before.reason)
+        when (verifyPin(pin)) {
+            PinResult.OK -> Unit
+            PinResult.LOCKED_OUT -> return WebUnlockResult.PinInvalid(locked = true)
+            PinResult.WRONG, PinResult.NOT_SET -> return WebUnlockResult.PinInvalid(locked = false)
+        }
+        // Defense in depth: even if the stored PIN were changed to a built-in value, the web
+        // page must not turn it into a remote unlock.
+        if (isDefaultPinValue(pin)) {
+            return WebUnlockResult.Rejected(WebUnlockReason.DEFAULT_PIN)
+        }
+        // Re-check after the (possibly slow) credential check: a session or quiz may have
+        // started, or the screen may have gone dark, while the PIN was being verified.
+        val after = webUnlockStatus()
+        if (!after.eligible) return WebUnlockResult.Rejected(after.reason)
+        if (!LocalPolicyRuntime.tryBeginParentOverrideFromLockScreen()) {
+            return WebUnlockResult.Rejected(WebUnlockReason.STATE_CHANGED)
+        }
+        parentAuth.onLockScreenPin(pin, PinResult.OK)
+        return WebUnlockResult.Ok
+    }
+
+    /**
+     * Lock state for the page's single-use action. This mirrors the lock-screen manual start,
+     * not the temporary unlock: the TV must be in manual mode, showing the lock surface, and
+     * waiting for the parent, with no rest, session, study mode or quiz in progress. The page
+     * only draws the button from this snapshot; [startManualFromWeb] repeats every check after
+     * the PIN and the runtime repeats the policy checks atomically.
+     */
+    @Synchronized
+    fun webManualStartStatus(): WebManualStartStatus {
+        if (mode != PolicyMode.LOCAL) {
+            return WebManualStartStatus(false, WebManualStartReason.NOT_LOCAL)
+        }
+        val ui = state.value
+        if (ui.guardState == GuardStatus.PARENT_OVERRIDE) {
+            return WebManualStartStatus(false, WebManualStartReason.ALREADY_UNLOCKED)
+        }
+        if (!ui.loaded) return WebManualStartStatus(false, WebManualStartReason.NOT_READY)
+        if (ui.setupRequired) {
+            return WebManualStartStatus(false, WebManualStartReason.SETUP_REQUIRED)
+        }
+        if (!ui.pinConfigured) {
+            return WebManualStartStatus(false, WebManualStartReason.PIN_NOT_SET)
+        }
+        if (ui.guardState == GuardStatus.STUDY_MODE) {
+            return WebManualStartStatus(false, WebManualStartReason.STUDY_MODE)
+        }
+        if (ui.guardState != GuardStatus.ENFORCING) {
+            return WebManualStartStatus(false, WebManualStartReason.NOT_READY)
+        }
+        if (ui.activation != Activation.MANUAL) {
+            return WebManualStartStatus(false, WebManualStartReason.AUTO_MODE)
+        }
+        if (ui.sessionState == SessionState.ACTIVE) {
+            return WebManualStartStatus(
+                eligible = false,
+                reason = WebManualStartReason.SESSION_ACTIVE,
+                remainingSeconds = ui.effectiveRemainingSeconds,
+            )
+        }
+        if (ui.sessionState == SessionState.PENDING) {
+            return WebManualStartStatus(false, WebManualStartReason.SESSION_PENDING)
+        }
+        if (ui.lockReason == LockReason.RESTING) {
+            return WebManualStartStatus(
+                eligible = false,
+                reason = WebManualStartReason.RESTING,
+                restRemainingSeconds = ui.restRemainingSeconds,
+            )
+        }
+        if (ui.lockReason == LockReason.OUTSIDE_WINDOW) {
+            return WebManualStartStatus(false, WebManualStartReason.OUTSIDE_WINDOW)
+        }
+        if (ui.noTimedApps || ui.lockReason == LockReason.NO_TIMED_APPS) {
+            return WebManualStartStatus(false, WebManualStartReason.NO_TIMED_APPS)
+        }
+        if (ui.lockReason != LockReason.MANUAL_WAITING) {
+            return WebManualStartStatus(false, WebManualStartReason.STATE_CHANGED)
+        }
+        if (!screenInteractive()) {
+            return WebManualStartStatus(false, WebManualStartReason.SCREEN_OFF)
+        }
+        if (!lockSurfaceInFront()) {
+            return WebManualStartStatus(false, WebManualStartReason.NOT_ON_LOCK_SCREEN)
+        }
+        if (QuizRuntime.isRoundActive()) {
+            return WebManualStartStatus(false, WebManualStartReason.QUIZ_ACTIVE)
+        }
+        if (isDefaultPin()) {
+            return WebManualStartStatus(false, WebManualStartReason.DEFAULT_PIN)
+        }
+        return WebManualStartStatus(true, WebManualStartReason.OK)
+    }
+
+    /**
+     * The page's single-use action. It requires the parent PIN every time; the remembered admin
+     * token only authenticates the page, never the start. The PIN is checked before and the
+     * whole state is checked again afterwards, so a session, rest, mode switch or quiz that
+     * begins during the (slow) credential check cannot be bypassed. The final start still goes
+     * through the same local manual path as the lock screen.
+     */
+    @Synchronized
+    fun startManualFromWeb(pin: String, minutes: Int): WebManualStartResult {
+        if (!ManualSessionLimits.isValid(minutes)) {
+            return WebManualStartResult.InvalidDuration
+        }
+        if (!LocalPin.isValid(pin)) {
+            return WebManualStartResult.PinInvalid(locked = false)
+        }
+        val before = webManualStartStatus()
+        if (!before.eligible) return WebManualStartResult.Rejected(before.reason)
+        when (verifyPin(pin)) {
+            PinResult.OK -> Unit
+            PinResult.LOCKED_OUT -> return WebManualStartResult.PinInvalid(locked = true)
+            PinResult.WRONG, PinResult.NOT_SET -> return WebManualStartResult.PinInvalid(locked = false)
+        }
+        if (isDefaultPinValue(pin)) {
+            return WebManualStartResult.Rejected(WebManualStartReason.DEFAULT_PIN)
+        }
+        val after = webManualStartStatus()
+        if (!after.eligible) return WebManualStartResult.Rejected(after.reason)
+        // Close the last window before the runtime's atomic admission. A quiz may have started
+        // while the PIN was being verified; the final check is still repeated by the caller's
+        // status refresh if the admission itself loses a race.
+        if (QuizRuntime.isRoundActive()) {
+            return WebManualStartResult.Rejected(WebManualStartReason.QUIZ_ACTIVE)
+        }
+        return when (val started = startLocalManualSession(
+            durationSeconds = minutes * 60L,
+            allowHostedRule = true,
+        )) {
+            SessionStartResult.Started -> {
+                publishCurrent()
+                WebManualStartResult.Ok
+            }
+            is SessionStartResult.Rejected -> {
+                publishCurrent()
+                val current = webManualStartStatus()
+                WebManualStartResult.Rejected(
+                    if (current.eligible) webManualReasonFor(started.reason) else current.reason,
+                )
+            }
+            SessionStartResult.Pending -> {
+                publishCurrent()
+                WebManualStartResult.Rejected(WebManualStartReason.STATE_CHANGED)
+            }
+        }
+    }
+
+    private fun webManualReasonFor(reason: RejectReason): WebManualStartReason = when (reason) {
+        RejectReason.GUARD_DISABLED -> WebManualStartReason.NOT_READY
+        RejectReason.HOSTED_MANUAL_REMOTE_ONLY -> WebManualStartReason.NOT_LOCAL
+        RejectReason.ACTIVATION_MISMATCH -> WebManualStartReason.AUTO_MODE
+        RejectReason.STALE_EPOCH, RejectReason.STALE_VERSION,
+        RejectReason.EXPIRED, RejectReason.INVALID_COMMAND,
+        RejectReason.INVALID_SCOPE -> WebManualStartReason.STATE_CHANGED
+        RejectReason.PARENT_OVERRIDE -> WebManualStartReason.ALREADY_UNLOCKED
+        RejectReason.BUSY -> WebManualStartReason.SESSION_ACTIVE
+        RejectReason.RESTING -> WebManualStartReason.RESTING
+        RejectReason.SCREEN_OFF -> WebManualStartReason.SCREEN_OFF
+        RejectReason.OUTSIDE_WINDOW -> WebManualStartReason.OUTSIDE_WINDOW
+        RejectReason.NO_TIMED_APPS -> WebManualStartReason.NO_TIMED_APPS
     }
 
     /**
@@ -922,9 +1232,9 @@ object PolicyModeCoordinator {
 
     /**
      * Parent-confirmed local manual start; the caller already verified the parent PIN.
-     * [allowHostedRule] is only set by the lock-screen picker: the V10 hosted rule guard
-     * accepts a local start in manual mode, while legacy boundaries (REDEEM, migration and
-     * quiz rewards) keep the old local-only behaviour.
+     * [allowHostedRule] is set by the lock-screen picker and the local parent web page: the
+     * V10 hosted rule guard accepts a local start in manual mode, while legacy boundaries
+     * (REDEEM, migration and quiz rewards) keep the old local-only behaviour.
      */
     fun startLocalManualSession(
         durationSeconds: Long,

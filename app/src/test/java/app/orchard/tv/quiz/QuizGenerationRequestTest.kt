@@ -82,7 +82,7 @@ class QuizGenerationRequestTest {
             .put("subject", "physics")
             .put("textbook", "suke")
             .put("scope", "unit")
-            .put("unit", 15)
+            .put("unit", 5)
             .put("targetCount", 20)
             .put("options", 4)
             .put("difficulty", "")
@@ -97,7 +97,7 @@ class QuizGenerationRequestTest {
                 .put("semester", 1)
                 .put("textbook", "suke")
                 .put("scopeType", "unit")
-                .put("unitNo", 15),
+                .put("unitNo", 5),
         )
         assertTrue(parsed is QuizGeneration.ParseResult.Ok)
     }

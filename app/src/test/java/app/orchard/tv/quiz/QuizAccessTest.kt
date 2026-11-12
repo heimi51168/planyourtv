@@ -1,6 +1,7 @@
 package app.orchard.tv.quiz
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -48,5 +49,20 @@ class QuizAccessTest {
         val expected = ms(2026, 11, 2, 0, 0, zone)
         assertEquals(expected, QuizAccess.nextLocalMidnight(now, zone))
         assertEquals(25L * 60 * 60 * 1000, expected - now)
+    }
+
+    @Test
+    fun sensitiveActionsShareOneFailureBudget() {
+        val now = 1_790_000_000_000L
+        QuizAccess.onSensitiveActionResult(success = true, nowMs = now)
+        repeat(4) { QuizAccess.onSensitiveActionResult(success = false, nowMs = now) }
+        assertEquals(0L, QuizAccess.sensitiveActionLockedSeconds(now))
+
+        QuizAccess.onSensitiveActionResult(success = false, nowMs = now)
+        assertTrue(QuizAccess.sensitiveActionLockedSeconds(now) > 0)
+        assertTrue(QuizAccess.sensitiveActionLockedSeconds(now + 9 * 60_000L) > 0)
+        assertEquals(0L, QuizAccess.sensitiveActionLockedSeconds(now + 10 * 60_000L))
+        QuizAccess.onSensitiveActionResult(success = true, nowMs = now + 10 * 60_000L)
+        assertEquals(0L, QuizAccess.sensitiveActionLockedSeconds(now + 10 * 60_000L))
     }
 }

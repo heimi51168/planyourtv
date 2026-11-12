@@ -882,7 +882,8 @@ internal fun PolicyCloudConsentDialog(
 /**
  * Confirms a timing-mode switch before the rule set is replaced. Switching to automatic also
  * explains that the TV quiz entry is manual-only and shows the automatic values that will take
- * effect. The safe choice is focused first, so a second OK never commits the switch.
+ * effect. A running segment or rest countdown is called out because both end immediately. The
+ * safe choice is focused first, so a second OK never commits the switch.
  */
 @Composable
 internal fun PolicyActivationConfirmDialog(
@@ -891,7 +892,8 @@ internal fun PolicyActivationConfirmDialog(
     autoDailyMinutes: Int,
     autoSessionMinutes: Int,
     autoRestMinutes: Int,
-    sessionActive: Boolean,
+    /** A running segment or an active rest interval; both end with the switch. */
+    timingActive: Boolean,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -962,7 +964,7 @@ internal fun PolicyActivationConfirmDialog(
             },
             style = Type.Body.copy(fontSize = 14.sp),
         )
-        if (sessionActive) {
+        if (timingActive) {
             Spacer(Modifier.height(8.dp))
             BasicText(
                 stringResource(R.string.policy_v6_activation_confirm_end_session),

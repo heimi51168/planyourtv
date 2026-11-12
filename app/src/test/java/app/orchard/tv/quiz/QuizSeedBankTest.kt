@@ -137,8 +137,8 @@ class QuizSeedBankTest {
     fun shippedAssetImportsCleanly() {
         val context = RuntimeEnvironment.getApplication()
 
-        assertEquals(4_900, QuizSeedBank.install(context))
-        assertEquals(4_900, QuizQuestionCache.availableCount(nowMs = now))
+        assertEquals(5_500, QuizSeedBank.install(context))
+        assertEquals(5_500, QuizQuestionCache.availableCount(nowMs = now))
         assertEquals(0, QuizSeedBank.install(context))
 
         val curriculum = requireNotNull(QuizCurriculum.current())
@@ -165,5 +165,22 @@ class QuizSeedBankTest {
             }
         }
         assertEquals(49, combinations)
+
+        for (grade in 1..6) {
+            val scope = QuizAnswerScope.create(
+                grade = grade,
+                semester = 1,
+                subject = "MATH",
+                textbook = "XINANDA",
+                scopeType = "MIDTERM",
+                unitNo = null,
+                difficulty = null,
+            )
+            assertEquals(
+                "XINANDA $grade/MATH",
+                100,
+                QuizQuestionCache.availableCount(nowMs = now, answerScope = scope),
+            )
+        }
     }
 }

@@ -1,8 +1,9 @@
 # Build from source
 
 The project is a standard Gradle Android build. It produces an Android TV app for Android 5.0
-(API 21) and newer. Public releases contain only the `standard` and `guard` flavors; Android 4.x
-and the former Lite APK are no longer supported or published.
+(API 21) and newer. Public TV releases contain only the `standard` and `guard` flavors; Android 4.x
+and the former Lite APK are no longer supported or published. The optional phone shell in `parent/`
+is a separate app with its own release.
 
 ## Requirements
 
@@ -62,9 +63,35 @@ takes over Home through accessibility instead. See [INSTALL.md](INSTALL.md).
 Release builds enable R8 shrinking and resource shrinking and run Android lint's fatal API checks.
 A debug build is noticeably slower on television hardware; use a release build for any real test.
 
+## Phone shell (optional)
+
+`parent/` is a separate application that opens the TV's local Parent Center page on an Android
+phone (Android 7.0 / API 24 and newer). It is a browser shell and a separate app, not a TV flavor.
+When published, it is an optional additional asset in the same release as the TV APKs:
+
+```bash
+./gradlew :parent:assembleDebug
+./gradlew :parent:assembleRelease
+./gradlew :parent:testDebugUnitTest
+```
+
+Outputs:
+
+```text
+parent/build/outputs/apk/debug/parent-debug.apk
+parent/build/outputs/apk/release/parent-release.apk
+```
+
+The parent release build reads `local/parent-signing.properties`, separate from the TV app's
+`local/signing.properties`. Without it, a local release build falls back to the debug key and is not
+suitable for distribution. Official builds must use a stable parent-only key. The official optional
+build is served from `https://planyourtv.me/download/planyourtv-parent.apk`; see
+[PARENT-APP.md](PARENT-APP.md) for pairing, supported browser behavior, and limitations.
+
 ## Signing
 
-The release build reads `local/signing.properties` when it exists:
+The TV app's release build reads `local/signing.properties` when it exists. The optional parent app
+uses its own `local/parent-signing.properties`; see [PARENT-APP.md](PARENT-APP.md).
 
 ```properties
 storeFile=planyourtv-release.jks
@@ -106,7 +133,7 @@ The version follows the Aerial base version:
 
 - `versionCode = Aerial versionCode * 1000 + productRevision`
 - `versionName = "<Aerial version>.<productRevision padded to 3>"`
-- The community baseline is `1.93.000` / `131000`, based on Aerial 1.93 / 131.
+- The community baseline is `1.93.002` / `131002`, based on Aerial 1.93 / 131.
 
 When rebasing on a newer Aerial release, update the Aerial version in `app/build.gradle.kts` and
 reset the revision to 0. For each later product release, increase the revision by one. Never reuse
@@ -127,9 +154,9 @@ An official-style build can opt in at compile time:
 ./gradlew :app:assembleStandardRelease -PtvApiBase=https://example.invalid/api/v1
 ```
 
-The hosted service, parent app and device protocol are not part of this repository and are not
-documented for self-hosting. Setting `-PtvApiBase` to an arbitrary server is not a supported
-deployment path.
+The hosted service, the hosted parent app (which is separate from the local phone shell in
+`parent/`) and the device protocol are not part of this repository and are not documented for
+self-hosting. Setting `-PtvApiBase` to an arbitrary server is not a supported deployment path.
 
 MQTT is an optional part of hosted mode and is not needed for a community build. Its properties
 are empty by default.

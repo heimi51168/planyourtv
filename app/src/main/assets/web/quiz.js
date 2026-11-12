@@ -4,8 +4,8 @@
   const TEXTS = {
     zh: {
       eyebrow: "家长设置 · 局域网",
-      title: "答题挑战",
-      securityNote: "本页只配置答题挑战，不能解锁电视、关闭守护或修改系统设置。",
+      title: "家长网页",
+      securityNote: "本页可配置题库与 AI 出题；仅在电视实际锁屏时，输入家长密码才能临时解锁；手动模式下还可开启一次计时。它不能结束计时、退出学习模式或修改守护与系统设置。",
       status_loading: "正在连接电视…",
       status_none: "电视上还没有挑战",
       status_draft: "草稿已保存",
@@ -28,7 +28,7 @@
       gate_scan_title: "请从电视扫码",
       gate_scan_text: "打开电视锁屏上的「开始挑战答题」，用手机扫描电视上的专用二维码。",
       gate_pair_title: "家长验证",
-      gate_pair_text: "请输入电视上的 6 位家长密码。验证后当天内再次打开无需输入；次日 0 点后需要重新验证。网页不能解锁电视。",
+      gate_pair_text: "请输入电视上的 6 位家长密码。验证后当天内再次打开无需输入；次日 0 点后需要重新验证。临时解锁只作用于电视锁屏。",
       gate_pair_expired: "二维码已过期，请在电视上刷新后重新扫码。",
       gate_in_use_badge: "使用中",
       gate_in_use_heading: "另一台手机正在使用",
@@ -154,6 +154,7 @@
       tbSujiao: "苏教版",
       tbBeishida: "北师大版",
       tbQingdao: "青岛版",
+      tbXinanda: "西南大学版",
       tbPep: "人教版（PEP）",
       tbWaiyan: "外研社版",
       tbYilin: "译林版",
@@ -303,12 +304,12 @@
       err_SESSION_RUNNING: "答题进行中，暂不能操作缓存。",
       err_NOT_READY: "当前挑战还没有发布，无法重建缓存。",
       err_INVALID_CONFIG: "挑战规则不符合要求。",
-      footer: "答题挑战只在电视上开始和结算；手机不能远程解锁。",
+      footer: "答题挑战只在电视上开始和结算；临时解锁仅在电视锁屏时可用，关屏或重启后恢复守护。",
     },
     en: {
       eyebrow: "Parent setup · Local network",
-      title: "Quiz challenge",
-      securityNote: "This page only configures the quiz. It cannot unlock the TV, disable the guard, or change system settings.",
+      title: "Parent web page",
+      securityNote: "This page configures the question bank and AI generation. Only while the TV is actually on its lock screen can the parent password temporarily unlock it; in manual mode it can also start one timed session. It cannot end a timer, leave study mode, or change the guard or system settings.",
       status_loading: "Connecting to the TV…",
       status_none: "No challenge on the TV",
       status_draft: "Draft saved",
@@ -331,7 +332,7 @@
       gate_scan_title: "Scan from the TV",
       gate_scan_text: "Open “Start quiz challenge” on the TV lock screen and scan its dedicated QR code.",
       gate_pair_title: "Parent verification",
-      gate_pair_text: "Enter the 6-digit parent password shown on the TV. Reopening the page is password-free for the rest of the day; after local midnight it asks again. This page cannot unlock the TV.",
+      gate_pair_text: "Enter the 6-digit parent password shown on the TV. After verification, this phone can reopen the page without a PIN until local midnight. The temporary unlock only applies on the TV lock screen.",
       gate_pair_expired: "The QR code expired. Refresh it on the TV and scan again.",
       gate_in_use_badge: "In use",
       gate_in_use_heading: "Another phone is in use",
@@ -457,6 +458,7 @@
       tbSujiao: "Sujiao edition",
       tbBeishida: "BNU edition",
       tbQingdao: "Qingdao edition",
+      tbXinanda: "SWU edition",
       tbPep: "PEP edition",
       tbWaiyan: "FLTRP edition",
       tbYilin: "Yilin edition",
@@ -606,12 +608,12 @@
       err_SESSION_RUNNING: "A quiz is in progress; the cache cannot be changed now.",
       err_NOT_READY: "The challenge is not published yet, so it cannot rebuild the cache.",
       err_INVALID_CONFIG: "The challenge rules are not valid.",
-      footer: "Challenges start and settle on the TV only; the phone cannot unlock it remotely.",
+      footer: "Quizzes start and settle on the TV only; temporary unlock is available only on the TV lock screen and ends when the screen turns off or the TV restarts.",
     },
     ru: {
       eyebrow: "Настройка родителей · Локальная сеть",
-      title: "Викторина",
-      securityNote: "Страница настраивает только викторину. Она не разблокирует телевизор и не меняет защиту.",
+      title: "Веб-страница для родителей",
+      securityNote: "Здесь настраиваются банк вопросов и генерация ИИ. Только когда телевизор действительно на экране блокировки, пароль родителя позволяет временно разблокировать его; в ручном режиме также можно запустить один сеанс. Страница не завершает таймер, не выходит из режима учёбы и не меняет защиту или системные настройки.",
       status_loading: "Подключение к телевизору…",
       status_none: "На телевизоре нет викторины",
       status_draft: "Черновик сохранён",
@@ -634,7 +636,7 @@
       gate_scan_title: "Сканируйте с телевизора",
       gate_scan_text: "Откройте «Начать викторину» на экране блокировки и отсканируйте специальный QR-код.",
       gate_pair_title: "Проверка родителя",
-      gate_pair_text: "Введите 6-значный пароль родителя с телевизора. В течение дня страница открывается без пароля; после местной полуночи потребуется ввести его снова. Страница не разблокирует телевизор.",
+      gate_pair_text: "Введите 6-значный пароль родителя с телевизора. После проверки страница открывается без пароля до местной полуночи. Временная разблокировка действует только на экране блокировки телевизора.",
       gate_pair_expired: "QR-код устарел. Обновите его на телевизоре и отсканируйте снова.",
       gate_in_use_badge: "Используется",
       gate_in_use_heading: "Другой телефон сейчас использует настройки",
@@ -760,6 +762,7 @@
       tbSujiao: "Субань",
       tbBeishida: "Бэйшида",
       tbQingdao: "Циндао",
+      tbXinanda: "Синанда",
       tbPep: "PEP",
       tbWaiyan: "Вайянь",
       tbYilin: "Илинь",
@@ -909,12 +912,12 @@
       err_SESSION_RUNNING: "Викторина идёт; сейчас кэш менять нельзя.",
       err_NOT_READY: "Задание ещё не опубликовано, поэтому кэш нельзя пересобрать.",
       err_INVALID_CONFIG: "Правила викторины неверны.",
-      footer: "Викторина начинается и завершается только на телевизоре.",
+      footer: "Викторина начинается и завершается только на телевизоре; временная разблокировка доступна только на экране блокировки и снимается при выключении экрана или перезапуске.",
     },
     uk: {
       eyebrow: "Налаштування батьків · Локальна мережа",
-      title: "Вікторина",
-      securityNote: "Сторінка налаштовує лише вікторину. Вона не розблоковує телевізор і не змінює захист.",
+      title: "Вебсторінка для батьків",
+      securityNote: "Тут налаштовуються банк питань і генерація ШІ. Лише коли телевізор справді на екрані блокування, пароль батьків дозволяє тимчасово розблокувати його; у ручному режимі також можна запустити один сеанс. Сторінка не завершує таймер, не виходить із режиму навчання й не змінює захист чи системні налаштування.",
       status_loading: "Підключення до телевізора…",
       status_none: "На телевізорі немає вікторини",
       status_draft: "Чернетку збережено",
@@ -937,7 +940,7 @@
       gate_scan_title: "Скануйте з телевізора",
       gate_scan_text: "Відкрийте «Почати вікторину» на екрані блокування й відскануйте спеціальний QR-код.",
       gate_pair_title: "Перевірка батьків",
-      gate_pair_text: "Введіть 6-значний пароль батьків із телевізора. Протягом дня сторінка відкривається без пароля; після місцевої півночі його треба ввести знову. Сторінка не розблоковує телевізор.",
+      gate_pair_text: "Введіть 6-значний пароль батьків із телевізора. Після перевірки сторінка відкривається без пароля до місцевої півночі. Тимчасове розблокування діє лише на екрані блокування телевізора.",
       gate_pair_expired: "QR-код застарів. Оновіть його на телевізорі й відскануйте знову.",
       gate_in_use_badge: "Використовується",
       gate_in_use_heading: "Інший телефон зараз використовує налаштування",
@@ -1063,6 +1066,7 @@
       tbSujiao: "Субань",
       tbBeishida: "Бейшіда",
       tbQingdao: "Циндао",
+      tbXinanda: "Сінанда",
       tbPep: "PEP",
       tbWaiyan: "Вайянь",
       tbYilin: "Ілінь",
@@ -1212,12 +1216,12 @@
       err_SESSION_RUNNING: "Вікторина триває; зараз кеш змінювати не можна.",
       err_NOT_READY: "Завдання ще не опубліковано, тому кеш не можна перебудувати.",
       err_INVALID_CONFIG: "Правила вікторини некоректні.",
-      footer: "Вікторина починається й завершується лише на телевізорі.",
+      footer: "Вікторина починається й завершується лише на телевізорі; тимчасове розблокування доступне лише на екрані блокування й знімається після вимкнення екрана або перезапуску.",
     },
     kk: {
       eyebrow: "Ата-ана баптауы · Жергілікті желі",
-      title: "Викторина",
-      securityNote: "Бұл бет тек викторинаны баптайды. Теледидарды ашпайды және қорғанысты өзгертпейді.",
+      title: "Ата-анаға арналған веб-бет",
+      securityNote: "Мұнда сұрақтар банкі мен ЖИ генерациясы бапталады. Тек теледидар шынымен құлыптау экранында болғанда ғана ата-ана құпиясөзі оны уақытша аша алады; қолмен режимінде бір сеансты да бастауға болады. Бет таймерді аяқтамайды, оқу режимінен шықпайды және қорғанысты немесе жүйелік баптауларды өзгертпейді.",
       status_loading: "Теледидарға қосылу…",
       status_none: "Теледидарда викторина жоқ",
       status_draft: "Жоба сақталды",
@@ -1240,7 +1244,7 @@
       gate_scan_title: "Теледидардан сканерлеңіз",
       gate_scan_text: "Құлыптау экранында «Викторинаны бастау» ашып, арнайы QR-кодты сканерлеңіз.",
       gate_pair_title: "Ата-ананы растау",
-      gate_pair_text: "Теледидардағы 6 таңбалы ата-ана құпиясөзін енгізіңіз. Күн ішінде бет құпиясөзсіз ашылады; жергілікті түн ортасынан кейін оны қайта енгізу керек. Бет теледидарды ашпайды.",
+      gate_pair_text: "Теледидардағы 6 таңбалы ата-ана құпиясөзін енгізіңіз. Тексеруден кейін бет жергілікті түн ортасына дейін құпиясөзсіз ашылады. Уақытша ашу тек теледидар құлыптау экранында әрекет етеді.",
       gate_pair_expired: "QR-код ескірді. Теледидарда жаңартып, қайта сканерлеңіз.",
       gate_in_use_badge: "Қолданылуда",
       gate_in_use_heading: "Басқа телефон қазір баптауды қолданып тұр",
@@ -1366,6 +1370,7 @@
       tbSujiao: "Субань",
       tbBeishida: "Бэйшида",
       tbQingdao: "Циндао",
+      tbXinanda: "Синанда",
       tbPep: "PEP",
       tbWaiyan: "Вайянь",
       tbYilin: "Илинь",
@@ -1515,7 +1520,7 @@
       err_SESSION_RUNNING: "Викторина жүріп жатыр; кэшті қазір өзгертуге болмайды.",
       err_NOT_READY: "Тапсырма әлі жарияланбаған, сондықтан кэшті қайта құруға болмайды.",
       err_INVALID_CONFIG: "Викторина ережелері дұрыс емес.",
-      footer: "Викторина тек теледидарда басталады және есептеледі.",
+      footer: "Викторина тек теледидарда басталады және есептеледі; уақытша ашу тек құлыптау экранында қолжетімді және экран өшкенде немесе теледидар қайта іске қосылғанда жойылады.",
     },
   };
 
@@ -3599,6 +3604,264 @@ Material to organize:
     },
   };
 
+  const V23_TEXTS = {
+    zh: {
+      title: "家长网页",
+      securityNote: "本页可配置题库与 AI 出题；仅在电视实际锁屏时，输入家长密码才能临时解锁；手动模式下还可开启一次计时。它不能结束计时、退出学习模式或修改守护与系统设置。",
+      gate_pair_text: "请输入电视上的 6 位家长密码。验证后当天内再次打开无需输入；次日 0 点后需要重新验证。临时解锁只作用于电视锁屏。",
+      footer: "答题挑战只在电视上开始和结算；临时解锁仅在电视锁屏时可用，关屏或重启后恢复守护。",
+      unlockTitle: "临时解锁",
+      unlockLead: "仅在电视锁屏时可用。输入家长密码后，电视临时解锁；关屏或重启电视即恢复守护。",
+      unlockAction: "临时解锁电视",
+      lockActionsLabel: "锁屏操作",
+      manualTitle: "开启单次使用",
+      manualLead: "仅在手动模式和电视锁屏时可用。时长和密码在这里填写，计时由电视开始和执行。",
+      manualDurationLabel: "本次时长",
+      manualDurationUnit: "分钟",
+      manualDecrease: "减少 5 分钟",
+      manualIncrease: "增加 5 分钟",
+      manualAction: "输入密码并开始",
+      manualDialogTitle: "开启单次使用",
+      manualDialogLead: "电视将立即开始 {minutes} 分钟计时。请输入家长密码；密码不会保存在手机上。",
+      manualSubmit: "确认开始",
+      manualReason_OK: "电视已锁屏，可以开启一次手动计时。",
+      manualReason_ALREADY_UNLOCKED: "电视已临时解锁，不能开始计时。",
+      manualReason_SESSION_ACTIVE: "电视正在计时，不能重复开始。",
+      manualReason_SESSION_PENDING: "电视正在等待确认一次计时，不能重复开始。",
+      manualReason_AUTO_MODE: "电视当前是自动模式，单次使用只在手动模式可用。",
+      manualReason_RESTING: "电视正在休息，稍后再试。",
+      manualReason_OUTSIDE_WINDOW: "当前不在允许使用的时段。",
+      manualReason_NO_TIMED_APPS: "电视还没有设置可计时的应用。",
+      manualRestWait: "电视正在休息，约 {minutes} 分钟后可以开始。",
+      manualSessionActive: "电视正在计时，剩余约 {minutes} 分钟。",
+      manualError_INVALID_DURATION: "时长不正确，请重新选择。",
+      unlockDialogTitle: "输入家长密码",
+      unlockDialogLead: "密码只用于本次解锁，不会保存在手机上。",
+      unlockPinLabel: "家长密码",
+      unlockSubmit: "确认解锁",
+      unlockChecking: "正在读取电视状态…",
+      unlockReason_OK: "电视已锁屏，可以临时解锁。",
+      unlockReason_ALREADY_UNLOCKED: "电视已临时解锁。关屏或重启电视后恢复守护。",
+      unlockReason_SESSION_ACTIVE: "电视正在计时，不能临时解锁。",
+      unlockReason_STUDY_MODE: "电视在学习模式，不能临时解锁。",
+      unlockReason_QUIZ_ACTIVE: "答题正在进行，不能临时解锁。",
+      unlockReason_SCREEN_OFF: "电视屏幕已关闭，请先打开电视。",
+      unlockReason_NOT_ON_LOCK_SCREEN: "电视当前不在锁屏界面，请在电视上返回锁屏后再试。",
+      unlockReason_SETUP_REQUIRED: "电视还没完成儿童模式设置。",
+      unlockReason_PIN_NOT_SET: "电视还没有设置家长密码。",
+      unlockReason_DEFAULT_PIN: "请先在电视上修改初始密码。",
+      unlockReason_NOT_LOCAL: "只有本地模式的电视支持家长网页。",
+      unlockReason_NOT_READY: "电视状态同步中，请稍后再试。",
+      unlockReason_STATE_CHANGED: "电视状态已变化，请稍后再试。",
+      unlockReason_OFFLINE: "无法连接电视，请确认手机和电视在同一局域网。",
+      unlockPinLength: "请输入 6 位家长密码。",
+    },
+    en: {
+      title: "Parent web page",
+      securityNote: "This page configures the question bank and AI generation. Only while the TV is actually on its lock screen can the parent password temporarily unlock it; in manual mode it can also start one timed session. It cannot end a timer, leave study mode, or change the guard or system settings.",
+      gate_pair_text: "Enter the 6-digit parent password shown on the TV. After verification, this phone can reopen the page without a PIN until local midnight. The temporary unlock only applies on the TV lock screen.",
+      footer: "Quizzes start and settle on the TV only; temporary unlock is available only on the TV lock screen and ends when the screen turns off or the TV restarts.",
+      unlockTitle: "Temporary unlock",
+      unlockLead: "Available only while the TV is on its lock screen. Enter the parent password to unlock the TV temporarily; turning the TV screen off or restarting it restores the guard.",
+      unlockAction: "Unlock TV temporarily",
+      lockActionsLabel: "Lock-screen actions",
+      manualTitle: "Start one session",
+      manualLead: "Available only in manual mode while the TV is on its lock screen. Choose the duration and enter the password here; the TV starts and runs the timer.",
+      manualDurationLabel: "Session length",
+      manualDurationUnit: "minutes",
+      manualDecrease: "Decrease by 5 minutes",
+      manualIncrease: "Increase by 5 minutes",
+      manualAction: "Enter password and start",
+      manualDialogTitle: "Start one session",
+      manualDialogLead: "The TV will start a {minutes}-minute timer immediately. Enter the parent password; it is not saved on the phone.",
+      manualSubmit: "Start timer",
+      manualReason_OK: "The TV is locked and ready for one manual session.",
+      manualReason_ALREADY_UNLOCKED: "The TV is temporarily unlocked. A timed session cannot start.",
+      manualReason_SESSION_ACTIVE: "The TV timer is already running.",
+      manualReason_SESSION_PENDING: "The TV is waiting to confirm a session. Try again shortly.",
+      manualReason_AUTO_MODE: "The TV is in automatic mode. One session is available only in manual mode.",
+      manualReason_RESTING: "The TV is resting. Try again later.",
+      manualReason_OUTSIDE_WINDOW: "The current time is outside the allowed window.",
+      manualReason_NO_TIMED_APPS: "No timed apps are configured on the TV.",
+      manualRestWait: "The TV is resting; a session can start in about {minutes} minutes.",
+      manualSessionActive: "The TV timer is running with about {minutes} minutes left.",
+      manualError_INVALID_DURATION: "That duration is not valid. Choose another.",
+      unlockDialogTitle: "Enter the parent password",
+      unlockDialogLead: "The password is used only for this unlock and is not saved on the phone.",
+      unlockPinLabel: "Parent password",
+      unlockSubmit: "Unlock",
+      unlockChecking: "Reading TV status…",
+      unlockReason_OK: "The TV is locked and can be unlocked temporarily.",
+      unlockReason_ALREADY_UNLOCKED: "The TV is temporarily unlocked. Turn the screen off or restart the TV to restore the guard.",
+      unlockReason_SESSION_ACTIVE: "The TV timer is running. Temporary unlock is unavailable.",
+      unlockReason_STUDY_MODE: "The TV is in study mode. Temporary unlock is unavailable.",
+      unlockReason_QUIZ_ACTIVE: "A quiz is in progress. Temporary unlock is unavailable.",
+      unlockReason_SCREEN_OFF: "The TV screen is off. Turn the TV on first.",
+      unlockReason_NOT_ON_LOCK_SCREEN: "The TV is not on the lock screen right now. Return to the lock screen on the TV and try again.",
+      unlockReason_SETUP_REQUIRED: "Kids mode setup is not complete on the TV.",
+      unlockReason_PIN_NOT_SET: "No parent password is set on the TV.",
+      unlockReason_DEFAULT_PIN: "Change the default parent password on the TV first.",
+      unlockReason_NOT_LOCAL: "The parent web page is only available on a TV in local mode.",
+      unlockReason_NOT_READY: "TV status is still syncing. Try again shortly.",
+      unlockReason_STATE_CHANGED: "The TV state changed. Try again.",
+      unlockReason_OFFLINE: "Cannot reach the TV. Check that the phone and TV are on the same LAN.",
+      unlockPinLength: "Enter the 6-digit parent password.",
+    },
+    ru: {
+      title: "Веб-страница для родителей",
+      securityNote: "Здесь настраиваются банк вопросов и генерация ИИ. Только когда телевизор действительно на экране блокировки, пароль родителя позволяет временно разблокировать его; в ручном режиме также можно запустить один сеанс. Страница не завершает таймер, не выходит из режима учёбы и не меняет защиту или системные настройки.",
+      gate_pair_text: "Введите 6-значный пароль родителя с телевизора. После проверки страница открывается без пароля до местной полуночи. Временная разблокировка действует только на экране блокировки телевизора.",
+      footer: "Викторина начинается и завершается только на телевизоре; временная разблокировка доступна только на экране блокировки и снимается при выключении экрана или перезапуске.",
+      unlockTitle: "Временная разблокировка",
+      unlockLead: "Доступно только когда телевизор на экране блокировки. Введите пароль родителя, чтобы временно разблокировать телевизор; выключение экрана или перезапуск вернут защиту.",
+      unlockAction: "Временно разблокировать телевизор",
+      lockActionsLabel: "Действия на экране блокировки",
+      manualTitle: "Запустить один сеанс",
+      manualLead: "Доступно только в ручном режиме и когда телевизор на экране блокировки. Выберите длительность и введите пароль здесь; таймер запускает и ведёт телевизор.",
+      manualDurationLabel: "Длительность",
+      manualDurationUnit: "минут",
+      manualDecrease: "Уменьшить на 5 минут",
+      manualIncrease: "Увеличить на 5 минут",
+      manualAction: "Ввести пароль и начать",
+      manualDialogTitle: "Запуск одного сеанса",
+      manualDialogLead: "Телевизор сразу запустит таймер на {minutes} мин. Введите пароль родителя; на телефоне он не сохраняется.",
+      manualSubmit: "Запустить таймер",
+      manualReason_OK: "Телевизор заблокирован; можно запустить один ручной сеанс.",
+      manualReason_ALREADY_UNLOCKED: "Телевизор временно разблокирован. Запустить таймер нельзя.",
+      manualReason_SESSION_ACTIVE: "Таймер на телевизоре уже идёт.",
+      manualReason_SESSION_PENDING: "Телевизор ждёт подтверждения сеанса. Повторите позже.",
+      manualReason_AUTO_MODE: "Телевизор в автоматическом режиме. Один сеанс доступен только в ручном режиме.",
+      manualReason_RESTING: "Телевизор отдыхает. Повторите позже.",
+      manualReason_OUTSIDE_WINDOW: "Сейчас время вне разрешённого интервала.",
+      manualReason_NO_TIMED_APPS: "На телевизоре не выбраны приложения для таймера.",
+      manualRestWait: "Телевизор отдыхает; сеанс можно начать примерно через {minutes} мин.",
+      manualSessionActive: "Таймер идёт, осталось около {minutes} мин.",
+      manualError_INVALID_DURATION: "Недопустимая длительность. Выберите другую.",
+      unlockDialogTitle: "Введите пароль родителя",
+      unlockDialogLead: "Пароль используется только для этой разблокировки и не сохраняется на телефоне.",
+      unlockPinLabel: "Пароль родителя",
+      unlockSubmit: "Разблокировать",
+      unlockChecking: "Читаем состояние телевизора…",
+      unlockReason_OK: "Телевизор заблокирован; можно временно разблокировать.",
+      unlockReason_ALREADY_UNLOCKED: "Телевизор временно разблокирован. Выключите экран или перезапустите телевизор, чтобы вернуть защиту.",
+      unlockReason_SESSION_ACTIVE: "На телевизоре идёт таймер. Временная разблокировка недоступна.",
+      unlockReason_STUDY_MODE: "Телевизор в режиме учёбы. Временная разблокировка недоступна.",
+      unlockReason_QUIZ_ACTIVE: "Идёт викторина. Временная разблокировка недоступна.",
+      unlockReason_SCREEN_OFF: "Экран телевизора выключен. Сначала включите телевизор.",
+      unlockReason_NOT_ON_LOCK_SCREEN: "Сейчас на телевизоре не показан экран блокировки. Вернитесь к экрану блокировки на телевизоре и повторите.",
+      unlockReason_SETUP_REQUIRED: "Настройка детского режима на телевизоре не завершена.",
+      unlockReason_PIN_NOT_SET: "На телевизоре не задан пароль родителя.",
+      unlockReason_DEFAULT_PIN: "Сначала смените начальный пароль на телевизоре.",
+      unlockReason_NOT_LOCAL: "Веб-страница родителей доступна только в локальном режиме.",
+      unlockReason_NOT_READY: "Состояние телевизора ещё синхронизируется. Повторите позже.",
+      unlockReason_STATE_CHANGED: "Состояние телевизора изменилось. Повторите.",
+      unlockReason_OFFLINE: "Нет связи с телевизором. Убедитесь, что телефон и телевизор в одной локальной сети.",
+      unlockPinLength: "Введите 6-значный пароль родителя.",
+    },
+    uk: {
+      title: "Веб-сторінка для батьків",
+      securityNote: "Тут налаштовуються банк питань і генерація ШІ. Лише коли телевізор справді на екрані блокування, пароль батьків дозволяє тимчасово розблокувати його; у ручному режимі також можна запустити один сеанс. Сторінка не завершує таймер, не виходить із режиму навчання й не змінює захист чи системні налаштування.",
+      gate_pair_text: "Введіть 6-значний пароль батьків із телевізора. Після перевірки сторінка відкривається без пароля до місцевої півночі. Тимчасове розблокування діє лише на екрані блокування телевізора.",
+      footer: "Вікторина починається й завершується лише на телевізорі; тимчасове розблокування доступне лише на екрані блокування і знімається після вимкнення екрана або перезапуску.",
+      unlockTitle: "Тимчасове розблокування",
+      unlockLead: "Доступне лише коли телевізор на екрані блокування. Введіть пароль батьків, щоб тимчасово розблокувати телевізор; вимкнення екрана або перезапуск повернуть захист.",
+      unlockAction: "Тимчасово розблокувати телевізор",
+      lockActionsLabel: "Дії на екрані блокування",
+      manualTitle: "Запустити один сеанс",
+      manualLead: "Доступно лише в ручному режимі й коли телевізор на екрані блокування. Виберіть тривалість і введіть пароль тут; таймер запускає й веде телевізор.",
+      manualDurationLabel: "Тривалість",
+      manualDurationUnit: "хвилин",
+      manualDecrease: "Зменшити на 5 хвилин",
+      manualIncrease: "Збільшити на 5 хвилин",
+      manualAction: "Ввести пароль і почати",
+      manualDialogTitle: "Запуск одного сеансу",
+      manualDialogLead: "Телевізор одразу запустить таймер на {minutes} хв. Введіть пароль батьків; на телефоні він не зберігається.",
+      manualSubmit: "Запустити таймер",
+      manualReason_OK: "Телевізор заблокований; можна запустити один ручний сеанс.",
+      manualReason_ALREADY_UNLOCKED: "Телевізор тимчасово розблокований. Запустити таймер не можна.",
+      manualReason_SESSION_ACTIVE: "Таймер на телевізорі вже працює.",
+      manualReason_SESSION_PENDING: "Телевізор чекає підтвердження сеансу. Спробуйте пізніше.",
+      manualReason_AUTO_MODE: "Телевізор в автоматичному режимі. Один сеанс доступний лише в ручному режимі.",
+      manualReason_RESTING: "Телевізор відпочиває. Спробуйте пізніше.",
+      manualReason_OUTSIDE_WINDOW: "Зараз час поза дозволеним інтервалом.",
+      manualReason_NO_TIMED_APPS: "На телевізорі не вибрано застосунки для таймера.",
+      manualRestWait: "Телевізор відпочиває; сеанс можна почати приблизно через {minutes} хв.",
+      manualSessionActive: "Таймер працює, лишилося близько {minutes} хв.",
+      manualError_INVALID_DURATION: "Неприпустима тривалість. Виберіть іншу.",
+      unlockDialogTitle: "Введіть пароль батьків",
+      unlockDialogLead: "Пароль використовується лише для цього розблокування і не зберігається на телефоні.",
+      unlockPinLabel: "Пароль батьків",
+      unlockSubmit: "Розблокувати",
+      unlockChecking: "Читаємо стан телевізора…",
+      unlockReason_OK: "Телевізор заблокований; можна тимчасово розблокувати.",
+      unlockReason_ALREADY_UNLOCKED: "Телевізор тимчасово розблокований. Вимкніть екран або перезапустіть телевізор, щоб повернути захист.",
+      unlockReason_SESSION_ACTIVE: "На телевізорі йде таймер. Тимчасове розблокування недоступне.",
+      unlockReason_STUDY_MODE: "Телевізор у режимі навчання. Тимчасове розблокування недоступне.",
+      unlockReason_QUIZ_ACTIVE: "Триває вікторина. Тимчасове розблокування недоступне.",
+      unlockReason_SCREEN_OFF: "Екран телевізора вимкнено. Спершу увімкніть телевізор.",
+      unlockReason_NOT_ON_LOCK_SCREEN: "Зараз на телевізорі не показано екран блокування. Поверніться до екрана блокування на телевізорі та повторіть спробу.",
+      unlockReason_SETUP_REQUIRED: "Налаштування дитячого режиму на телевізорі не завершено.",
+      unlockReason_PIN_NOT_SET: "На телевізорі не задано пароль батьків.",
+      unlockReason_DEFAULT_PIN: "Спершу змініть початковий пароль на телевізорі.",
+      unlockReason_NOT_LOCAL: "Веб-сторінка батьків доступна лише в локальному режимі.",
+      unlockReason_NOT_READY: "Стан телевізора ще синхронізується. Спробуйте пізніше.",
+      unlockReason_STATE_CHANGED: "Стан телевізора змінився. Спробуйте ще раз.",
+      unlockReason_OFFLINE: "Немає зв'язку з телевізором. Перевірте, що телефон і телевізор в одній локальній мережі.",
+      unlockPinLength: "Введіть 6-значний пароль батьків.",
+    },
+    kk: {
+      title: "Ата-аналарға арналған веб-бет",
+      securityNote: "Мұнда сұрақтар банкі мен ЖИ генерациясы бапталады. Тек теледидар шынымен құлыптау экранында болғанда ғана ата-ана құпиясөзі оны уақытша аша алады; қолмен режимінде бір сеансты да бастауға болады. Бет таймерді аяқтамайды, оқу режимінен шықпайды және қорғанысты немесе жүйелік баптауларды өзгертпейді.",
+      gate_pair_text: "Теледидардағы 6 таңбалы ата-ана құпиясөзін енгізіңіз. Тексеруден кейін бет жергілікті түн ортасына дейін құпиясөзсіз ашылады. Уақытша ашу тек теледидар құлыптау экранында әрекет етеді.",
+      footer: "Викторина тек теледидарда басталады және есептеледі; уақытша ашу тек құлыптау экранында қолжетімді және экран өшкенде немесе теледидар қайта іске қосылғанда жойылады.",
+      unlockTitle: "Уақытша ашу",
+      unlockLead: "Тек теледидар құлыптау экранында қолжетімді. Ата-ана құпиясөзін енгізіп, теледидарды уақытша ашыңыз; экранды өшірсеңіз немесе теледидарды қайта іске қоссаңыз, қорғаныс қайтады.",
+      unlockAction: "Теледидарды уақытша ашу",
+      lockActionsLabel: "Құлыптау экранындағы әрекеттер",
+      manualTitle: "Бір сеансты бастау",
+      manualLead: "Тек қолмен режимінде және теледидар құлыптау экранында болғанда қолжетімді. Ұзақтықты таңдап, құпиясөзді осында енгізіңіз; таймерді теледидар бастайды және жүргізеді.",
+      manualDurationLabel: "Ұзақтығы",
+      manualDurationUnit: "минут",
+      manualDecrease: "5 минутқа азайту",
+      manualIncrease: "5 минутқа қосу",
+      manualAction: "Құпиясөзді енгізіп бастау",
+      manualDialogTitle: "Бір сеансты бастау",
+      manualDialogLead: "Теледидар бірден {minutes} минуттық таймерді бастайды. Ата-ана құпиясөзін енгізіңіз; ол телефонда сақталмайды.",
+      manualSubmit: "Таймерді бастау",
+      manualReason_OK: "Теледидар құлыптаулы; бір қолмен сеансын бастауға болады.",
+      manualReason_ALREADY_UNLOCKED: "Теледидар уақытша ашық. Таймерді бастауға болмайды.",
+      manualReason_SESSION_ACTIVE: "Теледидарда таймер әлдеқашан жүріп жатыр.",
+      manualReason_SESSION_PENDING: "Теледидар сеансты растауды күтіп тұр. Сәл кейінірек қайталаңыз.",
+      manualReason_AUTO_MODE: "Теледидар автоматты режимде. Бір сеанс тек қолмен режимінде қолжетімді.",
+      manualReason_RESTING: "Теледидар демалып тұр. Кейінірек қайталаңыз.",
+      manualReason_OUTSIDE_WINDOW: "Қазір рұқсат етілген уақыт аралығынан тыс.",
+      manualReason_NO_TIMED_APPS: "Теледидарда таймерге арналған қолданбалар таңдалмаған.",
+      manualRestWait: "Теледидар демалып тұр; сеансты шамамен {minutes} минуттан кейін бастауға болады.",
+      manualSessionActive: "Таймер жүріп жатыр, шамамен {minutes} минут қалды.",
+      manualError_INVALID_DURATION: "Ұзақтық жарамсыз. Басқа мәнді таңдаңыз.",
+      unlockDialogTitle: "Ата-ана құпиясөзін енгізіңіз",
+      unlockDialogLead: "Құпиясөз тек осы ашу үшін пайдаланылады және телефонда сақталмайды.",
+      unlockPinLabel: "Ата-ана құпиясөзі",
+      unlockSubmit: "Ашу",
+      unlockChecking: "Теледидар күйі оқылып жатыр…",
+      unlockReason_OK: "Теледидар құлыптаулы; уақытша ашуға болады.",
+      unlockReason_ALREADY_UNLOCKED: "Теледидар уақытша ашылды. Қорғанысты қайтару үшін экранды өшіріңіз немесе теледидарды қайта іске қосыңыз.",
+      unlockReason_SESSION_ACTIVE: "Теледидарда таймер жүріп жатыр. Уақытша ашу қолжетімсіз.",
+      unlockReason_STUDY_MODE: "Теледидар оқу режимінде. Уақытша ашу қолжетімсіз.",
+      unlockReason_QUIZ_ACTIVE: "Викторина жүріп жатыр. Уақытша ашу қолжетімсіз.",
+      unlockReason_SCREEN_OFF: "Теледидар экраны өшіп тұр. Алдымен теледидарды қосыңыз.",
+      unlockReason_NOT_ON_LOCK_SCREEN: "Қазір теледидарда құлыптау экраны көрсетілмей тұр. Теледидарда құлыптау экранына оралып, қайталап көріңіз.",
+      unlockReason_SETUP_REQUIRED: "Теледидарда балалар режимінің баптауы аяқталмаған.",
+      unlockReason_PIN_NOT_SET: "Теледидарда ата-ана құпиясөзі орнатылмаған.",
+      unlockReason_DEFAULT_PIN: "Алдымен теледидарда бастапқы құпиясөзді өзгертіңіз.",
+      unlockReason_NOT_LOCAL: "Ата-аналарға арналған веб-бет тек жергілікті режимде қолжетімді.",
+      unlockReason_NOT_READY: "Теледидар күйі әлі синхрондалып жатыр. Сәл кейінірек қайталаңыз.",
+      unlockReason_STATE_CHANGED: "Теледидар күйі өзгерді. Қайталап көріңіз.",
+      unlockReason_OFFLINE: "Теледидармен байланыс жоқ. Телефон мен теледидардың бір жергілікті желіде екенін тексеріңіз.",
+      unlockPinLength: "6 таңбалы ата-ана құпиясөзін енгізіңіз.",
+    },
+  };
+
   const LANGS = ["zh", "en", "ru", "uk", "kk"];
   for (const code of LANGS) {
     Object.assign(
@@ -3608,6 +3871,7 @@ Material to organize:
       V20_TEXTS[code],
       V21_TEXTS[code],
       V22_TEXTS[code],
+      V23_TEXTS[code],
     );
   }
 
@@ -3694,6 +3958,7 @@ Material to organize:
     sujiao: "tbSujiao",
     beishida: "tbBeishida",
     qingdao: "tbQingdao",
+    xinanda: "tbXinanda",
     pep: "tbPep",
     waiyan: "tbWaiyan",
     yilin: "tbYilin",
@@ -3703,7 +3968,7 @@ Material to organize:
   };
   let TEXTBOOKS = {
     chinese: ["bubian"],
-    math: ["renjiao", "beishida", "sujiao", "qingdao"],
+    math: ["renjiao", "beishida", "sujiao", "qingdao", "xinanda"],
     english: ["pep", "waiyan", "yilin"],
     science: ["kejiao", "sujiao", "renjiao_ej"],
     all: ["general", "all"],
@@ -3794,6 +4059,16 @@ Material to organize:
   let forceTakeover = false;
   let gateShown = false;
   let gateOccupied = false;
+  // The TV's lock-screen eligibility, refreshed by the 3s heartbeat. null means
+  // "not read yet"; the action stays disabled until the TV answers.
+  let unlockState = null;
+  let unlockBusy = false;
+  // A one-shot manual session started from this page. The TV owns the timer;
+  // this state only mirrors the TV's lock-screen eligibility and limits.
+  let manualState = null;
+  let manualBusy = false;
+  let manualMinutes = 20;
+  let manualMinutesTouched = false;
   let publicState = null;
   let adminSession = null;
   let challengeConfig = null;
@@ -3952,12 +4227,28 @@ Material to organize:
 
   function heartbeat() {
     if (!adminToken) return;
-    api("/api/quiz/admin/heartbeat", { admin: true }).catch(() => {});
+    api("/api/quiz/admin/heartbeat", { admin: true })
+      .then((data) => {
+        applyUnlockState(data && data.lock);
+        applyManualState(data && data.manualStart);
+      })
+      .catch((error) => {
+        if (error && error.code === "LOCAL_ONLY") {
+          applyUnlockState({ eligible: false, reason: "NOT_LOCAL", unlocked: false });
+          applyManualState({ eligible: false, reason: "NOT_LOCAL" });
+        } else if (error && error.code !== "ADMIN_EXPIRED" && error.code !== "ADMIN_REQUIRED") {
+          applyUnlockState({ eligible: false, reason: "OFFLINE", unlocked: false });
+          applyManualState({ eligible: false, reason: "OFFLINE" });
+        }
+      });
   }
 
   function startHeartbeat() {
     stopHeartbeat();
     if (!adminToken) return;
+    // Fetch once immediately: the "me" tab should not show "checking" for a
+    // full heartbeat interval after the editor opens.
+    heartbeat();
     heartbeatTimer = setInterval(() => {
       // WeChat keeps background pages alive on some versions; an explicit
       // visible check is what stops a forgotten page from holding the slot.
@@ -4084,17 +4375,31 @@ Material to organize:
 
   function fallbackCurriculum() {
     const numbers = [1, 2, 3, 4, 5, 6];
-    const subjects = SCOPE_SUBJECTS.map((id) => ({
-      id,
-      labels: {},
-      aliases: [],
-      options: [{
-        minGrade: 1,
-        maxGrade: 6,
-        defaultTextbook: DEFAULT_TEXTBOOK[id] || "general",
-        textbooks: (TEXTBOOKS[id] || ["general"]).slice(),
-      }],
-    }));
+    const subjects = SCOPE_SUBJECTS.map((id) => {
+      const textbooks = (TEXTBOOKS[id] || ["general"]).slice();
+      const options = id === "english"
+        ? [
+            {
+              minGrade: 1,
+              maxGrade: 2,
+              defaultTextbook: DEFAULT_TEXTBOOK[id] || "general",
+              textbooks: textbooks.filter((textbook) => textbook !== "yilin"),
+            },
+            {
+              minGrade: 3,
+              maxGrade: 6,
+              defaultTextbook: DEFAULT_TEXTBOOK[id] || "general",
+              textbooks,
+            },
+          ]
+        : [{
+            minGrade: 1,
+            maxGrade: 6,
+            defaultTextbook: DEFAULT_TEXTBOOK[id] || "general",
+            textbooks,
+          }];
+      return { id, labels: {}, aliases: [], options };
+    });
     return {
       stages: [{ id: "primary", minGrade: 1, maxGrade: 6, unitMax: 8, labels: {} }],
       grades: numbers.map((no) => ({ no, stage: "primary", labels: {} })),
@@ -4489,6 +4794,234 @@ Material to organize:
     applyI18n();
   }
 
+  function applyUnlockState(lock) {
+    unlockState = lock && typeof lock === "object"
+      ? {
+        eligible: Boolean(lock.eligible),
+        reason: String(lock.reason || ""),
+        unlocked: Boolean(lock.unlocked),
+      }
+      : null;
+    renderUnlockState();
+  }
+
+  function unlockReasonText(reason) {
+    const key = "unlockReason_" + (reason || "NOT_READY");
+    const value = t(key);
+    return value === key ? t("unlockReason_NOT_READY") : value;
+  }
+
+  function renderUnlockState() {
+    if (!$("unlockAction")) return;
+    const state = unlockState;
+    let text = t("unlockChecking");
+    if (state) {
+      text = state.unlocked
+        ? unlockReasonText("ALREADY_UNLOCKED")
+        : unlockReasonText(state.reason);
+    }
+    $("unlockState").textContent = text;
+    $("unlockState").classList.toggle("ok", Boolean(state && (state.eligible || state.unlocked)));
+    $("unlockAction").disabled = !state || !state.eligible || unlockBusy;
+    $("unlockAction").classList.toggle("hidden", Boolean(state && state.unlocked));
+  }
+
+  function openUnlockDialog() {
+    if (!unlockState || !unlockState.eligible) return;
+    $("unlockError").textContent = "";
+    $("unlockPin").value = "";
+    openModal("unlockDialog");
+    setTimeout(() => {
+      if (activeModal === "unlockDialog") $("unlockPin").focus();
+    }, 50);
+  }
+
+  async function submitUnlock(event) {
+    event.preventDefault();
+    if (unlockBusy) return;
+    const pin = $("unlockPin").value.trim();
+    if (!/^\d{6}$/.test(pin)) {
+      $("unlockError").textContent = t("unlockPinLength");
+      return;
+    }
+    unlockBusy = true;
+    $("unlockError").textContent = "";
+    $("unlockSubmit").disabled = true;
+    renderUnlockState();
+    try {
+      const data = await api("/api/quiz/admin/unlock", {
+        method: "POST",
+        admin: true,
+        body: { pin },
+      });
+      applyUnlockState(data && data.lock);
+      closeModal();
+    } catch (error) {
+      const lock = error.data && error.data.lock;
+      if (lock) applyUnlockState(lock);
+      const key = "unlockReason_" + (error.code || "");
+      const reasonText = t(key);
+      $("unlockError").textContent = reasonText === key
+        ? errorText(error)
+        : reasonText;
+      setTimeout(() => {
+        if (activeModal === "unlockDialog") $("unlockPin").focus();
+      }, 50);
+    } finally {
+      unlockBusy = false;
+      $("unlockSubmit").disabled = false;
+      $("unlockPin").value = "";
+      renderUnlockState();
+    }
+  }
+
+  // Both page actions share the same PIN limiter on the TV, but they mirror
+  // different eligibility states: temporary unlock versus a timed manual start.
+  const MANUAL_SHARED_REASON_KEYS = {
+    NOT_LOCAL: "unlockReason_NOT_LOCAL",
+    LOCAL_ONLY: "unlockReason_NOT_LOCAL",
+    NOT_READY: "unlockReason_NOT_READY",
+    SETUP_REQUIRED: "unlockReason_SETUP_REQUIRED",
+    PIN_NOT_SET: "unlockReason_PIN_NOT_SET",
+    STUDY_MODE: "unlockReason_STUDY_MODE",
+    QUIZ_ACTIVE: "unlockReason_QUIZ_ACTIVE",
+    SCREEN_OFF: "unlockReason_SCREEN_OFF",
+    NOT_ON_LOCK_SCREEN: "unlockReason_NOT_ON_LOCK_SCREEN",
+    DEFAULT_PIN: "unlockReason_DEFAULT_PIN",
+    STATE_CHANGED: "unlockReason_STATE_CHANGED",
+    OFFLINE: "unlockReason_OFFLINE",
+  };
+
+  function clampManualMinutes(value, state) {
+    const min = state ? state.minMinutes : 5;
+    const max = state ? Math.max(min, state.maxMinutes) : 120;
+    const step = state ? state.stepMinutes : 5;
+    const stepped = Math.round((Number(value) || min) / step) * step;
+    return Math.min(max, Math.max(min, stepped));
+  }
+
+  function applyManualState(manual) {
+    manualState = manual && typeof manual === "object"
+      ? {
+        eligible: Boolean(manual.eligible),
+        reason: String(manual.reason || ""),
+        minMinutes: Math.max(1, Number(manual.minMinutes) || 5),
+        maxMinutes: Math.max(1, Number(manual.maxMinutes) || 120),
+        stepMinutes: Math.max(1, Number(manual.stepMinutes) || 5),
+        defaultMinutes: Math.max(1, Number(manual.defaultMinutes) || 20),
+        restRemainingSeconds: Math.max(0, Number(manual.restRemainingSeconds) || 0),
+        remainingSeconds: Math.max(0, Number(manual.remainingSeconds) || 0),
+      }
+      : null;
+    if (manualState) {
+      manualMinutes = clampManualMinutes(
+        manualMinutesTouched ? manualMinutes : manualState.defaultMinutes,
+        manualState,
+      );
+    }
+    renderManualState();
+  }
+
+  function manualReasonText(reason) {
+    if (reason === "SESSION_ACTIVE" && manualState && manualState.remainingSeconds > 0) {
+      return t("manualSessionActive", {
+        minutes: Math.max(1, Math.ceil(manualState.remainingSeconds / 60)),
+      });
+    }
+    if (reason === "RESTING" && manualState && manualState.restRemainingSeconds > 0) {
+      return t("manualRestWait", {
+        minutes: Math.max(1, Math.ceil(manualState.restRemainingSeconds / 60)),
+      });
+    }
+    const shared = MANUAL_SHARED_REASON_KEYS[reason];
+    if (shared) return t(shared);
+    const key = "manualReason_" + (reason || "NOT_READY");
+    const value = t(key);
+    return value === key ? t("unlockReason_STATE_CHANGED") : value;
+  }
+
+  function renderManualState() {
+    if (!$("manualAction")) return;
+    const state = manualState;
+    const text = state ? manualReasonText(state.reason) : t("manualChecking");
+    $("manualState").textContent = text;
+    $("manualState").classList.toggle("ok", Boolean(state && state.reason === "OK"));
+    $("manualAction").disabled = !state || !state.eligible || manualBusy;
+    $("manualMinutes").textContent = String(manualMinutes);
+    if (activeModal === "manualDialog") {
+      $("manualDialogLead").textContent = t("manualDialogLead", { minutes: manualMinutes });
+    }
+    const min = state ? state.minMinutes : manualMinutes;
+    const max = state ? state.maxMinutes : manualMinutes;
+    $("manualMinus").disabled = !state || manualBusy || manualMinutes <= min;
+    $("manualPlus").disabled = !state || manualBusy || manualMinutes >= max;
+  }
+
+  function adjustManualMinutes(delta) {
+    if (!manualState || manualBusy) return;
+    manualMinutesTouched = true;
+    manualMinutes = clampManualMinutes(
+      manualMinutes + delta * manualState.stepMinutes,
+      manualState,
+    );
+    renderManualState();
+  }
+
+  function openManualDialog() {
+    if (!manualState || !manualState.eligible || manualBusy) return;
+    $("manualError").textContent = "";
+    $("manualPin").value = "";
+    $("manualDialogLead").textContent = t("manualDialogLead", { minutes: manualMinutes });
+    openModal("manualDialog");
+    setTimeout(() => {
+      if (activeModal === "manualDialog") $("manualPin").focus();
+    }, 50);
+  }
+
+  async function submitManualStart(event) {
+    event.preventDefault();
+    if (manualBusy || !manualState || !manualState.eligible) return;
+    const pin = $("manualPin").value.trim();
+    if (!/^\d{6}$/.test(pin)) {
+      $("manualError").textContent = t("unlockPinLength");
+      return;
+    }
+    manualBusy = true;
+    $("manualError").textContent = "";
+    $("manualSubmit").disabled = true;
+    renderManualState();
+    try {
+      const data = await api("/api/quiz/admin/manual/start", {
+        method: "POST",
+        admin: true,
+        body: { pin, minutes: manualMinutes },
+      });
+      applyManualState(data && data.manualStart);
+      closeModal();
+    } catch (error) {
+      const manual = error.data && error.data.manualStart;
+      if (manual) applyManualState(manual);
+      const shared = MANUAL_SHARED_REASON_KEYS[error.code];
+      if (shared) {
+        $("manualError").textContent = t(shared);
+      } else if (error.code === "INVALID_DURATION") {
+        $("manualError").textContent = t("manualError_INVALID_DURATION");
+      } else {
+        const key = "manualReason_" + (error.code || "");
+        const value = t(key);
+        $("manualError").textContent = value === key ? errorText(error) : value;
+      }
+      setTimeout(() => {
+        if (activeModal === "manualDialog") $("manualPin").focus();
+      }, 50);
+    } finally {
+      manualBusy = false;
+      $("manualSubmit").disabled = false;
+      $("manualPin").value = "";
+      renderManualState();
+    }
+  }
+
   function applyI18n() {
     document.documentElement.lang = lang;
     document.title = t("title");
@@ -4526,6 +5059,11 @@ Material to organize:
     renderBank();
     renderCustomLevels();
     renderBankImport();
+    renderUnlockState();
+    renderManualState();
+    if (activeModal === "manualDialog") {
+      $("manualDialogLead").textContent = t("manualDialogLead", { minutes: manualMinutes });
+    }
     if (genPage === "answer") renderAnswerPage();
     if (genPage === "level") renderLevelEditor();
     if (genPage === "customLevel") renderCustomLevelEditor();
@@ -6520,6 +7058,12 @@ Material to organize:
     $("editor").classList.add("hidden");
     $("bottomNav").classList.add("hidden");
     gateShown = true;
+    unlockState = null;
+    unlockBusy = false;
+    manualState = null;
+    manualBusy = false;
+    manualMinutes = 20;
+    manualMinutesTouched = false;
     setGate("gate_pair_title", "gate_pair_text", true);
     renderGateOccupation();
   }
@@ -6590,6 +7134,9 @@ Material to organize:
       loadBank(true);
     } else if (tab === "me") {
       refreshSync();
+      // Refresh the lock state on entry so the action reflects the TV now,
+      // not the last heartbeat from another tab.
+      heartbeat();
     }
     window.scrollTo({ top: 0 });
   }
@@ -9640,6 +10187,15 @@ Material to organize:
     $("syncUseRemote").addEventListener("click", useRemoteConfig);
     $("meAi").addEventListener("click", () => openProviderDialog(false));
     $("mePrivacy").addEventListener("click", () => openModal("privacyInfoDialog"));
+    $("unlockAction").addEventListener("click", openUnlockDialog);
+    $("unlockForm").addEventListener("submit", submitUnlock);
+    $("manualMinus").addEventListener("click", () => adjustManualMinutes(-1));
+    $("manualPlus").addEventListener("click", () => adjustManualMinutes(1));
+    $("manualAction").addEventListener("click", openManualDialog);
+    $("manualForm").addEventListener("submit", submitManualStart);
+    $("unlockPin").addEventListener("input", () => {
+      $("unlockPin").value = $("unlockPin").value.replace(/\D/g, "").slice(0, 6);
+    });
     $("logout").addEventListener("click", logout);
     $("acceptConsent").addEventListener("click", acceptConsent);
     $("declineConsent").addEventListener("click", logout);

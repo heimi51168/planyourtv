@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PlanYourTV Parent</string>
+    <string name="pair_title">Connect to your TV</string>
+    <string name="pair_intro">Open Parent Center on the TV and scan the QR code shown there. The address is remembered, so you only scan once.</string>
+    <string name="pair_scan">Scan TV QR code</string>
+    <string name="pair_manual_toggle">Can\'t scan? Enter the address manually</string>
+    <string name="pair_url_hint">192.0.2.10:8790/abcd2345/quiz</string>
+    <string name="pair_connect">Connect</string>
+    <string name="pair_note">The phone and the TV must be on the same Wi-Fi network. This app opens the Parent Center page served by your TV; it has no account or cloud service of its own.</string>
+    <string name="pair_invalid_url">Enter the complete address from the TV\'s QR code: IP, port and the code after it.</string>
+    <string name="scan_failed">The scanner could not start. Try again.</string>
+    <string name="camera_permission_hint">Allow camera access to scan the QR code on the TV.</string>
+    <string name="camera_blocked_title">Camera permission needed</string>
+    <string name="camera_blocked_message">Allow camera access in Settings to scan the TV QR code. You can still enter the address manually.</string>
+    <string name="open_settings">Open settings</string>
+    <string name="menu_refresh">Refresh</string>
+    <string name="menu_open_browser">Open in browser</string>
+    <string name="menu_repair">Scan a different TV</string>
+    <string name="repair_title">Scan a different TV?</string>
+    <string name="repair_message">The saved address will be replaced. The Parent Center session on the TV is not affected.</string>
+    <string name="repair_confirm">Scan again</string>
+    <string name="repair_cancel">Cancel</string>
+    <string name="loading">Loading Parent Center…</string>
+    <string name="error_title">Can\'t reach the TV</string>
+    <string name="error_message">%1$s\n\nCheck that the phone and the TV are on the same Wi-Fi network and that Parent Center is open on the TV.</string>
+    <string name="error_http">The TV refused the request (HTTP %1$d).</string>
+    <string name="error_local_only">The TV is not in local mode. Open Parent Center on the TV first.</string>
+    <string name="error_tls">The TV\'s certificate is not trusted.</string>
+    <string name="error_unknown">Unknown network error.</string>
+    <string name="error_retry">Retry</string>
+    <string name="error_repair">Scan another TV</string>
+    <string name="scan_prompt">Point the camera at the QR code on the TV</string>
+    <string name="saved">Download saved.</string>
+    <string name="save_failed">Could not save the download.</string>
+    <string name="download_unsupported">This download cannot be opened here. Try the browser from the menu.</string>
+    <string name="file_too_large">The file is too large to save here.</string>
+    <string name="external_unavailable">No browser is available to open this link.</string>
+</resources>

@@ -7,8 +7,9 @@ package com.planyourtv.policy
  * entry can start again.
  *
  * A parent takeover is the exception: the parent is about to use the TV, so the child's rest
- * does not begin. Mode switches and midnight/window rollovers are bookkeeping ends, and a spent
- * daily quota already locks the child on its own.
+ * does not begin. A mode switch is also a bookkeeping end: the caller stops the old mode's rest
+ * cursor instead of carrying it into the new mode. Midnight/window rollovers add no rest, and a
+ * spent daily quota already locks the child on its own.
  */
 object LocalRestPolicy {
     fun restSeconds(

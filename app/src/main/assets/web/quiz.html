@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="color-scheme" content="light dark">
-  <title>答题挑战</title>
+  <title>家长网页</title>
   <link rel="stylesheet" href="quiz.css">
 </head>
 <body>
@@ -660,6 +660,23 @@
       <section id="view-me" class="view hidden">
         <section class="card">
           <h2 data-i18n="tabMe"></h2>
+          <p class="section-label lock-actions-label" data-i18n="lockActionsLabel"></p>
+          <div class="settings-list lock-action-list">
+            <button id="unlockAction" class="setting-row lock-action-row" type="button">
+              <span class="setting-main">
+                <span data-i18n="unlockTitle"></span>
+                <span id="unlockState" class="setting-value" role="status" aria-live="polite"></span>
+              </span>
+              <span class="chevron" aria-hidden="true">›</span>
+            </button>
+            <button id="manualAction" class="setting-row lock-action-row" type="button">
+              <span class="setting-main">
+                <span data-i18n="manualTitle"></span>
+                <span id="manualState" class="setting-value" role="status" aria-live="polite"></span>
+              </span>
+              <span class="chevron" aria-hidden="true">›</span>
+            </button>
+          </div>
           <div class="settings-list">
             <button id="meAi" class="setting-row" type="button">
               <span class="setting-main">
@@ -772,6 +789,57 @@
         <button id="acceptConsent" class="btn primary" type="button" data-i18n="acceptAndContinue"></button>
         <button id="declineConsent" class="btn text" type="button" data-i18n="exit"></button>
       </div>
+    </section>
+
+    <section id="unlockDialog" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="unlockDialogTitle">
+      <div class="modal-head">
+        <h2 id="unlockDialogTitle" data-i18n="unlockDialogTitle"></h2>
+        <button class="icon-btn close" type="button" data-close-modal data-i18n-aria="close">×</button>
+      </div>
+      <p class="muted" data-i18n="unlockDialogLead"></p>
+      <form id="unlockForm">
+        <label class="field">
+          <span class="field-label" data-i18n="unlockPinLabel"></span>
+          <input id="unlockPin" type="password" inputmode="numeric" autocomplete="off"
+                 maxlength="6" pattern="[0-9]{6}" placeholder="••••••">
+        </label>
+        <p id="unlockError" class="error" role="alert"></p>
+        <div class="modal-actions">
+          <button class="btn text" type="button" data-close-modal data-i18n="cancel"></button>
+          <button id="unlockSubmit" class="btn primary" type="submit" data-i18n="unlockSubmit"></button>
+        </div>
+      </form>
+    </section>
+
+    <section id="manualDialog" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="manualDialogTitle">
+      <div class="modal-head">
+        <h2 id="manualDialogTitle" data-i18n="manualDialogTitle"></h2>
+        <button class="icon-btn close" type="button" data-close-modal data-i18n-aria="close">×</button>
+      </div>
+      <p id="manualDialogLead" class="muted"></p>
+      <form id="manualForm">
+        <div class="manual-duration">
+          <span class="field-label" data-i18n="manualDurationLabel"></span>
+          <div class="manual-stepper" role="group" data-i18n-aria="manualDurationLabel">
+            <button id="manualMinus" class="icon-btn" type="button"
+                    data-i18n-aria="manualDecrease" disabled>−</button>
+            <output id="manualMinutes" for="manualMinus manualPlus" aria-live="polite">20</output>
+            <button id="manualPlus" class="icon-btn" type="button"
+                    data-i18n-aria="manualIncrease" disabled>+</button>
+          </div>
+          <span class="hint" data-i18n="manualDurationUnit"></span>
+        </div>
+        <label class="field">
+          <span class="field-label" data-i18n="unlockPinLabel"></span>
+          <input id="manualPin" type="password" inputmode="numeric" autocomplete="off"
+                 maxlength="6" pattern="[0-9]{6}" placeholder="••••••">
+        </label>
+        <p id="manualError" class="error" role="alert"></p>
+        <div class="modal-actions">
+          <button class="btn text" type="button" data-close-modal data-i18n="cancel"></button>
+          <button id="manualSubmit" class="btn primary" type="submit" data-i18n="manualSubmit"></button>
+        </div>
+      </form>
     </section>
 
     <section id="providerDialog" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="providerTitle">
