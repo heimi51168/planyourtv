@@ -6,8 +6,6 @@
 }
 -keep class app.orchard.tv.parent.MainActivity$ShellBridge { *; }
 
-# ZXing embedded is referenced from its own manifest (CaptureActivity) and its
-# camera code uses reflection on some older devices.
--keep class com.journeyapps.barcodescanner.** { *; }
+# ZXing core selects readers reflectively in some code paths; keep it intact.
 -keep class com.google.zxing.** { *; }
 -dontwarn com.google.zxing.**

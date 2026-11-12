@@ -38,8 +38,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import app.orchard.tv.parent.databinding.ActivityMainBinding
-import com.journeyapps.barcodescanner.ScanContract
-import com.journeyapps.barcodescanner.ScanOptions
 
 /**
  * A browser shell around the Parent Center page served by the TV.
@@ -90,10 +88,12 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-    private val scanQr = registerForActivityResult(ScanContract()) { result ->
-        val contents = result.contents
-        if (!contents.isNullOrBlank()) connect(contents)
-    }
+    private val scanQr =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode != Activity.RESULT_OK) return@registerForActivityResult
+            val contents = result.data?.getStringExtra(QrScannerActivity.EXTRA_RESULT)
+            if (!contents.isNullOrBlank()) connect(contents)
+        }
 
     private val backCallback = object : OnBackPressedCallback(true) {
         override fun handleOnBackPressed() {
@@ -172,15 +172,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun launchScanner() {
-        val options = ScanOptions().apply {
-            setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-            setPrompt(getString(R.string.scan_prompt))
-            setBeepEnabled(false)
-            setOrientationLocked(false)
-            setBarcodeImageEnabled(false)
-        }
         try {
-            scanQr.launch(options)
+            scanQr.launch(Intent(this, QrScannerActivity::class.java))
         } catch (e: Exception) {
             toast(R.string.scan_failed)
         }

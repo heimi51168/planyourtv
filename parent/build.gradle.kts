@@ -21,8 +21,8 @@ android {
         targetSdk = 34
         // The shell is versioned independently from the TV app: the web page and
         // the TV server define the contract, not the APK version.
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 3
+        versionName = "1.0.2"
     }
 
     buildFeatures {
@@ -74,10 +74,15 @@ kotlin {
 }
 
 dependencies {
-    // AppCompat keeps the shell usable on Android 7-9 phones; ZXing embedded
-    // owns the camera preview and the QR decoder. No network or analytics SDK.
+    // AppCompat keeps the shell usable on Android 7-9 phones. CameraX owns the
+    // camera preview and analysis with the Camera2 stack; ZXing core only turns
+    // a luminance frame into text. zxing-android-embedded is deliberately gone:
+    // its Camera1 pipeline focused poorly on current phones (Android 16, vivo
+    // V2309A), where the same QR scans instantly in the browser.
     implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    implementation("androidx.camera:camera-camera2:1.4.2")
+    implementation("androidx.camera:camera-lifecycle:1.4.2")
+    implementation("androidx.camera:camera-view:1.4.2")
     implementation("com.google.zxing:core:3.5.3")
     testImplementation("junit:junit:4.13.2")
 }

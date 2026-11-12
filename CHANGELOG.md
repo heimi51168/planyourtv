@@ -3,6 +3,19 @@
 This changelog covers the community source snapshot. Official hosted builds may ship different
 artifacts with the same upstream Aerial base.
 
+## [1.93.005] - 2026-11-12
+
+Parent app scanner update, based on Aerial 1.93 / versionCode 131. Version code `131005`. There
+are no TV behavior changes in this release.
+
+### Fixed
+
+- The optional parent app now captures QR codes with CameraX (Camera2) and keeps ZXing only as
+  the decoder. The previous zxing-android-embedded 4.3.0 capture path used the legacy Camera1
+  API, which focused poorly on some current Android phones: the TV QR code was only recognized
+  intermittently even though the same code scanned instantly in a browser. Parent app version
+  `1.0.2` / `3`.
+
 ## [1.93.003] - 2026-11-12
 
 Quiz configuration, all-subject question mix and Parent Center update, based on Aerial 1.93 /

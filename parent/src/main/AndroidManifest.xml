@@ -24,6 +24,13 @@
         <!-- The TV serves the page over plain HTTP on the LAN. Cleartext is
              limited to the paired origin by the WebView's navigation policy. -->
         <activity
+            android:name=".QrScannerActivity"
+            android:exported="false"
+            android:screenOrientation="sensorLandscape"
+            android:theme="@style/Theme.PlanYourTV.Parent"
+            android:windowSoftInputMode="stateAlwaysHidden" />
+
+        <activity
             android:name=".MainActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden"
             android:exported="true"
