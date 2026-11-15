@@ -87,9 +87,11 @@ is pushed automatically once per local day after 21:00 (`BotDailyReport.AUTO_PUS
 
 The quiz-earned daily cap is enforced in the quiz path itself, not only in chat:
 `QuizEarnedStore` keeps one counter per local day, `QuizChallenge.closeFeedback` clamps a local
-round's earned minutes to the remaining allowance (so the child's report matches the grant), and
-`completeReview` records only after the reward session actually started. `今日`, `规则` and the
-settled-round push all surface the running total.
+round's earned minutes to the remaining allowance, and `completeReview` records only after the
+reward session actually started — since v1.97, for the granted amount: V29 admission clips any
+local start to the daily quota remaining, so `加时` reports the minutes that really started and
+the ledger records `min(report, granted)`. The two ceilings nest consistently: quiz cap ≤ daily
+quota. `今日`, `规则` and the settled-round push all surface the running total.
 
 ## Open items / follow-ups
 
