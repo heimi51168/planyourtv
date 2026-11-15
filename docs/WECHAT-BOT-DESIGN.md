@@ -95,15 +95,20 @@ quota. `今日`, `规则` and the settled-round push all surface the running tot
 
 ## Open items / follow-ups
 
-- Field names of the QR-status response are lenient (`status`/`qrcode_status`/`state`); tighten
-  once verified against the live backend.
-- The QR payload rendered on TV is the `qrcode` value (the poll key); if the live backend expects
-  `qrcode_img_content` instead, switch `PolicyWeChatPane` to that string.
+Live-verified 2026-11-15 on a real device (Xiaomi TV, first bind + chat round-trip):
+- ✅ QR payload: `qrcode_img_content` is the scannable `liteapp.weixin.qq.com` link; `qrcode` is
+  only the poll key.
+- ✅ getupdates success carries msgs/cursor with NO `ret` field; missing ret = success.
+- ⏳ Proactive push before the parent's first message remains queue-then-flush (untested live;
+  the first inbound message delivered the welcome as designed).
+
+Still open:
+- QR-status response field name stays lenient (`status`/`qrcode_status`/`state`); it worked
+  end to end, so only tighten this if a backend change breaks it.
 - Nickname at bind time: the protocol response has no display name, so bindings default to
   家长N; renaming is not in the UI yet (`BotBindingStore.rename` exists).
-- 今日答题累计 counter (for the push text and a possible daily quiz-earnings cap) is not wired.
-- Quiz config single-field tweaks (「设置 每轮题数10」) and rule edits stay web/TV-only in v1 by
-  the agreed scope; add a chat surface later if parents ask.
+- Quiz config single-field tweaks and rule edits stay web/TV-only in v1 by the agreed scope;
+  add a chat surface later if parents ask.
 - `BotRuntime.shutdown()` cancels its scope for good — tests only; production never restarts
   the process in place.
 - No voice input (v1 is text-only; the AI provider has no ASR).
