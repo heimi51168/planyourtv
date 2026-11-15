@@ -23,10 +23,14 @@
 
         <!-- The TV serves the page over plain HTTP on the LAN. Cleartext is
              limited to the paired origin by the WebView's navigation policy. -->
+        <!-- The scanner follows the phone's rotation. It handles the
+             configuration change itself so rotating while aiming does not
+             restart the camera; the activity updates the CameraX target
+             rotation for the analysis stream instead. -->
         <activity
             android:name=".QrScannerActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
             android:exported="false"
-            android:screenOrientation="sensorLandscape"
             android:theme="@style/Theme.PlanYourTV.Parent"
             android:windowSoftInputMode="stateAlwaysHidden" />
 

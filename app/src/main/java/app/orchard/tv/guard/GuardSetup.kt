@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.database.ContentObserver
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -69,7 +70,13 @@ object GuardSetup {
     private const val KEY_HOME_IN_FRONT_BOOT = "home_in_front_boot"
     private const val KEY_STOCK_HOME_AT = "stock_home_at"
     private const val KEY_STOCK_HOME_BOOT = "stock_home_boot"
+    private const val KEY_HOME_IN_FRONT_BOOT_ID = "home_in_front_boot_id"
+    private const val KEY_STOCK_HOME_BOOT_ID = "stock_home_boot_id"
     private const val KEY_INSTALLER_OPENED = "installer_opened_at"
+    private const val KEY_STOCK_VISIT_AT = "stock_visit_at"
+    private const val KEY_STOCK_VISIT_UNTIL = "stock_visit_until"
+    private const val KEY_STOCK_VISIT_BOOT = "stock_visit_boot"
+    private const val KEY_STOCK_VISIT_BOOT_ID = "stock_visit_boot_id"
     private const val KEY_SCREENSAVER_SWITCHED_OFF = "screensaver_switched_off"
     private const val KEY_SCREENSAVER_ENABLED = "screensaver_enabled"
     private const val KEY_OFF_IN_STANDBY = "guard_off_in_standby"
@@ -145,7 +152,24 @@ object GuardSetup {
     fun setHomeInFront(context: Context, inFront: Boolean) =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_HOME_IN_FRONT, inFront)
             .putLong(KEY_HOME_IN_FRONT_AT, SystemClock.elapsedRealtime())
-            .putLong(KEY_HOME_IN_FRONT_BOOT, System.currentTimeMillis() - SystemClock.elapsedRealtime()).apply()
+            .putLong(KEY_HOME_IN_FRONT_BOOT, System.currentTimeMillis() - SystemClock.elapsedRealtime())
+            .putString(KEY_HOME_IN_FRONT_BOOT_ID, app.orchard.tv.system.BootOpen.BOOT_ID).apply()
+
+    /**
+     * Whether a time saved as [at] (elapsed) was in this boot: by the kernel's boot id where both
+     * have one, else by the wall clock. TVs with no clock battery set the clock from the network a
+     * while into the boot, and a note written before that read as another boot: on Coocaa 5S21
+     * (Android 5.1) the guard, revived after Aerial was stopped in an app, no longer knew Aerial had
+     * left its Home and pulled it over the app (issue #1430). BootOpen went by the boot id already.
+     */
+    private fun thisBoot(prefs: android.content.SharedPreferences, at: Long, stampKey: String, idKey: String): Boolean {
+        if (at !in 0..SystemClock.elapsedRealtime()) return false
+        val id = prefs.getString(idKey, null)
+        val now = app.orchard.tv.system.BootOpen.BOOT_ID
+        if (id != null && now != null) return id == now
+        val bootNow = System.currentTimeMillis() - SystemClock.elapsedRealtime()
+        return kotlin.math.abs(prefs.getLong(stampKey, 0L) - bootNow) <= 2 * 60 * 1000L
+    }
 
     /**
      * [wasHomeInFront], when it was written in this boot; null when it was not (a power-on, or a
@@ -155,10 +179,16 @@ object GuardSetup {
     fun homeInFrontThisBoot(context: Context): Boolean? {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val at = prefs.getLong(KEY_HOME_IN_FRONT_AT, -1L)
-        val boot = prefs.getLong(KEY_HOME_IN_FRONT_BOOT, 0L)
-        val bootNow = System.currentTimeMillis() - SystemClock.elapsedRealtime()
-        if (at !in 0..SystemClock.elapsedRealtime() || kotlin.math.abs(boot - bootNow) > 2 * 60 * 1000L) return null
+        if (!thisBoot(prefs, at, KEY_HOME_IN_FRONT_BOOT, KEY_HOME_IN_FRONT_BOOT_ID)) return null
         return prefs.getBoolean(KEY_HOME_IN_FRONT, false)
+    }
+
+    /** When, in this boot, Aerial's home screen last left the front; null if it is in front or not known. */
+    fun homeLeftAt(context: Context): Long? {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val at = prefs.getLong(KEY_HOME_IN_FRONT_AT, -1L)
+        if (!thisBoot(prefs, at, KEY_HOME_IN_FRONT_BOOT, KEY_HOME_IN_FRONT_BOOT_ID) || prefs.getBoolean(KEY_HOME_IN_FRONT, false)) return null
+        return at
     }
 
     /**
@@ -168,7 +198,42 @@ object GuardSetup {
     fun noteStockHomeInFront(context: Context) =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putLong(KEY_STOCK_HOME_AT, SystemClock.elapsedRealtime())
-            .putLong(KEY_STOCK_HOME_BOOT, System.currentTimeMillis() - SystemClock.elapsedRealtime()).apply()
+            .putLong(KEY_STOCK_HOME_BOOT, System.currentTimeMillis() - SystemClock.elapsedRealtime())
+            .putString(KEY_STOCK_HOME_BOOT_ID, app.orchard.tv.system.BootOpen.BOOT_ID).apply()
+
+    /**
+     * The viewer's visit to the stock launcher, opened on purpose from Aerial (HomeGuardService
+     * .allowStockLauncher), kept on disk until [untilElapsed] (elapsed realtime); null ends it. A
+     * guard killed and revived in the middle of it had lost it in memory and took the launcher
+     * away: Haier WATERFALL_T962 (YunOS, Android 5.1, 920 MB), whose stock launcher is 酷喵, killed
+     * Aerial again and again, and each revival pulled 酷喵 back to Aerial a second after the tile
+     * opened it (issue #1491, the reporter's log).
+     */
+    fun noteStockVisit(context: Context, untilElapsed: Long?) {
+        if (!isUserUnlocked(context)) return
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        if (untilElapsed == null) {
+            if (!prefs.contains(KEY_STOCK_VISIT_UNTIL)) return
+            prefs.edit().remove(KEY_STOCK_VISIT_AT).remove(KEY_STOCK_VISIT_UNTIL).remove(KEY_STOCK_VISIT_BOOT)
+                .remove(KEY_STOCK_VISIT_BOOT_ID).apply()
+            return
+        }
+        prefs.edit()
+            .putLong(KEY_STOCK_VISIT_AT, SystemClock.elapsedRealtime())
+            .putLong(KEY_STOCK_VISIT_UNTIL, untilElapsed)
+            .putLong(KEY_STOCK_VISIT_BOOT, System.currentTimeMillis() - SystemClock.elapsedRealtime())
+            // At once: the firmware that makes this matter kills Aerial moments after the tile.
+            .putString(KEY_STOCK_VISIT_BOOT_ID, app.orchard.tv.system.BootOpen.BOOT_ID).commit()
+    }
+
+    /** How long the visit noted by [noteStockVisit] still runs, in this boot; 0 when there is none. */
+    fun stockVisitLeftMs(context: Context): Long {
+        if (!isUserUnlocked(context)) return 0L
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val at = prefs.getLong(KEY_STOCK_VISIT_AT, -1L)
+        if (!thisBoot(prefs, at, KEY_STOCK_VISIT_BOOT, KEY_STOCK_VISIT_BOOT_ID)) return 0L
+        return (prefs.getLong(KEY_STOCK_VISIT_UNTIL, 0L) - SystemClock.elapsedRealtime()).coerceAtLeast(0L)
+    }
 
     /**
      * Whether, in this boot, a stock launcher's home came to the front after Aerial's Home last left
@@ -179,8 +244,7 @@ object GuardSetup {
     fun stockHomeSinceHomeLeft(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val at = prefs.getLong(KEY_STOCK_HOME_AT, -1L)
-        val bootNow = System.currentTimeMillis() - SystemClock.elapsedRealtime()
-        if (at !in 0..SystemClock.elapsedRealtime() || kotlin.math.abs(prefs.getLong(KEY_STOCK_HOME_BOOT, 0L) - bootNow) > 2 * 60 * 1000L) return false
+        if (!thisBoot(prefs, at, KEY_STOCK_HOME_BOOT, KEY_STOCK_HOME_BOOT_ID)) return false
         return at >= prefs.getLong(KEY_HOME_IN_FRONT_AT, -1L)
     }
 
@@ -188,8 +252,7 @@ object GuardSetup {
     fun stockHomeSeenWithin(context: Context, ms: Long): Boolean {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val at = prefs.getLong(KEY_STOCK_HOME_AT, -1L)
-        val bootNow = System.currentTimeMillis() - SystemClock.elapsedRealtime()
-        if (at !in 0..SystemClock.elapsedRealtime() || kotlin.math.abs(prefs.getLong(KEY_STOCK_HOME_BOOT, 0L) - bootNow) > 2 * 60 * 1000L) return false
+        if (!thisBoot(prefs, at, KEY_STOCK_HOME_BOOT, KEY_STOCK_HOME_BOOT_ID)) return false
         return SystemClock.elapsedRealtime() - at < ms
     }
 
@@ -659,8 +722,55 @@ object GuardSetup {
         }.onFailure { Log.w(TAG, "could not allow the notification listener", it) }
     }
 
+    /**
+     * XGIMI rewrites the enabled list two to four seconds after the user is unlocked and drops the
+     * guard from it: on the H3S only XGIMI's own service was left until the sync put the guard back
+     * 110 s later (issue #1377, boot timeline of 2026-11-14). Watch the list in the first minutes of
+     * a boot and write the entry back 1.5 s after it goes, at most three times: outside a boot a
+     * missing entry is the viewer's choice in Settings, which the next start overrides as before.
+     */
+    private const val LIST_WATCH_WINDOW_MS = 5 * 60_000L
+    private const val LIST_WATCH_DELAY_MS = 1_500L
+    private const val LIST_WATCH_MAX_TRIES = 3
+    private var listWatchTries = 0
+    @Volatile private var listWatch: ContentObserver? = null
+
+    @Synchronized
+    fun watchEnabledList(context: Context) {
+        if (listWatch != null) return
+        val app = context.applicationContext
+        val handler = Handler(Looper.getMainLooper())
+        val me = ComponentName(app, HomeGuardService::class.java).flattenToString()
+        val watch = object : ContentObserver(handler) {
+            override fun onChange(selfChange: Boolean) {
+                handler.postDelayed({
+                    if (listWatchTries >= LIST_WATCH_MAX_TRIES) return@postDelayed
+                    if (SystemClock.elapsedRealtime() > LIST_WATCH_WINDOW_MS) return@postDelayed
+                    val listed = Settings.Secure
+                        .getString(app.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
+                        .orEmpty().split(':')
+                        .any { ComponentName.unflattenFromString(it)?.flattenToString() == me }
+                    if (listed) return@postDelayed
+                    // Counted only when the entry was actually put back: standing out for standby,
+                    // or a write another path had just made, must not use up the tries.
+                    if (ensureEnabled(app)) {
+                        listWatchTries++
+                        Log.i(TAG, "the firmware dropped Home Guard from the enabled list; putting it back ($listWatchTries)")
+                    }
+                }, LIST_WATCH_DELAY_MS)
+            }
+        }
+        runCatching {
+            app.contentResolver.registerContentObserver(
+                Settings.Secure.getUriFor(Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES), false, watch,
+            )
+            listWatch = watch
+        }.onFailure { Log.w(TAG, "could not watch the enabled list", it) }
+    }
+
     fun ensureEnabled(context: Context): Boolean {
         ensureAdb(context)
+        watchEnabledList(context)
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_SECURE_SETTINGS) != PackageManager.PERMISSION_GRANTED) return false
         restoreReceivers(context)
         keepScreensaver(context)

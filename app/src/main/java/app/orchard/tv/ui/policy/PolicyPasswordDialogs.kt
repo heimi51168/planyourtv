@@ -1,6 +1,7 @@
 package app.orchard.tv.ui.policy
 
 import android.view.KeyEvent as NativeKeyEvent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -30,8 +31,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -1201,5 +1205,166 @@ internal fun PolicyVerifyPinDialog(
         )
         Spacer(Modifier.height(8.dp))
         DialogPinPad(selected, ::type, ::erase, onClose = { if (!busy) onDismiss() })
+    }
+}
+
+/**
+ * V27: the TV side of the web parent-center pairing. The TV holds the editor lease and shows a
+ * one-time 8-digit code; the QR opens the existing quiz page with the code in the URL fragment,
+ * so the clear code never reaches the HTTP server. Once the phone pairs, the caller closes this
+ * overlay and the phone becomes the only editor. [remainingSeconds] is the lease's handoff TTL.
+ */
+@Composable
+internal fun PolicyWebPairDialog(
+    keyRouter: PolicyDialogKeyRouter,
+    code: String,
+    qr: ImageBitmap?,
+    loading: Boolean,
+    remainingSeconds: Long,
+    onRegenerate: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val expired = remainingSeconds <= 0L
+    // 0 = new code, 1 = close. Match the safe action: closing a live handoff, replacing a dead one.
+    var selected by remember(code) { mutableStateOf(if (expired) 0 else 1) }
+
+    fun activate() {
+        Sounds.select()
+        if (selected == 0) onRegenerate() else onDismiss()
+    }
+
+    fun handleKey(e: NativeKeyEvent): Boolean {
+        if (handleBackKey(e, true, onDismiss)) return true
+        if (e.action != NativeKeyEvent.ACTION_DOWN) return e.isDialogKey()
+        return when (e.keyCode) {
+            NativeKeyEvent.KEYCODE_DPAD_LEFT -> {
+                if (selected != 0) {
+                    selected = 0
+                    Sounds.focusMoved()
+                }
+                true
+            }
+            NativeKeyEvent.KEYCODE_DPAD_RIGHT -> {
+                if (selected != 1) {
+                    selected = 1
+                    Sounds.focusMoved()
+                }
+                true
+            }
+            NativeKeyEvent.KEYCODE_DPAD_UP,
+            NativeKeyEvent.KEYCODE_DPAD_DOWN,
+            -> true
+            in CONFIRM_KEYS -> {
+                if (e.repeatCount == 0) activate()
+                true
+            }
+            else -> false
+        }
+    }
+
+    PolicyDialogRoot(
+        maxWidth = 680.dp,
+        keyRouter = keyRouter,
+        onDismiss = onDismiss,
+        dismissible = { true },
+        onKey = ::handleKey,
+    ) {
+        BasicText(stringResource(R.string.policy_parent_web_pair_title), style = Type.Title)
+        Spacer(Modifier.height(8.dp))
+        BasicText(
+            stringResource(R.string.policy_parent_web_pair_lead),
+            style = Type.Body.copy(fontSize = 14.sp),
+        )
+        Spacer(Modifier.height(14.dp))
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(22.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(188.dp)
+                    .height(188.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color.White)
+                    .padding(10.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                when {
+                    qr != null -> Image(
+                        bitmap = qr,
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        filterQuality = FilterQuality.None,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    loading -> BasicText(
+                        "…",
+                        style = Type.Caption.copy(fontSize = 16.sp, color = Color(0xFF6E6E73)),
+                    )
+                    else -> BasicText(
+                        stringResource(R.string.policy_parent_web_pair_qr_failed),
+                        style = Type.Caption.copy(
+                            fontSize = 12.sp,
+                            color = Color(0xFF6E6E73),
+                            textAlign = TextAlign.Center,
+                        ),
+                    )
+                }
+            }
+            Column(modifier = Modifier.width(350.dp)) {
+                BasicText(
+                    stringResource(R.string.policy_parent_web_pair_code),
+                    style = Type.Caption.copy(color = Palette.SecondaryLabel),
+                )
+                Spacer(Modifier.height(4.dp))
+                BasicText(
+                    code,
+                    style = Type.Title.copy(
+                        fontSize = 34.sp,
+                        letterSpacing = 7.sp,
+                        color = if (expired) Palette.SecondaryLabel else Palette.Focus,
+                    ),
+                    maxLines = 1,
+                )
+                Spacer(Modifier.height(6.dp))
+                BasicText(
+                    if (expired) {
+                        stringResource(R.string.policy_parent_web_pair_expired)
+                    } else {
+                        stringResource(
+                            R.string.policy_parent_web_pair_expires,
+                            remainingSeconds.coerceAtLeast(0L),
+                        )
+                    },
+                    style = Type.Caption.copy(
+                        color = if (expired) Palette.Orange else Palette.SecondaryLabel,
+                    ),
+                )
+                Spacer(Modifier.height(10.dp))
+                BasicText(
+                    stringResource(R.string.policy_parent_web_pair_hint),
+                    style = Type.Caption.copy(fontSize = 12.sp, color = Palette.SecondaryLabel),
+                )
+            }
+        }
+        Spacer(Modifier.height(18.dp))
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            DialogTile(
+                label = stringResource(R.string.policy_parent_web_pair_regenerate),
+                focused = selected == 0,
+                width = 180.dp,
+                onClick = onRegenerate,
+            )
+            DialogTile(
+                label = stringResource(R.string.policy_parent_web_pair_close),
+                focused = selected == 1,
+                width = 220.dp,
+                primary = true,
+                onClick = onDismiss,
+            )
+        }
     }
 }

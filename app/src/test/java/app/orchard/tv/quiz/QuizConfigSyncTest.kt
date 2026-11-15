@@ -241,7 +241,7 @@ class QuizConfigSyncTest {
     }
 
     @Test
-    fun aConfirmedBindingQueuesTheChallengeReport() {
+    fun aConfirmedBindingDoesNotQueueALocalReport() {
         seedSource(configVersion = 9, localVersion = 3, source = QuizSource.CLOUD)
         QuizSessionStore.setEnabled(false)
 
@@ -253,9 +253,9 @@ class QuizConfigSyncTest {
         assertEquals(3L, source.localVersion)
         assertFalse(source.enabled)
         val sync = QuizSessionStore.loadSyncState()
-        assertTrue(sync.pendingLocal)
+        assertFalse(sync.pendingLocal)
         assertFalse(sync.conflict)
-        assertEquals(QuizPendingKind.BINDING, sync.pendingKind)
+        assertEquals(QuizPendingKind.NONE, sync.pendingKind)
         assertEquals(6, QuizSessionStore.loadChallengeConfig()!!.pullCount)
     }
 }

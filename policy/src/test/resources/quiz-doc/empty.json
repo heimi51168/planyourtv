@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "documentId": "quizcfg:local:empty",
+  "revision": 1,
+  "levelsEtag": "",
+  "etag": "",
+  "origin": "LOCAL",
+  "updatedAt": "2026-11-13T00:00:00+08:00",
+  "updatedBy": "MIGRATION",
+  "enabled": true,
+  "rules": {
+    "questionCount": 5,
+    "timeLimitSec": 60,
+    "feedback": {
+      "extraHoldSec": 0,
+      "answerRevealSec": 30,
+      "autoNext": false
+    },
+    "shuffleOptions": true,
+    "showPinyin": false,
+    "sourceOrder": ["WRONG", "PUBLIC", "PERSONAL"],
+    "subjects": []
+  },
+  "reward": {
+    "mode": "DIFFICULTY_SECONDS",
+    "profiles": {
+      "default": {
+        "correctSeconds": {"EASY": 60, "MEDIUM": 120, "HARD": 300},
+        "penaltySeconds": {"EASY": 0, "MEDIUM": 0, "HARD": 0},
+        "maxEarnedSeconds": 1800,
+        "minUnlockSeconds": 0
+      },
+      "weekday": null,
+      "weekend": null
+    }
+  },
+  "quota": {
+    "dailyMaxSeconds": 0,
+    "enforcedBy": "LOCAL"
+  },
+  "calendar": {
+    "timezone": "Asia/Shanghai",
+    "weekendDays": [6, 7]
+  },
+  "questionPolicy": {
+    "allowedTypes": ["SINGLE"],
+    "judgeMode": "LOCAL_OR_SERVER"
+  },
+  "requirements": {
+    "required": ["SINGLE", "REWARD_PROFILES"],
+    "optional": []
+  },
+  "levels": [],
+  "extensions": {}
+}

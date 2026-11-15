@@ -57,6 +57,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.lifecycleScope
 import app.orchard.tv.apps.AppEntry
 import app.orchard.tv.policy.PolicyProduct
+import app.orchard.tv.policy.LockStudyLaunch
 import app.orchard.tv.policy.PolicyModeCoordinator
 import app.orchard.tv.policy.PolicyPanelRefresh
 import app.orchard.tv.apps.CustomIcons
@@ -351,7 +352,7 @@ class MainActivity : ComponentActivity() {
             }
             CompositionLocalProvider(LocalReducedMotion provides reducedMotion, LocalDensity provides canvas) {
                 Box(Modifier.fillMaxSize()) {
-                    PolicyHomeGate(policyState) {
+                    PolicyHomeGate(policyState, vm, ::launch, ::open) {
                         HomeScreen(
                             vm = vm,
                             onLaunch = ::launch,
@@ -786,6 +787,7 @@ class MainActivity : ComponentActivity() {
         }
         DiagLog.i("screensaver starts (${Wallpapers.screensaver})")
         vm.screensaverVisible = true
+        SelfCompile.onScreensaver { vm.screensaverVisible }
         // Holding the screen on keeps the firmware's screensaver from starting over ours. After a
         // long stretch, let go so the TV's own power policy can still turn the panel off. Not
         // where the screen never goes off: letting go only handed it to the firmware's
@@ -985,7 +987,16 @@ class MainActivity : ComponentActivity() {
             idleHandler.post { startScreensaver(asked = true) }
             return
         }
-        if (intent.hasCategory(Intent.CATEGORY_HOME) || intent.action == Intent.ACTION_MAIN) {
+        // Some Skyworth/Coocaa firmwares answer Home by starting persist.service.homepage.pkg/cls
+        // themselves, with no action and no category: Home on Home never reset the focus
+        // (7S77_M2, MStar M7221, Android 8.0, issue #1508; the reporter patched 1.95 with this
+        // and checked it). Aerial's own starts of this activity all carry ACTION_MAIN.
+        val homeByComponent = intent.action == null && intent.component?.packageName == packageName
+        if (intent.hasCategory(Intent.CATEGORY_HOME) || intent.action == Intent.ACTION_MAIN || homeByComponent) {
+            // Home also leaves the parent-center overlay. The system handles Home before the app's
+            // key dispatch, so the overlay cannot close from a key handler; closing here covers
+            // both Home-on-Home and the guard bringing Aerial back from the stock launcher.
+            if (PolicyProduct.parentCenterVisible.value) PolicyProduct.closeParentSettings()
             // Since 1.11 Home Guard answers Home from an app by bringing Aerial back with this same
             // intent, so the intent alone cannot tell Home-on-Home from coming back from an app.
             vm.onHomePressed(resetFocus = !openedAppSinceHome)
@@ -1072,6 +1083,9 @@ class MainActivity : ComponentActivity() {
     /** What onResume does once the user is unlocked; also run by a start that was locked before. */
     private fun resumeWork() {
         vm.resumed = true
+        // Back in front by any route (Back from an app, Home, the app closing): no study app
+        // opened from the lock desktop is the foreground any more.
+        LockStudyLaunch.clearForeground()
         CecSwitch.register(this)
         if (!minuteReceiverOn) {
             // TIME_TICK is a protected system broadcast; it is only delivered to registered receivers.
@@ -1088,7 +1102,7 @@ class MainActivity : ComponentActivity() {
         }
         restartIdleTimer()
         GuardSetup.setHomeInFront(this, true)
-        HomeGuardService.onAerialResumed()
+        HomeGuardService.onAerialResumed(this)
         Updates.onHomeResumed()
         vm.refreshSystem()
         if (!resumedInProcess) {
@@ -1164,9 +1178,11 @@ class MainActivity : ComponentActivity() {
 
     /** Opens an app, growing it out of its tile. */
     private fun launch(app: AppEntry, bounds: Rect?) {
-        // No direct caller (tile, boot source, phone page, future automation) may
-        // open an app while the device-level lock screen is showing.
-        if (PolicyModeCoordinator.isLockScreen()) return
+        // The lock desktop's study tiles grant a one-shot permit for their listed app, so it opens
+        // over the lock and leaving it comes back here. Every other caller (tile, boot source,
+        // phone page, future automation) is still refused while the lock screen is showing.
+        val studyFromLock = LockStudyLaunch.consume(app.packageName)
+        if (PolicyModeCoordinator.isLockScreen() && !studyFromLock) return
         // Kids and Elders mode shows only its own tiles, and none while locked; this is the last word.
         if (Restricted.active && (app.key !in Restricted.allowed || Restricted.lock != null)) {
             DiagLog.i("kids: ${app.key} not opened")
@@ -1220,6 +1236,7 @@ class MainActivity : ComponentActivity() {
         }
         try {
             FilmAfterInput.noteOpened(this, app.launchIntent())
+            if (app.source != null) allowInputThroughHome(app.launchIntent())
             if (HisenseSources.open(this, app.launchIntent())) return
             startActivity(settingsLaunchIntent(this, app.launchIntent()), options)
         } catch (e: Exception) {
@@ -1232,7 +1249,7 @@ class MainActivity : ComponentActivity() {
                 // Opened on purpose all the same. In a process the firmware had just killed the
                 // guard had not bound yet, so isStockHome said no above, and once bound it took
                 // PatchWall for one the TV raised (MiTV-ANSP0, Android 9, issue #971, PR #1216).
-                if (isHomeApp(app.packageName)) HomeGuardService.allowStockLauncher()
+                if (isHomeApp(app.packageName)) HomeGuardService.allowStockLauncher(this)
                 return
             }
             Toast.makeText(this, getString(R.string.launch_failed, app.label), Toast.LENGTH_SHORT).show()
@@ -1287,8 +1304,19 @@ class MainActivity : ComponentActivity() {
         }.isSuccess
     }
 
+    /**
+     * An input opened through an activity that is also one of the TV's Homes, which the guard
+     * would take for the stock launcher and close: JMGO H931's com.jmgo.tv/.MainActivity tunes the
+     * input and is a Home candidate as well (issue #1481). Opened on purpose, like its tile.
+     */
+    private fun allowInputThroughHome(intent: Intent) {
+        val pkg = intent.component?.packageName ?: return
+        if (pkg != packageName && isHomeApp(pkg)) HomeGuardService.allowStockLauncher(this)
+    }
+
     private fun open(intent: Intent) {
         FilmAfterInput.noteOpened(this, intent)
+        if (intent.hasExtra("inputSrc")) allowInputThroughHome(intent)
         // Older Konka: the input first, then its page, which only shows what is on (issue #710).
         if (KonkaSources.needsSwitch(intent)) {
             val app = applicationContext

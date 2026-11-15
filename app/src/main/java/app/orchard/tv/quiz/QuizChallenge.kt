@@ -2,6 +2,7 @@ package app.orchard.tv.quiz
 
 import app.orchard.tv.policy.PolicyCloud
 import app.orchard.tv.policy.PolicyModeCoordinator
+import app.orchard.tv.policy.QuizSettlementAnswer
 import com.planyourtv.policy.Activation
 import com.planyourtv.policy.LockReason
 import com.planyourtv.policy.PolicyFlowTrace
@@ -14,16 +15,16 @@ import com.planyourtv.policy.SessionStartResult
 import com.planyourtv.policy.SessionState
 import com.planyourtv.policy.quiz.QUIZ_MAX_EARNED_MINUTES
 import com.planyourtv.policy.quiz.QUIZ_MAX_PULL_COUNT
-import com.planyourtv.policy.quiz.QUIZ_MIN_PULL_COUNT
+import com.planyourtv.policy.quiz.QUIZ_MIN_LOCAL_PULL_COUNT
 import com.planyourtv.policy.quiz.QuizAnswerScope
 import com.planyourtv.policy.quiz.QuizConfig
+import com.planyourtv.policy.quiz.QuizFeedbackHold
 import com.planyourtv.policy.quiz.QuizItem
+import com.planyourtv.policy.quiz.QuizLevel
 import com.planyourtv.policy.quiz.QuizRun
-import com.planyourtv.policy.quiz.QuizScoring
 import com.planyourtv.policy.quiz.QuizSession
 import com.planyourtv.policy.quiz.QuizSessionStatus
 import com.planyourtv.policy.quiz.QuizSubmission
-import com.planyourtv.policy.quiz.normalizeAnswerHoldSec
 import android.util.Log
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
@@ -99,6 +100,7 @@ object QuizChallenge {
         val explanation: String,
         val correctCount: Int,
         val earnedMinutes: Int,
+        val earnedSeconds: Int,
     )
 
     /**
@@ -260,20 +262,27 @@ object QuizChallenge {
         return BeginResult.Started
     }
 
-    /** A local level is either a curriculum scope or one custom tag. */
+    /** A local level is a curriculum scope, one custom tag, or wrong review. */
     private data class LocalLevelTarget(
         val scope: QuizAnswerScope?,
         val collectionId: String?,
+        val wrongReview: Boolean = false,
     )
 
-    private fun resolveLocalLevel(levelId: String?, nowMs: Long): LocalLevelTarget? {
-        val courseLevels = QuizAnswerScopeStore.levels()
+    private fun resolveLocalLevel(
+        levelId: String?,
+        courseLevels: List<QuizLevel>,
+        nowMs: Long,
+    ): LocalLevelTarget? {
         if (!levelId.isNullOrBlank()) {
             courseLevels.firstOrNull { it.id == levelId }?.let {
                 return LocalLevelTarget(it.scope, null)
             }
             QuizCollectionStore.customLevel(levelId)?.let {
                 return LocalLevelTarget(null, it.collectionId)
+            }
+            if (QuizWrongReviewLevelStore.level()?.id == levelId) {
+                return LocalLevelTarget(null, null, wrongReview = true)
             }
             return null
         }
@@ -283,6 +292,11 @@ object QuizChallenge {
         QuizCollectionStore.customLevels().firstOrNull {
             QuizQuestionCache.availableCollectionCount(it.collectionId, nowMs) > 0
         }?.let { return LocalLevelTarget(null, it.collectionId) }
+        if (QuizWrongReviewLevelStore.level() != null &&
+            QuizQuestionCache.wrongReviewCount() > 0
+        ) {
+            return LocalLevelTarget(null, null, wrongReview = true)
+        }
         return null
     }
 
@@ -292,38 +306,58 @@ object QuizChallenge {
      * failed save cannot leave questions stranded in RESERVED.
      */
     private fun startLocalRound(nowMs: Long, levelId: String?): BeginResult {
-        val config = QuizSessionStore.loadChallengeConfig() ?: QuizConfig()
+        // One read of the active document supplies every frozen input below.
+        // A missing or invalid document is refused instead of silently falling
+        // back to stale legacy keys the parent can no longer see.
+        val plan = when (val planned = QuizLocalRoundPlanner.plan(
+            QuizConfigDocumentStore.activeDocument(),
+            nowMs,
+        )) {
+            is QuizLocalPlanResult.Ready -> planned.plan
+            is QuizLocalPlanResult.Rejected -> return BeginResult.Rejected(planned.code)
+        }
+        val config = plan.config
         // An explicit level that disappeared while the dialog was open must not
         // silently start a different one. Without an id, take the first level
         // that can actually fill a round across course levels and custom tags.
-        val target = resolveLocalLevel(levelId, nowMs) ?: return BeginResult.Rejected("NO_LEVELS")
+        val target = resolveLocalLevel(levelId, plan.levels, nowMs)
+            ?: return BeginResult.Rejected("NO_LEVELS")
         val explicitLevel = !levelId.isNullOrBlank()
         val scope = QuizQuestionCache.LOCAL_SCOPE
-        val unused = if (target.collectionId != null) {
-            QuizQuestionCache.availableCollectionCount(target.collectionId, nowMs)
-        } else {
-            QuizQuestionCache.availableCount(scope, nowMs, target.scope)
+        val unused = when {
+            target.wrongReview -> QuizQuestionCache.wrongReviewCount(scope)
+            target.collectionId != null ->
+                QuizQuestionCache.availableCollectionCount(target.collectionId, nowMs)
+            else -> QuizQuestionCache.availableCount(scope, nowMs, target.scope)
         }
         if (unused <= 0) return BeginResult.Rejected("LOCAL_BANK_EMPTY")
-        // A level the child explicitly picked must supply the full configured
-        // round. Keep the old clamp only for legacy callers without a level id.
-        if (explicitLevel && unused < config.pullCount) {
+        // Any level the child explicitly picked, including wrong review, must
+        // supply the full configured round. Only the legacy caller without a
+        // level id keeps the old clamp.
+        val requiresFullRound = explicitLevel
+        if (requiresFullRound && unused < config.pullCount) {
             return BeginResult.Rejected("LOCAL_BANK_INSUFFICIENT")
         }
-        val count = if (explicitLevel) config.pullCount else min(config.pullCount, unused)
-        val required = if (explicitLevel) config.pullCount else 1
+        val count = if (requiresFullRound) config.pullCount else min(config.pullCount, unused)
+        val required = if (requiresFullRound) config.pullCount else 1
         val roundId = QbClient.SESSION_ID_PREFIX + UUID.randomUUID().toString().replace("-", "")
         val reserved = try {
-            if (target.collectionId != null) {
-                QuizQuestionCache.reserveCollectionForRound(
+            when {
+                target.wrongReview -> QuizQuestionCache.reserveWrongForRound(
+                    count = count,
+                    sessionId = roundId,
+                    scopeKey = scope,
+                    minRequired = required,
+                    nowMs = nowMs,
+                )
+                target.collectionId != null -> QuizQuestionCache.reserveCollectionForRound(
                     count = count,
                     sessionId = roundId,
                     collectionId = target.collectionId,
                     minRequired = required,
                     nowMs = nowMs,
                 )
-            } else {
-                QuizQuestionCache.reserveForRound(
+                else -> QuizQuestionCache.reserveForRound(
                     count = count,
                     sessionId = roundId,
                     scopeKey = scope,
@@ -357,7 +391,7 @@ object QuizChallenge {
         // with a short bank must not persist a snapshot the next load rejects
         // as unreadable; the round itself is always driven by [items].
         val runtimeConfig = config.copy(
-            pullCount = items.size.coerceIn(QUIZ_MIN_PULL_COUNT, QUIZ_MAX_PULL_COUNT),
+            pullCount = items.size.coerceIn(QUIZ_MIN_LOCAL_PULL_COUNT, QUIZ_MAX_PULL_COUNT),
         )
         val run = QuizRun(
             startedAt = nowMs,
@@ -376,6 +410,13 @@ object QuizChallenge {
             config = runtimeConfig,
             items = items,
             run = run,
+            // The payout is decided by the document as it was at start: a later
+            // edit or midnight itself must not rewrite this round's reward.
+            docRevision = plan.document.revision,
+            docEtag = plan.document.etag,
+            levelsEtag = plan.document.levelsEtag,
+            dayType = plan.dayType.name,
+            rewardProfile = plan.profile,
         )
         if (!QuizSessionStore.saveSession(session)) {
             QuizQuestionCache.settleRound(roundId, scope, emptyList(), nowMs)
@@ -416,12 +457,22 @@ object QuizChallenge {
         }
 
         val correct = !expired && selectedIndex == item.answerIndex
+        // v6 freezes the nominal feedback floor when the answer is recorded, so
+        // a later config edit cannot shorten the stay this child already sees.
+        // v5 records keep null and use their historical answerDisplaySec.
+        val feedbackHoldMs = QuizFeedbackHold.frozenHoldMs(
+            correct = correct,
+            timedOut = expired,
+            extraHoldSec = session.config.feedbackExtraHoldSec,
+            originSchemaVersion = session.originSchemaVersion,
+        )
         val submission = QuizSubmission(
             questionId = item.questionId,
             selectedIndex = if (expired) null else selectedIndex,
             correct = correct,
             timedOut = expired,
             answeredAt = nowMs,
+            feedbackHoldMs = feedbackHoldMs,
         )
         // A wrong answer or timeout never ends the round. The child still gets
         // every remaining question, and the score is settled only after the last
@@ -510,12 +561,8 @@ object QuizChallenge {
         // Wrong/timeout feedback is a minimum stay, enforced here rather than
         // only by the disabled button so Back or any future caller cannot skip
         // it. Correct answers keep their immediate reward transition.
-        if (!lastSubmission.correct) {
-            val holdSec = normalizeAnswerHoldSec(session.config.answerDisplaySec)
-            val unlockAt = lastSubmission.answeredAt + holdSec * 1_000L
-            if (holdSec > 0 && nowMs < unlockAt) {
-                return FeedbackOutcome.Failed("FEEDBACK_HOLD")
-            }
+        if (QuizFeedbackHold.isLocked(lastSubmission, session.config.answerDisplaySec, nowMs)) {
+            return FeedbackOutcome.Failed("FEEDBACK_HOLD")
         }
 
         val nextItem = session.items.getOrNull(run.index)
@@ -536,35 +583,38 @@ object QuizChallenge {
         }
 
         val config = session.config
-        val earnedMinutes = when {
-            // v5 local rounds score by difficulty and use a net-minute threshold.
-            // Cloud rounds keep their backend-authoritative v4 formula; they may
-            // carry schema 5 but must never be settled with local scoring.
-            // The daily earned allowance caps what a local round can still pay
-            // today, so the report the child reads matches what will be granted.
-            session.originSchemaVersion >= 5 && !isCloudSession(session) -> {
-                QuizScoring.score(session.items, run.submissions, config).earnedMinutes
-                    .coerceAtMost(QuizEarnedStore.remainingToday(nowMs))
-            }
-            session.originSchemaVersion >= 4 -> {
-                if (run.correctCount >= config.minCorrectCount) {
-                    min(
-                        run.correctCount * config.minutesPerQuestion,
-                        min(config.maxEarnedMinutes, QUIZ_MAX_EARNED_MINUTES),
-                    )
-                } else {
-                    0
+        // v6 local rounds use the frozen seconds profile and v5 local rounds the
+        // minute engine ([QuizSettlement]); cloud rounds stay backend-authoritative
+        // and v2/v3/v4 records keep the legacy fields below. The daily earned
+        // allowance caps what a local round may still pay today, so the report
+        // the child reads matches what will be granted; cloud payouts stay uncapped.
+        val earnedSeconds = when (val settled = QuizSettlement.earnedSeconds(session)) {
+            null -> when {
+                session.originSchemaVersion >= 4 -> {
+                    if (run.correctCount >= config.minCorrectCount) {
+                        min(
+                            run.correctCount * config.minutesPerQuestion,
+                            min(config.maxEarnedMinutes, QUIZ_MAX_EARNED_MINUTES),
+                        ) * 60
+                    } else {
+                        0
+                    }
                 }
+                run.correctCount >= config.minCorrectCount -> {
+                    min(run.earnedPoints * config.minutesPerPoint, config.maxEarnedMinutes) * 60
+                }
+                else -> 0
             }
-            run.correctCount >= config.minCorrectCount -> {
-                min(run.earnedPoints * config.minutesPerPoint, config.maxEarnedMinutes)
-            }
-            else -> 0
+            else -> settled.coerceAtMost((QuizEarnedStore.remainingToday(nowMs) * 60L).toInt())
         }
+        // Old UI and the policy engine still read minutes; v6 seconds are kept
+        // separately so a sub-minute payout is never truncated before settlement.
+        val earnedMinutes = earnedSeconds / 60
         val settling = session.copy(
             status = QuizSessionStatus.SETTLING,
             run = run.copy(
                 earnedMinutes = earnedMinutes,
+                earnedSeconds = earnedSeconds,
                 feedbackOpen = false,
                 feedbackRemainingMs = 0L,
             ),
@@ -596,6 +646,7 @@ object QuizChallenge {
                 lastSubmission.timedOut,
                 run.correctCount,
                 earnedMinutes,
+                earnedSeconds,
             ),
         )
     }
@@ -659,7 +710,16 @@ object QuizChallenge {
         if (session.status == QuizSessionStatus.START_FAILED) {
             return ReviewOutcome.Failed(run.startErrorCode ?: "NOT_AVAILABLE")
         }
-        if (run.earnedMinutes <= 0) {
+        // A v6 local round may earn seconds that do not fill a whole minute; the
+        // payout uses that exact value. Older rounds paid minutes, so derive it.
+        val earnedSeconds = if (session.originSchemaVersion >= 6 &&
+            !isCloudSession(session)
+        ) {
+            run.earnedSeconds
+        } else {
+            run.earnedMinutes * 60
+        }
+        if (earnedSeconds <= 0) {
             QuizSessionStore.clearSession()
             QuizRuntime.refresh()
             return ReviewOutcome.Cleared
@@ -677,7 +737,7 @@ object QuizChallenge {
         }
 
         val startResult = runCatching {
-            PolicyModeCoordinator.startLocalManualSession(run.earnedMinutes * 60L)
+            PolicyModeCoordinator.startLocalManualSession(earnedSeconds.toLong())
         }.getOrElse { SessionStartResult.Rejected(RejectReason.INVALID_COMMAND) }
         return when (startResult) {
             SessionStartResult.Started -> {
@@ -799,9 +859,20 @@ object QuizChallenge {
             "correct" to run.correctCount,
             "total" to session.items.size,
             "earnedMinutes" to run.earnedMinutes,
+            "earnedSeconds" to run.earnedSeconds,
             "configVersion" to run.configVersion,
         )
-        if (run.earnedMinutes <= 0) {
+        // A v6 round (the QCD profile is frozen at start) can earn less than a
+        // whole minute; only a real zero payout skips settlement. Older cloud
+        // rounds carry minutes only, so their derived seconds stay the guard.
+        val payoutSeconds = if (session.originSchemaVersion >= 6 &&
+            session.rewardProfile != null
+        ) {
+            run.earnedSeconds
+        } else {
+            run.earnedMinutes * 60
+        }
+        if (payoutSeconds <= 0) {
             PolicyFlowTrace.event("quiz.settle.skip", "reason" to "NO_EARNED_TIME")
             QuizSessionStore.clearSession()
             QuizRuntime.refresh()
@@ -829,12 +900,32 @@ object QuizChallenge {
             if (!QuizSessionStore.saveSession(starting)) return ReviewOutcome.Failed("STORAGE")
         }
 
+        // Cloud settlement is profile-driven: the backend needs the per-question
+        // difficulty and outcome, not just the score, to apply the member's
+        // difficulty reward/penalty rules. The frozen member id and document
+        // revision identify which round this is; the backend still owns the
+        // amounts and recomputes them from the current cloud config.
+        val itemsById = session.items.associateBy { it.questionId }
+        val answers = run.submissions
+            .distinctBy { it.questionId }
+            .mapNotNull { submission ->
+                val item = itemsById[submission.questionId] ?: return@mapNotNull null
+                QuizSettlementAnswer(
+                    questionId = submission.questionId,
+                    difficulty = item.difficulty,
+                    correct = submission.correct,
+                    timedOut = submission.timedOut,
+                )
+            }
         val settled = PolicyCloud.settleQuizEarned(
             deviceNo = deviceNo,
             sessionId = session.id,
             totalCount = session.items.size,
             correctCount = run.correctCount,
             configVersion = run.configVersion,
+            learnerId = session.cloudMemberId,
+            docRevision = session.docRevision.takeIf { it > 0L },
+            answers = answers,
         )
         return settled.fold(
             onSuccess = { reward ->
@@ -843,6 +934,7 @@ object QuizChallenge {
                     "correct" to run.correctCount,
                     "total" to session.items.size,
                     "earnedMinutes" to reward.earnedMinutes,
+                    "earnedSeconds" to reward.earnedSeconds,
                     "alreadyGranted" to reward.alreadyGranted,
                 )
                 // The backend dispatches the trusted manual grant over MQTT.
@@ -949,6 +1041,7 @@ object QuizChallenge {
         timedOut: Boolean,
         correctCount: Int,
         earnedMinutes: Int,
+        earnedSeconds: Int,
     ) = Result(
         correct = correct,
         timedOut = timedOut,
@@ -956,6 +1049,7 @@ object QuizChallenge {
         explanation = item.explanation,
         correctCount = correctCount,
         earnedMinutes = earnedMinutes,
+        earnedSeconds = earnedSeconds,
     )
 
     private fun shuffleOptions(items: List<QuizItem>): List<QuizItem> = items.map { item ->

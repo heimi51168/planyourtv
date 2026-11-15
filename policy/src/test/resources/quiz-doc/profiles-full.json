@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "documentId": "quizcfg:local:profiles-fixture",
+  "revision": 2,
+  "levelsEtag": "",
+  "etag": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+  "origin": "LOCAL",
+  "updatedAt": "2026-11-13T11:00:00+08:00",
+  "updatedBy": "TV_LOCAL_EDIT",
+  "enabled": true,
+  "rules": {
+    "questionCount": 5,
+    "timeLimitSec": 60,
+    "feedback": {
+      "extraHoldSec": 5,
+      "answerRevealSec": 30,
+      "autoNext": false
+    },
+    "shuffleOptions": true,
+    "showPinyin": false,
+    "sourceOrder": ["WRONG", "PUBLIC", "PERSONAL"],
+    "subjects": []
+  },
+  "reward": {
+    "mode": "DIFFICULTY_SECONDS",
+    "profiles": {
+      "default": {
+        "correctSeconds": {"EASY": 60, "MEDIUM": 120, "HARD": 180},
+        "penaltySeconds": {"EASY": 0, "MEDIUM": 0, "HARD": 0},
+        "maxEarnedSeconds": 1800,
+        "minUnlockSeconds": 0
+      },
+      "weekday": {
+        "correctSeconds": {"EASY": 30, "MEDIUM": 60, "HARD": 90},
+        "penaltySeconds": {"EASY": 30, "MEDIUM": 60, "HARD": 90},
+        "maxEarnedSeconds": 1500,
+        "minUnlockSeconds": 0
+      },
+      "weekend": {
+        "correctSeconds": {"EASY": 60, "MEDIUM": 120, "HARD": 300},
+        "penaltySeconds": {"EASY": 0, "MEDIUM": 0, "HARD": 0},
+        "maxEarnedSeconds": 1800,
+        "minUnlockSeconds": 60
+      }
+    }
+  },
+  "quota": {
+    "dailyMaxSeconds": 3600,
+    "enforcedBy": "LOCAL"
+  },
+  "calendar": {
+    "timezone": "Asia/Shanghai",
+    "weekendDays": [6, 7]
+  },
+  "questionPolicy": {
+    "allowedTypes": ["SINGLE"],
+    "judgeMode": "LOCAL_OR_SERVER"
+  },
+  "requirements": {
+    "required": ["SINGLE", "REWARD_PROFILES"],
+    "optional": []
+  },
+  "levels": [],
+  "extensions": {}
+}

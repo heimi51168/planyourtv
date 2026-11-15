@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "documentId": "quizcfg:local:fixture-install",
+  "revision": 3,
+  "levelsEtag": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "etag": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "origin": "LOCAL",
+  "updatedAt": "2026-11-13T10:00:00+08:00",
+  "updatedBy": "TV_WEB",
+  "enabled": true,
+  "rules": {
+    "questionCount": 5,
+    "timeLimitSec": 60,
+    "feedback": {
+      "extraHoldSec": 0,
+      "answerRevealSec": 30,
+      "autoNext": false
+    },
+    "shuffleOptions": true,
+    "showPinyin": false,
+    "sourceOrder": ["WRONG", "PUBLIC", "PERSONAL"],
+    "subjects": ["MATH", "CHINESE"],
+    "legacy": {
+      "minCorrectCount": 1,
+      "minutesPerPoint": 5,
+      "minutesPerQuestion": 5,
+      "pointsPerQuestion": 1
+    },
+    "x-section-note": "preserve me"
+  },
+  "reward": {
+    "mode": "DIFFICULTY_SECONDS",
+    "profiles": {
+      "default": {
+        "correctSeconds": {"EASY": 60, "MEDIUM": 120, "HARD": 300},
+        "penaltySeconds": {"EASY": 0, "MEDIUM": 30, "HARD": 60},
+        "maxEarnedSeconds": 1800,
+        "minUnlockSeconds": 0
+      },
+      "weekday": null,
+      "weekend": null
+    }
+  },
+  "quota": {
+    "dailyMaxSeconds": 0,
+    "enforcedBy": "LOCAL"
+  },
+  "calendar": {
+    "timezone": "Asia/Shanghai",
+    "weekendDays": [6, 7]
+  },
+  "questionPolicy": {
+    "allowedTypes": ["SINGLE"],
+    "judgeMode": "LOCAL_OR_SERVER"
+  },
+  "requirements": {
+    "required": ["SINGLE", "REWARD_PROFILES"],
+    "optional": []
+  },
+  "levels": [
+    {
+      "levelId": "local:11111111-1111-1111-1111-111111111111",
+      "origin": "LOCAL",
+      "name": "口算",
+      "enabled": true,
+      "sortNo": 0,
+      "sources": ["LOCAL"],
+      "subjects": ["MATH"],
+      "scopeType": "UNIT",
+      "unitNos": [3],
+      "unitGroups": [],
+      "grade": 4,
+      "semester": 2,
+      "textbook": "RENJIAO",
+      "difficulty": null,
+      "advisoryQuestionCount": 5,
+      "questionTypes": ["SINGLE"],
+      "localScope": {
+        "grade": 4,
+        "semester": 2,
+        "subject": "MATH",
+        "textbook": "RENJIAO",
+        "scopeType": "UNIT",
+        "unitNo": 3,
+        "difficulty": null
+      },
+      "x-level-note": "preserve me too"
+    },
+    {
+      "levelId": "local:22222222-2222-2222-2222-222222222222",
+      "origin": "LOCAL",
+      "name": "语文复习",
+      "enabled": true,
+      "sortNo": 1,
+      "sources": ["LOCAL"],
+      "subjects": ["CHINESE"],
+      "scopeType": "REVIEW",
+      "unitNos": [],
+      "grade": 4,
+      "semester": 2,
+      "textbook": "BUBIAN",
+      "difficulty": "EASY",
+      "advisoryQuestionCount": 5,
+      "questionTypes": ["SINGLE"],
+      "localScope": {
+        "grade": 4,
+        "semester": 2,
+        "subject": "CHINESE",
+        "textbook": "BUBIAN",
+        "scopeType": "REVIEW",
+        "unitNo": null,
+        "difficulty": "EASY"
+      }
+    }
+  ],
+  "extensions": {
+    "local": {
+      "legacyAnswerDisplaySec": 30
+    },
+    "cloudUnknown": {
+      "keep": true
+    }
+  },
+  "x-top-note": {
+    "a": 1
+  }
+}

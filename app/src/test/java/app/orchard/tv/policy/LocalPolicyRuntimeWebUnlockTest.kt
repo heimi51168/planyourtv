@@ -1,6 +1,7 @@
 package app.orchard.tv.policy
 
 import android.os.PowerManager
+import com.planyourtv.policy.Activation
 import com.planyourtv.policy.GuardStatus
 import com.planyourtv.policy.LocalRules
 import com.planyourtv.policy.LocalTimeWindow
@@ -68,6 +69,29 @@ class LocalPolicyRuntimeWebUnlockTest {
         assertEquals(SessionState.IDLE, state().sessionState)
         assertFalse(LocalPolicyRuntime.isActive)
         assertTrue(LocalPolicyRuntime.isTemporaryUnlocked())
+    }
+
+    @Test
+    fun enteringLocalModeForcesManualWithoutLosingTheStoredAutoRules() {
+        assertTrue(LocalPolicyRuntime.setActivation(Activation.AUTO))
+        assertEquals(Activation.AUTO, state().activation)
+
+        assertTrue(LocalPolicyRuntime.ensureLocalManualActivation())
+        assertEquals(Activation.MANUAL, state().activation)
+        // The automatic rule set is still stored; only the active switch moved.
+        assertNotNull(LocalPolicyRuntime.currentRuleSets?.rulesFor(
+            Activation.AUTO,
+        ))
+    }
+
+    @Test
+    fun manualSessionKeepsTheRequestedDuration() {
+        // The web page no longer exposes a per-session cap. A quiz reward is limited by its own
+        // maxEarnedMinutes, and the manual start here is limited only by the daily quota, so a
+        // 30-minute request inside a 60-minute day must start 30 minutes.
+        assertEquals(SessionStartResult.Started, LocalPolicyRuntime.startManualSession(30 * 60L))
+        assertEquals(30 * 60L, state().totalSeconds)
+        assertEquals(SessionState.ACTIVE, state().sessionState)
     }
 
     @Test

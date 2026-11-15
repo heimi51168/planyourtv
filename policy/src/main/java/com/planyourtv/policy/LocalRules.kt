@@ -163,7 +163,8 @@ data class LocalRules(
         }
         // The automatic daily quota and the per-session cap are independent. Manual sessions
         // have no daily quota, so a small automatic quota must not shrink the manual cap.
-        if (autoDailyLimitMinutes !in 1..MAX_DAILY_MINUTES ||
+        // Zero is a valid quota: it locks automatic entertainment for the whole day.
+        if (autoDailyLimitMinutes !in 0..MAX_DAILY_MINUTES ||
             sessionLimitMinutes !in 1..MAX_DAILY_MINUTES ||
             restMinutes !in 0..MAX_REST_MINUTES ||
             sessionScreenOffBufferMinutes !in MIN_SESSION_BUFFER_MINUTES..MAX_SESSION_BUFFER_MINUTES
@@ -212,12 +213,13 @@ data class LocalRules(
         const val MAX_ALLOWED_PACKAGES = 500
         const val MAX_PACKAGE_NAME_LENGTH = 255
         const val DEFAULT_SESSION_BUFFER_MINUTES = 20
-        const val MIN_SESSION_BUFFER_MINUTES = 5
+        /** Zero disables the screen-off grace; negative values are malformed. */
+        const val MIN_SESSION_BUFFER_MINUTES = 0
         const val MAX_SESSION_BUFFER_MINUTES = 60
 
-        /** Clamps a cloud-supplied buffer to the range this app can enforce safely. */
+        /** Clamps a cloud-supplied buffer; only a negative (malformed) value gets the default. */
         fun sanitizeSessionBufferMinutes(value: Int): Int =
-            if (value <= 0) {
+            if (value < 0) {
                 DEFAULT_SESSION_BUFFER_MINUTES
             } else {
                 value.coerceIn(MIN_SESSION_BUFFER_MINUTES, MAX_SESSION_BUFFER_MINUTES)

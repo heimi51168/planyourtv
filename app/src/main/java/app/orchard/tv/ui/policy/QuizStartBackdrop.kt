@@ -1,5 +1,6 @@
 package app.orchard.tv.ui.policy
 
+import android.graphics.BitmapFactory
 import android.view.SurfaceView
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -12,15 +13,17 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -31,16 +34,21 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
-import app.orchard.tv.R
+import app.orchard.tv.policy.media.PolicyVideoSource
 import app.orchard.tv.ui.theme.LocalReducedMotion
 import app.orchard.tv.ui.theme.Motion
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Full-screen intro film behind both "start this round" faces. It plays once,
  * stops on its last frame, and never keeps the decoder or audio focus after the
- * page goes away. The poster is always present until the first video frame, and
- * remains as the whole backdrop when the TV is set to reduce motion or when the
- * film cannot be decoded.
+ * page goes away. A chosen film shows its own poster (or the shared default
+ * wallpaper) until its first frame, so a mismatched poster never flashes.
+ *
+ * With no chosen film, with reduced motion, or when the file cannot be decoded,
+ * the backdrop is [PolicyDefaultBackdrop]: exactly Aerial's default wallpaper.
+ * There is no bundled fallback film in the APK any more.
  *
  * [fadeOut] is driven by the start request: the music fades away while the
  * round is being prepared, and comes back if the request is refused. The page
@@ -49,11 +57,12 @@ import app.orchard.tv.ui.theme.Motion
  * never changes the TV's loudness.
  *
  * [onIntroFinished] fires once when the film ends, fails, or is skipped by the
- * reduce-motion setting; the caller reveals the card, never starts a round
- * from it.
+ * reduce-motion or no-film setting; the caller reveals the card, never starts a
+ * round from it.
  */
 @Composable
 internal fun QuizStartBackdrop(
+    source: PolicyVideoSource?,
     fadeOut: Boolean,
     onIntroFinished: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -61,11 +70,29 @@ internal fun QuizStartBackdrop(
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val reduced = LocalReducedMotion.current
-    var player by remember { mutableStateOf<ExoPlayer?>(null) }
-    var surface by remember { mutableStateOf<SurfaceView?>(null) }
-    var firstFrame by remember { mutableStateOf(false) }
-    var failed by remember { mutableStateOf(false) }
-    var finished by remember { mutableStateOf(false) }
+    var player by remember(source) { mutableStateOf<ExoPlayer?>(null) }
+    var surface by remember(source) { mutableStateOf<SurfaceView?>(null) }
+    var firstFrame by remember(source) { mutableStateOf(false) }
+    var failed by remember(source) { mutableStateOf(false) }
+    var finished by remember(source) { mutableStateOf(false) }
+    val wallpaperMode = source == null || reduced || failed
+    val uri = source?.uri
+
+    val posterBitmap by produceState<ImageBitmap?>(
+        initialValue = null,
+        source?.poster?.path,
+    ) {
+        val poster = source?.poster
+        value = if (poster == null) {
+            null
+        } else {
+            withContext(Dispatchers.IO) {
+                runCatching {
+                    BitmapFactory.decodeFile(poster.path)?.asImageBitmap()
+                }.getOrNull()
+            }
+        }
+    }
 
     val targetVolume = if (fadeOut) 0f else INTRO_VOLUME
     val audioVolume by animateFloatAsState(
@@ -93,10 +120,9 @@ internal fun QuizStartBackdrop(
         player?.volume = audioVolume
     }
 
-    // The poster is the whole intro when the TV asks to reduce motion; reveal
-    // the card immediately instead of waiting for a player that never starts.
-    LaunchedEffect(reduced) {
-        if (reduced) signalFinished()
+    // No film, or reduced motion: the default wallpaper is the whole intro.
+    LaunchedEffect(wallpaperMode) {
+        if (wallpaperMode) signalFinished()
     }
 
     DisposableEffect(lifecycle) {
@@ -115,11 +141,12 @@ internal fun QuizStartBackdrop(
         onDispose { lifecycle.removeObserver(observer) }
     }
 
-    DisposableEffect(reduced, failed) {
-        if (reduced || failed) return@DisposableEffect onDispose { }
+    DisposableEffect(uri, wallpaperMode) {
+        if (wallpaperMode || uri == null) return@DisposableEffect onDispose { }
 
+        var active = true
         val exo = ExoPlayer.Builder(context).build().apply {
-            setMediaItem(MediaItem.fromUri("asset:///quiz/start_intro.mp4"))
+            setMediaItem(MediaItem.fromUri(uri))
             repeatMode = Player.REPEAT_MODE_OFF
             videoScalingMode = C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING
             videoChangeFrameRateStrategy = C.VIDEO_CHANGE_FRAME_RATE_STRATEGY_OFF
@@ -133,14 +160,16 @@ internal fun QuizStartBackdrop(
             volume = 0f
             addListener(object : Player.Listener {
                 override fun onRenderedFirstFrame() {
-                    firstFrame = true
+                    if (active) firstFrame = true
                 }
 
                 override fun onPlaybackStateChanged(playbackState: Int) {
-                    if (playbackState == Player.STATE_ENDED) signalFinished()
+                    if (active && playbackState == Player.STATE_ENDED) signalFinished()
                 }
 
                 override fun onPlayerError(error: PlaybackException) {
+                    if (!active) return
+                    // No bundled fallback: the shared default wallpaper stands in.
                     failed = true
                     signalFinished()
                 }
@@ -152,13 +181,16 @@ internal fun QuizStartBackdrop(
         player = exo
 
         onDispose {
+            active = false
             if (player === exo) player = null
             exo.release()
         }
     }
 
     Box(modifier.fillMaxSize().background(Color(0xFF03060C))) {
-        if (!reduced && !failed) {
+        if (wallpaperMode) {
+            PolicyDefaultBackdrop()
+        } else {
             AndroidView(
                 factory = { ctx ->
                     SurfaceView(ctx).also { view ->
@@ -172,13 +204,21 @@ internal fun QuizStartBackdrop(
                 },
                 modifier = Modifier.fillMaxSize(),
             )
+            // The wallpaper and the film's poster hold the screen until ExoPlayer renders its
+            // first frame; both fade out together, so a file without a poster never flashes
+            // black and a file with one never shows a stale frame.
+            if (posterBitmap == null) {
+                PolicyDefaultBackdrop(modifier = Modifier.alpha(posterAlpha))
+            }
+            posterBitmap?.let { bitmap ->
+                Image(
+                    bitmap = bitmap,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize().alpha(posterAlpha),
+                )
+            }
         }
-        Image(
-            painter = painterResource(R.drawable.quiz_start_poster),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize().alpha(posterAlpha),
-        )
     }
 }
 

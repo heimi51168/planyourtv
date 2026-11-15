@@ -439,6 +439,14 @@ object LocalPolicyStore {
         return PinResult.WRONG
     }
 
+    /** Seconds left on the recovery-code lockout; zero once another attempt may run. */
+    fun recoveryLockSeconds(): Long {
+        if (!TvStore.isReady) return 0L
+        val remaining = TvStore.getLong(PolicyKeys.LOCAL_RECOVERY_LOCKOUT, 0L) -
+            System.currentTimeMillis()
+        return if (remaining > 0L) (remaining + 999L) / 1000L else 0L
+    }
+
     /** Daily usage is keyed by the TV's local date; a new date starts at zero. */
     fun usedSeconds(date: String): Long {
         if (!TvStore.isReady) return 0

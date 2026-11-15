@@ -442,6 +442,86 @@ object QuizQuestionCache {
     ): List<CachedQuestion> =
         reserveForRound(count, sessionId, LOCAL_SCOPE, minRequired, nowMs, collectionId = collectionId)
 
+    /** Every local row whose most recent answer was wrong, across sources and tags. */
+    fun wrongReviewCount(scopeKey: String = LOCAL_SCOPE): Int = synchronized(lock) {
+        val db = database() ?: return 0
+        runCatching {
+            db.rawQuery(
+                "SELECT COUNT(*) FROM $TABLE " +
+                    "WHERE scope_key = ? AND state = ? AND last_result = ?",
+                arrayOf(scopeKey, STATE_CONSUMED, RESULT_WRONG),
+            ).use { if (it.moveToFirst()) it.getInt(0) else 0 }
+        }.onFailure { Log.e(TAG, "wrong-review count failed", it) }.getOrDefault(0)
+    }
+
+    /**
+     * A wrong-review round re-asks consumed wrong rows without making them
+     * available again. Clearing `last_round_id` reuses the existing answerable
+     * hook in [writeAnswersLocked]; the row stays CONSUMED+WRONG, so normal and
+     * custom levels (which only reserve AVAILABLE rows) can never see it.
+     *
+     * Least-recently-attempted rows go first so a repeatedly failed question
+     * cannot starve the rest of the pool. Duplicate question ids and identical
+     * content within one round are collapsed because a session accepts only one
+     * answer per question id.
+     */
+    fun reserveWrongForRound(
+        count: Int,
+        sessionId: String,
+        scopeKey: String,
+        minRequired: Int,
+        nowMs: Long = System.currentTimeMillis(),
+    ): List<CachedQuestion> = synchronized(lock) {
+        if (count <= 0 || minRequired <= 0) return emptyList()
+        val db = database() ?: throw CacheException("cache not initialized")
+        db.beginTransaction()
+        try {
+            val picked = ArrayList<CachedQuestion>(count)
+            val questionIds = HashSet<String>(count)
+            val fingerprints = HashSet<String>(count)
+            db.rawQuery(
+                "SELECT $SELECT_COLUMNS, question_id, fingerprint FROM $TABLE " +
+                    "WHERE scope_key = ? AND state = ? AND last_result = ? " +
+                    "ORDER BY COALESCE(answered_at, 0) ASC, received_at ASC, rowid ASC",
+                arrayOf(scopeKey, STATE_CONSUMED, RESULT_WRONG),
+            ).use { cursor ->
+                while (cursor.moveToNext() && picked.size < count) {
+                    val cached = readQuestion(cursor)
+                    val questionId = cursor.getString(WRONG_QUESTION_ID_COLUMN)
+                        .orEmpty()
+                        .ifBlank { cached.question.questionId }
+                    val fingerprint = cursor.getString(WRONG_FINGERPRINT_COLUMN).orEmpty()
+                    if (!questionIds.add(questionId)) continue
+                    if (fingerprint.isNotEmpty() && !fingerprints.add(fingerprint)) continue
+                    picked += cached
+                }
+            }
+            if (picked.size < minRequired) {
+                db.setTransactionSuccessful()
+                return emptyList()
+            }
+            picked.forEach { item ->
+                db.update(
+                    TABLE,
+                    ContentValues().apply { putNull("last_round_id") },
+                    "cache_id = ? AND state = ? AND last_result = ?",
+                    arrayOf(item.cacheId, STATE_CONSUMED, RESULT_WRONG),
+                )
+            }
+            db.setTransactionSuccessful()
+            picked
+        } catch (e: CacheException) {
+            throw e
+        } catch (e: Exception) {
+            throw CacheException("wrong-review reserve failed", e)
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    private const val WRONG_QUESTION_ID_COLUMN = 14
+    private const val WRONG_FINGERPRINT_COLUMN = 15
+
     private fun readCandidates(
         db: SQLiteDatabase,
         where: String,

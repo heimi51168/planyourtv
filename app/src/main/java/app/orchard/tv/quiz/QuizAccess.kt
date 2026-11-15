@@ -235,6 +235,32 @@ object QuizAccess {
         QuizSessionStore.removeWebToken(digest, nowMs)
     }
 
+    /**
+     * V29 invalidation for binding, unbinding and TV-driven mode changes. Unlike [logout] this
+     * is not scoped to the current owner: the TV is revoking every web session because the
+     * authorization that admitted it no longer exists.
+     */
+    @Synchronized
+    fun invalidateWebSession(reason: String) {
+        admin = null
+        activeDigest = null
+        lastSeenAt = 0L
+        QuizSessionStore.clearWebTokens()
+    }
+
+    /**
+     * A verified recovery reset replaced the PIN. Drop both in-memory limiters, otherwise a
+     * parent who just proved the recovery code still waits out a lockout earned by the old
+     * PIN. The persisted counters are cleared by the PIN write itself.
+     */
+    @Synchronized
+    fun onPinReset() {
+        pinFailures = 0
+        pinLockedUntil = 0L
+        actionFailures = 0
+        actionLockedUntil = 0L
+    }
+
     private fun ownsSlot(digestHex: String, nowMs: Long): Boolean {
         val remembered = QuizSessionStore.activeWebToken(nowMs)
         if (remembered != null) return remembered.digest == digestHex

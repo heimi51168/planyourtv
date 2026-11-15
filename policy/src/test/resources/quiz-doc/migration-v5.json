@@ -1,0 +1,47 @@
+{
+  "pullCount": 7,
+  "defaultTimeLimitSec": 90,
+  "shuffleOptions": true,
+  "answerDisplaySec": 30,
+  "minutesPerPoint": 5,
+  "minCorrectCount": 1,
+  "maxEarnedMinutes": 60,
+  "minutesPerQuestion": 5,
+  "pointsPerQuestion": 1,
+  "easyRewardMinutes": 1,
+  "mediumRewardMinutes": 2,
+  "hardRewardMinutes": 5,
+  "easyPenaltyMinutes": 0,
+  "mediumPenaltyMinutes": 0,
+  "hardPenaltyMinutes": 0,
+  "minUnlockMinutes": 0,
+  "enabled": true,
+  "answerScopes": [
+    {
+      "id": "lvl-a",
+      "name": "数学第三单元",
+      "scope": {
+        "grade": 4,
+        "semester": 2,
+        "subject": "MATH",
+        "textbook": "RENJIAO",
+        "scopeType": "UNIT",
+        "unitNo": 3,
+        "difficulty": null
+      }
+    },
+    {
+      "id": "lvl-b",
+      "name": "语文复习",
+      "scope": {
+        "grade": 4,
+        "semester": 2,
+        "subject": "CHINESE",
+        "textbook": "BUBIAN",
+        "scopeType": "REVIEW",
+        "unitNo": null,
+        "difficulty": "EASY"
+      }
+    }
+  ]
+}

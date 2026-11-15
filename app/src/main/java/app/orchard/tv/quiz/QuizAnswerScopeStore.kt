@@ -1,6 +1,8 @@
 package app.orchard.tv.quiz
 
 import android.util.Log
+import app.orchard.tv.policy.PolicyModeCoordinator
+import com.planyourtv.policy.PolicyMode
 import com.planyourtv.policy.quiz.QuizAnswerScope
 import com.planyourtv.policy.quiz.QuizLevel
 import java.util.Locale
@@ -18,6 +20,18 @@ object QuizAnswerScopeStore {
     private const val TAG = "QuizAnswerScopeStore"
 
     fun levels(): List<QuizLevel> {
+        if (PolicyModeCoordinator.mode == PolicyMode.LOCAL) {
+            // The local document is the only source of truth here. An unreadable
+            // document yields no levels: the quiz page blocks and the parent
+            // re-saves, instead of silently reviving the old keys.
+            val document = when (val loaded = QuizConfigDocumentStore.ensureLocalDocument()) {
+                is QuizDocLoadResult.Ok -> loaded.document
+                is QuizDocLoadResult.Unreadable,
+                QuizDocLoadResult.Storage,
+                -> return emptyList()
+            }
+            return document.localLevels() ?: emptyList()
+        }
         val stored = QuizSessionStore.loadAnswerScopes()
         if (stored != null) return stored
         if (QuizSessionStore.hasAnswerScopes()) {
@@ -35,7 +49,12 @@ object QuizAnswerScopeStore {
     }
 
     /** Saves the whole ordered list atomically through [QuizSessionStore]. */
-    fun save(levels: List<QuizLevel>): Boolean = QuizSessionStore.saveAnswerScopes(levels)
+    fun save(levels: List<QuizLevel>): Boolean {
+        if (PolicyModeCoordinator.mode == PolicyMode.LOCAL) {
+            return QuizConfigDocumentStore.updateLevels(levels) is QuizDocSaveResult.Ok
+        }
+        return QuizSessionStore.saveAnswerScopes(levels)
+    }
 
     /** The selected level by id, or null when the parent removed it meanwhile. */
     fun level(id: String?): QuizLevel? {
@@ -63,18 +82,64 @@ object QuizAnswerScopeStore {
      * one custom scope. Freeze whichever scope is effective today into level 1;
      * later generation edits no longer move it, matching the new list model.
      */
-    private fun migrateLegacyScope(): List<QuizLevel> {
-        val scope = if (!QuizSessionStore.hasAnswerScope() ||
+    private fun migrateLegacyScope(): List<QuizLevel> = legacyScopeLevels() ?: emptyList()
+
+    /**
+     * Read-only source for the one-time QCD migration. Null means the legacy
+     * records exist but cannot be rebuilt, so the migration must fail loudly
+     * instead of writing an empty or guessed level list.
+     */
+    internal fun legacyLevelsForMigration(): List<QuizLevel>? {
+        val stored = QuizSessionStore.loadAnswerScopes()
+        if (stored != null) return stored
+        if (QuizSessionStore.hasAnswerScopes()) {
+            Log.e(TAG, "stored answer levels cannot migrate: corrupt list")
+            return null
+        }
+        return legacyScopeLevels()
+    }
+
+    private fun legacyScopeLevels(): List<QuizLevel>? {
+        val freshInstall = !QuizSessionStore.hasChallengeConfig() &&
+            !QuizSessionStore.hasAnswerScope() &&
+            !QuizSessionStore.hasAnswerScopes() &&
+            QuizSessionStore.loadGenerationPrefs() == null
+        val bound = !QuizSessionStore.hasAnswerScope() ||
             QuizSessionStore.answerScopeIsBound()
-        ) {
+        val scope = if (bound) {
+            // No generation profile means a fresh-ish TV with nothing to carry
+            // over; that is a valid empty migration, not a corrupt record.
+            if (QuizStudyProfile.current() == null) return emptyList()
             boundScope()
         } else {
             QuizSessionStore.loadAnswerScope().also {
-                if (it == null) Log.e(TAG, "legacy answer scope is corrupt")
+                if (it == null) Log.e(TAG, "legacy answer scope cannot migrate: corrupt scope")
             }
         }
-        return scope?.let { listOf(QuizLevel(id = "legacy-1", name = "", scope = it)) }
+        val migrated = scope?.let { listOf(QuizLevel(id = "legacy-1", name = "", scope = it)) }
             ?: emptyList()
+        if (!freshInstall) return migrated
+        // A new TV also gets one wide all-subject level first, so the child can
+        // start with mixed-subject questions without configuring anything. The
+        // generation default stays a single subject for focused AI generation.
+        val allScope = freshAllSubjectScope() ?: return migrated
+        if (migrated.any { it.scope.signature() == allScope.signature() }) return migrated
+        return listOf(QuizLevel(id = "legacy-all", name = "", scope = allScope)) + migrated
+    }
+
+    /** Grade/semester/topic follow the install defaults; subject is widened to all. */
+    private fun freshAllSubjectScope(): QuizAnswerScope? {
+        val prefs = QuizStudyProfile.current() ?: return null
+        val scopeType = prefs.optString("scope", "").uppercase(Locale.ROOT)
+        return QuizAnswerScope.create(
+            grade = prefs.optInt("grade", 0),
+            semester = prefs.optInt("semester", 0),
+            subject = QuizAnswerScope.SUBJECT_ALL,
+            textbook = QuizAnswerScope.TEXTBOOK_ALL,
+            scopeType = scopeType,
+            unitNo = null,
+            difficulty = null,
+        )
     }
 
     private fun boundScope(): QuizAnswerScope? {

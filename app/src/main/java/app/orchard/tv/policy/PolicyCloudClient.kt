@@ -6,6 +6,7 @@ import android.os.SystemClock
 import android.util.Log
 import app.orchard.tv.BuildConfig
 import app.orchard.tv.R
+import app.orchard.tv.quiz.QuizConfigDocumentSync
 import app.orchard.tv.quiz.QuizConfigSync
 import com.planyourtv.policy.AccessMode
 import com.planyourtv.policy.Activation
@@ -82,12 +83,26 @@ data class MqttCredentials(
 )
 
 /**
- * Server-computed quiz reward. The TV sends only the score; the backend recomputes
- * the minutes from the config it owns and dispatches the trusted start_session.
+ * Server-computed quiz reward. The TV sends the per-question outcome; the backend
+ * recomputes the payout from the member config it owns and dispatches the trusted
+ * start_session. [earnedSeconds] is the exact payout (a cloud round may earn less
+ * than one minute); [earnedMinutes] stays for the legacy minute display.
  */
 data class QuizSettlement(
     val earnedMinutes: Int,
     val alreadyGranted: Boolean,
+    val earnedSeconds: Int,
+)
+
+/**
+ * One answered question as reported for cloud settlement. The server owns the
+ * reward amounts: difficulty only selects a bucket in the member's reward profile.
+ */
+data class QuizSettlementAnswer(
+    val questionId: String,
+    val difficulty: String,
+    val correct: Boolean,
+    val timedOut: Boolean,
 )
 
 /**
@@ -467,8 +482,7 @@ object PolicyCloud : PolicySyncHost {
         appliedMode: RemotePolicyMode? = null,
         appliedConfigVersion: Long? = null,
         policyEpoch: Long? = null,
-        supportsQuizConfig: Boolean? = null,
-        supportsCloudQuiz: Boolean? = null,
+        quizCapabilities: JSONObject? = null,
         appliedQuizVersion: Long? = null,
     ): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
@@ -493,15 +507,8 @@ object PolicyCloud : PolicySyncHost {
             if (appliedQuizVersion != null) {
                 body.put("appliedQuizVersion", appliedQuizVersion)
             }
-            if (supportsQuizConfig != null || supportsCloudQuiz != null) {
-                val capabilities = JSONObject()
-                if (supportsQuizConfig != null) {
-                    capabilities.put("supportsQuizConfig", supportsQuizConfig)
-                }
-                if (supportsCloudQuiz != null) {
-                    capabilities.put("supportsCloudQuiz", supportsCloudQuiz)
-                }
-                body.put("capabilities", capabilities)
+            if (quizCapabilities != null) {
+                body.put("capabilities", quizCapabilities)
             }
             request("POST", "/devices/report/policy-mode", authToken(), body)
             Unit
@@ -664,6 +671,8 @@ object PolicyCloud : PolicySyncHost {
                 // without reopening the local quiz page; callers that apply it again are
                 // idempotent (applyRemote ignores equal versions).
                 QuizConfigSync.applyRemote(snapshot.quiz)
+                // 规则/关卡可能独立变化；每次配置轮询/MQTT 通知后节流对齐 QCD。
+                QuizConfigDocumentSync.requestSync()
                 snapshot
             }.onFailure {
                 if (PolicyFlowTrace.enabled()) {
@@ -715,10 +724,12 @@ object PolicyCloud : PolicySyncHost {
     }
 
     /**
-     * Hosted quiz settlement: the TV reports the score and the config version the
-     * round started with, and the backend recomputes the minutes. The trusted
-     * start_session is dispatched while this call waits for the TV ACK, so the
-     * read timeout must outlast the backend's 12 s command wait.
+     * Hosted quiz settlement: the TV reports the round identity and the
+     * per-question outcome, and the backend recomputes the payout from the
+     * member config it owns. Cloud rounds carry [learnerId], [docRevision] and
+     * [answers]; the legacy path omits them and keeps the old score-only
+     * request. The trusted start_session is dispatched while this call waits
+     * for the TV ACK, so the read timeout must outlast the backend's 12 s wait.
      */
     suspend fun settleQuizEarned(
         deviceNo: String,
@@ -726,6 +737,9 @@ object PolicyCloud : PolicySyncHost {
         totalCount: Int,
         correctCount: Int,
         configVersion: Long,
+        learnerId: Long? = null,
+        docRevision: Long? = null,
+        answers: List<QuizSettlementAnswer> = emptyList(),
     ): Result<QuizSettlement> = withContext(Dispatchers.IO) {
         runCatching {
             val body = JSONObject()
@@ -733,6 +747,21 @@ object PolicyCloud : PolicySyncHost {
                 .put("totalCount", totalCount)
                 .put("correctCount", correctCount)
                 .put("configVersion", configVersion)
+            if (learnerId != null) body.put("learnerId", learnerId)
+            if (docRevision != null) body.put("docRevision", docRevision)
+            if (answers.isNotEmpty()) {
+                val encoded = JSONArray()
+                answers.forEach { answer ->
+                    encoded.put(
+                        JSONObject()
+                            .put("questionId", answer.questionId)
+                            .put("difficulty", answer.difficulty)
+                            .put("correct", answer.correct)
+                            .put("timedOut", answer.timedOut),
+                    )
+                }
+                body.put("answers", encoded)
+            }
             val result = request(
                 "POST",
                 "/devices/current/quiz/earned-session",
@@ -746,9 +775,14 @@ object PolicyCloud : PolicySyncHost {
                 referer = apiBase,
             ).optJSONObject("result")
                 ?: throw IOException("quiz settlement returned no result")
+            val earnedMinutes = result.optInt("earnedMinutes", 0)
             QuizSettlement(
-                earnedMinutes = result.optInt("earnedMinutes", 0),
+                earnedMinutes = earnedMinutes,
                 alreadyGranted = result.optBoolean("alreadyGranted", false),
+                earnedSeconds = result.optInt(
+                    "earnedSeconds",
+                    result.optInt("durationSeconds", earnedMinutes * 60),
+                ),
             )
         }
     }
@@ -966,7 +1000,7 @@ object PolicyCloud : PolicySyncHost {
         PolicyModeCoordinator.confirmCloudBinding()
         withContext(NonCancellable) {
             // A new binding is a new family: drop any previous family's CLOUD quiz source
-            // before the backend resets its row. The local challenge config is the payload.
+            // before the backend resets its row.
             QuizConfigSync.onBindingConfirmed(deviceNo)
             // Must precede reportGuardStatus/fetchConfig: this is what creates device_info for a
             // TV that was bound before it ever reported, and the backend seeds the PENDING
@@ -975,9 +1009,11 @@ object PolicyCloud : PolicySyncHost {
                 .onFailure { Log.w(TAG, "device info report after bind failed", it) }
             reportGuardStatus(deviceNo)
                 .onFailure { Log.w(TAG, "guard status report failed", it) }
-            // Upload the local quiz config before fetching: the cloud row is reset on binding,
-            // and a failed report is retried in the background without blocking this screen.
-            QuizConfigSync.reportBinding(deviceNo)
+            // 2026-11-12: 绑定不再上传本机答题配置。绑定后答题配置完全以云端为准
+            // （题库孩子级配置 + TV 关卡），上报本机旧结构会覆盖云端并引入不兼容。
+            // 保留下行拉取（fetchConfig → applyRemote）与 QuizConfigDocumentSync 的 QCD 同步。
+            // 回滚：把 QuizConfigSync.LOCAL_QUIZ_UPLOAD_ENABLED 改回 true 并恢复此行。
+            // QuizConfigSync.reportBinding(deviceNo)
             fetchConfig(deviceNo)
                 .onSuccess { snapshot ->
                     Log.i(

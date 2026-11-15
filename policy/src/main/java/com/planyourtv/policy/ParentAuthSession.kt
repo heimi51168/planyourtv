@@ -94,5 +94,15 @@ class ParentAuthSession(
         clearExpiresAt()
     }
 
+    /**
+     * True while the proof is still inside its TTL. [authenticated] alone can stay true until
+     * the next guard event, so callers that gate a remote surface must use this instead.
+     */
+    fun proofValid(): Boolean = _authenticated.value && expiresAtMs > now()
+
+    /** Remaining proof time; zero when no proof is valid. */
+    fun remainingMs(): Long =
+        if (!proofValid()) 0L else (expiresAtMs - now()).coerceAtLeast(0L)
+
     private fun isExpired(): Boolean = expiresAtMs > 0L && now() >= expiresAtMs
 }

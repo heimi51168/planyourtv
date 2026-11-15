@@ -13,6 +13,7 @@
     <string name="policy_temp_unlock_local_note">У щоденному режимі діють локальні правила з батьківського контролю.</string>
     <string name="policy_confirm_start">Підтвердити й почати</string>
     <string name="policy_parent_unlock">Тимчасовий вхід</string>
+    <string name="policy_exit_child_mode">Тимчасово вийти з дитячого режиму</string>
     <string name="policy_activation_auto">Автоматичний</string>
     <string name="policy_activation_manual">Ручний</string>
     <string name="policy_auto_ready_title">Можна починати</string>
@@ -41,11 +42,13 @@
     <string name="policy_quiz_scan_hint">QR-код постійний, його можна зберегти на телефоні. Після перевірки сторінка відкривається без PIN до кінця дня; після опівночі потрібна повторна перевірка.</string>
     <string name="policy_quiz_qr_loading">Підготовка QR-коду…</string>
     <string name="policy_quiz_offline">Телевізор не в локальній мережі, QR-код недоступний.</string>
+    <string name="policy_parent_qr_hint">Скануйте телефоном · та сама мережа Wi-Fi</string>
+    <string name="policy_parent_qr_offline">QR недоступний</string>
     <string name="policy_quiz_bank_stock">Джерело: локальний банк · не використано: %1$d</string>
+    <string name="policy_quiz_wrong_stock">Джерело: помилки · повторити: %1$d</string>
     <string name="policy_quiz_source_cloud">Джерело: хмарний банк</string>
     <string name="policy_quiz_scope_label">Діапазон питань</string>
     <string name="policy_quiz_level_hint">Перемикання рівня: вгору/вниз</string>
-    <string name="policy_quiz_intro_hint">Натисніть стрілку, щоб побачити рівні</string>
     <string name="policy_quiz_key_ok">OK</string>
     <string name="policy_quiz_preparing">Підготовка раунду…</string>
     <string name="policy_quiz_back_hint">Вихід</string>
@@ -53,6 +56,7 @@
     <string name="policy_quiz_level_short">На рівні лише %1$d із %2$d питань для раунду</string>
     <string name="policy_quiz_scope_any">Не задано</string>
     <string name="policy_quiz_scope_custom_tag">Власний тег · %1$s</string>
+    <string name="policy_quiz_scope_wrong_review">Повторення помилок</string>
     <string name="policy_quiz_format_label">Формат відповіді</string>
     <string name="policy_quiz_format_single">Одна відповідь</string>
     <string name="policy_quiz_semester_first">1-й семестр</string>
@@ -67,6 +71,8 @@
     <string name="policy_quiz_bank_qr_hint">Батькам: скануйте код, щоб додати питання</string>
     <string name="policy_quiz_bank_empty_title">Попросіть батьків додати питання</string>
     <string name="policy_quiz_bank_empty_body">У локальному банку немає готових питань. Відскануйте код і створіть питання на сторінці телефона.</string>
+    <string name="policy_quiz_bank_blocked_title">Налаштування вікторини-випробування потрібно зберегти знову</string>
+    <string name="policy_quiz_bank_blocked_body">Телевізор не зміг прочитати локальні налаштування вікторини. Відскануйте код і збережіть налаштування знову на сторінці телефона.</string>
     <string name="policy_quiz_bank_insufficient">Для початку потрібно ще %1$d пит.</string>
     <string name="policy_quiz_bank_refresh">Оновити</string>
     <string name="policy_quiz_ready_title">Вікторина готова</string>
@@ -139,6 +145,12 @@
     <string name="policy_quiz_report_breakdown_no_penalty">Правильно +%1$d · підсумок %2$d хв</string>
     <string name="policy_quiz_report_threshold">Поріг %1$d хв; підсумок раунду %2$d хв — поріг не досягнуто.</string>
     <string name="policy_quiz_report_capped">Діє ліміт %1$d хв за раунд.</string>
+    <string name="policy_quiz_report_seconds_value">%1$d с</string>
+    <string name="policy_quiz_report_minutes_seconds_value">%1$d хв %2$d с</string>
+    <string name="policy_quiz_report_breakdown_seconds">Правильно +%1$d с · неправильно/тайм-аут -%2$d с · підсумок %3$s</string>
+    <string name="policy_quiz_report_breakdown_no_penalty_seconds">Правильно +%1$d с · підсумок %2$s</string>
+    <string name="policy_quiz_report_threshold_seconds">Поріг %1$s; підсумок раунду %2$s — поріг не досягнуто.</string>
+    <string name="policy_quiz_report_capped_seconds">Діє ліміт %1$s за раунд.</string>
     <string name="policy_quiz_review_question">Питання</string>
     <string name="policy_quiz_review_your_answer">Ваш вибір</string>
     <string name="policy_quiz_review_correct_answer">Правильна відповідь</string>
@@ -213,7 +225,6 @@
     <string name="policy_today">Сьогодні</string>
     <string name="policy_tomorrow">Завтра</string>
     <string name="policy_lock_expected_label">Доступно</string>
-    <string name="policy_lock_expected_now">Зараз</string>
     <string name="policy_lock_expected_none">Поки ні</string>
     <string name="policy_lock_detail_windows">Час ТБ</string>
     <string name="policy_lock_detail_rest">Інтервал відпочинку</string>
@@ -222,13 +233,16 @@
     <string name="policy_lock_detail_none">Немає</string>
     <string name="policy_lock_detail_paused">Пауза до наступного вікна</string>
     <string name="policy_lock_detail_under_minute">Менше хвилини</string>
+    <string name="policy_lock_dock_idle">Виберіть дію стрілками.</string>
     <string name="policy_lock_study_footer">Без відліку. Доступні лише схвалені навчальні застосунки.</string>
+    <string name="policy_lock_study_app_footer">Відкрити «%1$s». Навчальні застосунки не враховуються.</string>
     <string name="policy_lock_study_empty_footer">Навчальні застосунки не налаштовані. Попросіть батьків додати їх.</string>
     <string name="policy_lock_quiz_local_footer">Банк запитань ШІ. За правильні відповіді нараховується час.</string>
     <string name="policy_lock_quiz_remote_footer">Банк запитань від батьків. За правильні відповіді нараховується час.</string>
     <string name="policy_lock_quiz_running_footer">Завершіть випробування, щоб отримати час.</string>
     <string name="policy_lock_quiz_expired_footer">Попросіть батьків налаштувати знову.</string>
     <string name="policy_lock_quiz_empty_footer">Банк запитань не готовий. Попросіть батьків налаштувати його.</string>
+    <string name="policy_lock_quiz_blocked_footer">Налаштування вікторини-випробування потрібно зберегти знову.</string>
     <string name="policy_lock_manual_local_footer">Оберіть тривалість, потім батьки введуть PIN.</string>
     <string name="policy_lock_manual_remote_footer">Батьки надсилають час із телефона або дитина обмінює бажання.</string>
     <string name="policy_lock_auto_local_footer">Враховує денний ліміт і тривалість, потім перерва.</string>
@@ -342,4 +356,15 @@
     <string name="policy_bind_retry">Я відсканував</string>
     <string name="policy_bind_later">Прив’язати пізніше</string>
     <string name="policy_bind_qr_loading">Підготовка QR-коду…</string>
+    <string name="policy_parent_web_pair">Батьківський центр у браузері</string>
+    <string name="policy_parent_web_pair_sub">Налаштування з телефона</string>
+    <string name="policy_parent_web_pair_title">Налаштування з телефона</string>
+    <string name="policy_parent_web_pair_lead">Відскануйте QR-код телефоном або введіть 8-значний код нижче. Телефон і телевізор мають бути в одній мережі.</string>
+    <string name="policy_parent_web_pair_code">Код сполучення</string>
+    <string name="policy_parent_web_pair_expires">Спливає через %1$d с</string>
+    <string name="policy_parent_web_pair_expired">Термін дії коду минув. Створіть новий.</string>
+    <string name="policy_parent_web_pair_regenerate">Новий код</string>
+    <string name="policy_parent_web_pair_close">Закрити</string>
+    <string name="policy_parent_web_pair_qr_failed">Не вдалося створити QR-код. Введіть код на телефоні.</string>
+    <string name="policy_parent_web_pair_hint">Після сполучення батьківський центр на телевізорі закриється, редагування продовжиться на телефоні.</string>
 </resources>

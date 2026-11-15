@@ -132,19 +132,20 @@ object SystemProbe {
      * on MT5879 (Android 11, 1.41), as on the reporter's m7221 (Android 8). Up to 1.40 the flag was
      * there for MT5879, where it had seemed that only a shown bar reached the amplifier.
      * [fromKey]: the guard repeating a held volume key (HomeGuardService.takeVolumeKey), which
-     * shows TCL's bar as the key itself does.
+     * shows TCL's bar as the key itself does. [showUi]: a step for a key the firmware did nothing
+     * with, which would have shown Android's bar (issue #1498).
      */
-    private fun volumeFlags(context: Context, fromKey: Boolean) =
-        if (fromKey && isInstalled(context, "com.tcl.settings")) AudioManager.FLAG_SHOW_UI else 0
+    private fun volumeFlags(context: Context, fromKey: Boolean, showUi: Boolean = false) =
+        if (showUi || (fromKey && isInstalled(context, "com.tcl.settings"))) AudioManager.FLAG_SHOW_UI else 0
 
     /**
      * TCL tcl_m7642 (雷鸟 65S515D, Android 9) has adjustStreamVolume note the change in battery stats,
      * which needs a system permission: it threw and Control Center crashed at the first step (issue
      * #15). Setting the level is the way left there.
      */
-    fun adjustVolume(context: Context, direction: Int, fromKey: Boolean = false) {
+    fun adjustVolume(context: Context, direction: Int, fromKey: Boolean = false, showUi: Boolean = false) {
         val am = context.getSystemService<AudioManager>() ?: return
-        val flags = volumeFlags(context, fromKey)
+        val flags = volumeFlags(context, fromKey, showUi)
         try {
             am.adjustStreamVolume(
                 AudioManager.STREAM_MUSIC,
@@ -199,6 +200,7 @@ object SystemProbe {
 
     fun settingsIntent(context: Context): Intent =
         ChanghongSettings.intent(context)
+            ?: fengOsSettingsIntent(context)
             ?: xgimiSettingsIntent(context, "Settings://com.xgimi.misckey.main/mainPage")
             ?: konkaSettingsIntent(context)
             ?: settingsActivityIntent(context)
@@ -228,6 +230,25 @@ object SystemProbe {
             }?.let(::Intent),
         )
 
+    /**
+     * FengOS (Formovie / Xiaomi projectors) keeps its own settings panel, the one its remote and
+     * launcher open for 设置, while android.settings.SETTINGS lands in the AOSP pages left in the
+     * firmware (Xiaomi Q3 Pro, device peppa, Android 9; issue #1438, the reporter's patch, tried on
+     * that projector). Known by the panel being there.
+     */
+    private val FENGOS_SETTINGS = ComponentName("cn.formovie.fengos.settings", "cn.formovie.fengos.settings.ui.activity.MainActivity")
+
+    private fun fengOsSettingsIntent(context: Context): Intent? =
+        resolvable(context, Intent(Intent.ACTION_MAIN).setComponent(FENGOS_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+
+    /**
+     * FengOS's own network page is the floating panel its settings open with the Wi-Fi action; the
+     * AOSP NetworkActivity, which networkSettingsActivityIntents tries first, is a leftover there
+     * (Q3 Pro, issue #1438). Only where FengOS's settings panel is.
+     */
+    private fun fengOsNetworkIntent(context: Context): Intent? =
+        if (fengOsSettingsIntent(context) == null) null else resolvable(context, Intent(Settings.ACTION_WIFI_SETTINGS))
+
     private fun konkaSettingsIntent(context: Context): Intent? {
         val intent = Intent("com.konka.settings.action.SETTING_MAIN_VIEW").setComponent(KONKA_SETTINGS)
         return intent.takeIf { context.packageManager.resolveService(it, 0)?.serviceInfo?.exported == true }
@@ -247,6 +268,10 @@ object SystemProbe {
             // com.android.settings (priority 1) over Hisense's own page, which declares it too and
             // is what the TV's System Settings tile opens (issue #1085, the reporter's adb).
             Intent(Settings.ACTION_SETTINGS).setComponent(ComponentName("com.android.tv.settings", "com.hisense.systemsettings.MainActivity")),
+            // LeTV Max4-55 (MStar, Android 6, Dangbei's slimmed firmware): ACTION_SETTINGS lands in
+            // AOSP's empty MainSettings; LeTV's own settings have no launcher entry and answer no
+            // settings action (the reporter opened them by component, issue #1528).
+            Intent(Intent.ACTION_MAIN).setComponent(ComponentName("com.stv.globalsetting", "com.stv.globalsetting.activity.SettingActivity")),
             Intent(Settings.ACTION_SETTINGS),
             // Konka Android TV 553 (Hi3751V553, Android 5.1.1) has neither of the above: its settings
             // are a second app, opened by component on the TV by the reporter (issue #918).
@@ -284,7 +309,22 @@ object SystemProbe {
         resolvable(context, Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
 
     private fun resolvable(context: Context, intent: Intent): Intent? =
-        intent.takeIf { context.packageManager.resolveActivity(it, 0) != null }?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        intent.takeIf { startable(context, it) }?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+    /**
+     * Whether [intent] resolves to an activity Aerial may start: exported, and any permission it
+     * asks for held. Haier's settings (com.haier.tv.menusetting/.RootActivity) resolve on the
+     * Huanglong-based 统帅 L65F8 (Android 12) but ask for com.huanglong.permission.COMMON_PERMISSION,
+     * signature|privileged, so the start threw and Control Center said the TV had no settings,
+     * though candidates after it were there (issue #1388, the reporter's dexdump and adb).
+     */
+    private fun startable(context: Context, intent: Intent): Boolean {
+        val info = context.packageManager.resolveActivity(intent, 0)?.activityInfo ?: return false
+        if (info.packageName == context.packageName) return true
+        if (!info.exported) return false
+        val permission = info.permission ?: return true
+        return context.checkCallingOrSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
+    }
 
     /**
      * The network page and, after it, the ones to try if it closes at once. Xiaomi MiTV-ANSP0
@@ -295,7 +335,7 @@ object SystemProbe {
      * MiTV-MFTP0 (Android 9) viewer saw "crash" (issue #369); MiTV-MFTR0 has the page too.
      */
     fun networkSettingsIntents(context: Context, ethernet: Boolean = false): List<Intent> =
-        listOfNotNull(ChanghongSettings.intent(context, ChanghongSettings.NETWORK), xgimiSettingsIntent(context, XGIMI_NETWORK_PAGE)) +
+        listOfNotNull(fengOsNetworkIntent(context), ChanghongSettings.intent(context, ChanghongSettings.NETWORK), xgimiSettingsIntent(context, XGIMI_NETWORK_PAGE)) +
             networkSettingsActivityIntents(context, ethernet)
 
     private fun networkSettingsActivityIntents(context: Context, ethernet: Boolean = false): List<Intent> {
@@ -604,16 +644,27 @@ object SystemProbe {
         ) return true
         // Skyworth 42X5 (8S40, Android 4.4.4, Aerial Lite's issue #1419): the framework turns the
         // remote's input key into a "com.android.sky.SendHotKey" broadcast that ccosservice's exported
-        // HotKeyReceiver answers with the input panel, reading the key from EXTRA_KEY_EVENT (the
-        // reporter's logcat). Its HomeService below is there but ignores the key, so this goes first;
-        // sent only to an exported receiver for it, and not yet tried from an app.
+        // HotKeyReceiver answers with the input panel. The key goes in an int extra "specialKey"
+        // (the reporter read it from the firmware's PhoneWindowManager; sent so with am broadcast,
+        // the panel came up; a KeyEvent in EXTRA_KEY_EVENT reached the receiver and was ignored).
+        // Its HomeService below is there but ignores the key, so this goes first; sent only to an
+        // exported receiver for it.
         val skyHotKey = Intent("com.android.sky.SendHotKey")
         runCatching { pm.queryBroadcastReceivers(skyHotKey, 0) }.getOrNull().orEmpty()
             .firstOrNull { it.activityInfo.exported && it.activityInfo.enabled }?.activityInfo?.let { r ->
                 val key = Intent(skyHotKey).setComponent(ComponentName(r.packageName, r.name))
-                    .putExtra(Intent.EXTRA_KEY_EVENT, android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_TV_INPUT))
+                    .putExtra("specialKey", android.view.KeyEvent.KEYCODE_TV_INPUT)
                 if (runCatching { context.sendBroadcast(key) }.isSuccess) return true
             }
+        // Baofeng TV (Android 4.4, Aerial Lite's issue #1225): the remote's source key is the
+        // broadcast "baofengtv.action.SOURCE_SWITCH", which the system app BFTVSourceSwitch's
+        // exported TVEventReceiver answers with its source overlay (read from the APK the reporter
+        // sent). Only where that receiver is there and exported; not seen on a full-app Baofeng yet.
+        val baofeng = Intent("baofengtv.action.SOURCE_SWITCH")
+            .setComponent(ComponentName("com.baofengtv.sourceswitch", "com.baofengtv.sourceswitch.receiver.TVEventReceiver"))
+        if (runCatching { pm.queryBroadcastReceivers(baofeng, 0) }.getOrNull().orEmpty().any { it.activityInfo.exported } &&
+            runCatching { context.sendBroadcast(baofeng) }.isSuccess
+        ) return true
         // Older Coocaa with none of the above (Skyworth 8S61, MStar, Android 4.4.2, Aerial Lite's
         // issue #1272): the system answers the remote's input key by starting its launcher's
         // HomeService with the key, which shows the input page. The extra is read from the
@@ -631,6 +682,13 @@ object SystemProbe {
         val mstar = Intent(MSTAR_SOURCE_INFO).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         if (runCatching { pm.resolveActivity(mstar, 0)?.activityInfo }.getOrNull()?.exported == true &&
             runCatching { context.startActivity(mstar) }.isSuccess
+        ) return true
+        // HiSilicon YunOS (喜瑞 HS350, bigfish, Android 9): TvInputManager lists the inputs, but
+        // nothing answers their passthrough intent; the system TVSource app's source list does
+        // (the reporter's agent opened it with this link, issue #1527). Only an exported one.
+        val yunos = Intent(Intent.ACTION_VIEW, Uri.parse("alliance://start_signal")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (runCatching { pm.resolveActivity(yunos, 0)?.activityInfo }.getOrNull()?.exported == true &&
+            runCatching { context.startActivity(yunos) }.isSuccess
         ) return true
         return false
     }
@@ -685,11 +743,20 @@ object SystemProbe {
         )
     }.isSuccess
 
+    /**
+     * Tianci's system service, which answers the remote's input key with the firmware's own source
+     * page and lets the key through to Aerial too: both pages came up (Panasonic TH-55HX560C, a
+     * Skyworth build, m7221, Android 8, issue #1468; older Coocaa show their SOURCE_DIALOG on the
+     * same key, #519 #582).
+     */
+    fun tianciInputPanel(context: Context): Boolean = runCatching {
+        context.packageManager.getPackageInfo("com.tianci.system", 0)
+    }.isSuccess
+
     private fun firstResolvable(context: Context, vararg intents: Intent): Intent {
-        val pm = context.packageManager
         // Not Intent.resolveActivity: it returns an explicit component unchecked, so Xiaomi's
         // component was picked on TCL too, where it does not exist.
-        return (intents.firstOrNull { pm.resolveActivity(it, 0) != null } ?: intents.last())
+        return (intents.firstOrNull { startable(context, it) } ?: intents.last())
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             .let { settingsLaunchIntent(context, it) }
     }
@@ -701,6 +768,7 @@ object SystemProbe {
         return intents
             .filter { intent ->
                 val info = pm.resolveActivity(intent, 0)?.activityInfo ?: return@filter false
+                if (!startable(context, intent)) return@filter false
                 seen.add("${info.packageName}/${info.name}")
             }
             .ifEmpty { listOf(intents.last()) }
@@ -794,7 +862,7 @@ object SystemProbe {
                     ?: tclPlayer?.takeIf { info.id.startsWith(TCL_INPUTS) }?.let { tclRoute(it, kind, label, hw(info.id)) }
                     ?: generic.takeIf { resolves(context, it) }
                     ?: droidLogicRoute(context, info)
-                    ?: jmgoRoute(context, info)
+                    ?: jmgoRoute(context, info, label)
                     ?: tclPlayer?.let { tclRoute(it, kind, label, hw(info.id)) }
                     ?: generic
                 val device = cec
@@ -869,10 +937,22 @@ object SystemProbe {
      * after. JMGO S60 (Amlogic T968, Android 5.1.1): HDMI3 opened, the reporter's patched build and
      * `am start` (issue #1347).
      */
-    private fun jmgoRoute(context: Context, info: TvInputInfo): Intent? {
+    private fun jmgoRoute(context: Context, info: TvInputInfo, label: String): Intent? {
         if (info.type != TvInputInfo.TYPE_HDMI) return null
-        val port = JMGO_PORT.find(info.id)?.groupValues?.get(1) ?: return null
-        val intent = Intent().setComponent(ComponentName(JMGO_TV, "$JMGO_TV.AmlogicTvActivity"))
+        JMGO_PORT.find(info.id)?.groupValues?.get(1)?.let { return jmgoActivity(context, "AmlogicTvActivity", it) }
+        // JMGO H931 (MediaTek mt5889, Android 11): MediaTek's .hdmi.HDMIInputService/HW5-8, and the
+        // TV app's MainActivity takes the same extra, then tunes the port's CEC child in its
+        // TvActivity, which is not exported (issue #1481, the reporter's agent with adb). The port
+        // is the digit in the firmware's label (HDMI 2), else MediaTek's HW5 for HDMI 1.
+        if (!info.id.startsWith(MTK_HDMI)) return null
+        val port = HDMI_DIGIT.find(label)?.groupValues?.get(1)
+            ?: hw(info.id)?.minus(4)?.takeIf { it in 1..4 }?.toString()
+            ?: return null
+        return jmgoActivity(context, "MainActivity", port)
+    }
+
+    private fun jmgoActivity(context: Context, activityName: String, port: String): Intent? {
+        val intent = Intent().setComponent(ComponentName(JMGO_TV, "$JMGO_TV.$activityName"))
             .putExtra("inputSrc", "HDMI$port")
         val activity = runCatching { context.packageManager.getActivityInfo(intent.component!!, 0) }.getOrNull() ?: return null
         return intent.takeIf {
@@ -883,6 +963,8 @@ object SystemProbe {
 
     private const val JMGO_TV = "com.jmgo.tv"
     private val JMGO_PORT = Regex("""\.Hdmi(\d)InputService/""")
+    private const val MTK_HDMI = "com.mediatek.tvinput/.hdmi.HDMIInputService/"
+    private val HDMI_DIGIT = Regex("""^HDMI\s*(\d)""", RegexOption.IGNORE_CASE)
 
     private fun resolves(context: Context, intent: Intent) =
         runCatching { context.packageManager.resolveActivity(intent, 0) != null }.getOrDefault(false)

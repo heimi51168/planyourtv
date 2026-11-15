@@ -43,6 +43,23 @@ val tvApiBase = (project.findProperty("tvApiBase") as String?)
 val tvOfficialBuild = (project.findProperty("tvOfficialBuild") as String?)
     ?.equals("true", ignoreCase = true) == true
 
+// The read-only catalogue of official policy films. Empty (the community build) means the
+// parent center offers local uploads only and never contacts a media host. Official channels
+// pass the R2 manifest URL through tools/build_local_network.sh; the runtime parser still
+// requires HTTPS and the same-host /media/policy-videos/ prefix.
+val tvMediaCatalogUrl = (project.findProperty("tvMediaCatalogUrl") as String?)
+    ?.trim()
+    ?.takeIf { it.isNotEmpty() }
+    ?: ""
+
+if (tvMediaCatalogUrl.isNotBlank()) {
+    requireMqtt(
+        tvMediaCatalogUrl.startsWith("https://") &&
+            !tvMediaCatalogUrl.any { it.isWhitespace() },
+        "tvMediaCatalogUrl must be an HTTPS URL without whitespace",
+    )
+}
+
 // The dev channel skips R8 and resource shrinking so UI iteration does not wait for the
 // slowest release step. preview/pro keep both: those are the channels used to validate the
 // artifact that actually ships. dev must not be used as a release-verification build.
@@ -114,12 +131,12 @@ android {
         // Android 5.0. Compose 1.10 and later need 6.0, so the Compose BOM below stays on 1.9.
         minSdk = 21
         targetSdk = 34
-        // Product version: Aerial's version stays the prefix (v1.93 / 131 -> 1.93.003 / 131003).
+        // Product version: Aerial's version stays the prefix (v1.97 / 142 -> 1.97.000 / 142000).
         // On every upstream merge update these two from the Aerial tag and reset the revision to 0.
         // Raise productRevision for each product release; never reuse or decrease it.
-        val aerialVersionName = "1.93"
-        val aerialVersionCode = 131
-        val productRevision = 5
+        val aerialVersionName = "1.97"
+        val aerialVersionCode = 142
+        val productRevision = 0
         require(productRevision in 0..999) { "productRevision must fit in three digits" }
         versionCode = aerialVersionCode * 1000 + productRevision
         versionName = "$aerialVersionName.${productRevision.toString().padStart(3, '0')}"
@@ -129,6 +146,7 @@ android {
         buildConfigField("boolean", "DIAG", diag.toString())
         if (diag) versionNameSuffix = "-diag"
         buildConfigField("String", "TV_API_BASE", "\"$tvApiBase\"")
+        buildConfigField("String", "TV_MEDIA_CATALOG_URL", buildConfigString(tvMediaCatalogUrl))
         // The community build has no backend baked in: keep the cloud/remote UI hidden and do
         // not install the HTTP/MQTT adapters. An official build opts in with -PtvApiBase.
         buildConfigField("boolean", "CLOUD_ENABLED", tvApiBase.isNotBlank().toString())

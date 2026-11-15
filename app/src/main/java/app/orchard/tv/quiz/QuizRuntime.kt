@@ -1,9 +1,12 @@
 package app.orchard.tv.quiz
 
 import app.orchard.tv.policy.PolicyModeCoordinator
+import com.planyourtv.policy.PolicyMode
 import com.planyourtv.policy.quiz.QuizAnswerScope
 import com.planyourtv.policy.quiz.QuizConfig
+import com.planyourtv.policy.quiz.QuizConfigDocument
 import com.planyourtv.policy.quiz.QuizLevel
+import com.planyourtv.policy.quiz.QuizRewardProfile
 import com.planyourtv.policy.quiz.QuizSession
 import com.planyourtv.policy.quiz.QuizSessionStatus
 import com.planyourtv.policy.quiz.QuizSource
@@ -21,7 +24,8 @@ object QuizRuntime {
     /**
      * One parent-designed level plus how many bank questions it can use now.
      * A course level carries [scope]; a custom-tag level carries
-     * [collectionId] and [tagName] instead. Exactly one of the two is set.
+     * [collectionId] and [tagName] instead. A wrong-review level has neither
+     * and is marked by [wrongReview].
      */
     data class LevelState(
         val id: String,
@@ -30,8 +34,18 @@ object QuizRuntime {
         val collectionId: String? = null,
         val tagName: String = "",
         val available: Int,
+        /** Set only for cloud levels; the QB level id used by `serve-next`. Never zero. */
+        val qbLevelId: Long? = null,
+        /**
+         * Questions this level pulls per round. Cloud levels carry the parent's
+         * per-level count from the QCD; local levels keep the shared round size.
+         */
+        val questionCount: Int? = null,
+        /** The optional local level that re-asks every wrong answer in the bank. */
+        val wrongReview: Boolean = false,
     ) {
         val isCustom: Boolean get() = collectionId != null
+        val isCloud: Boolean get() = qbLevelId != null
     }
 
     private val EXPIRY_BOUND_STATUSES = setOf(
@@ -53,7 +67,27 @@ object QuizRuntime {
         val session: QuizSession? = null,
         val providerConfigured: Boolean = false,
         val consentAccepted: Boolean = false,
+        /** The stored session itself cannot be decoded. */
         val unreadable: Boolean = false,
+        /**
+         * The local QCD is missing or failed validation. Kept separate from
+         * [unreadable] so a corrupt document cannot hide a running round; it
+         * only blocks starting a new one.
+         */
+        val documentUnreadable: Boolean = false,
+        /**
+         * Bound TV: the active cloud QCD could not be projected into a round.
+         * The code is internal; screens map it to human copy. Null in local mode
+         * and when the plan is ready.
+         */
+        val cloudPlanError: String? = null,
+        val cloudCheckinBlocked: Boolean = false,
+        val cloudCheckinMessage: String? = null,
+        /**
+         * Exact cloud payout frozen by the active QCD, for the start card only.
+         * The executed payout always comes from the frozen READY session.
+         */
+        val cloudRewardProfile: QuizRewardProfile? = null,
         val cacheAvailable: Int = 0,
         val sourceConfig: QuizSourceConfig = QuizSourceConfig(),
         val bankCounts: QuizQuestionCache.BankCounts = QuizQuestionCache.BankCounts(),
@@ -132,50 +166,117 @@ object QuizRuntime {
     fun refresh(): UiState {
         val session = QuizSessionStore.loadSession()
         val unreadable = session == null && QuizSessionStore.hasStoredSession()
-        val enabled = QuizSessionStore.enabled()
+        val localMode = PolicyModeCoordinator.mode == PolicyMode.LOCAL
+        var localDocument: QuizConfigDocument? = null
+        var documentUnreadable = false
+        if (localMode) {
+            when (val loaded = QuizConfigDocumentStore.ensureLocalDocument()) {
+                is QuizDocLoadResult.Ok -> localDocument = loaded.document
+                is QuizDocLoadResult.Unreadable, QuizDocLoadResult.Storage ->
+                    documentUnreadable = true
+            }
+        }
+        // Bound TV: the cloud QCD is the only execution source. A missing,
+        // corrupt or unsupported active document is an explicit error; it never
+        // falls back to the local document or the legacy device config.
+        var cloudPlan: QuizCloudRoundPlan? = null
+        var cloudPlanError: String? = null
+        if (!localMode) {
+            when (val planned = QuizCloudRoundPlanner.plan()) {
+                is QuizCloudPlanResult.Ready -> cloudPlan = planned.plan
+                is QuizCloudPlanResult.Rejected -> cloudPlanError = planned.code
+            }
+        }
+        val enabled = if (localMode) {
+            localDocument?.enabled ?: false
+        } else {
+            cloudPlan?.document?.enabled ?: false
+        }
         val sourceConfig = QuizSessionStore.loadSourceConfig()
-        val defaultConfig = QuizSessionStore.loadChallengeConfig() ?: QuizConfig()
+        val defaultConfig = if (localMode) {
+            localDocument?.toLegacyConfig() ?: QuizConfig()
+        } else {
+            cloudPlan?.config ?: QuizConfig()
+        }
         val bankCounts = QuizQuestionCache.bankCounts(QuizQuestionCache.LOCAL_SCOPE)
         val activeScope = session?.let {
             QuizRecovery.scopeFor(it, PolicyModeCoordinator.state.value.deviceNo)
         }
         val activeAvailable = activeScope?.let { QuizQuestionCache.availableCount(it) } ?: 0
-        val courseLevels = QuizAnswerScopeStore.levels().map { level: QuizLevel ->
-            LevelState(
-                id = level.id,
-                name = level.name,
-                scope = level.scope,
-                available = QuizQuestionCache.availableCount(
-                    QuizQuestionCache.LOCAL_SCOPE,
-                    answerScope = level.scope,
-                ),
-            )
+        val documentLevels = localDocument?.localLevels()
+        if (localMode && localDocument != null && documentLevels == null) {
+            documentUnreadable = true
+        }
+        val courseLevels: List<LevelState> = if (localMode) {
+            (documentLevels ?: emptyList()).map { level: QuizLevel ->
+                LevelState(
+                    id = level.id,
+                    name = level.name,
+                    scope = level.scope,
+                    available = QuizQuestionCache.availableCount(
+                        QuizQuestionCache.LOCAL_SCOPE,
+                        answerScope = level.scope,
+                    ),
+                )
+            }
+        } else {
+            cloudPlan?.levels?.map { level ->
+                LevelState(
+                    id = level.id,
+                    name = level.name,
+                    available = level.available,
+                    qbLevelId = level.qbLevelId,
+                    questionCount = level.questionCount,
+                )
+            } ?: emptyList()
         }
         // Custom levels always come after course levels. Each draws only from
-        // its own tag; they never gain a curriculum scope.
-        val tagNames = QuizCollectionStore.collections().associate { it.id to it.name }
-        val customLevels = QuizCollectionStore.customLevels().map { level ->
-            LevelState(
-                id = level.id,
-                name = level.name,
-                collectionId = level.collectionId,
-                tagName = tagNames[level.collectionId].orEmpty(),
-                available = QuizQuestionCache.availableCollectionCount(level.collectionId),
-            )
+        // its own tag; they never gain a curriculum scope. A cloud document
+        // cannot carry them, so querying the local store here would mix modes.
+        val customLevels = if (localMode) {
+            val tagNames = QuizCollectionStore.collections().associate { it.id to it.name }
+            QuizCollectionStore.customLevels().map { level ->
+                LevelState(
+                    id = level.id,
+                    name = level.name,
+                    collectionId = level.collectionId,
+                    tagName = tagNames[level.collectionId].orEmpty(),
+                    available = QuizQuestionCache.availableCollectionCount(level.collectionId),
+                )
+            }
+        } else {
+            emptyList()
         }
-        val answerLevels = courseLevels + customLevels
+        // Wrong review always comes last; it has no curriculum scope and no
+        // custom tag. An empty name falls back to the localized TV title.
+        val wrongLevels = if (localMode) {
+            QuizWrongReviewLevelStore.level()?.let { level ->
+                listOf(
+                    LevelState(
+                        id = level.id,
+                        name = level.name,
+                        available = QuizQuestionCache.wrongReviewCount(),
+                        wrongReview = true,
+                    ),
+                )
+            }.orEmpty()
+        } else {
+            emptyList()
+        }
+        val answerLevels = courseLevels + customLevels + wrongLevels
         // This legacy field always means a curriculum scope; a custom level in
         // front must not turn it into null for cloud/reporting callers.
         val answerScope = courseLevels.firstOrNull()?.scope
-        // Keep the start entry visible while any level has questions, even if
-        // none can fill a full round: the start card blocks a short level and
-        // leaves the QR as the parent's recovery path.
         val playable = answerLevels.maxOfOrNull { it.available } ?: 0
-        // v5 has no minimum-correct gate, but an explicitly picked level must
-        // supply the configured round. Only the empty page is QR-only.
         val bankState = when {
+            !localMode && cloudPlanError != null -> "blocked"
+            localMode && documentUnreadable -> "blocked"
             !enabled -> "disabled"
-            playable <= 0 -> "empty"
+            // Local mode hides the start page when no level has questions. The
+            // cloud start page stays visible whenever the parent configured
+            // levels, so an unavailable reason can be shown instead of the QR.
+            localMode && playable <= 0 -> "empty"
+            !localMode && answerLevels.isEmpty() -> "empty"
             else -> "ready"
         }
         val next = UiState(
@@ -185,11 +286,16 @@ object QuizRuntime {
             providerConfigured = QuizSessionStore.providerConfigured(),
             consentAccepted = QuizSessionStore.consentAccepted(),
             unreadable = unreadable,
+            documentUnreadable = documentUnreadable,
+            cloudPlanError = cloudPlanError,
+            cloudCheckinBlocked = cloudPlan?.checkinBlocked ?: false,
+            cloudCheckinMessage = cloudPlan?.checkinMessage,
+            cloudRewardProfile = cloudPlan?.profile,
             cacheAvailable = bankCounts.unused,
             sourceConfig = sourceConfig,
             bankCounts = bankCounts,
             bankState = bankState,
-            localBankActive = sourceConfig.source != QuizSource.CLOUD,
+            localBankActive = localMode,
             defaultChallengeConfig = defaultConfig,
             answerLevels = answerLevels,
             answerScope = answerScope,

@@ -60,6 +60,8 @@ enum class RejectReason {
     RESTING,
     SCREEN_OFF,
     OUTSIDE_WINDOW,
+    /** The local day's quota is already used up; a manual start would otherwise be a free session. */
+    DAILY_LIMIT,
     EXPIRED,
     NO_TIMED_APPS,
     INVALID_SCOPE,

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "documentId": "quizcfg:local:invalid-ranges",
+  "revision": 4,
+  "levelsEtag": "",
+  "etag": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+  "origin": "LOCAL",
+  "updatedAt": "2026-11-13T12:00:00+08:00",
+  "updatedBy": "TV_LOCAL_EDIT",
+  "enabled": true,
+  "rules": {
+    "questionCount": 0,
+    "timeLimitSec": 4,
+    "feedback": {
+      "extraHoldSec": 2147484,
+      "answerRevealSec": 4,
+      "autoNext": false
+    },
+    "shuffleOptions": true,
+    "showPinyin": false,
+    "sourceOrder": ["WRONG", "PUBLIC", "PERSONAL"],
+    "subjects": ["MATH", "MATH"],
+    "legacy": {
+      "minCorrectCount": 0,
+      "minutesPerPoint": 5,
+      "minutesPerQuestion": 5,
+      "pointsPerQuestion": 1
+    }
+  },
+  "reward": {
+    "mode": "DIFFICULTY_SECONDS",
+    "profiles": {
+      "default": {
+        "correctSeconds": {"EASY": 1801, "MEDIUM": 120, "HARD": 180},
+        "penaltySeconds": {"EASY": 0, "MEDIUM": 0, "HARD": 0},
+        "maxEarnedSeconds": 30,
+        "minUnlockSeconds": 2147483641
+      },
+      "weekday": {
+        "correctSeconds": {"EASY": 30, "MEDIUM": 60, "HARD": 90},
+        "penaltySeconds": {"EASY": -1, "MEDIUM": 60, "HARD": 90},
+        "maxEarnedSeconds": 1500,
+        "minUnlockSeconds": 0
+      },
+      "weekend": null
+    }
+  },
+  "quota": {
+    "dailyMaxSeconds": 10,
+    "enforcedBy": "LOCAL"
+  },
+  "calendar": {
+    "timezone": "UTC",
+    "weekendDays": []
+  },
+  "questionPolicy": {
+    "allowedTypes": ["SINGLE"],
+    "judgeMode": "LOCAL_OR_SERVER"
+  },
+  "requirements": {
+    "required": ["SINGLE", "REWARD_PROFILES"],
+    "optional": []
+  },
+  "levels": [],
+  "extensions": {}
+}

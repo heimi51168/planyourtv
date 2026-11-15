@@ -7,7 +7,8 @@ page, its PIN gate and its data stay on the TV.
 ## What it does
 
 - Scans the QR code shown in Parent Center on the TV, or accepts the complete address encoded
-  in that code.
+  in that code. The scanner uses a CameraX preview and native zxing-cpp decoding, with continuous
+  focus, tap-to-focus, zoom and a torch.
 - Remembers the address, so the code is scanned once.
 - Shows the page full screen in a WebView, with the browser behavior the page relies on:
   file import, JSON export through the system save dialog, copy to clipboard, and external links

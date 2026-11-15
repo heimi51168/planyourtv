@@ -20,7 +20,7 @@ data class QuizLevel(
         .put("scope", scope.encode())
 
     companion object {
-        const val MAX_LEVELS = 6
+        const val MAX_LEVELS = 20
         const val MAX_NAME_CODE_POINTS = 10
 
         private val ID_PATTERN = Regex("^[A-Za-z0-9_-]{1,40}$")

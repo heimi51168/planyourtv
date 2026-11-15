@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.io.StringReader
 import java.util.Properties
 
 // A phone shell for the Parent Center page served by the TV over the LAN. It is
@@ -21,8 +22,8 @@ android {
         targetSdk = 34
         // The shell is versioned independently from the TV app: the web page and
         // the TV server define the contract, not the APK version.
-        versionCode = 3
-        versionName = "1.0.2"
+        versionCode = 4
+        versionName = "1.1.0"
     }
 
     buildFeatures {
@@ -33,15 +34,23 @@ android {
     // would make one leaked key affect both applications, so official builds
     // read local/parent-signing.properties instead. Without it, local release
     // builds fall back to the debug key and must not be distributed.
-    val signingProps = rootProject.file("local/parent-signing.properties")
+    // providers.fileContents() makes the configuration cache invalidate when the
+    // file appears or changes; a plain exists() check can reuse a cached debug
+    // configuration after the signing file has been uploaded to a warm workspace.
+    val signingProps = providers.fileContents(
+        rootProject.layout.projectDirectory.file("local/parent-signing.properties"),
+    ).asText
+    val signingValues = Properties().apply {
+        runCatching { signingProps.orNull?.let { load(StringReader(it)) } }
+    }
+    val signingStore = signingValues.getProperty("storeFile")
     signingConfigs {
-        if (signingProps.exists()) {
-            val p = Properties().apply { signingProps.inputStream().use { load(it) } }
+        if (signingStore != null) {
             create("release") {
-                storeFile = rootProject.file("local/" + p.getProperty("storeFile"))
-                storePassword = p.getProperty("storePassword")
-                keyAlias = p.getProperty("keyAlias")
-                keyPassword = p.getProperty("keyPassword")
+                storeFile = rootProject.file("local/$signingStore")
+                storePassword = signingValues.getProperty("storePassword")
+                keyAlias = signingValues.getProperty("keyAlias")
+                keyPassword = signingValues.getProperty("keyPassword")
             }
         }
     }
@@ -52,6 +61,12 @@ android {
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+            ndk {
+                // zxing-cpp ships x86/x86_64 libraries for emulators. The phone
+                // app is distributed as one APK; drop the emulator ABIs so the
+                // native decoder costs about 2.8 MB instead of 6.2 MB.
+                abiFilters += listOf("armeabi-v7a", "arm64-v8a")
+            }
         }
     }
 
@@ -75,14 +90,15 @@ kotlin {
 
 dependencies {
     // AppCompat keeps the shell usable on Android 7-9 phones. CameraX owns the
-    // camera preview and analysis with the Camera2 stack; ZXing core only turns
-    // a luminance frame into text. zxing-android-embedded is deliberately gone:
-    // its Camera1 pipeline focused poorly on current phones (Android 16, vivo
-    // V2309A), where the same QR scans instantly in the browser.
+    // camera preview, zoom and analysis with the Camera2 stack; zxing-cpp is the
+    // native ZXing decoder. It reads the YUV Y plane and rotation directly, so
+    // the analyzer no longer copies and rotates every frame in Kotlin. Java ZXing
+    // was the bottleneck: it decoded at most every 100 ms and could not keep up
+    // with the continuous frames that make the phone browser scan so quickly.
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.camera:camera-camera2:1.4.2")
     implementation("androidx.camera:camera-lifecycle:1.4.2")
     implementation("androidx.camera:camera-view:1.4.2")
-    implementation("com.google.zxing:core:3.5.3")
+    implementation("io.github.zxing-cpp:android:2.3.0")
     testImplementation("junit:junit:4.13.2")
 }

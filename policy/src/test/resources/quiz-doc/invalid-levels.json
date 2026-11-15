@@ -1,0 +1,789 @@
+{
+  "schemaVersion": 1,
+  "documentId": "quizcfg:local:invalid-levels",
+  "revision": 3,
+  "levelsEtag": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "etag": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "origin": "LOCAL",
+  "updatedAt": "2026-11-13T10:00:00+08:00",
+  "updatedBy": "TV_WEB",
+  "enabled": true,
+  "rules": {
+    "questionCount": 5,
+    "timeLimitSec": 60,
+    "feedback": {
+      "extraHoldSec": 0,
+      "answerRevealSec": 30,
+      "autoNext": false
+    },
+    "shuffleOptions": true,
+    "showPinyin": false,
+    "sourceOrder": [
+      "WRONG",
+      "PUBLIC",
+      "PERSONAL"
+    ],
+    "subjects": [
+      "MATH",
+      "CHINESE"
+    ],
+    "legacy": {
+      "minCorrectCount": 1,
+      "minutesPerPoint": 5,
+      "minutesPerQuestion": 5,
+      "pointsPerQuestion": 1
+    },
+    "x-section-note": "preserve me"
+  },
+  "reward": {
+    "mode": "DIFFICULTY_SECONDS",
+    "profiles": {
+      "default": {
+        "correctSeconds": {
+          "EASY": 60,
+          "MEDIUM": 120,
+          "HARD": 300
+        },
+        "penaltySeconds": {
+          "EASY": 0,
+          "MEDIUM": 30,
+          "HARD": 60
+        },
+        "maxEarnedSeconds": 1800,
+        "minUnlockSeconds": 0
+      },
+      "weekday": null,
+      "weekend": null
+    }
+  },
+  "quota": {
+    "dailyMaxSeconds": 0,
+    "enforcedBy": "LOCAL"
+  },
+  "calendar": {
+    "timezone": "Asia/Shanghai",
+    "weekendDays": [
+      6,
+      7
+    ]
+  },
+  "questionPolicy": {
+    "allowedTypes": [
+      "SINGLE"
+    ],
+    "judgeMode": "LOCAL_OR_SERVER"
+  },
+  "requirements": {
+    "required": [
+      "SINGLE",
+      "REWARD_PROFILES"
+    ],
+    "optional": []
+  },
+  "levels": [
+    {
+      "levelId": "local:00000001-1111-1111-1111-111111111111",
+      "origin": "LOCAL",
+      "name": "关卡 1",
+      "enabled": true,
+      "sortNo": 0,
+      "sources": [
+        "LOCAL"
+      ],
+      "subjects": [
+        "MATH"
+      ],
+      "scopeType": "REVIEW",
+      "unitNos": [],
+      "unitGroups": [],
+      "grade": 4,
+      "semester": 1,
+      "textbook": "RENJIAO",
+      "difficulty": null,
+      "advisoryQuestionCount": 5,
+      "questionTypes": [
+        "SINGLE"
+      ],
+      "localScope": {
+        "grade": 4,
+        "semester": 1,
+        "subject": "MATH",
+        "textbook": "RENJIAO",
+        "scopeType": "REVIEW",
+        "unitNo": null,
+        "difficulty": null
+      }
+    },
+    {
+      "levelId": "local:00000002-1111-1111-1111-111111111111",
+      "origin": "LOCAL",
+      "name": "关卡 2",
+      "enabled": true,
+      "sortNo": 1,
+      "sources": [
+        "LOCAL"
+      ],
+      "subjects": [
+        "MATH"
+      ],
+      "scopeType": "REVIEW",
+      "unitNos": [],
+      "unitGroups": [],
+      "grade": 4,
+      "semester": 1,
+      "textbook": "RENJIAO",
+      "difficulty": null,
+      "advisoryQuestionCount": 5,
+      "questionTypes": [
+        "SINGLE"
+      ],
+      "localScope": {
+        "grade": 4,
+        "semester": 1,
+        "subject": "MATH",
+        "textbook": "RENJIAO",
+        "scopeType": "REVIEW",
+        "unitNo": null,
+        "difficulty": null
+      }
+    },
+    {
+      "levelId": "local:00000002-1111-1111-1111-111111111111",
+      "origin": "LOCAL",
+      "name": "关卡 3",
+      "enabled": true,
+      "sortNo": 2,
+      "sources": [
+        "LOCAL"
+      ],
+      "subjects": [
+        "MATH"
+      ],
+      "scopeType": "REVIEW",
+      "unitNos": [],
+      "unitGroups": [],
+      "grade": 4,
+      "semester": 1,
+      "textbook": "RENJIAO",
+      "difficulty": "MEDIUM",
+      "advisoryQuestionCount": 5,
+      "questionTypes": [
+        "SINGLE"
+      ],
+      "localScope": {
+        "grade": 4,
+        "semester": 1,
+        "subject": "MATH",
+        "textbook": "RENJIAO",
+        "scopeType": "REVIEW",
+        "unitNo": null,
+        "difficulty": "MEDIUM"
+      }
+    },
+    {
+      "levelId": "local:00000004-1111-1111-1111-111111111111",
+      "origin": "LOCAL",
+      "name": "关卡 4",
+      "enabled": true,
+      "sortNo": 3,
+      "sources": [
+        "LOCAL"
+      ],
+      "subjects": [
+        "MATH"
+      ],
+      "scopeType": "REVIEW",
+      "unitNos": [],
+      "unitGroups": [],
+      "grade": 4,
+      "semester": 1,
+      "textbook": "RENJIAO",
+      "difficulty": "HARD",
+      "advisoryQuestionCount": 5,
+      "questionTypes": [
+        "SINGLE"
+      ],
+      "localScope": {
+        "grade": 4,
+        "semester": 1,
+        "subject": "MATH",
+        "textbook": "RENJIAO",
+        "scopeType": "REVIEW",
+        "unitNo": null,
+        "difficulty": "HARD"
+      }
+    },
+    {
+      "levelId": "local:00000005-1111-1111-1111-111111111111",
+      "origin": "LOCAL",
+      "name": "关卡 5",
+      "enabled": true,
+      "sortNo": 4,
+      "sources": [
+        "LOCAL"
+      ],
+      "subjects": [
+        "MATH"
+      ],
+      "scopeType": "REVIEW",
+      "unitNos": [],
+      "unitGroups": [],
+      "grade": 4,
+      "semester": 2,
+      "textbook": "RENJIAO",
+      "difficulty": null,
+      "advisoryQuestionCount": 5,
+      "questionTypes": [
+        "SINGLE"
+      ],
+      "localScope": {
+        "grade": 4,
+        "semester": 2,
+        "subject": "MATH",
+        "textbook": "RENJIAO",
+        "scopeType": "REVIEW",
+        "unitNo": null,
+        "difficulty": null
+      }
+    },
+    {
+      "levelId": "local:00000006-1111-1111-1111-111111111111",
+      "origin": "LOCAL",
+      "name": "关卡 6",
+      "enabled": true,
+      "sortNo": 5,
+      "sources": [
+        "LOCAL"
+      ],
+      "subjects": [
+        "MATH"
+      ],
+      "scopeType": "REVIEW",
+      "unitNos": [],
+      "unitGroups": [],
+      "grade": 4,
+      "semester": 2,
+      "textbook": "RENJIAO",
+      "difficulty": "EASY",
+      "advisoryQuestionCount": 5,
+      "questionTypes": [
+        "SINGLE"
+      ],
+      "localScope": {
+        "grade": 4,
+        "semester": 2,
+        "subject": "MATH",
+        "textbook": "RENJIAO",
+        "scopeType": "REVIEW",
+        "unitNo": null,
+        "difficulty": "EASY"
+      }
+    },
+    {
+      "levelId": "local:00000007-1111-1111-1111-111111111111",
+      "origin": "LOCAL",
+      "name": "关卡 7",
+      "enabled": true,
+      "sortNo": 6,
+      "sources": [
+        "LOCAL"
+      ],
+      "subjects": [
+        "MATH"
+      ],
+      "scopeType": "REVIEW",
+      "unitNos": [],
+      "unitGroups": [],
+      "grade": 4,
+      "semester": 2,
+      "textbook": "RENJIAO",
+      "difficulty": "MEDIUM",
+      "advisoryQuestionCount": 5,
+      "questionTypes": [
+        "SINGLE"
+      ],
+      "localScope": {
+        "grade": 4,
+        "semester": 2,
+        "subject": "MATH",
+        "textbook": "RENJIAO",
+        "scopeType": "REVIEW",
+        "unitNo": null,
+        "difficulty": "MEDIUM"
+      }
+    },
+    {
+      "levelId": "local:00000008-1111-1111-1111-111111111111",
+      "origin": "LOCAL",
+      "name": "关卡 8",
+      "enabled": true,
+      "sortNo": 7,
+      "sources": [
+        "LOCAL"
+      ],
+      "subjects": [
+        "MATH"
+      ],
+      "scopeType": "REVIEW",
+      "unitNos": [],
+      "unitGroups": [],
+      "grade": 4,
+      "semester": 2,
+      "textbook": "RENJIAO",
+      "difficulty": "HARD",
+      "advisoryQuestionCount": 5,
+      "questionTypes": [
+        "SINGLE"
+      ],
+      "localScope": {
+        "grade": 4,
+        "semester": 2,
+        "subject": "MATH",
+        "textbook": "RENJIAO",
+        "scopeType": "REVIEW",
+        "unitNo": null,
+        "difficulty": "HARD"
+      }
+    },
+    {
+      "levelId": "local:00000009-1111-1111-1111-111111111111",
+      "origin": "LOCAL",
+      "name": "关卡 9",
+      "enabled": true,
+      "sortNo": 8,
+      "sources": [
+        "LOCAL"
+      ],
+      "subjects": [
+        "CHINESE"
+      ],
+      "scopeType": "REVIEW",
+      "unitNos": [],
+      "unitGroups": [],
+      "grade": 4,
+      "semester": 1,
+      "textbook": "BUBIAN",
+      "difficulty": null,
+      "advisoryQuestionCount": 5,
+      "questionTypes": [
+        "SINGLE"
+      ],
+      "localScope": {
+        "grade": 4,
+        "semester": 1,
+        "subject": "CHINESE",
+        "textbook": "BUBIAN",
+        "scopeType": "REVIEW",
+        "unitNo": null,
+        "difficulty": null
+      }
+    },
+    {
+      "levelId": "local:00000010-1111-1111-1111-111111111111",
+      "origin": "LOCAL",
+      "name": "关卡 10",
+      "enabled": true,
+      "sortNo": 9,
+      "sources": [
+        "LOCAL"
+      ],
+      "subjects": [
+        "CHINESE"
+      ],
+      "scopeType": "REVIEW",
+      "unitNos": [],
+      "unitGroups": [],
+      "grade": 4,
+      "semester": 1,
+      "textbook": "BUBIAN",
+      "difficulty": "EASY",
+      "advisoryQuestionCount": 5,
+      "questionTypes": [
+        "SINGLE"
+      ],
+      "localScope": {
+        "grade": 4,
+        "semester": 1,
+        "subject": "CHINESE",
+        "textbook": "BUBIAN",
+        "scopeType": "REVIEW",
+        "unitNo": null,
+        "difficulty": "EASY"
+      }
+    },
+    {
+      "levelId": "local:00000011-1111-1111-1111-111111111111",
+      "origin": "LOCAL",
+      "name": "关卡 11",
+      "enabled": true,
+      "sortNo": 10,
+      "sources": [
+        "LOCAL"
+      ],
+      "subjects": [
+        "CHINESE"
+      ],
+      "scopeType": "REVIEW",
+      "unitNos": [],
+      "unitGroups": [],
+      "grade": 4,
+      "semester": 1,
+      "textbook": "BUBIAN",
+      "difficulty": "MEDIUM",
+      "advisoryQuestionCount": 5,
+      "questionTypes": [
+        "SINGLE"
+      ],
+      "localScope": {
+        "grade": 4,
+        "semester": 1,
+        "subject": "CHINESE",
+        "textbook": "BUBIAN",
+        "scopeType": "REVIEW",
+        "unitNo": null,
+        "difficulty": "MEDIUM"
+      }
+    },
+    {
+      "levelId": "local:00000012-1111-1111-1111-111111111111",
+      "origin": "LOCAL",
+      "name": "关卡 12",
+      "enabled": true,
+      "sortNo": 11,
+      "sources": [
+        "LOCAL"
+      ],
+      "subjects": [
+        "CHINESE"
+      ],
+      "scopeType": "REVIEW",
+      "unitNos": [],
+      "unitGroups": [],
+      "grade": 4,
+      "semester": 1,
+      "textbook": "BUBIAN",
+      "difficulty": "HARD",
+      "advisoryQuestionCount": 5,
+      "questionTypes": [
+        "SINGLE"
+      ],
+      "localScope": {
+        "grade": 4,
+        "semester": 1,
+        "subject": "CHINESE",
+        "textbook": "BUBIAN",
+        "scopeType": "REVIEW",
+        "unitNo": null,
+        "difficulty": "HARD"
+      }
+    },
+    {
+      "levelId": "local:00000013-1111-1111-1111-111111111111",
+      "origin": "LOCAL",
+      "name": "关卡 13",
+      "enabled": true,
+      "sortNo": 12,
+      "sources": [
+        "LOCAL"
+      ],
+      "subjects": [
+        "CHINESE"
+      ],
+      "scopeType": "REVIEW",
+      "unitNos": [],
+      "unitGroups": [],
+      "grade": 4,
+      "semester": 2,
+      "textbook": "BUBIAN",
+      "difficulty": null,
+      "advisoryQuestionCount": 5,
+      "questionTypes": [
+        "SINGLE"
+      ],
+      "localScope": {
+        "grade": 4,
+        "semester": 2,
+        "subject": "CHINESE",
+        "textbook": "BUBIAN",
+        "scopeType": "REVIEW",
+        "unitNo": null,
+        "difficulty": null
+      }
+    },
+    {
+      "levelId": "local:00000014-1111-1111-1111-111111111111",
+      "origin": "LOCAL",
+      "name": "关卡 14",
+      "enabled": true,
+      "sortNo": 13,
+      "sources": [
+        "LOCAL"
+      ],
+      "subjects": [
+        "CHINESE"
+      ],
+      "scopeType": "REVIEW",
+      "unitNos": [],
+      "unitGroups": [],
+      "grade": 4,
+      "semester": 2,
+      "textbook": "BUBIAN",
+      "difficulty": "EASY",
+      "advisoryQuestionCount": 5,
+      "questionTypes": [
+        "SINGLE"
+      ],
+      "localScope": {
+        "grade": 4,
+        "semester": 2,
+        "subject": "CHINESE",
+        "textbook": "BUBIAN",
+        "scopeType": "REVIEW",
+        "unitNo": null,
+        "difficulty": "EASY"
+      }
+    },
+    {
+      "levelId": "local:00000015-1111-1111-1111-111111111111",
+      "origin": "LOCAL",
+      "name": "关卡 15",
+      "enabled": true,
+      "sortNo": 14,
+      "sources": [
+        "LOCAL"
+      ],
+      "subjects": [
+        "CHINESE"
+      ],
+      "scopeType": "REVIEW",
+      "unitNos": [],
+      "unitGroups": [],
+      "grade": 4,
+      "semester": 2,
+      "textbook": "BUBIAN",
+      "difficulty": "MEDIUM",
+      "advisoryQuestionCount": 5,
+      "questionTypes": [
+        "SINGLE"
+      ],
+      "localScope": {
+        "grade": 4,
+        "semester": 2,
+        "subject": "CHINESE",
+        "textbook": "BUBIAN",
+        "scopeType": "REVIEW",
+        "unitNo": null,
+        "difficulty": "MEDIUM"
+      }
+    },
+    {
+      "levelId": "local:00000016-1111-1111-1111-111111111111",
+      "origin": "LOCAL",
+      "name": "关卡 16",
+      "enabled": true,
+      "sortNo": 15,
+      "sources": [
+        "LOCAL"
+      ],
+      "subjects": [
+        "CHINESE"
+      ],
+      "scopeType": "REVIEW",
+      "unitNos": [],
+      "unitGroups": [],
+      "grade": 4,
+      "semester": 2,
+      "textbook": "BUBIAN",
+      "difficulty": "HARD",
+      "advisoryQuestionCount": 5,
+      "questionTypes": [
+        "SINGLE"
+      ],
+      "localScope": {
+        "grade": 4,
+        "semester": 2,
+        "subject": "CHINESE",
+        "textbook": "BUBIAN",
+        "scopeType": "REVIEW",
+        "unitNo": null,
+        "difficulty": "HARD"
+      }
+    },
+    {
+      "levelId": "local:00000017-1111-1111-1111-111111111111",
+      "origin": "LOCAL",
+      "name": "关卡 17",
+      "enabled": true,
+      "sortNo": 16,
+      "sources": [
+        "LOCAL"
+      ],
+      "subjects": [
+        "ENGLISH"
+      ],
+      "scopeType": "REVIEW",
+      "unitNos": [],
+      "unitGroups": [],
+      "grade": 4,
+      "semester": 1,
+      "textbook": "PEP",
+      "difficulty": null,
+      "advisoryQuestionCount": 5,
+      "questionTypes": [
+        "SINGLE"
+      ],
+      "localScope": {
+        "grade": 4,
+        "semester": 1,
+        "subject": "ENGLISH",
+        "textbook": "PEP",
+        "scopeType": "REVIEW",
+        "unitNo": null,
+        "difficulty": null
+      }
+    },
+    {
+      "levelId": "local:00000018-1111-1111-1111-111111111111",
+      "origin": "LOCAL",
+      "name": "关卡 18",
+      "enabled": true,
+      "sortNo": 17,
+      "sources": [
+        "LOCAL"
+      ],
+      "subjects": [
+        "ENGLISH"
+      ],
+      "scopeType": "REVIEW",
+      "unitNos": [],
+      "unitGroups": [],
+      "grade": 4,
+      "semester": 1,
+      "textbook": "PEP",
+      "difficulty": "EASY",
+      "advisoryQuestionCount": 5,
+      "questionTypes": [
+        "SINGLE"
+      ],
+      "localScope": {
+        "grade": 4,
+        "semester": 1,
+        "subject": "ENGLISH",
+        "textbook": "PEP",
+        "scopeType": "REVIEW",
+        "unitNo": null,
+        "difficulty": "EASY"
+      }
+    },
+    {
+      "levelId": "local:00000019-1111-1111-1111-111111111111",
+      "origin": "LOCAL",
+      "name": "关卡 19",
+      "enabled": true,
+      "sortNo": 18,
+      "sources": [
+        "LOCAL"
+      ],
+      "subjects": [
+        "ENGLISH"
+      ],
+      "scopeType": "REVIEW",
+      "unitNos": [],
+      "unitGroups": [],
+      "grade": 4,
+      "semester": 1,
+      "textbook": "PEP",
+      "difficulty": "MEDIUM",
+      "advisoryQuestionCount": 5,
+      "questionTypes": [
+        "SINGLE"
+      ],
+      "localScope": {
+        "grade": 4,
+        "semester": 1,
+        "subject": "ENGLISH",
+        "textbook": "PEP",
+        "scopeType": "REVIEW",
+        "unitNo": null,
+        "difficulty": "MEDIUM"
+      }
+    },
+    {
+      "levelId": "local:00000020-1111-1111-1111-111111111111",
+      "origin": "LOCAL",
+      "name": "关卡 20",
+      "enabled": true,
+      "sortNo": 19,
+      "sources": [
+        "LOCAL"
+      ],
+      "subjects": [
+        "ENGLISH"
+      ],
+      "scopeType": "REVIEW",
+      "unitNos": [],
+      "unitGroups": [],
+      "grade": 4,
+      "semester": 1,
+      "textbook": "PEP",
+      "difficulty": "HARD",
+      "advisoryQuestionCount": 5,
+      "questionTypes": [
+        "SINGLE"
+      ],
+      "localScope": {
+        "grade": 4,
+        "semester": 1,
+        "subject": "ENGLISH",
+        "textbook": "PEP",
+        "scopeType": "REVIEW",
+        "unitNo": null,
+        "difficulty": "HARD"
+      }
+    },
+    {
+      "levelId": "local:00000021-1111-1111-1111-111111111111",
+      "origin": "LOCAL",
+      "name": "关卡 21",
+      "enabled": true,
+      "sortNo": 20,
+      "sources": [
+        "LOCAL"
+      ],
+      "subjects": [
+        "ENGLISH"
+      ],
+      "scopeType": "REVIEW",
+      "unitNos": [],
+      "unitGroups": [],
+      "grade": 4,
+      "semester": 2,
+      "textbook": "PEP",
+      "difficulty": null,
+      "advisoryQuestionCount": 5,
+      "questionTypes": [
+        "SINGLE"
+      ],
+      "localScope": {
+        "grade": 4,
+        "semester": 2,
+        "subject": "ENGLISH",
+        "textbook": "PEP",
+        "scopeType": "REVIEW",
+        "unitNo": null,
+        "difficulty": null
+      }
+    }
+  ],
+  "extensions": {
+    "local": {
+      "legacyAnswerDisplaySec": 30
+    },
+    "cloudUnknown": {
+      "keep": true
+    }
+  },
+  "x-top-note": {
+    "a": 1
+  }
+}

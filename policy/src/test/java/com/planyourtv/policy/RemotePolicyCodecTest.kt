@@ -270,10 +270,16 @@ class RemotePolicyCodecTest {
             LocalRules.MAX_SESSION_BUFFER_MINUTES,
             RemotePolicyCodec.parse(tooLarge)!!.rules.sessionScreenOffBufferMinutes,
         )
-        val tooSmall = withRules(policyJson) { it.put("sessionScreenOffBufferMinutes", 1) }
+        val zero = withRules(policyJson) { it.put("sessionScreenOffBufferMinutes", 0) }
         assertEquals(
-            LocalRules.MIN_SESSION_BUFFER_MINUTES,
-            RemotePolicyCodec.parse(tooSmall)!!.rules.sessionScreenOffBufferMinutes,
+            0,
+            RemotePolicyCodec.parse(zero)!!.rules.sessionScreenOffBufferMinutes,
+        )
+        // Negative is malformed and falls back to the default; it is not a zero clamp.
+        val negative = withRules(policyJson) { it.put("sessionScreenOffBufferMinutes", -1) }
+        assertEquals(
+            LocalRules.DEFAULT_SESSION_BUFFER_MINUTES,
+            RemotePolicyCodec.parse(negative)!!.rules.sessionScreenOffBufferMinutes,
         )
     }
 

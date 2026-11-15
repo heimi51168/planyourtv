@@ -70,10 +70,13 @@ sealed interface BotCommand {
     /** Daily cap on quiz-earned minutes; 0 lifts the cap. */
     data class SetQuizCap(val minutes: Int) : BotCommand
 
-    /** One challenge-config field; ranges are re-validated by the codec. */
+    /**
+     * One challenge-config field; ranges mirror the v1.97 codec (the round
+     * count widened to the quiz-doc ceiling) and are re-validated by it.
+     */
     enum class QuizField(val label: String, val range: String) {
-        ROUND_COUNT("每轮题数", "5–50"),
-        TIME_LIMIT("每题时限", "15–1800秒"),
+        ROUND_COUNT("每轮题数", "1–1000"),
+        TIME_LIMIT("每题时限", "5–1800秒"),
         UNLOCK_GATE("门槛", "0–180分钟"),
         ROUND_CAP("单轮上限", "1–180分钟"),
     }

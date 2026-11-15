@@ -37,8 +37,41 @@
       gate_in_use_text: "若对方已离开，本页会自动更新；\n对方点「退出家长设置」可立即释放。",
       gate_takeover_button: "仍要接管",
       gate_takeover_note: "需要家长密码；对方手机会立即退出。",
+      webDisabledTitleBound: "网页已停用",
+      webDisabledTitleBinding: "正在绑定远程",
+      webDisabledTitleNoChild: "网页家长中心不可用",
+      webDisabledTitleNotReady: "电视正在启动",
+      webDisabledBoundText: "这台电视已绑定远程。远程完全接管本地策略，网页只在本地模式且未绑定时可用。请在「家长端 App」→ 设备守护 → 电视设备 中修改。",
+      webDisabledBindingText: "电视正在绑定远程。绑定完成后网页会自动停用；请在家长端 App 完成绑定和后续设置。",
+      webDisabledNoChildText: "网页只在本地儿童模式下可用。请先在电视「家长中心」开启儿童模式；开启后电视右侧会出现手机配置二维码。",
+      webDisabledNotReadyText: "电视正在启动，请稍后刷新。",
+      webDisabledStateBound: "当前：远程模式 / 已绑定",
+      webDisabledStateBinding: "当前：远程模式 / 绑定中",
+      webDisabledStateNoChild: "当前：本地模式 / 儿童模式关闭",
+      webDisabledStateNotReady: "当前：电视未就绪",
+      webDisabledRefresh: "刷新状态",
+      webDisabledRefreshFailed: "连接电视失败，请确认手机和电视在同一 Wi-Fi 后重试。",
+      webDisabledHint: "网页只在电视开启本地儿童模式且未绑定远程时可用。",
       pinLabel: "请输入家长密码",
       pinButton: "进入设置",
+      forgotPin: "忘记密码？",
+      recoveryTitle: "用恢复码重置密码",
+      recoveryLead: "输入首次开启儿童模式时保存的 12 位恢复码，再设置新的 6 位家长密码。恢复码只显示过一次，网页和电视都无法找回。",
+      recoveryCodeLabel: "恢复码",
+      recoveryNewPinLabel: "新的家长密码（6 位数字）",
+      recoveryConfirmLabel: "再次输入新密码",
+      recoverySubmit: "重置密码",
+      recoveryCancel: "返回登录",
+      recoveryDone: "家长密码已重置，请用新密码登录。",
+      recoveryMismatch: "两次输入的新密码不一致。",
+      recoveryFormat: "请输入 12 位恢复码。",
+      err_RECOVERY_INVALID: "恢复码不正确。",
+      err_RECOVERY_LOCKED: "恢复码错误次数过多，请稍后再试。",
+      err_RECOVERY_LOCKED_RETRY: "恢复码错误次数过多，请在 {n} 秒后重试。",
+      err_RECOVERY_NOT_SET: "这台电视没有保存恢复码，无法在网页重置。恢复码只在首次开启儿童模式时显示一次。",
+      err_RECOVERY_FAILED: "重置失败，请重试。",
+      err_NEW_PIN_INVALID: "新密码必须是 6 位数字。",
+      err_PIN_TOO_SIMPLE: "请不要使用 123456 或 666666 这类简单密码。",
       editor_locked: "本轮挑战进行中，网页只能查看摘要。",
       challengeTitle: "本次挑战",
       challengeHint: "题目只属于本次挑战；发布后电视锁屏才会显示入口。",
@@ -98,6 +131,11 @@
       err_SESSION_EXISTS: "已有一份已就绪的挑战，请先删除或勾选替换。",
       err_SESSION_CONFLICT: "同一份挑战的内容不一致，请重新打开设置。",
       err_STORAGE_ERROR: "电视保存失败，请重试。",
+      err_DOCUMENT_UNREADABLE: "电视上的答题配置已损坏，请重新保存一次。",
+      err_INVALID_DOCUMENT: "答题规则不符合要求，请检查后重试。",
+      err_REVISION_CONFLICT: "配置已被其他页面修改，请重新打开设置。",
+      err_UNSUPPORTED: "当前电视不支持这些答题设置。",
+      err_DOCUMENT_PROJECTION_FAILED: "保存后的配置无法生效，请重试。",
       err_NOT_FOUND: "接口不存在或版本不匹配。",
       err_NETWORK: "无法连接电视，请确认手机和电视在同一局域网。",
       aiTitle: "AI 出题",
@@ -339,8 +377,41 @@
       gate_in_use_text: "If the other phone has left, this page refreshes automatically.\nExit parent settings there to release it now.",
       gate_takeover_button: "Take over",
       gate_takeover_note: "Parent password required; the other phone is signed out immediately.",
+      webDisabledTitleBound: "Web page disabled",
+      webDisabledTitleBinding: "Remote binding in progress",
+      webDisabledTitleNoChild: "Web parent center unavailable",
+      webDisabledTitleNotReady: "The TV is starting",
+      webDisabledBoundText: "This TV is bound to remote management. The phone app now owns the local policy; this page works only in local mode and while unbound. Change settings in the parent app under Device guard → TV devices.",
+      webDisabledBindingText: "The TV is binding to remote management. This page turns off after binding completes; finish binding and later settings in the parent app.",
+      webDisabledNoChildText: "This page works only with local child mode. Turn on child mode in the TV's Parent Center first; the phone setup QR appears on the TV once it is on.",
+      webDisabledNotReadyText: "The TV is still starting. Refresh in a moment.",
+      webDisabledStateBound: "Now: remote mode / bound",
+      webDisabledStateBinding: "Now: remote mode / binding",
+      webDisabledStateNoChild: "Now: local mode / child mode off",
+      webDisabledStateNotReady: "Now: TV not ready",
+      webDisabledRefresh: "Refresh status",
+      webDisabledRefreshFailed: "Could not reach the TV. Check that the phone and TV share the same Wi-Fi and try again.",
+      webDisabledHint: "This page is available only while local child mode is on and the TV is not bound to remote management.",
       pinLabel: "Enter parent password",
       pinButton: "Open settings",
+      forgotPin: "Forgot password?",
+      recoveryTitle: "Reset with a recovery code",
+      recoveryLead: "Enter the 12-digit recovery code saved when child mode was first enabled, then choose a new 6-digit parent password. The code was shown only once; neither this page nor the TV can retrieve it.",
+      recoveryCodeLabel: "Recovery code",
+      recoveryNewPinLabel: "New parent password (6 digits)",
+      recoveryConfirmLabel: "Enter the new password again",
+      recoverySubmit: "Reset password",
+      recoveryCancel: "Back to sign-in",
+      recoveryDone: "The parent password was reset. Sign in with the new password.",
+      recoveryMismatch: "The new passwords do not match.",
+      recoveryFormat: "Enter the 12-digit recovery code.",
+      err_RECOVERY_INVALID: "The recovery code is incorrect.",
+      err_RECOVERY_LOCKED: "Too many wrong recovery codes. Try again later.",
+      err_RECOVERY_LOCKED_RETRY: "Too many wrong recovery codes. Try again in {n}s.",
+      err_RECOVERY_NOT_SET: "This TV has no saved recovery code, so it cannot be reset from this page. The code is shown only once, when child mode is first enabled.",
+      err_RECOVERY_FAILED: "The reset failed. Try again.",
+      err_NEW_PIN_INVALID: "The new password must be 6 digits.",
+      err_PIN_TOO_SIMPLE: "Do not use a simple password such as 123456 or 666666.",
       editor_locked: "A challenge is running. This page can only show its summary.",
       challengeTitle: "This challenge",
       challengeHint: "Questions belong only to this challenge. The lock-screen entry appears after you publish.",
@@ -400,6 +471,11 @@
       err_SESSION_EXISTS: "A ready challenge already exists. Delete it or replace it first.",
       err_SESSION_CONFLICT: "The same challenge changed elsewhere. Reopen settings.",
       err_STORAGE_ERROR: "The TV could not save. Try again.",
+      err_DOCUMENT_UNREADABLE: "The quiz configuration on this TV is damaged. Save it again from this page.",
+      err_INVALID_DOCUMENT: "The quiz rules are not valid. Check them and try again.",
+      err_REVISION_CONFLICT: "The configuration changed in another page. Reopen settings.",
+      err_UNSUPPORTED: "This TV does not support these quiz settings.",
+      err_DOCUMENT_PROJECTION_FAILED: "The saved configuration cannot take effect. Try again.",
       err_NOT_FOUND: "The endpoint is missing or the version does not match.",
       err_NETWORK: "Cannot reach the TV. Check that the phone and TV are on the same LAN.",
       aiTitle: "AI questions",
@@ -641,8 +717,41 @@
       gate_in_use_text: "Если другой телефон уже вышел, страница обновится сама.\nВыход из настроек освобождает доступ сразу.",
       gate_takeover_button: "Перехватить управление",
       gate_takeover_note: "Нужен пароль родителя; другой телефон сразу выйдет из настроек.",
+      webDisabledTitleBound: "Веб-страница отключена",
+      webDisabledTitleBinding: "Идёт привязка к удалённому управлению",
+      webDisabledTitleNoChild: "Веб-центр родителя недоступен",
+      webDisabledTitleNotReady: "Телевизор запускается",
+      webDisabledBoundText: "Этот телевизор привязан к удалённому управлению. Удалённое управление полностью определяет локальную политику; страница доступна только в локальном режиме и без привязки. Изменяйте настройки в приложении родителя: Защита устройств → Телевизоры.",
+      webDisabledBindingText: "Телевизор привязывается к удалённому управлению. После завершения привязки страница отключится; завершите привязку и дальнейшие настройки в приложении родителя.",
+      webDisabledNoChildText: "Страница работает только в локальном детском режиме. Сначала включите детский режим в «Центре родителя» на телевизоре; после этого справа появится QR-код для настройки с телефона.",
+      webDisabledNotReadyText: "Телевизор ещё запускается. Обновите страницу чуть позже.",
+      webDisabledStateBound: "Сейчас: удалённый режим / привязан",
+      webDisabledStateBinding: "Сейчас: удалённый режим / привязка",
+      webDisabledStateNoChild: "Сейчас: локальный режим / детский режим выключен",
+      webDisabledStateNotReady: "Сейчас: телевизор не готов",
+      webDisabledRefresh: "Обновить состояние",
+      webDisabledRefreshFailed: "Не удалось связаться с телевизором. Убедитесь, что телефон и телевизор в одной сети Wi-Fi, и повторите.",
+      webDisabledHint: "Страница доступна, только когда на телевизоре включён локальный детский режим и нет привязки к удалённому управлению.",
       pinLabel: "Введите пароль родителя",
       pinButton: "Открыть настройки",
+      forgotPin: "Забыли пароль?",
+      recoveryTitle: "Сброс по коду восстановления",
+      recoveryLead: "Введите 12-значный код восстановления, сохранённый при первом включении детского режима, и задайте новый 6-значный пароль родителя. Код показывался только один раз; ни страница, ни телевизор не могут его восстановить.",
+      recoveryCodeLabel: "Код восстановления",
+      recoveryNewPinLabel: "Новый пароль родителя (6 цифр)",
+      recoveryConfirmLabel: "Повторите новый пароль",
+      recoverySubmit: "Сбросить пароль",
+      recoveryCancel: "Назад ко входу",
+      recoveryDone: "Пароль родителя сброшен. Войдите с новым паролем.",
+      recoveryMismatch: "Пароли не совпадают.",
+      recoveryFormat: "Введите 12-значный код восстановления.",
+      err_RECOVERY_INVALID: "Неверный код восстановления.",
+      err_RECOVERY_LOCKED: "Слишком много неверных кодов восстановления. Попробуйте позже.",
+      err_RECOVERY_LOCKED_RETRY: "Слишком много неверных кодов восстановления. Повторите через {n} с.",
+      err_RECOVERY_NOT_SET: "На этом телевизоре нет кода восстановления, поэтому сброс со страницы невозможен. Код показывается только один раз при первом включении детского режима.",
+      err_RECOVERY_FAILED: "Не удалось сбросить пароль. Повторите попытку.",
+      err_NEW_PIN_INVALID: "Новый пароль должен состоять из 6 цифр.",
+      err_PIN_TOO_SIMPLE: "Не используйте простой пароль вроде 123456 или 666666.",
       editor_locked: "Викторина идёт. Страница показывает только сводку.",
       challengeTitle: "Эта викторина",
       challengeHint: "Вопросы принадлежат только этой викторине. Вход появится после публикации.",
@@ -702,6 +811,11 @@
       err_SESSION_EXISTS: "Готовая викторина уже есть. Удалите или замените её.",
       err_SESSION_CONFLICT: "Та же викторина изменена elsewhere. Откройте настройку снова.",
       err_STORAGE_ERROR: "Телевизор не сохранил данные. Повторите.",
+      err_DOCUMENT_UNREADABLE: "Конфигурация викторины на телевизоре повреждена. Сохраните её заново на этой странице.",
+      err_INVALID_DOCUMENT: "Правила викторины неверны. Проверьте их и повторите.",
+      err_REVISION_CONFLICT: "Конфигурация изменена на другой странице. Откройте настройку снова.",
+      err_UNSUPPORTED: "Этот телевизор не поддерживает такие настройки викторины.",
+      err_DOCUMENT_PROJECTION_FAILED: "Сохранённая конфигурация не может вступить в силу. Повторите.",
       err_NOT_FOUND: "Интерфейс не найден или версия не совпадает.",
       err_NETWORK: "Нет связи с телевизором. Проверьте локальную сеть.",
       aiTitle: "ИИ-вопросы",
@@ -943,8 +1057,41 @@
       gate_in_use_text: "Якщо інший телефон уже вийшов, сторінка оновиться сама.\nВихід із налаштувань звільняє доступ одразу.",
       gate_takeover_button: "Перехопити керування",
       gate_takeover_note: "Потрібен пароль батьків; інший телефон одразу вийде з налаштувань.",
+      webDisabledTitleBound: "Вебсторінку вимкнено",
+      webDisabledTitleBinding: "Триває прив'язка до віддаленого керування",
+      webDisabledTitleNoChild: "Веб-центр батьків недоступний",
+      webDisabledTitleNotReady: "Телевізор запускається",
+      webDisabledBoundText: "Цей телевізор прив'язано до віддаленого керування. Віддалене керування повністю визначає локальну політику; сторінка доступна лише в локальному режимі та без прив'язки. Змінюйте налаштування в застосунку батьків: Захист пристроїв → Телевізори.",
+      webDisabledBindingText: "Телевізор прив'язується до віддаленого керування. Після завершення прив'язки сторінка вимкнеться; завершіть прив'язку та подальші налаштування в застосунку батьків.",
+      webDisabledNoChildText: "Сторінка працює лише в локальному дитячому режимі. Спершу ввімкніть дитячий режим у «Центрі батьків» на телевізорі; після цього праворуч з'явиться QR-код для налаштування з телефона.",
+      webDisabledNotReadyText: "Телевізор ще запускається. Оновіть сторінку трохи пізніше.",
+      webDisabledStateBound: "Зараз: віддалений режим / прив'язано",
+      webDisabledStateBinding: "Зараз: віддалений режим / прив'язка",
+      webDisabledStateNoChild: "Зараз: локальний режим / дитячий режим вимкнено",
+      webDisabledStateNotReady: "Зараз: телевізор не готовий",
+      webDisabledRefresh: "Оновити стан",
+      webDisabledRefreshFailed: "Не вдалося зв'язатися з телевізором. Переконайтеся, що телефон і телевізор в одній мережі Wi-Fi, і повторіть.",
+      webDisabledHint: "Сторінка доступна, лише коли на телевізорі ввімкнено локальний дитячий режим і немає прив'язки до віддаленого керування.",
       pinLabel: "Введіть пароль батьків",
       pinButton: "Відкрити налаштування",
+      forgotPin: "Забули пароль?",
+      recoveryTitle: "Скидання за кодом відновлення",
+      recoveryLead: "Введіть 12-значний код відновлення, збережений під час першого ввімкнення дитячого режиму, і задайте новий 6-значний пароль батьків. Код показувався лише один раз; ні ця сторінка, ні телевізор не можуть його відновити.",
+      recoveryCodeLabel: "Код відновлення",
+      recoveryNewPinLabel: "Новий пароль батьків (6 цифр)",
+      recoveryConfirmLabel: "Повторіть новий пароль",
+      recoverySubmit: "Скинути пароль",
+      recoveryCancel: "Назад до входу",
+      recoveryDone: "Пароль батьків скинуто. Увійдіть із новим паролем.",
+      recoveryMismatch: "Паролі не збігаються.",
+      recoveryFormat: "Введіть 12-значний код відновлення.",
+      err_RECOVERY_INVALID: "Неправильний код відновлення.",
+      err_RECOVERY_LOCKED: "Забагато неправильних кодів відновлення. Спробуйте пізніше.",
+      err_RECOVERY_LOCKED_RETRY: "Забагато неправильних кодів відновлення. Повторіть через {n} с.",
+      err_RECOVERY_NOT_SET: "На цьому телевізорі немає коду відновлення, тому скидання зі сторінки неможливе. Код показується лише один раз під час першого ввімкнення дитячого режиму.",
+      err_RECOVERY_FAILED: "Не вдалося скинути пароль. Спробуйте ще раз.",
+      err_NEW_PIN_INVALID: "Новий пароль має складатися з 6 цифр.",
+      err_PIN_TOO_SIMPLE: "Не використовуйте простий пароль, як-от 123456 або 666666.",
       editor_locked: "Вікторина триває. Сторінка показує лише підсумок.",
       challengeTitle: "Ця вікторина",
       challengeHint: "Питання належать лише цій вікторині. Вхід з'явиться після публікації.",
@@ -1004,6 +1151,11 @@
       err_SESSION_EXISTS: "Готова вікторина вже є. Видаліть або замініть її.",
       err_SESSION_CONFLICT: "Ту саму вікторину змінено elsewhere. Відкрийте налаштування знову.",
       err_STORAGE_ERROR: "Телевізор не зберіг дані. Повторіть.",
+      err_DOCUMENT_UNREADABLE: "Конфігурація вікторини на телевізорі пошкоджена. Збережіть її знову на цій сторінці.",
+      err_INVALID_DOCUMENT: "Правила вікторини некоректні. Перевірте їх і повторіть.",
+      err_REVISION_CONFLICT: "Конфігурацію змінено на іншій сторінці. Відкрийте налаштування знову.",
+      err_UNSUPPORTED: "Цей телевізор не підтримує такі налаштування вікторини.",
+      err_DOCUMENT_PROJECTION_FAILED: "Збережена конфігурація не може набути чинності. Повторіть.",
       err_NOT_FOUND: "Інтерфейс відсутній або версія не збігається.",
       err_NETWORK: "Немає зв'язку з телевізором. Перевірте локальну мережу.",
       aiTitle: "ШІ-питання",
@@ -1245,8 +1397,41 @@
       gate_in_use_text: "Басқа телефон шыққан болса, бет өзі жаңарады.\nБаптаудан шығу қолжетімділікті бірден босатады.",
       gate_takeover_button: "Басқарып алу",
       gate_takeover_note: "Ата-ана құпиясөзі қажет; басқа телефон бірден шығады.",
+      webDisabledTitleBound: "Веб-бет өшірілді",
+      webDisabledTitleBinding: "Қашықтан басқаруға байлау жүруде",
+      webDisabledTitleNoChild: "Веб ата-ана орталығы қолжетімсіз",
+      webDisabledTitleNotReady: "Теледидар іске қосылуда",
+      webDisabledBoundText: "Бұл теледидар қашықтан басқаруға байланған. Қашықтан басқару жергілікті саясатты толық анықтайды; бет тек жергілікті режимде және байланыс жоқ кезде қолжетімді. Параметрлерді ата-ана қолданбасындағы Құрылғы қорғанысы → Теледидарлар бөлімінде өзгертіңіз.",
+      webDisabledBindingText: "Теледидар қашықтан басқаруға байланып жатыр. Байлау аяқталған соң бет өшіріледі; байлауды және кейінгі параметрлерді ата-ана қолданбасында аяқтаңыз.",
+      webDisabledNoChildText: "Бет тек жергілікті бала режимінде жұмыс істейді. Алдымен теледидардағы «Ата-ана орталығында» бала режимін қосыңыз; қосылған соң оң жақта телефонмен баптауға арналған QR-код пайда болады.",
+      webDisabledNotReadyText: "Теледидар әлі іске қосылуда. Сәл кейінірек бетті жаңартыңыз.",
+      webDisabledStateBound: "Қазір: қашықтан режим / байланған",
+      webDisabledStateBinding: "Қазір: қашықтан режим / байлау",
+      webDisabledStateNoChild: "Қазір: жергілікті режим / бала режимі өшірулі",
+      webDisabledStateNotReady: "Қазір: теледидар дайын емес",
+      webDisabledRefresh: "Күйді жаңарту",
+      webDisabledRefreshFailed: "Теледидармен байланысу мүмкін болмады. Телефон мен теледидар бір Wi-Fi желісінде екенін тексеріп, қайталаңыз.",
+      webDisabledHint: "Бет тек теледидарда жергілікті бала режимі қосулы және қашықтан басқаруға байланыс жоқ кезде қолжетімді.",
       pinLabel: "Ата-ана құпиясөзін енгізіңіз",
       pinButton: "Баптауды ашу",
+      forgotPin: "Құпиясөзді ұмыттыңыз ба?",
+      recoveryTitle: "Қалпына келтіру кодымен қалпына келтіру",
+      recoveryLead: "Балалар режимін алғаш қосқанда сақталған 12 таңбалы қалпына келтіру кодын енгізіп, жаңа 6 таңбалы ата-ана құпиясөзін орнатыңыз. Код бір рет қана көрсетілген; оны бұл бет те, теледидар да қайта көрсете алмайды.",
+      recoveryCodeLabel: "Қалпына келтіру коды",
+      recoveryNewPinLabel: "Жаңа ата-ана құпиясөзі (6 сан)",
+      recoveryConfirmLabel: "Жаңа құпиясөзді қайталаңыз",
+      recoverySubmit: "Құпиясөзді қалпына келтіру",
+      recoveryCancel: "Кіруге оралу",
+      recoveryDone: "Ата-ана құпиясөзі қалпына келтірілді. Жаңа құпиясөзбен кіріңіз.",
+      recoveryMismatch: "Құпиясөздер сәйкес емес.",
+      recoveryFormat: "12 таңбалы қалпына келтіру кодын енгізіңіз.",
+      err_RECOVERY_INVALID: "Қалпына келтіру коды дұрыс емес.",
+      err_RECOVERY_LOCKED: "Қалпына келтіру коды тым көп қате енгізілді. Кейінірек қайталаңыз.",
+      err_RECOVERY_LOCKED_RETRY: "Қалпына келтіру коды тым көп қате енгізілді. {n} секундтан кейін қайталаңыз.",
+      err_RECOVERY_NOT_SET: "Бұл теледидарда қалпына келтіру коды сақталмаған, сондықтан оны беттен қалпына келтіру мүмкін емес. Код балалар режимін алғаш қосқанда бір рет қана көрсетіледі.",
+      err_RECOVERY_FAILED: "Қалпына келтіру сәтсіз аяқталды. Қайталап көріңіз.",
+      err_NEW_PIN_INVALID: "Жаңа құпиясөз 6 саннан тұруы керек.",
+      err_PIN_TOO_SIMPLE: "123456 немесе 666666 сияқты қарапайым құпиясөзді қолданбаңыз.",
       editor_locked: "Викторина жүріп жатыр. Бет тек қорытындыны көрсетеді.",
       challengeTitle: "Осы викторина",
       challengeHint: "Сұрақтар тек осы викторинаға тиесілі. Кіру жарияланғаннан кейін пайда болады.",
@@ -1306,6 +1491,11 @@
       err_SESSION_EXISTS: "Дайын викторина бар. Оны жойыңыз немесе ауыстырыңыз.",
       err_SESSION_CONFLICT: "Сол викторина elsewhere өзгерген. Баптауды қайта ашыңыз.",
       err_STORAGE_ERROR: "Теледидар сақтай алмады. Қайталаңыз.",
+      err_DOCUMENT_UNREADABLE: "Теледидардағы викторина конфигурациясы бүлінген. Осы бетте қайта сақтаңыз.",
+      err_INVALID_DOCUMENT: "Викторина ережелері дұрыс емес. Тексеріп, қайталаңыз.",
+      err_REVISION_CONFLICT: "Конфигурация басқа бетте өзгертілген. Баптауды қайта ашыңыз.",
+      err_UNSUPPORTED: "Бұл теледидар мұндай викторина баптауларын қолдамайды.",
+      err_DOCUMENT_PROJECTION_FAILED: "Сақталған конфигурация күшіне ене алмады. Қайталаңыз.",
       err_NOT_FOUND: "Интерфейс жоқ немесе нұсқа сәйкес емес.",
       err_NETWORK: "Теледидармен байланыс жоқ. Жергілікті желіні тексеріңіз.",
       aiTitle: "AI сұрақтары",
@@ -1521,7 +1711,12 @@
       tabGenerate: "出题",
       tabBank: "题库",
       tabWrong: "错题",
-      tabMe: "我的",
+      tabControl: "控制",
+      tabMe: "更多",
+      controlPanelTitle: "控制面板",
+      controlOpenHint: "在本机局域网内远程查看电视状态并执行家长操作。",
+      controlOpenAction: "打开控制面板",
+      controlUnavailable: "当前电视不支持远程控制。请确认电视处于本地儿童模式。",
       navLabel: "主导航",
       sourceValueLocal: "本地题库",
       sourceValueCloud: "远程题库",
@@ -1577,14 +1772,14 @@
       meSource: "答题来源",
       meAdvanced: "高级",
       meMaintenance: "题库维护",
-      meMaintenanceHint: "清理未使用、已回答或错题",
+      meMaintenanceHint: "删除题目或作答历史；「未使用」不是历史记录",
       clearUnused: "清空未使用",
       clearAnswered: "清空已回答",
       clearWrong: "清空错题",
       clearAll: "清空全部题库",
-      confirmClearUnused: "清空所有未使用的题目？",
-      confirmClearAnswered: "清空所有已回答的题目？",
-      confirmClearWrong: "清空所有错题记录？",
+      confirmClearUnused: "清空所有未使用的题目？未开始的挑战会受影响，且不能撤销。",
+      confirmClearAnswered: "删除所有已回答的记录？此操作不能撤销。",
+      confirmClearWrong: "删除所有错题记录？此操作不能撤销。",
       confirmClearAll: "清空整个本地题库？此操作不能撤销。",
       clearDone: "已清理。",
       bankFilterAll: "全部",
@@ -1618,7 +1813,12 @@
       tabGenerate: "Create",
       tabBank: "Bank",
       tabWrong: "Mistakes",
-      tabMe: "Mine",
+      tabControl: "Control",
+      tabMe: "More",
+      controlPanelTitle: "Control panel",
+      controlOpenHint: "View the TV state and run parent actions on this local network.",
+      controlOpenAction: "Open control panel",
+      controlUnavailable: "Remote control is unavailable. Make sure the TV is in local child mode.",
       navLabel: "Main navigation",
       sourceValueLocal: "Local bank",
       sourceValueCloud: "Remote bank",
@@ -1674,14 +1874,14 @@
       meSource: "Quiz source",
       meAdvanced: "Advanced",
       meMaintenance: "Bank maintenance",
-      meMaintenanceHint: "Clear unused, answered or wrong",
+      meMaintenanceHint: "Delete questions or answer history; “unused” is not history",
       clearUnused: "Clear unused",
       clearAnswered: "Clear answered",
       clearWrong: "Clear mistakes",
       clearAll: "Clear whole bank",
-      confirmClearUnused: "Clear all unused questions?",
-      confirmClearAnswered: "Clear all answered questions?",
-      confirmClearWrong: "Clear all mistake records?",
+      confirmClearUnused: "Clear all unused questions? An unstarted challenge is affected, and this cannot be undone.",
+      confirmClearAnswered: "Delete all answered records? This cannot be undone.",
+      confirmClearWrong: "Delete all mistake records? This cannot be undone.",
       confirmClearAll: "Clear the entire local bank? This cannot be undone.",
       clearDone: "Cleared.",
       bankFilterAll: "All",
@@ -1715,7 +1915,12 @@
       tabGenerate: "Создать",
       tabBank: "Банк",
       tabWrong: "Ошибки",
-      tabMe: "Моё",
+      tabControl: "Пульт",
+      tabMe: "Ещё",
+      controlPanelTitle: "Панель управления",
+      controlOpenHint: "Смотрите состояние телевизора и выполняйте действия родителя в локальной сети.",
+      controlOpenAction: "Открыть панель",
+      controlUnavailable: "Удалённое управление недоступно. Убедитесь, что телевизор в локальном детском режиме.",
       navLabel: "Основная навигация",
       sourceValueLocal: "Локальный банк",
       sourceValueCloud: "Облачный банк",
@@ -1771,14 +1976,14 @@
       meSource: "Источник викторины",
       meAdvanced: "Дополнительно",
       meMaintenance: "Обслуживание банка",
-      meMaintenanceHint: "Очистка неиспользованных, отвеченных или неверных",
+      meMaintenanceHint: "Удаление вопросов или истории ответов; «неиспользованные» — не история",
       clearUnused: "Очистить неиспользованные",
       clearAnswered: "Очистить отвеченные",
       clearWrong: "Очистить ошибки",
       clearAll: "Очистить весь банк",
-      confirmClearUnused: "Очистить все неиспользованные вопросы?",
-      confirmClearAnswered: "Очистить все отвеченные вопросы?",
-      confirmClearWrong: "Очистить все записи об ошибках?",
+      confirmClearUnused: "Очистить все неиспользованные вопросы? Это затронет не начатую викторину и не отменяется.",
+      confirmClearAnswered: "Удалить все записи об отвеченных вопросах? Это нельзя отменить.",
+      confirmClearWrong: "Удалить все записи об ошибках? Это нельзя отменить.",
       confirmClearAll: "Очистить весь локальный банк? Это нельзя отменить.",
       clearDone: "Очищено.",
       bankFilterAll: "Все",
@@ -1812,7 +2017,12 @@
       tabGenerate: "Створити",
       tabBank: "Банк",
       tabWrong: "Помилки",
-      tabMe: "Моє",
+      tabControl: "Пульт",
+      tabMe: "Ще",
+      controlPanelTitle: "Панель керування",
+      controlOpenHint: "Переглядайте стан телевізора й виконуйте дії батьків у локальній мережі.",
+      controlOpenAction: "Відкрити панель",
+      controlUnavailable: "Віддалене керування недоступне. Переконайтеся, що телевізор у локальному дитячому режимі.",
       navLabel: "Основна навігація",
       sourceValueLocal: "Локальний банк",
       sourceValueCloud: "Хмарний банк",
@@ -1868,14 +2078,14 @@
       meSource: "Джерело вікторини",
       meAdvanced: "Додатково",
       meMaintenance: "Обслуговування банку",
-      meMaintenanceHint: "Очищення невикористаних, відповідей або помилок",
+      meMaintenanceHint: "Видалення питань або історії відповідей; «невикористані» — не історія",
       clearUnused: "Очистити невикористані",
       clearAnswered: "Очистити відповіді",
       clearWrong: "Очистити помилки",
       clearAll: "Очистити весь банк",
-      confirmClearUnused: "Очистити всі невикористані питання?",
-      confirmClearAnswered: "Очистити всі відповіді?",
-      confirmClearWrong: "Очистити всі записи про помилки?",
+      confirmClearUnused: "Очистити всі невикористані питання? Це вплине на непочату вікторину, і скасувати не можна.",
+      confirmClearAnswered: "Видалити всі записи про відповіді? Це неможливо скасувати.",
+      confirmClearWrong: "Видалити всі записи про помилки? Це неможливо скасувати.",
       confirmClearAll: "Очистити весь локальний банк? Це неможливо скасувати.",
       clearDone: "Очищено.",
       bankFilterAll: "Усі",
@@ -1909,7 +2119,12 @@
       tabGenerate: "Жасау",
       tabBank: "Банк",
       tabWrong: "Қателер",
-      tabMe: "Менің",
+      tabControl: "Қашықтан",
+      tabMe: "Қосымша",
+      controlPanelTitle: "Басқару панелі",
+      controlOpenHint: "Жергілікті желіде теледидар күйін қарап, ата-ана әрекеттерін орындаңыз.",
+      controlOpenAction: "Панельді ашу",
+      controlUnavailable: "Қашықтан басқару қолжетімсіз. Теледидардың жергілікті бала режимінде екенін тексеріңіз.",
       navLabel: "Негізгі навигация",
       sourceValueLocal: "Жергілікті банк",
       sourceValueCloud: "Бұлттық банк",
@@ -1965,14 +2180,14 @@
       meSource: "Викторина көзі",
       meAdvanced: "Қосымша",
       meMaintenance: "Банкті күтіп-ұстау",
-      meMaintenanceHint: "Пайдаланылмаған, жауапталған немесе қателерді тазалау",
+      meMaintenanceHint: "Сұрақтарды немесе жауап тарихын жою; «пайдаланылмаған» — тарих емес",
       clearUnused: "Пайдаланылмағанды тазалау",
       clearAnswered: "Жауаптарды тазалау",
       clearWrong: "Қателерді тазалау",
       clearAll: "Бүкіл банкті тазалау",
-      confirmClearUnused: "Барлық пайдаланылмаған сұрақты тазалау керек пе?",
-      confirmClearAnswered: "Барлық жауапталған сұрақты тазалау керек пе?",
-      confirmClearWrong: "Барлық қате жазбаларын тазалау керек пе?",
+      confirmClearUnused: "Барлық пайдаланылмаған сұрақты тазалау керек пе? Басталмаған викторинаға әсер етеді, қайтару мүмкін емес.",
+      confirmClearAnswered: "Барлық жауапталған жазбаны жою керек пе? Бұны қайтару мүмкін емес.",
+      confirmClearWrong: "Барлық қате жазбаларын жою керек пе? Бұны қайтару мүмкін емес.",
       confirmClearAll: "Бүкіл жергілікті банкті тазалау керек пе? Бұны қайтару мүмкін емес.",
       clearDone: "Тазаланды.",
       bankFilterAll: "Барлығы",
@@ -2010,7 +2225,7 @@
   const V19_TEXTS = {
     zh: {
       genConfigTitle: "题目生成",
-      answerConfigTitle: "答题配置",
+      answerConfigTitle: "答题闯关配置",
       answerRulesTitle: "答题规则",
       generateCardTitle: "开始生成",
       scopeBound: "和题目生成一致",
@@ -2094,7 +2309,7 @@
     },
     en: {
       genConfigTitle: "Question generation",
-      answerConfigTitle: "Quiz setup",
+      answerConfigTitle: "Quiz challenge settings",
       answerRulesTitle: "Rules",
       generateCardTitle: "Start generating",
       scopeBound: "Same as question generation",
@@ -2178,7 +2393,7 @@
     },
     ru: {
       genConfigTitle: "Генерация вопросов",
-      answerConfigTitle: "Настройка викторины",
+      answerConfigTitle: "Настройки квиз-испытания",
       answerRulesTitle: "Правила",
       generateCardTitle: "Начать генерацию",
       scopeBound: "Совпадает с генерацией вопросов",
@@ -2262,7 +2477,7 @@
     },
     uk: {
       genConfigTitle: "Генерація питань",
-      answerConfigTitle: "Налаштування вікторини",
+      answerConfigTitle: "Налаштування вікторини-випробування",
       answerRulesTitle: "Правила",
       generateCardTitle: "Почати генерацію",
       scopeBound: "Збігається з генерацією питань",
@@ -2346,7 +2561,7 @@
     },
     kk: {
       genConfigTitle: "Сұрақ жасау",
-      answerConfigTitle: "Викторина баптауы",
+      answerConfigTitle: "Викторина-сынақ баптаулары",
       answerRulesTitle: "Ережелер",
       generateCardTitle: "Жасауды бастау",
       scopeBound: "Сұрақ жасаумен бірдей",
@@ -2440,6 +2655,7 @@
       levelNoneLabel: "未设置关卡",
       levelListTitle: "关卡",
       levelListLead: "电视上按这里的顺序显示关卡，孩子用遥控上下选择。",
+      levelEditorLead: "默认已填好「小学四年级 · 上册 · 全科 · 期中必考 · 不限难度」。保存后电视会多一个关卡，孩子可用遥控上下键选择。",
       levelListCount: "{n}/{max}",
       levelEmptyTitle: "还没有设置关卡",
       levelEmptyText: "添加一个答题范围，孩子就能在电视上像选关一样答题。",
@@ -2473,6 +2689,7 @@
       levelNoneLabel: "No levels",
       levelListTitle: "Levels",
       levelListLead: "The TV lists the levels in this order so your child can pick one with the remote.",
+      levelEditorLead: "The default range is Grade 4, first semester, all subjects, midterm, any difficulty. After saving, the TV gains one more level, and your child can switch levels with the remote.",
       levelListCount: "{n}/{max}",
       levelEmptyTitle: "No levels yet",
       levelEmptyText: "Add an answer range so your child can pick it on the TV like a game level.",
@@ -2506,6 +2723,7 @@
       levelNoneLabel: "Уровни не заданы",
       levelListTitle: "Уровни",
       levelListLead: "На ТВ уровни показываются в этом порядке; ребёнок выбирает их пультом.",
+      levelEditorLead: "По умолчанию: 4 класс, первое полугодие, все предметы, к полугодовой, любая сложность. После сохранения на ТВ появится ещё один уровень; ребёнок сможет переключать уровни пультом.",
       levelListCount: "{n}/{max}",
       levelEmptyTitle: "Уровней пока нет",
       levelEmptyText: "Добавьте диапазон вопросов, чтобы ребёнок мог выбрать его на ТВ как уровень игры.",
@@ -2539,6 +2757,7 @@
       levelNoneLabel: "Рівні не налаштовані",
       levelListTitle: "Рівні",
       levelListLead: "На ТБ рівні показуються в цьому порядку; дитина вибирає їх пультом.",
+      levelEditorLead: "Типово: 4 клас, перший семестр, усі предмети, до піврічної, будь-яка складність. Після збереження на ТБ з’явиться ще один рівень; дитина зможе перемикати рівні пультом.",
       levelListCount: "{n}/{max}",
       levelEmptyTitle: "Рівнів ще немає",
       levelEmptyText: "Додайте діапазон питань, щоб дитина могла вибрати його на ТБ як рівень гри.",
@@ -2572,6 +2791,7 @@
       levelNoneLabel: "Деңгейлер орнатылмаған",
       levelListTitle: "Деңгейлер",
       levelListLead: "ТВ-де деңгейлер осы ретпен көрсетіледі; бала оны қашықтан басқару пультімен таңдайды.",
+      levelEditorLead: "Әдепкі: 4-сынып, бірінші тоқсан, барлық пәндер, аралық бақылауға, кез келген қиындық. Сақтағаннан кейін ТВ-де тағы бір деңгей пайда болады; бала деңгейлерді пультпен ауыстыра алады.",
       levelListCount: "{n}/{max}",
       levelEmptyTitle: "Деңгейлер әзірге жоқ",
       levelEmptyText: "Бала ТВ-де ойын деңгейі ретінде таңдай алатындай сұрақ ауқымын қосыңыз.",
@@ -2618,7 +2838,7 @@
       scoringWarnThreshold: "最低解锁时长 {threshold} 分钟高于单轮上限 {cap} 分钟，可能永远无法解锁。",
       scoringWarnPenalty: "有难度的扣分不低于答对奖励，答错一题可能抵消多道答对。",
       unlockTitle: "最低解锁时长（分钟）",
-      unlockHint: "净得分钟达到门槛才能解锁；0 表示不设门槛。门槛只做判断，不会从奖励里扣除。",
+      unlockHint: "净得分钟达到门槛才能解锁；0 表示不设门槛，不设上限。门槛只做判断，不会从奖励里扣除。",
       unlockNone: "不设门槛",
       minuteN: "{n} 分钟",
       homeAnswerSub: "每轮 {n} 题 · 简单 +{easy} / 中等 +{medium} / 困难 +{hard} 分钟 · {unlock}",
@@ -2639,7 +2859,7 @@
       scoringWarnThreshold: "The {threshold} min unlock threshold is above the {cap} min round cap, so it may never unlock.",
       scoringWarnPenalty: "A deduction is at least its reward, so one wrong answer can cancel several correct ones.",
       unlockTitle: "Minimum unlock time (minutes)",
-      unlockHint: "The round unlocks when net minutes reach this line; 0 means no threshold. The threshold only checks the result and is never deducted.",
+      unlockHint: "The round unlocks when net minutes reach this line; 0 means no threshold, and there is no upper limit. The threshold only checks the result and is never deducted.",
       unlockNone: "No threshold",
       minuteN: "{n} min",
       homeAnswerSub: "{n} per round · easy +{easy} / medium +{medium} / hard +{hard} min · {unlock}",
@@ -2660,7 +2880,7 @@
       scoringWarnThreshold: "Порог {threshold} мин выше лимита раунда {cap} мин — разблокировка может не сработать.",
       scoringWarnPenalty: "Штраф не меньше награды: одна ошибка может перекрыть несколько верных ответов.",
       unlockTitle: "Минимум для разблокировки (минуты)",
-      unlockHint: "Раунд разблокируется, когда чистые минуты достигают порога; 0 — без порога. Порог только проверяет результат и не вычитается.",
+      unlockHint: "Раунд разблокируется, когда чистые минуты достигают порога; 0 — без порога, верхнего предела нет. Порог только проверяет результат и не вычитается.",
       unlockNone: "Без порога",
       minuteN: "{n} мин",
       homeAnswerSub: "{n} за раунд · лёгкий +{easy} / средний +{medium} / сложный +{hard} мин · {unlock}",
@@ -2681,7 +2901,7 @@
       scoringWarnThreshold: "Поріг {threshold} хв вищий за ліміт раунду {cap} хв — розблокування може не спрацювати.",
       scoringWarnPenalty: "Штраф не менший за нагороду: одна помилка може перекрити кілька правильних відповідей.",
       unlockTitle: "Мінімум для розблокування (хвилини)",
-      unlockHint: "Раунд розблоковується, коли чисті хвилини сягають порогу; 0 — без порогу. Поріг лише перевіряє результат і не віднімається.",
+      unlockHint: "Раунд розблоковується, коли чисті хвилини сягають порогу; 0 — без порогу, верхньої межі немає. Поріг лише перевіряє результат і не віднімається.",
       unlockNone: "Без порогу",
       minuteN: "{n} хв",
       homeAnswerSub: "{n} за раунд · легкий +{easy} / середній +{medium} / складний +{hard} хв · {unlock}",
@@ -2702,7 +2922,7 @@
       scoringWarnThreshold: "Ең төмен ашу шегі {threshold} мин раунд шегінен {cap} мин жоғары — ашу мүмкін болмауы мүмкін.",
       scoringWarnPenalty: "Шегерім сыйақыдан кем емес: бір қате бірнеше дұрыс жауапты жаба алады.",
       unlockTitle: "Ашуға қажет ең аз уақыт (минут)",
-      unlockHint: "Раунд таза минуттар шекке жеткенде ашылады; 0 — шек жоқ. Шек тек нәтижені тексереді, сыйақыдан шегерілмейді.",
+      unlockHint: "Раунд таза минуттар шекке жеткенде ашылады; 0 — шек жоқ, жоғарғы шектеу де жоқ. Шек тек нәтижені тексереді, сыйақыдан шегерілмейді.",
       unlockNone: "Шек жоқ",
       minuteN: "{n} мин",
       homeAnswerSub: "Раундта {n} сұрақ · жеңіл +{easy} / орташа +{medium} / қиын +{hard} мин · {unlock}",
@@ -2807,8 +3027,30 @@
       levelAddCustomMeta: "从导入标签取题",
       levelAddCustomMetaNoTags: "先导入题目",
       levelAddCustomMetaCloud: "云端模式下不可用",
+      levelAddWrongTitle: "错题复习",
+      levelAddWrongMeta: "全学科 · 答对后消除错题",
+      levelAddWrongMetaEmpty: "暂无错题，答错后自动加入",
+      levelAddWrongMetaCloud: "云端模式下不可用",
+      wrongLevelListTitle: "错题复习",
+      wrongLevelListLead: "只有一个错题复习关卡，自动包含所有学科的错题。",
+      wrongLevelListCount: "{n}/1",
+      wrongLevelBadge: "错题",
+      wrongLevelMeta: "全学科 · 答对后从错题本移除",
+      wrongLevelFallbackName: "错题复习",
+      wrongLevelAvailable: "错题 {n} 道 · 每轮最多 {pull} 道",
+      wrongLevelEmptyPool: "当前没有错题；答错后自动加入",
+      wrongLevelAddTitle: "添加错题复习",
+      wrongLevelEditTitle: "编辑错题复习",
+      wrongLevelEditorLead: "错题复习不分学科，自动收录本机所有答错的题；答对后该错题会从错题本移除。",
+      wrongLevelNameHint: "留空时电视显示「错题复习」；最多 10 个字。",
+      wrongLevelEditorAvailable: "当前错题 {n} 道 · 每轮最多 {pull} 道。",
+      wrongLevelEditorEmpty: "当前没有错题。孩子答错后会加入错题本，之后就可以复习。",
+      wrongLevelDeleteConfirm: "确定删除错题复习关卡「{name}」？错题本身不会删除。",
+      wrongLevelDeleteAria: "删除错题复习「{name}」",
+      wrongLevelSaved: "错题复习关卡已保存。",
+      wrongLevelDeleted: "错题复习关卡已删除。",
+      err_INVALID_WRONG_LEVEL: "错题复习关卡不符合要求，请刷新页面后重试。",
       customLevelListTitle: "自定义关卡",
-      customLevelListLead: "从你导入的标签中取题；不按课程单元或难度过滤。",
       customLevelNameHint: "留空时显示标签名称；最多 10 个字。",
       customLevelTagLabel: "题目来源标签",
       customLevelTagHint: "每个标签只能建一个关卡。",
@@ -2830,7 +3072,7 @@
       customLevelSaved: "自定义关卡已保存。",
       customLevelDeleted: "自定义关卡已删除。",
       levelsTotalHint: "关卡 {used} / {max}",
-      customLevelCombined: "课程与自定义关卡合计 {used} / {max}。",
+      customLevelCombined: "课程、自定义与错题复习关卡合计 {used} / {max}。",
       maintenanceSourceLabel: "清理范围",
       maintenanceSourceCourse: "课程/AI",
       maintenanceSourceCustom: "自定义",
@@ -2851,7 +3093,7 @@
       err_INVALID_CUSTOM_LEVEL: "自定义关卡配置不正确。",
       err_INVALID_IMPORT: "导入内容有错误，请按提示修改。",
       err_TOO_MANY_ITEMS: "一次最多导入 200 道题。",
-      err_TOO_MANY_LEVELS: "课程关卡和自定义关卡合计最多 6 个。",
+      err_TOO_MANY_LEVELS: "课程、自定义与错题复习关卡合计最多 20 个。",
       err_INVALID_INDEX: "题目位置不正确，请重新解析。",
       importAiPrompt: `你是题库整理助手。请把我给你的题目资料整理成学习机能导入的 JSON，只输出 JSON。只整理单选题。
 
@@ -2983,8 +3225,30 @@
       levelAddCustomMeta: "From imported tags",
       levelAddCustomMetaNoTags: "Import questions first",
       levelAddCustomMetaCloud: "Unavailable in cloud mode",
+      levelAddWrongTitle: "Wrong review",
+      levelAddWrongMeta: "All subjects · clears mistakes",
+      levelAddWrongMetaEmpty: "No mistakes yet; wrong answers join automatically",
+      levelAddWrongMetaCloud: "Unavailable in cloud mode",
+      wrongLevelListTitle: "Wrong review",
+      wrongLevelListLead: "Only one wrong-review level; it automatically covers mistakes from every subject.",
+      wrongLevelListCount: "{n}/1",
+      wrongLevelBadge: "Review",
+      wrongLevelMeta: "All subjects · a correct answer clears the mistake",
+      wrongLevelFallbackName: "Wrong review",
+      wrongLevelAvailable: "{n} mistakes · up to {pull} per round",
+      wrongLevelEmptyPool: "No mistakes right now; wrong answers join automatically",
+      wrongLevelAddTitle: "New wrong-review level",
+      wrongLevelEditTitle: "Edit wrong review",
+      wrongLevelEditorLead: "Wrong review ignores subjects and draws from every local wrong answer. A correct answer removes that mistake.",
+      wrongLevelNameHint: "Leave blank to show “Wrong review”; at most 10 characters.",
+      wrongLevelEditorAvailable: "{n} mistakes · up to {pull} per round.",
+      wrongLevelEditorEmpty: "No mistakes right now. Wrong answers join automatically and can be reviewed later.",
+      wrongLevelDeleteConfirm: "Delete the wrong-review level “{name}”? The mistakes themselves are kept.",
+      wrongLevelDeleteAria: "Delete wrong review “{name}”",
+      wrongLevelSaved: "Wrong-review level saved.",
+      wrongLevelDeleted: "Wrong-review level deleted.",
+      err_INVALID_WRONG_LEVEL: "The wrong-review level is invalid. Refresh the page and try again.",
       customLevelListTitle: "Custom levels",
-      customLevelListLead: "Draws from your imported tags; no course-unit or difficulty filter.",
       customLevelNameHint: "Leave blank to show the tag name; at most 10 characters.",
       customLevelTagLabel: "Question source tag",
       customLevelTagHint: "Each tag can back only one level.",
@@ -3006,7 +3270,7 @@
       customLevelSaved: "Custom level saved.",
       customLevelDeleted: "Custom level deleted.",
       levelsTotalHint: "Levels {used} / {max}",
-      customLevelCombined: "Course and custom levels: {used} / {max}.",
+      customLevelCombined: "Course, custom, and wrong-review levels: {used} / {max}.",
       maintenanceSourceLabel: "Clear scope",
       maintenanceSourceCourse: "Course/AI",
       maintenanceSourceCustom: "Custom",
@@ -3027,7 +3291,7 @@
       err_INVALID_CUSTOM_LEVEL: "The custom level settings are invalid.",
       err_INVALID_IMPORT: "The import contains errors; fix them using the messages.",
       err_TOO_MANY_ITEMS: "At most 200 questions can be imported at once.",
-      err_TOO_MANY_LEVELS: "Course and custom levels together cannot exceed 6.",
+      err_TOO_MANY_LEVELS: "Course, custom, and wrong-review levels together cannot exceed 20.",
       err_INVALID_INDEX: "The question position is invalid; parse the import again.",
       importAiPrompt: `You organize question banks. Turn the material I give you into JSON that a study device can import. Output only JSON. Include single-choice questions only.
 
@@ -3159,8 +3423,30 @@ Material to organize:
       levelAddCustomMeta: "Из импортированных тегов",
       levelAddCustomMetaNoTags: "Сначала импортируйте вопросы",
       levelAddCustomMetaCloud: "Недоступно в облачном режиме",
+      levelAddWrongTitle: "Повторение ошибок",
+      levelAddWrongMeta: "Все предметы · ошибки исчезают",
+      levelAddWrongMetaEmpty: "Ошибок пока нет; неверные ответы добавятся сами",
+      levelAddWrongMetaCloud: "Недоступно в облачном режиме",
+      wrongLevelListTitle: "Повторение ошибок",
+      wrongLevelListLead: "Уровень повторения один и автоматически включает ошибки по всем предметам.",
+      wrongLevelListCount: "{n}/1",
+      wrongLevelBadge: "Ошибки",
+      wrongLevelMeta: "Все предметы · верный ответ убирает ошибку",
+      wrongLevelFallbackName: "Повторение ошибок",
+      wrongLevelAvailable: "Ошибок: {n} · до {pull} за раунд",
+      wrongLevelEmptyPool: "Ошибок сейчас нет; неверные ответы добавятся сами",
+      wrongLevelAddTitle: "Новый уровень повторения",
+      wrongLevelEditTitle: "Изменить повторение ошибок",
+      wrongLevelEditorLead: "Повторение не делится по предметам и берёт все локальные ошибки. Верный ответ убирает ошибку.",
+      wrongLevelNameHint: "Если пусто, показывается «Повторение ошибок»; до 10 символов.",
+      wrongLevelEditorAvailable: "Ошибок: {n} · до {pull} за раунд.",
+      wrongLevelEditorEmpty: "Ошибок сейчас нет. Неверные ответы добавятся сами, и их можно будет повторить.",
+      wrongLevelDeleteConfirm: "Удалить уровень повторения «{name}»? Сами ошибки сохранятся.",
+      wrongLevelDeleteAria: "Удалить повторение ошибок «{name}»",
+      wrongLevelSaved: "Уровень повторения сохранён.",
+      wrongLevelDeleted: "Уровень повторения удалён.",
+      err_INVALID_WRONG_LEVEL: "Некорректный уровень повторения. Обновите страницу и повторите.",
       customLevelListTitle: "Свои уровни",
-      customLevelListLead: "Вопросы берутся из импортированных тегов; фильтров по разделу курса и сложности нет.",
       customLevelNameHint: "Если пусто, показывается название тега; до 10 символов.",
       customLevelTagLabel: "Тег источника вопросов",
       customLevelTagHint: "Для каждого тега можно создать один уровень.",
@@ -3182,7 +3468,7 @@ Material to organize:
       customLevelSaved: "Свой уровень сохранён.",
       customLevelDeleted: "Свой уровень удалён.",
       levelsTotalHint: "Уровни {used} / {max}",
-      customLevelCombined: "Курсовые и свои уровни: {used} / {max}.",
+      customLevelCombined: "Курсовые, свои и уровни повторения ошибок: {used} / {max}.",
       maintenanceSourceLabel: "Область очистки",
       maintenanceSourceCourse: "Курс/ИИ",
       maintenanceSourceCustom: "Свои",
@@ -3203,7 +3489,7 @@ Material to organize:
       err_INVALID_CUSTOM_LEVEL: "Неверная настройка своего уровня.",
       err_INVALID_IMPORT: "В импортируемых данных есть ошибки. Исправьте их по подсказкам.",
       err_TOO_MANY_ITEMS: "Не более 200 вопросов за один раз.",
-      err_TOO_MANY_LEVELS: "Всего можно создать не более 6 курсовых и своих уровней.",
+      err_TOO_MANY_LEVELS: "Всего можно создать не более 20 курсовых, своих уровней и уровней повторения ошибок.",
       err_INVALID_INDEX: "Неверная позиция вопроса. Проверьте импорт заново.",
       importAiPrompt: `Ты помощник по упорядочиванию банка вопросов. Преврати присланный материал в JSON, который можно импортировать на учебное устройство. Выводи только JSON. Оставляй только вопросы с одним правильным ответом.
 
@@ -3335,8 +3621,30 @@ Material to organize:
       levelAddCustomMeta: "З імпортованих тегів",
       levelAddCustomMetaNoTags: "Спершу імпортуйте питання",
       levelAddCustomMetaCloud: "Недоступно в хмарному режимі",
+      levelAddWrongTitle: "Повторення помилок",
+      levelAddWrongMeta: "Усі предмети · помилки зникають",
+      levelAddWrongMetaEmpty: "Помилок ще немає; неправильні відповіді додадуться самі",
+      levelAddWrongMetaCloud: "Недоступно в хмарному режимі",
+      wrongLevelListTitle: "Повторення помилок",
+      wrongLevelListLead: "Рівень повторення один і автоматично охоплює помилки з усіх предметів.",
+      wrongLevelListCount: "{n}/1",
+      wrongLevelBadge: "Помилки",
+      wrongLevelMeta: "Усі предмети · правильна відповідь прибирає помилку",
+      wrongLevelFallbackName: "Повторення помилок",
+      wrongLevelAvailable: "Помилок: {n} · до {pull} за раунд",
+      wrongLevelEmptyPool: "Помилок зараз немає; неправильні відповіді додадуться самі",
+      wrongLevelAddTitle: "Новий рівень повторення",
+      wrongLevelEditTitle: "Змінити повторення помилок",
+      wrongLevelEditorLead: "Повторення не поділяється за предметами й бере всі локальні помилки. Правильна відповідь прибирає помилку.",
+      wrongLevelNameHint: "Якщо порожньо, показується «Повторення помилок»; до 10 символів.",
+      wrongLevelEditorAvailable: "Помилок: {n} · до {pull} за раунд.",
+      wrongLevelEditorEmpty: "Помилок зараз немає. Неправильні відповіді додадуться самі, і їх можна буде повторити.",
+      wrongLevelDeleteConfirm: "Видалити рівень повторення «{name}»? Самі помилки збережуться.",
+      wrongLevelDeleteAria: "Видалити повторення помилок «{name}»",
+      wrongLevelSaved: "Рівень повторення збережено.",
+      wrongLevelDeleted: "Рівень повторення видалено.",
+      err_INVALID_WRONG_LEVEL: "Некоректний рівень повторення. Оновіть сторінку та повторіть.",
       customLevelListTitle: "Власні рівні",
-      customLevelListLead: "Питання беруться з імпортованих тегів; фільтрів за розділом курсу і складністю немає.",
       customLevelNameHint: "Якщо порожньо, показується назва тегу; до 10 символів.",
       customLevelTagLabel: "Тег джерела питань",
       customLevelTagHint: "Для кожного тегу можна створити один рівень.",
@@ -3358,7 +3666,7 @@ Material to organize:
       customLevelSaved: "Власний рівень збережено.",
       customLevelDeleted: "Власний рівень видалено.",
       levelsTotalHint: "Рівні {used} / {max}",
-      customLevelCombined: "Курсові та власні рівні: {used} / {max}.",
+      customLevelCombined: "Курсові, власні та рівні повторення помилок: {used} / {max}.",
       maintenanceSourceLabel: "Область очищення",
       maintenanceSourceCourse: "Курс/ШІ",
       maintenanceSourceCustom: "Власні",
@@ -3379,7 +3687,7 @@ Material to organize:
       err_INVALID_CUSTOM_LEVEL: "Неправильні налаштування власного рівня.",
       err_INVALID_IMPORT: "В імпортованих даних є помилки. Виправте їх за підказками.",
       err_TOO_MANY_ITEMS: "Не більше 200 питань за один раз.",
-      err_TOO_MANY_LEVELS: "Усього можна створити не більше 6 курсових і власних рівнів.",
+      err_TOO_MANY_LEVELS: "Усього можна створити не більше 20 курсових, власних рівнів і рівнів повторення помилок.",
       err_INVALID_INDEX: "Неправильна позиція питання. Перевірте імпорт ще раз.",
       importAiPrompt: `Ти помічник з упорядкування банку питань. Перетвори надісланий матеріал на JSON, який можна імпортувати на навчальний пристрій. Виводь лише JSON. Залишай лише питання з однією правильною відповіддю.
 
@@ -3511,8 +3819,30 @@ Material to organize:
       levelAddCustomMeta: "Импортталған тегтерден",
       levelAddCustomMetaNoTags: "Алдымен сұрақтарды импорттаңыз",
       levelAddCustomMetaCloud: "Бұлт режимінде қолжетімсіз",
+      levelAddWrongTitle: "Қателерді қайталау",
+      levelAddWrongMeta: "Барлық пән · қате жойылады",
+      levelAddWrongMetaEmpty: "Әзірге қате жоқ; қате жауаптар өзі қосылады",
+      levelAddWrongMetaCloud: "Бұлт режимінде қолжетімсіз",
+      wrongLevelListTitle: "Қателерді қайталау",
+      wrongLevelListLead: "Қайталау деңгейі біреу; ол барлық пәндегі қателерді автоматты қамтиды.",
+      wrongLevelListCount: "{n}/1",
+      wrongLevelBadge: "Қателер",
+      wrongLevelMeta: "Барлық пән · дұрыс жауап қатені жояды",
+      wrongLevelFallbackName: "Қателерді қайталау",
+      wrongLevelAvailable: "Қате: {n} · раундқа {pull}-ге дейін",
+      wrongLevelEmptyPool: "Қазір қате жоқ; қате жауаптар өзі қосылады",
+      wrongLevelAddTitle: "Жаңа қайталау деңгейі",
+      wrongLevelEditTitle: "Қателерді қайталауды өзгерту",
+      wrongLevelEditorLead: "Қайталау пәнге бөлінбейді және барлық жергілікті қателерді алады. Дұрыс жауап қатені жояды.",
+      wrongLevelNameHint: "Бос болса «Қателерді қайталау» көрсетіледі; ең көбі 10 таңба.",
+      wrongLevelEditorAvailable: "Қате: {n} · раундқа {pull}-ге дейін.",
+      wrongLevelEditorEmpty: "Қазір қате жоқ. Қате жауаптар өзі қосылып, кейін қайталауға болады.",
+      wrongLevelDeleteConfirm: "«{name}» қайталау деңгейін жою керек пе? Қателердің өзі сақталады.",
+      wrongLevelDeleteAria: "«{name}» қателерді қайталауды жою",
+      wrongLevelSaved: "Қайталау деңгейі сақталды.",
+      wrongLevelDeleted: "Қайталау деңгейі жойылды.",
+      err_INVALID_WRONG_LEVEL: "Қайталау деңгейі жарамсыз. Бетті жаңартып, қайталаңыз.",
       customLevelListTitle: "Жеке деңгейлер",
-      customLevelListLead: "Импортталған тегтерден сұрақ алады; курстық бөлім немесе қиындық сүзгісі жоқ.",
       customLevelNameHint: "Бос болса тег атауы көрсетіледі; ең көбі 10 таңба.",
       customLevelTagLabel: "Сұрақ көзінің тегі",
       customLevelTagHint: "Әр тегке тек бір деңгей жасауға болады.",
@@ -3534,7 +3864,7 @@ Material to organize:
       customLevelSaved: "Жеке деңгей сақталды.",
       customLevelDeleted: "Жеке деңгей жойылды.",
       levelsTotalHint: "Деңгейлер {used} / {max}",
-      customLevelCombined: "Курстық және жеке деңгейлер: {used} / {max}.",
+      customLevelCombined: "Курстық, жеке және қателерді қайталау деңгейлері: {used} / {max}.",
       maintenanceSourceLabel: "Тазалау аясы",
       maintenanceSourceCourse: "Курс/AI",
       maintenanceSourceCustom: "Жеке",
@@ -3555,7 +3885,7 @@ Material to organize:
       err_INVALID_CUSTOM_LEVEL: "Жеке деңгей баптауы дұрыс емес.",
       err_INVALID_IMPORT: "Импортталған деректерде қателер бар. Нұсқаулар бойынша түзетіңіз.",
       err_TOO_MANY_ITEMS: "Бір ретте ең көбі 200 сұрақ импорттауға болады.",
-      err_TOO_MANY_LEVELS: "Курстық және жеке деңгейлердің барлығы 6-дан аспауы керек.",
+      err_TOO_MANY_LEVELS: "Курстық, жеке және қателерді қайталау деңгейлерінің барлығы 20-дан аспауы керек.",
       err_INVALID_INDEX: "Сұрақ орны дұрыс емес. Импортты қайта тексеріңіз.",
       importAiPrompt: `Сен сұрақ банкін реттеуші көмекшісің. Маған берілген материалды оқу құрылғысына импорттауға болатын JSON-ға айналдыр. Тек JSON шығар. Тек бір дұрыс жауабы бар сұрақтарды ғана қалдыр.
 
@@ -3613,6 +3943,7 @@ Material to organize:
       manualAction: "输入密码并开始",
       manualDialogTitle: "开启单次使用",
       manualDialogLead: "电视将立即开始 {minutes} 分钟计时。请输入家长密码；密码不会保存在手机上。",
+      manualChecking: "正在读取电视状态…",
       manualSubmit: "确认开始",
       manualReason_OK: "电视已锁屏，可以开启一次手动计时。",
       manualReason_ALREADY_UNLOCKED: "电视已临时解锁，不能开始计时。",
@@ -3621,6 +3952,7 @@ Material to organize:
       manualReason_AUTO_MODE: "电视当前是自动模式，单次使用只在手动模式可用。",
       manualReason_RESTING: "电视正在休息，稍后再试。",
       manualReason_OUTSIDE_WINDOW: "当前不在允许使用的时段。",
+      manualReason_DAILY_LIMIT: "今天的可用时长已经用完。",
       manualReason_NO_TIMED_APPS: "电视还没有设置可计时的应用。",
       manualRestWait: "电视正在休息，约 {minutes} 分钟后可以开始。",
       manualSessionActive: "电视正在计时，剩余约 {minutes} 分钟。",
@@ -3664,6 +3996,7 @@ Material to organize:
       manualAction: "Enter password and start",
       manualDialogTitle: "Start one session",
       manualDialogLead: "The TV will start a {minutes}-minute timer immediately. Enter the parent password; it is not saved on the phone.",
+      manualChecking: "Checking the TV state…",
       manualSubmit: "Start timer",
       manualReason_OK: "The TV is locked and ready for one manual session.",
       manualReason_ALREADY_UNLOCKED: "The TV is temporarily unlocked. A timed session cannot start.",
@@ -3672,6 +4005,7 @@ Material to organize:
       manualReason_AUTO_MODE: "The TV is in automatic mode. One session is available only in manual mode.",
       manualReason_RESTING: "The TV is resting. Try again later.",
       manualReason_OUTSIDE_WINDOW: "The current time is outside the allowed window.",
+      manualReason_DAILY_LIMIT: "Today's time allowance is used up.",
       manualReason_NO_TIMED_APPS: "No timed apps are configured on the TV.",
       manualRestWait: "The TV is resting; a session can start in about {minutes} minutes.",
       manualSessionActive: "The TV timer is running with about {minutes} minutes left.",
@@ -3715,6 +4049,7 @@ Material to organize:
       manualAction: "Ввести пароль и начать",
       manualDialogTitle: "Запуск одного сеанса",
       manualDialogLead: "Телевизор сразу запустит таймер на {minutes} мин. Введите пароль родителя; на телефоне он не сохраняется.",
+      manualChecking: "Проверяем состояние телевизора…",
       manualSubmit: "Запустить таймер",
       manualReason_OK: "Телевизор заблокирован; можно запустить один ручной сеанс.",
       manualReason_ALREADY_UNLOCKED: "Телевизор временно разблокирован. Запустить таймер нельзя.",
@@ -3723,6 +4058,7 @@ Material to organize:
       manualReason_AUTO_MODE: "Телевизор в автоматическом режиме. Один сеанс доступен только в ручном режиме.",
       manualReason_RESTING: "Телевизор отдыхает. Повторите позже.",
       manualReason_OUTSIDE_WINDOW: "Сейчас время вне разрешённого интервала.",
+      manualReason_DAILY_LIMIT: "Дневной лимит времени уже израсходован.",
       manualReason_NO_TIMED_APPS: "На телевизоре не выбраны приложения для таймера.",
       manualRestWait: "Телевизор отдыхает; сеанс можно начать примерно через {minutes} мин.",
       manualSessionActive: "Таймер идёт, осталось около {minutes} мин.",
@@ -3766,6 +4102,7 @@ Material to organize:
       manualAction: "Ввести пароль і почати",
       manualDialogTitle: "Запуск одного сеансу",
       manualDialogLead: "Телевізор одразу запустить таймер на {minutes} хв. Введіть пароль батьків; на телефоні він не зберігається.",
+      manualChecking: "Перевіряємо стан телевізора…",
       manualSubmit: "Запустити таймер",
       manualReason_OK: "Телевізор заблокований; можна запустити один ручний сеанс.",
       manualReason_ALREADY_UNLOCKED: "Телевізор тимчасово розблокований. Запустити таймер не можна.",
@@ -3774,6 +4111,7 @@ Material to organize:
       manualReason_AUTO_MODE: "Телевізор в автоматичному режимі. Один сеанс доступний лише в ручному режимі.",
       manualReason_RESTING: "Телевізор відпочиває. Спробуйте пізніше.",
       manualReason_OUTSIDE_WINDOW: "Зараз час поза дозволеним інтервалом.",
+      manualReason_DAILY_LIMIT: "Денний ліміт часу вже використано.",
       manualReason_NO_TIMED_APPS: "На телевізорі не вибрано застосунки для таймера.",
       manualRestWait: "Телевізор відпочиває; сеанс можна почати приблизно через {minutes} хв.",
       manualSessionActive: "Таймер працює, лишилося близько {minutes} хв.",
@@ -3817,6 +4155,7 @@ Material to organize:
       manualAction: "Құпиясөзді енгізіп бастау",
       manualDialogTitle: "Бір сеансты бастау",
       manualDialogLead: "Теледидар бірден {minutes} минуттық таймерді бастайды. Ата-ана құпиясөзін енгізіңіз; ол телефонда сақталмайды.",
+      manualChecking: "Теледидар күйі тексерілуде…",
       manualSubmit: "Таймерді бастау",
       manualReason_OK: "Теледидар құлыптаулы; бір қолмен сеансын бастауға болады.",
       manualReason_ALREADY_UNLOCKED: "Теледидар уақытша ашық. Таймерді бастауға болмайды.",
@@ -3825,6 +4164,7 @@ Material to organize:
       manualReason_AUTO_MODE: "Теледидар автоматты режимде. Бір сеанс тек қолмен режимінде қолжетімді.",
       manualReason_RESTING: "Теледидар демалып тұр. Кейінірек қайталаңыз.",
       manualReason_OUTSIDE_WINDOW: "Қазір рұқсат етілген уақыт аралығынан тыс.",
+      manualReason_DAILY_LIMIT: "Күнделікті уақыт шегі таусылды.",
       manualReason_NO_TIMED_APPS: "Теледидарда таймерге арналған қолданбалар таңдалмаған.",
       manualRestWait: "Теледидар демалып тұр; сеансты шамамен {minutes} минуттан кейін бастауға болады.",
       manualSessionActive: "Таймер жүріп жатыр, шамамен {minutes} минут қалды.",
@@ -3892,69 +4232,300 @@ Material to organize:
 
   const V26_TEXTS = {
     zh: {
-      settingsRoundHint: "5–50 题，每次 5 题",
+      settingsRoundHint: "至少 5 题，每次 5 题",
       unlockThresholdTitle: "答题看电视的时间门槛（分钟）",
-      settingsTimeRange: "15 秒 – 30 分钟，每次 30 秒",
-      settingsAnswerHold: "答案展示最少时间",
-      settingsAnswerHoldHint: "1–30 秒；答错或超时后，至少停留这么久才能继续。答对不受影响。",
+      settingsTimeRange: "5 秒 – 30 分钟，每次 5 秒",
+      settingsFeedbackHold: "答错查看解答最少停留时间",
+      settingsFeedbackHoldHint: "0 秒起，不设上限；答错或超时时，解答至少停留这么久（语音更长时以语音结束为准）。答对不停留。",
       roundDecrease: "减少 5 题",
       roundIncrease: "增加 5 题",
-      timeDecrease: "减少 30 秒",
-      timeIncrease: "增加 30 秒",
-      answerHoldDecrease: "减少 1 秒",
-      answerHoldIncrease: "增加 1 秒",
+      timeDecrease: "减少 5 秒",
+      timeIncrease: "增加 5 秒",
+      feedbackHoldDecrease: "减少 1 秒",
+      feedbackHoldIncrease: "增加 1 秒",
+      minutesUnit: "分钟",
+      unlockDecrease: "减少 5 分钟",
+      unlockIncrease: "增加 5 分钟",
     },
     en: {
-      settingsRoundHint: "5–50 questions, step 5",
+      settingsRoundHint: "At least 5 questions, step 5",
       unlockThresholdTitle: "TV time threshold (minutes)",
-      settingsTimeRange: "15 seconds – 30 minutes, step 30 seconds",
-      settingsAnswerHold: "Minimum answer display time",
-      settingsAnswerHoldHint: "1–30 seconds. After a wrong answer or timeout, wait this long before continuing. Correct answers are unaffected.",
+      settingsTimeRange: "5 seconds – 30 minutes, step 5 seconds",
+      settingsFeedbackHold: "Minimum explanation stay after a wrong answer",
+      settingsFeedbackHoldHint: "Starts at 0, no upper limit. After a wrong answer or timeout, the explanation stays at least this long; a longer voice clip still wins. Correct answers have no hold.",
       roundDecrease: "Decrease by 5 questions",
       roundIncrease: "Increase by 5 questions",
-      timeDecrease: "Decrease by 30 seconds",
-      timeIncrease: "Increase by 30 seconds",
-      answerHoldDecrease: "Decrease by 1 second",
-      answerHoldIncrease: "Increase by 1 second",
+      timeDecrease: "Decrease by 5 seconds",
+      timeIncrease: "Increase by 5 seconds",
+      feedbackHoldDecrease: "Decrease by 1 second",
+      feedbackHoldIncrease: "Increase by 1 second",
+      minutesUnit: "min",
+      unlockDecrease: "Decrease by 5 minutes",
+      unlockIncrease: "Increase by 5 minutes",
     },
     ru: {
-      settingsRoundHint: "От 5 до 50 вопросов, шаг 5",
+      settingsRoundHint: "Не менее 5 вопросов, шаг 5",
       unlockThresholdTitle: "Порог времени для ТВ (минуты)",
-      settingsTimeRange: "От 15 секунд до 30 минут, шаг 30 секунд",
-      settingsAnswerHold: "Минимальное время показа ответа",
-      settingsAnswerHoldHint: "От 1 до 30 секунд. После неверного ответа или тайм-аута подождите указанное время. На верные ответы не влияет.",
+      settingsTimeRange: "От 5 секунд до 30 минут, шаг 5 секунд",
+      settingsFeedbackHold: "Минимальное время просмотра объяснения после ошибки",
+      settingsFeedbackHoldHint: "От 0 секунд, без верхнего предела. После неверного ответа или тайм-аута объяснение остаётся на экране не меньше этого времени; более длинная озвучка имеет приоритет. На верные ответы задержка не действует.",
       roundDecrease: "Уменьшить на 5 вопросов",
       roundIncrease: "Увеличить на 5 вопросов",
-      timeDecrease: "Уменьшить на 30 секунд",
-      timeIncrease: "Увеличить на 30 секунд",
-      answerHoldDecrease: "Уменьшить на 1 секунду",
-      answerHoldIncrease: "Увеличить на 1 секунду",
+      timeDecrease: "Уменьшить на 5 секунд",
+      timeIncrease: "Увеличить на 5 секунд",
+      feedbackHoldDecrease: "Уменьшить на 1 секунду",
+      feedbackHoldIncrease: "Увеличить на 1 секунду",
+      minutesUnit: "мин",
+      unlockDecrease: "Уменьшить на 5 минут",
+      unlockIncrease: "Увеличить на 5 минут",
     },
     uk: {
-      settingsRoundHint: "Від 5 до 50 питань, крок 5",
+      settingsRoundHint: "Щонайменше 5 питань, крок 5",
       unlockThresholdTitle: "Поріг часу для ТБ (хвилини)",
-      settingsTimeRange: "Від 15 секунд до 30 хвилин, крок 30 секунд",
-      settingsAnswerHold: "Мінімальний час показу відповіді",
-      settingsAnswerHoldHint: "Від 1 до 30 секунд. Після неправильної відповіді або тайм-ауту зачекайте вказаний час. На правильні відповіді не впливає.",
+      settingsTimeRange: "Від 5 секунд до 30 хвилин, крок 5 секунд",
+      settingsFeedbackHold: "Мінімальний час перегляду пояснення після помилки",
+      settingsFeedbackHoldHint: "Від 0 секунд, без верхньої межі. Після неправильної відповіді або тайм-ауту пояснення залишається на екрані щонайменше стільки часу; довше озвучення має пріоритет. На правильні відповіді затримка не діє.",
       roundDecrease: "Зменшити на 5 питань",
       roundIncrease: "Збільшити на 5 питань",
-      timeDecrease: "Зменшити на 30 секунд",
-      timeIncrease: "Збільшити на 30 секунд",
-      answerHoldDecrease: "Зменшити на 1 секунду",
-      answerHoldIncrease: "Збільшити на 1 секунду",
+      timeDecrease: "Зменшити на 5 секунд",
+      timeIncrease: "Збільшити на 5 секунд",
+      feedbackHoldDecrease: "Зменшити на 1 секунду",
+      feedbackHoldIncrease: "Збільшити на 1 секунду",
+      minutesUnit: "хв",
+      unlockDecrease: "Зменшити на 5 хвилин",
+      unlockIncrease: "Збільшити на 5 хвилин",
     },
     kk: {
-      settingsRoundHint: "5–50 сұрақ, қадам 5",
+      settingsRoundHint: "Кемінде 5 сұрақ, қадам 5",
       unlockThresholdTitle: "Теледидар уақытының шегі (минут)",
-      settingsTimeRange: "15 секундтан 30 минутқа дейін, қадам 30 секунд",
-      settingsAnswerHold: "Жауапты көрсетудің ең аз уақыты",
-      settingsAnswerHoldHint: "1–30 секунд. Қате жауап немесе уақыт біткеннен кейін жалғастырмас бұрын осы уақытты күтіңіз. Дұрыс жауаптарға әсер етпейді.",
+      settingsTimeRange: "5 секундтан 30 минутқа дейін, қадам 5 секунд",
+      settingsFeedbackHold: "Қате жауаптан кейін түсіндірмені көруге қажет ең аз уақыт",
+      settingsFeedbackHoldHint: "0 секундтан бастап, жоғарғы шектеусіз. Қате жауап немесе уақыт біткен кезде түсіндірме кемінде осы уақыт бойы тұрады; ұзағырақ дауыс басым болады. Дұрыс жауаптарға кідіріс жоқ.",
       roundDecrease: "5 сұраққа азайту",
       roundIncrease: "5 сұраққа қосу",
-      timeDecrease: "30 секундқа азайту",
-      timeIncrease: "30 секундқа қосу",
-      answerHoldDecrease: "1 секундқа азайту",
-      answerHoldIncrease: "1 секундқа қосу",
+      timeDecrease: "5 секундқа азайту",
+      timeIncrease: "5 секундқа қосу",
+      feedbackHoldDecrease: "1 секундқа азайту",
+      feedbackHoldIncrease: "1 секундқа қосу",
+      minutesUnit: "мин",
+      unlockDecrease: "5 минутқа азайту",
+      unlockIncrease: "5 минутқа қосу",
+    },
+  };
+
+  // V28: the parent app download lives in the Me tab. It is hidden inside the app shell,
+  // where the app is already installed, and shares one daily click budget with the
+  // parent center's first-entry prompt.
+  const V28_TEXTS = {
+    zh: {
+      parentAppDownload: "下载家长端 App",
+      parentAppDownloadRemaining: "今天还可下载 {n} 次",
+      parentAppDownloadLimit: "今天已达上限，明天再试",
+    },
+    en: {
+      parentAppDownload: "Download the parent app",
+      parentAppDownloadRemaining: "Downloads left today: {n}",
+      parentAppDownloadLimit: "Daily limit reached; try again tomorrow",
+    },
+    ru: {
+      parentAppDownload: "Скачать приложение родителя",
+      parentAppDownloadRemaining: "Осталось загрузок сегодня: {n}",
+      parentAppDownloadLimit: "Дневной лимит; повторите завтра",
+    },
+    uk: {
+      parentAppDownload: "Завантажити застосунок батьків",
+      parentAppDownloadRemaining: "Залишилося завантажень сьогодні: {n}",
+      parentAppDownloadLimit: "Денний ліміт; повторіть завтра",
+    },
+    kk: {
+      parentAppDownload: "Ата-ана қолданбасын жүктеу",
+      parentAppDownloadRemaining: "Бүгін қалған жүктеу саны: {n}",
+      parentAppDownloadLimit: "Күнделікті шек; ертең қайталаңыз",
+    },
+  };
+
+  // V34: bank management lives on its own subpage with an explicit per-bank
+  // clear action. Every clear goes through two confirmations.
+  const V34_TEXTS = {
+    zh: {
+      bankManageEntry: "题库管理",
+      bankManageEntryState: "课程/AI {course} · 自定义 {custom}",
+      bankManageTitle: "题库管理",
+      bankManageLead: "清空会永久删除题目和作答记录；每次清空需要两步确认。",
+      bankManageCourseTitle: "课程 / AI 题库",
+      bankManageCourseMeta: "共 {n} 道",
+      bankManageCustomTitle: "自定义题库",
+      bankManageCustomMeta: "共 {n} 道 · {tags} 个标签",
+      bankManageTagMeta: "共 {n} 道 · 未使用 {unused}",
+      bankManageClear: "清空",
+      bankManageClearCourse: "清空课程 / AI 题库",
+      bankManageClearCustom: "清空全部自定义题库",
+      bankManageClearTag: "清空「{name}」",
+      bankManageAllTitle: "全部题库",
+      bankManageAllMeta: "共 {n} 道",
+      bankManageClearAll: "清空全部题库",
+      bankClearScopeCourse: "课程 / AI 题库",
+      bankClearScopeCustomTag: "自定义题库「{name}」",
+      bankClearScopeCustomAll: "全部自定义题库",
+      bankClearScopeAll: "全部题库",
+      bankClearTitleFirst: "清空{scope}？",
+      bankClearTitleFinal: "再次确认：清空{scope}",
+      bankClearAllDetail: "{scope}共 {n} 道题和作答记录将被永久删除。",
+      bankClearUnusedDetail: "将删除{scope}中未使用（含已过期）的题目。",
+      bankClearAnsweredDetail: "将删除{scope}中已回答的题目。",
+      bankClearWrongDetail: "将删除{scope}中答错的题目。",
+      bankClearFirstWarning: "此操作不能撤销，还需要再确认一次。",
+      bankClearFinalWarning: "这是最后一次确认，清空后无法恢复。",
+      bankClearContinue: "继续",
+      bankClearConfirm: "确认清空",
+      maxEarned: "单轮闯关奖励电视的时间上限",
+      maxEarnedHint: "每轮最多奖励这么多分钟；达到上限后本轮不再增加。",
+      maxEarnedDecrease: "减少 5 分钟",
+      maxEarnedIncrease: "增加 5 分钟",
+    },
+    en: {
+      bankManageEntry: "Manage banks",
+      bankManageEntryState: "Course/AI {course} · Custom {custom}",
+      bankManageTitle: "Manage banks",
+      bankManageLead: "Clearing permanently deletes questions and answer history. Every clear needs two confirmations.",
+      bankManageCourseTitle: "Course / AI bank",
+      bankManageCourseMeta: "{n} questions",
+      bankManageCustomTitle: "Custom banks",
+      bankManageCustomMeta: "{n} questions · {tags} tags",
+      bankManageTagMeta: "{n} questions · {unused} unused",
+      bankManageClear: "Clear",
+      bankManageClearCourse: "Clear course / AI bank",
+      bankManageClearCustom: "Clear all custom banks",
+      bankManageClearTag: "Clear “{name}”",
+      bankManageAllTitle: "All banks",
+      bankManageAllMeta: "{n} questions",
+      bankManageClearAll: "Clear all banks",
+      bankClearScopeCourse: "the course / AI bank",
+      bankClearScopeCustomTag: "the custom bank “{name}”",
+      bankClearScopeCustomAll: "all custom banks",
+      bankClearScopeAll: "all banks",
+      bankClearTitleFirst: "Clear {scope}?",
+      bankClearTitleFinal: "Confirm again: clear {scope}",
+      bankClearAllDetail: "All {n} questions and their answer history in {scope} will be permanently deleted.",
+      bankClearUnusedDetail: "Unused (and expired) questions in {scope} will be deleted.",
+      bankClearAnsweredDetail: "Answered questions in {scope} will be deleted.",
+      bankClearWrongDetail: "Wrongly answered questions in {scope} will be deleted.",
+      bankClearFirstWarning: "This cannot be undone; one more confirmation is required.",
+      bankClearFinalWarning: "Final confirmation. This cannot be undone.",
+      bankClearContinue: "Continue",
+      bankClearConfirm: "Clear now",
+      maxEarned: "Max TV time rewarded per round",
+      maxEarnedHint: "The most TV time one round can earn; the round stops adding time at this cap.",
+      maxEarnedDecrease: "Decrease by 5 minutes",
+      maxEarnedIncrease: "Increase by 5 minutes",
+    },
+    ru: {
+      bankManageEntry: "Управление банками",
+      bankManageEntryState: "Курс/ИИ {course} · Свои {custom}",
+      bankManageTitle: "Управление банками",
+      bankManageLead: "Очистка навсегда удаляет вопросы и историю ответов. Каждая очистка требует двух подтверждений.",
+      bankManageCourseTitle: "Банк курса / ИИ",
+      bankManageCourseMeta: "Всего: {n}",
+      bankManageCustomTitle: "Свои банки",
+      bankManageCustomMeta: "Всего: {n} · тегов: {tags}",
+      bankManageTagMeta: "Всего: {n} · не использовано: {unused}",
+      bankManageClear: "Очистить",
+      bankManageClearCourse: "Очистить банк курса / ИИ",
+      bankManageClearCustom: "Очистить все свои банки",
+      bankManageClearTag: "Очистить «{name}»",
+      bankManageAllTitle: "Все банки",
+      bankManageAllMeta: "Всего: {n}",
+      bankManageClearAll: "Очистить все банки",
+      bankClearScopeCourse: "банк курса / ИИ",
+      bankClearScopeCustomTag: "свой банк «{name}»",
+      bankClearScopeCustomAll: "все свои банки",
+      bankClearScopeAll: "все банки",
+      bankClearTitleFirst: "Очистить {scope}?",
+      bankClearTitleFinal: "Подтвердите: очистить {scope}",
+      bankClearAllDetail: "{scope}: все вопросы ({n}) и история ответов будут удалены навсегда.",
+      bankClearUnusedDetail: "{scope}: будут удалены неиспользованные (и просроченные) вопросы.",
+      bankClearAnsweredDetail: "{scope}: будут удалены отвеченные вопросы.",
+      bankClearWrongDetail: "{scope}: будут удалены вопросы с неверными ответами.",
+      bankClearFirstWarning: "Это нельзя отменить; потребуется ещё одно подтверждение.",
+      bankClearFinalWarning: "Последнее подтверждение. Отменить будет нельзя.",
+      bankClearContinue: "Продолжить",
+      bankClearConfirm: "Очистить",
+      maxEarned: "Максимум времени ТВ за раунд",
+      maxEarnedHint: "Сколько минут ТВ может принести один раунд; после этого время больше не начисляется.",
+      maxEarnedDecrease: "Уменьшить на 5 минут",
+      maxEarnedIncrease: "Увеличить на 5 минут",
+    },
+    uk: {
+      bankManageEntry: "Керування банками",
+      bankManageEntryState: "Курс/ШІ {course} · Власні {custom}",
+      bankManageTitle: "Керування банками",
+      bankManageLead: "Очищення назавжди видаляє питання й історію відповідей. Кожне очищення потребує двох підтверджень.",
+      bankManageCourseTitle: "Банк курсу / ШІ",
+      bankManageCourseMeta: "Усього: {n}",
+      bankManageCustomTitle: "Власні банки",
+      bankManageCustomMeta: "Усього: {n} · тегів: {tags}",
+      bankManageTagMeta: "Усього: {n} · не використано: {unused}",
+      bankManageClear: "Очистити",
+      bankManageClearCourse: "Очистити банк курсу / ШІ",
+      bankManageClearCustom: "Очистити всі власні банки",
+      bankManageClearTag: "Очистити «{name}»",
+      bankManageAllTitle: "Усі банки",
+      bankManageAllMeta: "Усього: {n}",
+      bankManageClearAll: "Очистити всі банки",
+      bankClearScopeCourse: "банк курсу / ШІ",
+      bankClearScopeCustomTag: "власний банк «{name}»",
+      bankClearScopeCustomAll: "усі власні банки",
+      bankClearScopeAll: "усі банки",
+      bankClearTitleFirst: "Очистити {scope}?",
+      bankClearTitleFinal: "Підтвердьте ще раз: очистити {scope}",
+      bankClearAllDetail: "{scope}: усі питання ({n}) та історію відповідей буде остаточно видалено.",
+      bankClearUnusedDetail: "{scope}: буде видалено невикористані (і прострочені) питання.",
+      bankClearAnsweredDetail: "{scope}: буде видалено питання з відповідями.",
+      bankClearWrongDetail: "{scope}: буде видалено питання з неправильними відповідями.",
+      bankClearFirstWarning: "Це не можна скасувати; потрібне ще одне підтвердження.",
+      bankClearFinalWarning: "Останнє підтвердження. Скасувати буде неможливо.",
+      bankClearContinue: "Продовжити",
+      bankClearConfirm: "Очистити",
+      maxEarned: "Максимум часу ТБ за раунд",
+      maxEarnedHint: "Скільки хвилин ТБ може принести один раунд; після цього час більше не нараховується.",
+      maxEarnedDecrease: "Зменшити на 5 хвилин",
+      maxEarnedIncrease: "Збільшити на 5 хвилин",
+    },
+    kk: {
+      bankManageEntry: "Банктерді басқару",
+      bankManageEntryState: "Курс/AI {course} · Жеке {custom}",
+      bankManageTitle: "Банктерді басқару",
+      bankManageLead: "Тазалау сұрақтар мен жауап тарихын біржола жояды. Әр тазалау екі рет растауды қажет етеді.",
+      bankManageCourseTitle: "Курс / AI банкі",
+      bankManageCourseMeta: "Барлығы: {n}",
+      bankManageCustomTitle: "Жеке банктер",
+      bankManageCustomMeta: "Барлығы: {n} · тег: {tags}",
+      bankManageTagMeta: "Барлығы: {n} · пайдаланылмаған: {unused}",
+      bankManageClear: "Тазалау",
+      bankManageClearCourse: "Курс / AI банкін тазалау",
+      bankManageClearCustom: "Барлық жеке банкті тазалау",
+      bankManageClearTag: "«{name}» тазалау",
+      bankManageAllTitle: "Барлық банктер",
+      bankManageAllMeta: "Барлығы: {n}",
+      bankManageClearAll: "Барлық банкті тазалау",
+      bankClearScopeCourse: "курс / AI банкі",
+      bankClearScopeCustomTag: "«{name}» жеке банкі",
+      bankClearScopeCustomAll: "барлық жеке банктер",
+      bankClearScopeAll: "барлық банктер",
+      bankClearTitleFirst: "{scope} тазалау керек пе?",
+      bankClearTitleFinal: "Қайта растаңыз: {scope} тазалау",
+      bankClearAllDetail: "{scope}: барлық {n} сұрақ пен жауап тарихы біржола жойылады.",
+      bankClearUnusedDetail: "{scope}: пайдаланылмаған (және мерзімі өткен) сұрақтар жойылады.",
+      bankClearAnsweredDetail: "{scope}: жауапталған сұрақтар жойылады.",
+      bankClearWrongDetail: "{scope}: қате жауапталған сұрақтар жойылады.",
+      bankClearFirstWarning: "Бұны қайтару мүмкін емес; тағы бір растау қажет.",
+      bankClearFinalWarning: "Соңғы растау. Тазалағаннан кейін қайтару мүмкін емес.",
+      bankClearContinue: "Жалғастыру",
+      bankClearConfirm: "Тазалау",
+      maxEarned: "Бір раундтағы теледидар уақытының жоғарғы шегі",
+      maxEarnedHint: "Бір раунд ең көбі осы минутты әкеле алады; шекке жеткенде уақыт қосылмайды.",
+      maxEarnedDecrease: "5 минутқа азайту",
+      maxEarnedIncrease: "5 минутқа қосу",
     },
   };
 
@@ -3970,6 +4541,8 @@ Material to organize:
       V23_TEXTS[code],
       V25_TEXTS[code],
       V26_TEXTS[code],
+      V28_TEXTS[code],
+      V34_TEXTS[code],
     );
   }
 
@@ -3981,12 +4554,15 @@ Material to organize:
   // the unload request cannot be delivered. Three missed beats release the
   // slot, so a single dropped request does not cut off an active page.
   const HEARTBEAT_MS = 3 * 1000;
+  // Product default: a wrong answer's explanation stays at least 10 seconds.
+  const FEEDBACK_HOLD_DEFAULT_SEC = 10;
   const DEFAULT_CONFIG = {
     defaultTimeLimitSec: 60,
     minutesPerPoint: 5,
     minCorrectCount: 1,
     maxEarnedMinutes: 60,
     answerDisplaySec: 3,
+    feedbackExtraHoldSec: FEEDBACK_HOLD_DEFAULT_SEC,
     shuffleOptions: true,
     pullCount: 5,
     minutesPerQuestion: 5,
@@ -4008,21 +4584,29 @@ Material to organize:
     hardPenaltyMinutes: 0,
     minUnlockMinutes: 0,
   };
-  const UNLOCK_VALUES = [0, 5, 10, 20, 30];
+  // Technical ceilings only. The UI does not present them as product limits:
+  // they keep the session record and the seconds-based wire fields in range.
+  const ROUND_MIN = 5;
+  const ROUND_MAX = 1000;
+  const ROUND_STEP = 5;
+  const ANSWER_TIME_MIN_SEC = 5;
+  const ANSWER_TIME_MAX_SEC = 30 * 60;
+  const ANSWER_TIME_STEP_SEC = 5;
+  // Minimum stay on wrong/timeout feedback. Correct answers never wait.
+  const FEEDBACK_HOLD_MIN_SEC = 0;
+  const FEEDBACK_HOLD_MAX_SEC = Math.floor(2147483647 / 1000);
+  const FEEDBACK_HOLD_STEP_SEC = 1;
+  // The TV stores the threshold in seconds; this keeps minutes * 60 in range.
+  const UNLOCK_MAX_MINUTES = Math.floor(2147483647 / 60);
+  const UNLOCK_STEP_MINUTES = 5;
+  // Per-round reward cap. The stored config still uses 1..180 minutes.
+  const MAX_EARNED_MIN_MINUTES = 1;
+  const MAX_EARNED_MAX_MINUTES = 180;
+  const MAX_EARNED_STEP_MINUTES = 5;
   const SCOPE_VALUES = ["unit", "midterm", "final", "review"];
   const REQUIREMENT_MAX_CHARS = 30;
   const GEN_OPTIONS_VALUES = [4, 6];
   const TARGET_COUNTS = [20, 30, 50];
-  const ROUND_MIN = 5;
-  const ROUND_MAX = 50;
-  const ROUND_STEP = 5;
-  const ANSWER_TIME_MIN_SEC = 15;
-  const ANSWER_TIME_MAX_SEC = 30 * 60;
-  const ANSWER_TIME_STEP_SEC = 30;
-  // Minimum stay on wrong/timeout feedback. Correct answers never wait.
-  const ANSWER_HOLD_MIN_SEC = 1;
-  const ANSWER_HOLD_MAX_SEC = 30;
-  const ANSWER_HOLD_STEP_SEC = 1;
   // A fresh TV opens the generation page on a ready-to-run demo scope instead of
   // an empty requirement, which would block generation until a parent types one.
   // The title matches unit 1 of grade 4 / semester 1 / math / 人教版.
@@ -4036,7 +4620,7 @@ Material to organize:
     customLevel: "customLevelEditorPage",
     questions: "questionsPage",
   };
-  const MAX_LEVELS = 6;
+  const MAX_LEVELS = 20;
   const LEVEL_NAME_MAX = 10;
   const TAG_NAME_MAX = 20;
   const IMPORT_MAX_BYTES = 512 * 1024;
@@ -4117,6 +4701,18 @@ Material to organize:
     REVIEW: "all",
   };
   const SCOPE_DIFFICULTY_VALUES = ["", "EASY", "MEDIUM", "HARD"];
+  // A new level starts on the widest playable scope in the bundled bank:
+  // grade 4, semester 1, all subjects, midterm, any difficulty. The parent can
+  // still narrow each step; saving it as-is gives the child mixed subjects.
+  const DEFAULT_LEVEL_SCOPE = Object.freeze({
+    grade: 4,
+    semester: 1,
+    subject: SUBJECT_ALL,
+    textbook: TEXTBOOK_ALL,
+    topic: "midterm",
+    unitNo: null,
+    difficulty: "",
+  });
   // Custom answer scope is a stepwise filter: each step shows only values that
   // still have bank questions under the upstream selections. Units are listed
   // individually in the topic step instead of being summarized into one chip.
@@ -4146,9 +4742,15 @@ Material to organize:
     expired: "bankStatusExpired",
   };
   const GEN_PREFS_KEY = "quiz.gen.prefs";
+  // The app download is a browser-only convenience. In the parent app shell it is
+  // redundant, and the daily cap is a courtesy limit rather than a security control.
+  const PARENT_APP_DOWNLOAD_URL = "https://planyourtv.me/download/parent";
+  const PARENT_APP_DOWNLOAD_KEY = "ptv.parentAppDownload";
+  const PARENT_APP_DOWNLOAD_LIMIT = 5;
   const TAB_VIEWS = {
     generate: "view-generate",
     bank: "view-bank",
+    control: "view-control",
     me: "view-me",
   };
   const $ = (id) => document.getElementById(id);
@@ -4156,13 +4758,31 @@ Material to organize:
   let adminToken = null;
   let adminExpiresAt = 0;
   let heartbeatTimer = 0;
+  let statusTimer = 0;
+  // V29: the web parent center is writable only in LOCAL mode and while unbound. Any other
+  // state turns the whole page into the disabled card: no PIN, no parent UI, no quiz editor.
+  let webDisabled = false;
+  let webDisabledBootstrap = null;
+  let webDisabledTimer = 0;
+  let webDisabledBusy = false;
+  let webDisabledVisibilityBound = false;
+  let parentBootstrap = null;
+  // The TV's parent-center QR opens /quiz#parent; after the normal PIN login the page should
+  // land on More instead of the generation tab. The fragment is consumed at startup so a
+  // refresh inside the editor does not jump back to More.
+  let openParentAfterLogin = false;
   let forceTakeover = false;
   let gateShown = false;
   let gateOccupied = false;
+  // Forgot-password form replaces the PIN form on the same gate card. It talks only to
+  // /api/parent/recover, so it works while the PIN is forgotten or its login is locked out.
+  let recoveryOpen = false;
   // The TV's lock-screen eligibility, refreshed by the 3s heartbeat. null means
   // "not read yet"; the action stays disabled until the TV answers.
   let unlockState = null;
   let unlockBusy = false;
+  // V27: parent.js borrows this dialog so the web parent center has one unlock UI.
+  let parentUnlockWaiter = null;
   // A one-shot manual session started from this page. The TV owns the timer;
   // this state only mirrors the TV's lock-screen eligibility and limits.
   let manualState = null;
@@ -4207,10 +4827,16 @@ Material to organize:
   let customLevelDraftTag = "";
   let customLevelSaving = false;
   let customLevelMessageTimer = 0;
+  // A single optional level over the dynamic wrong-answer pool. It is kept
+  // apart from customLevels so the tag cap and tag editor never apply to it.
+  let wrongLevel = null;
+  let wrongLevelEditing = false;
+  let wrongLevelSaving = false;
+  let wrongLevelMessageTimer = 0;
   let bankSourceCounts = { course: 0, custom: 0 };
   let localBankActive = true;
-  let clearSource = "course";
-  let clearCollectionId = "";
+  let bankClearPending = null;
+  let bankClearBusy = false;
   let targetCount = 20;
   let genState = idleGeneration();
   let genTimer = null;
@@ -4219,6 +4845,11 @@ Material to organize:
   let rangeSaving = false;
   let activeModal = null;
   let lastFocused = null;
+  // AI configuration is a full subpage rather than a modal. It can be opened
+  // from the generate flow, the Me tab, or the parent center's More page.
+  let aiPageOpen = false;
+  let aiReturnTab = "generate";
+  let aiReturnParentCenter = false;
   let genGradeValue = 4;
   let genSemesterValue = 1;
   let genUnitValue = 1;
@@ -4394,6 +5025,117 @@ Material to organize:
       }
     }
     return value;
+  }
+
+  // --------------------------------------------------------- parent app download
+
+  let parentAppDownloadMemory = null;
+
+  function isParentAppShell() {
+    return Boolean(window.ParentShell || window.__pytvParentShell);
+  }
+
+  function localDayKey() {
+    const now = new Date();
+    const month = ("0" + (now.getMonth() + 1)).slice(-2);
+    const day = ("0" + now.getDate()).slice(-2);
+    return now.getFullYear() + "-" + month + "-" + day;
+  }
+
+  function readParentAppDownload() {
+    const today = localDayKey();
+    if (parentAppDownloadMemory && parentAppDownloadMemory.day === today) {
+      return parentAppDownloadMemory;
+    }
+    parentAppDownloadMemory = null;
+    let raw = null;
+    try {
+      raw = localStorage.getItem(PARENT_APP_DOWNLOAD_KEY);
+    } catch (_) {
+      // Private mode: keep counting in memory for this page instead of blocking.
+      return { day: today, count: 0, available: false };
+    }
+    if (!raw) return { day: today, count: 0, available: true };
+    try {
+      const parsed = JSON.parse(raw);
+      if (!parsed || parsed.day !== today || typeof parsed.count !== "number" ||
+          !isFinite(parsed.count) || parsed.count < 0) {
+        return { day: today, count: 0, available: true };
+      }
+      return { day: today, count: Math.floor(parsed.count), available: true };
+    } catch (_) {
+      return { day: today, count: 0, available: true };
+    }
+  }
+
+  function writeParentAppDownload(usage) {
+    const next = { day: usage.day, count: usage.count, available: true };
+    // Keep the count even when the write fails, so the cap still applies while the
+    // page stays open. A reload clears the fallback; that is acceptable for a courtesy cap.
+    parentAppDownloadMemory = next;
+    try {
+      localStorage.setItem(PARENT_APP_DOWNLOAD_KEY, JSON.stringify({
+        day: next.day,
+        count: next.count,
+      }));
+    } catch (_) { /* private mode */ }
+  }
+
+  function parentAppDownloadStatus() {
+    const usage = readParentAppDownload();
+    const count = usage.available ? usage.count : 0;
+    return {
+      remaining: Math.max(0, PARENT_APP_DOWNLOAD_LIMIT - count),
+      limited: usage.available && count >= PARENT_APP_DOWNLOAD_LIMIT,
+    };
+  }
+
+  function updateParentAppDownloadRow() {
+    const card = $("parentAppDownloadCard");
+    const row = $("parentAppDownload");
+    const state = $("parentAppDownloadState");
+    if (!card || !row || !state) return;
+    if (isParentAppShell()) {
+      card.classList.add("hidden");
+      return;
+    }
+    card.classList.remove("hidden");
+    const status = parentAppDownloadStatus();
+    if (status.limited) {
+      row.setAttribute("aria-disabled", "true");
+      state.textContent = t("parentAppDownloadLimit");
+      return;
+    }
+    row.removeAttribute("aria-disabled");
+    state.textContent = status.remaining <= 2
+      ? t("parentAppDownloadRemaining", { n: status.remaining })
+      : "Android 7.0+";
+  }
+
+  function openParentAppDownload() {
+    if (isParentAppShell()) return "unavailable";
+    const usage = readParentAppDownload();
+    if (usage.available && usage.count >= PARENT_APP_DOWNLOAD_LIMIT) {
+      updateParentAppDownloadRow();
+      return "limited";
+    }
+    writeParentAppDownload({
+      day: usage.day,
+      count: (usage.available ? usage.count : 0) + 1,
+    });
+    updateParentAppDownloadRow();
+    let opened = null;
+    try {
+      opened = window.open(PARENT_APP_DOWNLOAD_URL, "_blank");
+    } catch (_) {
+      opened = null;
+    }
+    if (opened) {
+      try { opened.opener = null; } catch (_) { /* ignore */ }
+    } else {
+      try { location.href = PARENT_APP_DOWNLOAD_URL; } catch (_) { /* ignore */ }
+    }
+    return "opened";
   }
 
   // ---- 课程表 ----
@@ -4933,6 +5675,28 @@ Material to organize:
     }, 50);
   }
 
+  /**
+   * V27 host bridge. Resolves true only after the TV accepted the PIN via the normal quiz
+   * unlock endpoint (which marks the same parent proof the parent center needs), and false
+   * when the dialog was closed or this page cannot offer it. parent.js falls back to its own
+   * sheet when false, so an older tab still works.
+   */
+  function parentUnlockDialog() {
+    if (!adminToken || Date.now() >= adminExpiresAt) return Promise.resolve(false);
+    if (!unlockState || !unlockState.eligible || unlockState.unlocked) return Promise.resolve(false);
+    if (parentUnlockWaiter || activeModal) return Promise.resolve(false);
+    return new Promise((resolve) => {
+      parentUnlockWaiter = resolve;
+      openUnlockDialog();
+    });
+  }
+
+  function settleParentUnlock(ok) {
+    const resolve = parentUnlockWaiter;
+    parentUnlockWaiter = null;
+    if (resolve) resolve(Boolean(ok));
+  }
+
   async function submitUnlock(event) {
     event.preventDefault();
     if (unlockBusy) return;
@@ -4952,6 +5716,7 @@ Material to organize:
         body: { pin },
       });
       applyUnlockState(data && data.lock);
+      settleParentUnlock(true);
       closeModal();
     } catch (error) {
       const lock = error.data && error.data.lock;
@@ -5019,15 +5784,16 @@ Material to organize:
     renderManualState();
   }
 
-  function manualReasonText(reason) {
-    if (reason === "SESSION_ACTIVE" && manualState && manualState.remainingSeconds > 0) {
+  function manualReasonText(reason, state) {
+    const manual = state || manualState;
+    if (reason === "SESSION_ACTIVE" && manual && manual.remainingSeconds > 0) {
       return t("manualSessionActive", {
-        minutes: Math.max(1, Math.ceil(manualState.remainingSeconds / 60)),
+        minutes: Math.max(1, Math.ceil(manual.remainingSeconds / 60)),
       });
     }
-    if (reason === "RESTING" && manualState && manualState.restRemainingSeconds > 0) {
+    if (reason === "RESTING" && manual && manual.restRemainingSeconds > 0) {
       return t("manualRestWait", {
-        minutes: Math.max(1, Math.ceil(manualState.restRemainingSeconds / 60)),
+        minutes: Math.max(1, Math.ceil(manual.restRemainingSeconds / 60)),
       });
     }
     const shared = MANUAL_SHARED_REASON_KEYS[reason];
@@ -5151,7 +5917,7 @@ Material to organize:
     renderProviderMessages();
     renderSync();
     renderSettings();
-    renderMaintenance();
+    renderBankManage();
     renderBankCounts();
     renderBank();
     renderCustomLevels();
@@ -5166,6 +5932,11 @@ Material to organize:
     if (genPage === "customLevel") renderCustomLevelEditor();
     if (genPage === "questions") renderQuestions();
     updateToggleState();
+    updateParentAppDownloadRow();
+    if (webDisabled) renderWebDisabled();
+    if (window.ParentCenterUI && window.ParentCenterUI.setLang) {
+      window.ParentCenterUI.setLang(lang);
+    }
   }
 
   function renderStock() {
@@ -5220,9 +5991,11 @@ Material to organize:
     const entries = levels.map((level, index) => ({
       ordinal: index + 1,
       name: String(level.name || "").trim() ||
-        (level.collectionId
-          ? t("customLevelNameFallback", { name: customLevelTagName(level) })
-          : scopeSummaryText(level.scope)),
+        (level.wrongReview
+          ? t("wrongLevelFallbackName")
+          : level.collectionId
+            ? t("customLevelNameFallback", { name: customLevelTagName(level) })
+            : scopeSummaryText(level.scope)),
     }));
     if (!entries.length) {
       host.classList.add("empty");
@@ -5305,7 +6078,7 @@ Material to organize:
         ? t("levelCountLabel", { n: totalLevels })
         : t("levelNoneLabel");
     }
-    renderAnswerSummary(answerLevels.concat(customLevels));
+    renderAnswerSummary(answerLevels.concat(customLevels, wrongLevel ? [wrongLevel] : []));
     const scoring = scoringValues(config);
     $("homeAnswerSub").textContent = t("homeAnswerSub", {
       n: pull,
@@ -5470,9 +6243,9 @@ Material to organize:
   // custom-level entry jumps to the bank import page, so only the subpage of
   // the tab actually on screen may hide the top bar and bottom navigation.
   function syncSubpageClass() {
-    const bankImport = activeTab === "bank" && bankPage === "import";
+    const bankSubpage = activeTab === "bank" && bankPage !== "home";
     const genSubpage = activeTab === "generate" && genPage !== "home";
-    document.body.classList.toggle("subpage-open", genSubpage || bankImport);
+    document.body.classList.toggle("subpage-open", aiPageOpen || genSubpage || bankSubpage);
   }
 
   function showGenPage(page) {
@@ -5491,10 +6264,13 @@ Material to organize:
   }
 
   function showBankPage(page) {
-    bankPage = page === "import" ? "import" : "home";
+    bankPage = ["import", "manage"].includes(page) ? page : "home";
     if ($("bankHome")) $("bankHome").classList.toggle("hidden", bankPage !== "home");
     if ($("bankImportPage")) {
       $("bankImportPage").classList.toggle("hidden", bankPage !== "import");
+    }
+    if ($("bankManagePage")) {
+      $("bankManagePage").classList.toggle("hidden", bankPage !== "manage");
     }
     syncSubpageClass();
     window.scrollTo({ top: 0 });
@@ -5634,15 +6410,29 @@ Material to organize:
     return normalizeRoundCount(config.pullCount, DEFAULT_CONFIG.pullCount);
   }
 
-  function normalizeAnswerHold(value, fallback) {
+  function normalizeFeedbackHold(value, fallback) {
     if (value === null || value === undefined || String(value).trim() === "") return fallback;
     const number = Number(value);
     if (!Number.isInteger(number)) return fallback;
-    return Math.min(ANSWER_HOLD_MAX_SEC, Math.max(ANSWER_HOLD_MIN_SEC, number));
+    return Math.min(FEEDBACK_HOLD_MAX_SEC, Math.max(FEEDBACK_HOLD_MIN_SEC, number));
   }
 
-  function configAnswerHold(config) {
-    return normalizeAnswerHold(config.answerDisplaySec, DEFAULT_CONFIG.answerDisplaySec);
+  function configFeedbackHold(config) {
+    return normalizeFeedbackHold(
+      config.feedbackExtraHoldSec,
+      DEFAULT_CONFIG.feedbackExtraHoldSec,
+    );
+  }
+
+  function normalizeMaxEarned(value, fallback) {
+    if (value === null || value === undefined || String(value).trim() === "") return fallback;
+    const number = Number(value);
+    if (!Number.isInteger(number)) return fallback;
+    return Math.min(MAX_EARNED_MAX_MINUTES, Math.max(MAX_EARNED_MIN_MINUTES, number));
+  }
+
+  function configMaxEarned(config) {
+    return normalizeMaxEarned(config.maxEarnedMinutes, DEFAULT_CONFIG.maxEarnedMinutes);
   }
 
   // A saved value may predate stepping (the old round chips offered 8). Move
@@ -5656,8 +6446,9 @@ Material to organize:
     return Math.min(max, Math.max(min, next));
   }
 
-  function renderStepper(prefix, value, min, max, step) {
-    const input = $(prefix + "Input");
+  // Most steppers use <prefix>Input, but the scoring rows keep their legacy field ids.
+  function renderStepper(prefix, value, min, max, step, inputId) {
+    const input = $(inputId || (prefix + "Input"));
     if (!input) return;
     // Do not rewrite the field while it is being typed into.
     if (document.activeElement !== input) input.value = String(value);
@@ -5670,8 +6461,8 @@ Material to organize:
     if (plus) plus.disabled = value >= max;
   }
 
-  function bindStepper(prefix, min, max, step, configValue, patch) {
-    const input = $(prefix + "Input");
+  function bindStepper(prefix, min, max, step, configValue, patch, inputId) {
+    const input = $(inputId || (prefix + "Input"));
     if (!input) return;
     const read = () => {
       const raw = input.value.trim();
@@ -5723,9 +6514,9 @@ Material to organize:
       easyPenaltyMinutes: scoringNumber(source.easyPenaltyMinutes, 0, 30),
       mediumPenaltyMinutes: scoringNumber(source.mediumPenaltyMinutes, 0, 30),
       hardPenaltyMinutes: scoringNumber(source.hardPenaltyMinutes, 0, 30),
-      minUnlockMinutes: scoringNumber(source.minUnlockMinutes, 0, 180),
-      maxEarnedMinutes: Math.min(
-        180, Math.max(1, Number(source.maxEarnedMinutes) || DEFAULT_CONFIG.maxEarnedMinutes)),
+      minUnlockMinutes: scoringNumber(source.minUnlockMinutes, 0, UNLOCK_MAX_MINUTES),
+      maxEarnedMinutes: normalizeMaxEarned(
+        source.maxEarnedMinutes, DEFAULT_CONFIG.maxEarnedMinutes),
     };
   }
 
@@ -5740,7 +6531,7 @@ Material to organize:
       easyPenaltyMinutes: numberField("easyPenalty", 0, 30, 0),
       mediumPenaltyMinutes: numberField("mediumPenalty", 0, 30, 0),
       hardPenaltyMinutes: numberField("hardPenalty", 0, 30, 0),
-      minUnlockMinutes: numberField("minUnlock", 0, 180, 0),
+      minUnlockMinutes: numberField("minUnlock", 0, UNLOCK_MAX_MINUTES, 0),
     };
   }
 
@@ -5796,15 +6587,6 @@ Material to organize:
     warning.classList.toggle("hidden", !text);
   }
 
-  function renderUnlockChips() {
-    const scoring = scoringValues(currentConfig());
-    const selected = scoring.minUnlockMinutes;
-    const values = Array.from(new Set(UNLOCK_VALUES.concat([selected])))
-      .sort((a, b) => a - b);
-    renderChipRow($("unlockCounts"), values, selected, "data-unlock",
-      (value) => value === 0 ? t("unlockNone") : t("minuteN", { n: value }));
-  }
-
   function resetScoringDefaults() {
     $("easyReward").value = String(SCORING_DEFAULTS.easyRewardMinutes);
     $("mediumReward").value = String(SCORING_DEFAULTS.mediumRewardMinutes);
@@ -5830,15 +6612,22 @@ Material to organize:
       ANSWER_TIME_MIN_SEC, ANSWER_TIME_MAX_SEC, ANSWER_TIME_STEP_SEC,
     );
     renderStepper(
-      "answerHold",
-      configAnswerHold(config),
-      ANSWER_HOLD_MIN_SEC, ANSWER_HOLD_MAX_SEC, ANSWER_HOLD_STEP_SEC,
+      "feedbackHold",
+      configFeedbackHold(config),
+      FEEDBACK_HOLD_MIN_SEC, FEEDBACK_HOLD_MAX_SEC, FEEDBACK_HOLD_STEP_SEC,
     );
-    renderUnlockChips();
+    // The unlock threshold is a settings stepper, not a chip row: it starts at
+    // 0 and has no product-level upper limit.
+    renderStepper(
+      "unlock",
+      scoringValues(config).minUnlockMinutes,
+      0, UNLOCK_MAX_MINUTES, UNLOCK_STEP_MINUTES, "minUnlock",
+    );
     renderScoringSummary();
     if ($("ruleScope")) {
-      $("ruleScope").textContent = answerLevels.length
-        ? t("levelCountLabel", { n: answerLevels.length })
+      const totalLevels = allLevelCount();
+      $("ruleScope").textContent = totalLevels
+        ? t("levelCountLabel", { n: totalLevels })
         : t("levelNoneLabel");
     }
   }
@@ -5847,7 +6636,12 @@ Material to organize:
     if (!$("maxEarned")) return;
     const config = currentConfig();
     renderScoringInputs(config);
-    $("maxEarned").value = config.maxEarnedMinutes || 60;
+    renderStepper(
+      "maxEarned",
+      configMaxEarned(config),
+      MAX_EARNED_MIN_MINUTES, MAX_EARNED_MAX_MINUTES, MAX_EARNED_STEP_MINUTES,
+      "maxEarned",
+    );
     $("shuffle").checked = config.shuffleOptions !== false;
     renderSettingsChrome();
     renderSettingsAttention();
@@ -5989,11 +6783,10 @@ Material to organize:
         answered: counts.answered,
       });
     }
-    if ($("maintenanceCounts")) {
-      $("maintenanceCounts").textContent = t("bankCountsLine", {
-        total: counts.total,
-        unused: counts.unused,
-        answered: counts.answered,
+    if ($("bankManageEntryState")) {
+      $("bankManageEntryState").textContent = t("bankManageEntryState", {
+        course: bankSourceCounts.course,
+        custom: bankSourceCounts.custom,
       });
     }
     if ($("bankSourceCounts")) {
@@ -6130,9 +6923,79 @@ Material to organize:
     });
   }
 
-  function renderMaintenance() {
-    if (!$("maintenanceCounts")) return;
-    $("maintenanceCounts").textContent = t("meMaintenanceHint");
+  function renderBankManage() {
+    if (!$("bankManagePage")) return;
+    const course = Math.max(0, Number(bankSourceCounts.course || 0));
+    const custom = Math.max(0, Number(bankSourceCounts.custom || 0));
+    const total = course + custom;
+    $("bankManageCourseMeta").textContent = t("bankManageCourseMeta", { n: course });
+    $("bankManageCustomMeta").textContent = t("bankManageCustomMeta", {
+      n: custom,
+      tags: importCollections.length,
+    });
+    $("bankManageAllMeta").textContent = t("bankManageAllMeta", { n: total });
+    ["bankManageCourseUnused", "bankManageCourseAnswered",
+      "bankManageCourseWrong", "bankManageCourseClear"].forEach((id) => {
+      $(id).disabled = course <= 0;
+    });
+    const list = $("bankManageCustomList");
+    list.replaceChildren();
+    importCollections.forEach((collection) => {
+      const row = document.createElement("div");
+      row.className = "setting-row static";
+      const main = document.createElement("span");
+      main.className = "setting-main";
+      const name = document.createElement("span");
+      name.textContent = collection.name;
+      const meta = document.createElement("span");
+      meta.className = "setting-value";
+      meta.textContent = t("bankManageTagMeta", {
+        n: collection.total,
+        unused: collection.unused,
+      });
+      main.append(name, meta);
+      const clear = document.createElement("button");
+      clear.type = "button";
+      clear.className = "btn danger small";
+      clear.textContent = t("bankManageClear");
+      clear.setAttribute("aria-label", t("bankManageClearTag", { name: collection.name }));
+      clear.disabled = collection.total <= 0;
+      clear.addEventListener("click", () => requestBankClear({
+        mode: "all",
+        source: "custom",
+        collectionId: collection.id,
+        name: collection.name,
+        count: collection.total,
+      }));
+      row.append(main, clear);
+      list.appendChild(row);
+    });
+    $("bankManageCustomEmpty").classList.toggle("hidden", importCollections.length > 0);
+    const customClear = $("bankManageCustomClear");
+    customClear.classList.toggle("hidden", importCollections.length < 2);
+    customClear.disabled = custom <= 0;
+    $("bankManageAllClear").disabled = total <= 0;
+    renderBankCounts();
+  }
+
+  function openBankManage() {
+    setTab("bank", true);
+    showBankPage("manage");
+    $("bankManageState").textContent = "";
+    $("bankManageError").textContent = "";
+    renderBankManage();
+    loadAdminSession().catch((error) => {
+      if ($("bankManageError")) $("bankManageError").textContent = errorText(error);
+    });
+    window.scrollTo({ top: 0 });
+  }
+
+  function backFromBankManage() {
+    $("bankManageState").textContent = "";
+    $("bankManageError").textContent = "";
+    showBankPage("home");
+    loadBank(true);
+    window.scrollTo({ top: 0 });
   }
 
   // Manual import keeps the tag lifecycle separate from the question write:
@@ -6422,7 +7285,6 @@ Material to organize:
     if (!$("importTagSuggest").classList.contains("hidden")) {
       renderImportTagSuggest();
     }
-    renderMaintenanceSource();
     renderImportPreview();
     renderImportResult();
   }
@@ -6910,52 +7772,96 @@ Material to organize:
     openBankImport();
   }
 
-  function renderMaintenanceSource() {
-    if (!$("maintenanceSource")) return;
-    document.querySelectorAll("#maintenanceSource [data-clear-source]").forEach((button) => {
-      button.setAttribute(
-        "aria-pressed",
-        String(button.dataset.clearSource === clearSource),
-      );
-    });
-    if (!importCollections.some((item) => item.id === clearCollectionId)) {
-      clearCollectionId = importCollections.length ? importCollections[0].id : "";
+  function bankClearScopeText(item) {
+    if (item.source === "all") return t("bankClearScopeAll");
+    if (item.source === "custom") {
+      return item.collectionId
+        ? t("bankClearScopeCustomTag", { name: item.name || "" })
+        : t("bankClearScopeCustomAll");
     }
-    const select = $("maintenanceCollection");
-    select.replaceChildren();
-    importCollections.forEach((collection) => {
-      const option = document.createElement("option");
-      option.value = collection.id;
-      option.textContent = t("maintenanceTagOption", {
-        name: collection.name,
-        total: collection.total,
-        unused: collection.unused,
-      });
-      select.appendChild(option);
-    });
-    select.value = clearCollectionId;
-    select.classList.toggle("hidden", clearSource !== "custom");
-    select.disabled = clearSource !== "custom";
-    let hint = "";
-    if (clearSource === "course") {
-      hint = t("maintenanceSourceCourseHint");
-    } else if (clearSource === "custom") {
-      hint = importCollections.length
-        ? t("maintenanceSourceCustomHint")
-        : t("maintenanceSourceNoTags");
-    } else {
-      hint = t("maintenanceSourceAllHint", { custom: bankSourceCounts.custom });
-    }
-    $("maintenanceSourceHint").textContent = hint;
-    const blocked = clearSource === "custom" && !clearCollectionId;
-    document.querySelectorAll(".maintenance-grid .btn").forEach((button) => {
-      button.disabled = blocked;
-    });
+    return t("bankClearScopeCourse");
   }
 
-  function setClearSource(source) {
-    clearSource = ["course", "custom", "all"].includes(source) ? source : "course";
-    renderMaintenanceSource();
+  function renderBankClearDialog() {
+    if (!bankClearPending) return;
+    const item = bankClearPending;
+    const scope = bankClearScopeText(item);
+    const detailKey = item.mode === "unused" ? "bankClearUnusedDetail"
+      : item.mode === "answered" ? "bankClearAnsweredDetail"
+        : item.mode === "wrong" ? "bankClearWrongDetail" : "bankClearAllDetail";
+    $("bankClearTitle").textContent = t(
+      item.step === 1 ? "bankClearTitleFirst" : "bankClearTitleFinal",
+      { scope },
+    );
+    $("bankClearLead").textContent = t(detailKey, {
+      scope,
+      n: Math.max(0, Number(item.count || 0)),
+    });
+    $("bankClearWarning").textContent = t(
+      item.step === 1 ? "bankClearFirstWarning" : "bankClearFinalWarning",
+    );
+    const next = $("bankClearNext");
+    next.textContent = t(item.step === 1 ? "bankClearContinue" : "bankClearConfirm");
+    next.classList.toggle("primary", item.step === 1);
+    next.classList.toggle("danger", item.step !== 1);
+    next.disabled = bankClearBusy;
+  }
+
+  function requestBankClear(action) {
+    if (bankClearBusy) return;
+    bankClearPending = Object.assign({ step: 1, collectionId: null, name: "", count: 0 }, action);
+    $("bankManageState").textContent = "";
+    $("bankManageError").textContent = "";
+    renderBankClearDialog();
+    openModal("bankClearDialog");
+  }
+
+  async function advanceBankClear() {
+    if (!bankClearPending || bankClearBusy) return;
+    if (bankClearPending.step === 1) {
+      bankClearPending.step = 2;
+      renderBankClearDialog();
+      return;
+    }
+    const item = bankClearPending;
+    bankClearBusy = true;
+    renderBankClearDialog();
+    try {
+      const body = { mode: item.mode, source: item.source };
+      if (item.collectionId) body.collectionId = item.collectionId;
+      const data = await api("/api/quiz/admin/bank/clear", {
+        method: "POST",
+        admin: true,
+        body,
+      });
+      applyBankCounts(data.counts);
+      if (data.sourceCounts) {
+        bankSourceCounts = {
+          course: Math.max(0, Number(data.sourceCounts.course || 0)),
+          custom: Math.max(0, Number(data.sourceCounts.custom || 0)),
+        };
+      }
+      if (publicState && data.bankState) publicState.bankState = data.bankState;
+      closeModal();
+      bankClearPending = null;
+      bankClearBusy = false;
+      $("bankManageState").textContent = t("clearDone");
+      $("bankManageError").textContent = "";
+      renderBankManage();
+      renderStock();
+      await refreshStatus();
+      try {
+        await loadAdminSession();
+      } catch (_) {
+        // The clear already succeeded; tag counts catch up on the next refresh.
+      }
+      if (activeTab === "bank") loadBank(true);
+    } catch (error) {
+      bankClearBusy = false;
+      bankClearPending = null;
+      closeModal();
+      $("bankManageError").textContent = errorText(error);
+    }
   }
 
   function updateToggleState() {
@@ -6997,10 +7903,274 @@ Material to organize:
       if (error.code === "ADMIN_EXPIRED" || error.code === "ADMIN_REQUIRED") {
         clearAuth();
         showPinGate();
+      } else if (error.code === "WEB_LOCAL_ONLY" || error.code === "LOCAL_ONLY") {
+        onParentWebUnavailable();
       }
       throw error;
     }
     return data;
+  }
+
+  // --------------------------------------------------------------- V27 parent host
+  // parent.js owns the parent-center UI, but it never reads the quiz token or builds URLs
+  // itself. Everything goes through these two functions so same-origin handling, the admin
+  // token, the single-editor headers and JSON errors stay in one place.
+
+  async function loadParentBootstrap() {
+    try {
+      const response = await fetch(API_ROOT + "api/parent/bootstrap", {
+        cache: "no-store",
+        credentials: "omit",
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      if (!data || data.enabled !== true || !data.gate) return null;
+      return data;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function parentHeaders(options) {
+    const headers = { "X-Parent": "1" };
+    if (options.editorToken) headers["X-Parent-Editor-Token"] = options.editorToken;
+    if (options.sensitiveToken) headers["X-Parent-Sensitive-Token"] = options.sensitiveToken;
+    if (options.entryToken) headers["X-Parent-Entry"] = options.entryToken;
+    if (options.takeover) headers["X-Parent-Takeover"] = "1";
+    if (options.quizAuth !== false && adminToken && Date.now() < adminExpiresAt) {
+      headers["X-Quiz-Admin-Token"] = adminToken;
+    }
+    return headers;
+  }
+
+  async function parentRequest(path, options = {}) {
+    const method = options.method || "GET";
+    const headers = parentHeaders(options);
+    if (options.body !== undefined || method !== "GET") {
+      headers["Content-Type"] = "application/json";
+    }
+    const requestPath = path.startsWith("/api/") ? API_ROOT + path.slice(1) : API_ROOT + path;
+    let response;
+    try {
+      response = await fetch(requestPath, {
+        method,
+        headers,
+        body: options.body === undefined ? undefined : JSON.stringify(options.body),
+        cache: "no-store",
+        credentials: "omit",
+        keepalive: Boolean(options.keepalive),
+      });
+    } catch (_) {
+      throw new Error("NETWORK");
+    }
+    let data = null;
+    try { data = await response.json(); } catch (_) { data = null; }
+    if (!response.ok) {
+      const error = new Error((data && data.error) || ("HTTP_" + response.status));
+      error.code = (data && data.error) || ("HTTP_" + response.status);
+      error.data = data;
+      error.status = response.status;
+      if (error.code === "WEB_LOCAL_ONLY" || error.status === 423) onParentWebUnavailable();
+      throw error;
+    }
+    return data;
+  }
+
+  async function parentBlob(path, editorToken) {
+    const response = await fetch(API_ROOT + path.slice(1), {
+      headers: parentHeaders({ editorToken }),
+      cache: "no-store",
+      credentials: "omit",
+    });
+    if (!response.ok) throw new Error("HTTP_" + response.status);
+    return response.blob();
+  }
+
+  /**
+   * Sends a raw File as the request body. parentRequest always JSON-encodes, which would
+   * base64 the film and multiply its size; this keeps the upload a single binary stream so
+   * the TV can write it straight to disk. Content-Length is set by the browser from the File.
+   * XHR is used instead of fetch because only XHR reports upload progress to the page.
+   */
+  function parentUpload(path, file, editorToken, onProgress) {
+    const headers = parentHeaders({ editorToken });
+    headers["Content-Type"] = "application/octet-stream";
+    const requestPath = path.startsWith("/api/") ? API_ROOT + path.slice(1) : API_ROOT + path;
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", requestPath, true);
+      for (const name of Object.keys(headers)) xhr.setRequestHeader(name, headers[name]);
+      xhr.responseType = "text";
+      // A 4 MB film can be slow on a phone backing away from the TV; this is a stall
+      // guard, not a throughput target.
+      xhr.timeout = 180000;
+      if (typeof onProgress === "function") {
+        xhr.upload.onprogress = (event) => {
+          if (event && event.lengthComputable) onProgress(event.loaded, event.total);
+        };
+      }
+      xhr.onload = () => {
+        let data = null;
+        try { data = xhr.responseText ? JSON.parse(xhr.responseText) : null; } catch (_) { data = null; }
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(data);
+          return;
+        }
+        const error = new Error((data && data.error) || ("HTTP_" + xhr.status));
+        error.code = (data && data.error) || ("HTTP_" + xhr.status);
+        error.data = data;
+        error.status = xhr.status;
+        if (error.code === "WEB_LOCAL_ONLY" || error.status === 423) onParentWebUnavailable();
+        reject(error);
+      };
+      xhr.onerror = () => reject(new Error("NETWORK"));
+      xhr.ontimeout = () => reject(new Error("NETWORK"));
+      xhr.onabort = () => reject(new Error("NETWORK"));
+      xhr.send(file);
+    });
+  }
+
+  function parentHost() {
+    return {
+      lang: () => lang,
+      t: (key, vars) => t(key, vars),
+      request: parentRequest,
+      upload: parentUpload,
+      blob: parentBlob,
+      hasQuizSession: () => Boolean(adminToken && Date.now() < adminExpiresAt),
+      refreshQuizState: () => {
+        refreshStatus();
+        heartbeat();
+      },
+      openQuizLogin: () => {
+        if (!gateShown) showPinGate();
+      },
+      openQuizBank: () => openBankManage(),
+      openUnlockDialog: () => parentUnlockDialog(),
+      openManualDialog: () => openManualDialog(),
+      controlManualReason: (state) => (state ? manualReasonText(state.reason, state) : ""),
+      openParentAppDownload: () => openParentAppDownload(),
+      openPrivacy: () => openModal("privacyInfoDialog"),
+      openAi: () => openProviderDialog(false),
+      closeAi: () => closeAiPage(),
+      changeLanguage: (value) => applyLanguage(value),
+      logout: () => {
+        clearAuth();
+        stopHeartbeat();
+        showPinGate();
+      },
+      onWebUnavailable: () => onParentWebUnavailable(),
+    };
+  }
+
+  function parentWebAvailable(bootstrap) {
+    if (!bootstrap || !bootstrap.gate) return false;
+    if (bootstrap.webAvailable === false || bootstrap.gate.webAvailable === false) return false;
+    return bootstrap.gate.mode === "LOCAL";
+  }
+
+  function webDisabledCopy(reason) {
+    switch (reason) {
+      case "LOCAL_MODE_REQUIRED":
+        return {
+          title: t("webDisabledTitleNoChild"),
+          text: t("webDisabledNoChildText"),
+          state: t("webDisabledStateNoChild"),
+        };
+      case "REMOTE_MODE":
+        return {
+          title: t("webDisabledTitleBinding"),
+          text: t("webDisabledBindingText"),
+          state: t("webDisabledStateBinding"),
+        };
+      case "NOT_READY":
+        return {
+          title: t("webDisabledTitleNotReady"),
+          text: t("webDisabledNotReadyText"),
+          state: t("webDisabledStateNotReady"),
+        };
+      default:
+        return {
+          title: t("webDisabledTitleBound"),
+          text: t("webDisabledBoundText"),
+          state: t("webDisabledStateBound"),
+        };
+    }
+  }
+
+  function renderWebDisabled(bootstrap) {
+    if (bootstrap) webDisabledBootstrap = bootstrap;
+    const data = webDisabledBootstrap || {};
+    const reason = String(data.reason || (data.gate && data.gate.reason) || "REMOTE_BOUND");
+    const copy = webDisabledCopy(reason);
+    $("webDisabledTitle").textContent = copy.title;
+    $("webDisabledText").textContent = copy.text;
+    $("webDisabledState").textContent = copy.state;
+  }
+
+  function enterWebDisabled(bootstrap) {
+    if (!webDisabled) {
+      // A blocked page keeps no credentials: the next successful LOCAL login must be explicit.
+      clearAuth();
+    }
+    webDisabled = true;
+    stopHeartbeat();
+    if (statusTimer) {
+      clearInterval(statusTimer);
+      statusTimer = 0;
+    }
+    if (activeModal) closeModal();
+    document.body.classList.add("web-disabled", "editor-open");
+    document.body.classList.remove("modal-open", "parent-only");
+    $("gateCard").classList.add("hidden");
+    $("editor").classList.add("hidden");
+    $("bottomNav").classList.add("hidden");
+    $("modalRoot").classList.add("hidden");
+    $("webDisabledCard").classList.remove("hidden");
+    $("webDisabledError").classList.add("hidden");
+    renderWebDisabled(bootstrap);
+    window.scrollTo({ top: 0 });
+    if (!webDisabledTimer) {
+      webDisabledTimer = setInterval(() => {
+        if (!document.hidden) refreshWebDisabled(false);
+      }, 15000);
+    }
+    if (!webDisabledVisibilityBound) {
+      webDisabledVisibilityBound = true;
+      document.addEventListener("visibilitychange", () => {
+        if (webDisabled && !document.hidden) refreshWebDisabled(false);
+      });
+    }
+  }
+
+  async function refreshWebDisabled(manual) {
+    if (!webDisabled) return;
+    if (webDisabledBusy) return;
+    webDisabledBusy = true;
+    const button = $("webDisabledRefresh");
+    if (button) button.disabled = true;
+    if ($("webDisabledError")) $("webDisabledError").classList.add("hidden");
+    const data = await loadParentBootstrap();
+    if (data && parentWebAvailable(data)) {
+      // Back to LOCAL and unbound: reload so no disabled-page state leaks into the login page.
+      location.reload();
+      return;
+    }
+    if (data) {
+      renderWebDisabled(data);
+    } else if (manual || !webDisabledBootstrap) {
+      $("webDisabledError").textContent = t("webDisabledRefreshFailed");
+      $("webDisabledError").classList.remove("hidden");
+    }
+    if (button) button.disabled = false;
+    webDisabledBusy = false;
+  }
+
+  function onParentWebUnavailable() {
+    if (webDisabled) return;
+    loadParentBootstrap().then((data) => {
+      if (data) enterWebDisabled(data);
+    });
   }
 
   function modalFocusable(dialog) {
@@ -7029,6 +8199,7 @@ Material to organize:
 
   function closeModal() {
     if (!activeModal) return;
+    if (activeModal === "unlockDialog") settleParentUnlock(false);
     document.querySelectorAll("#modalRoot .modal").forEach((el) => el.classList.add("hidden"));
     $("modalRoot").classList.add("hidden");
     document.body.classList.remove("modal-open");
@@ -7072,8 +8243,9 @@ Material to organize:
     $("gateCard").classList.remove("hidden");
     $("gateTitle").textContent = t(titleKey);
     $("gateText").textContent = t(textKey);
-    $("pinForm").classList.toggle("hidden", !showPin);
-    if (showPin) setTimeout(() => $("pin").focus(), 50);
+    $("pinForm").classList.toggle("hidden", !showPin || recoveryOpen);
+    $("forgotPin").classList.toggle("hidden", !showPin || recoveryOpen);
+    if (showPin && !recoveryOpen) setTimeout(() => $("pin").focus(), 50);
   }
 
   function resetSessionState() {
@@ -7106,10 +8278,15 @@ Material to organize:
       clearTimeout(customLevelMessageTimer);
       customLevelMessageTimer = 0;
     }
+    wrongLevel = null;
+    wrongLevelEditing = false;
+    wrongLevelSaving = false;
+    if (wrongLevelMessageTimer) {
+      clearTimeout(wrongLevelMessageTimer);
+      wrongLevelMessageTimer = 0;
+    }
     bankSourceCounts = { course: 0, custom: 0 };
     localBankActive = true;
-    clearSource = "course";
-    clearCollectionId = "";
     providerState = { aiSupported: true, consentAccepted: false, configured: false, baseUrl: "", model: "" };
     providerMsg = null;
     pendingGenerate = false;
@@ -7152,13 +8329,21 @@ Material to organize:
     $("rangeError").textContent = "";
     $("settingsError").textContent = "";
     $("settingsState").textContent = "";
-    $("maintenanceError").textContent = "";
-    $("maintenanceState").textContent = "";
+    $("challengeError").textContent = "";
+    $("challengeState").textContent = "";
+    $("bankManageState").textContent = "";
+    $("bankManageError").textContent = "";
+    bankClearPending = null;
+    bankClearBusy = false;
     $("bankError").textContent = "";
     $("generateError").textContent = "";
     $("generateOk").textContent = "";
     $("generateProgress").textContent = "";
     $("questionError").textContent = "";
+    aiPageOpen = false;
+    aiReturnTab = "generate";
+    aiReturnParentCenter = false;
+    $("aiConfigPage").classList.add("hidden");
     showGenPage("home");
     showBankPage("home");
     renderSettings();
@@ -7171,6 +8356,13 @@ Material to organize:
     forceTakeover = false;
     if (activeModal) closeModal();
     resetSessionState();
+    recoveryOpen = false;
+    $("recoveryForm").classList.add("hidden");
+    $("recoveryError").textContent = "";
+    $("recoveryCode").value = "";
+    $("recoveryNewPin").value = "";
+    $("recoveryConfirmPin").value = "";
+    $("gateOk").textContent = "";
     document.body.classList.remove("editor-open");
     $("editor").classList.add("hidden");
     $("bottomNav").classList.add("hidden");
@@ -7189,6 +8381,8 @@ Material to organize:
     forceTakeover = false;
     gateShown = false;
     gateOccupied = false;
+    recoveryOpen = false;
+    $("recoveryForm").classList.add("hidden");
     document.body.classList.add("editor-open");
     $("gateCard").classList.add("hidden");
     $("editor").classList.remove("hidden");
@@ -7205,8 +8399,13 @@ Material to organize:
     // After the second parent confirms takeover, keep the PIN form visible
     // across the five-second status poll until the request finishes.
     const inUse = occupied && !forceTakeover;
-    $("gateTitle").textContent = t(inUse ? "gate_in_use_heading" : "gate_pair_title");
-    $("gateText").textContent = t(inUse ? "gate_in_use_lead" : "gate_pair_text");
+    const showRecovery = recoveryOpen && !inUse;
+    $("gateTitle").textContent = t(
+      inUse ? "gate_in_use_heading" : (showRecovery ? "recoveryTitle" : "gate_pair_title")
+    );
+    $("gateText").textContent = t(
+      inUse ? "gate_in_use_lead" : (showRecovery ? "recoveryLead" : "gate_pair_text")
+    );
     if (inUse) {
       $("gateNoticeTitle").textContent = t("gate_in_use_title");
       $("gateNoticeText").textContent = t("gate_in_use_text");
@@ -7221,21 +8420,124 @@ Material to organize:
     $("gateStatus").classList.toggle("hidden", !inUse);
     $("gateTakeover").classList.toggle("hidden", !inUse);
     $("gateTakeoverNote").classList.toggle("hidden", !occupied);
-    $("pinForm").classList.toggle("hidden", inUse);
+    $("pinForm").classList.toggle("hidden", inUse || showRecovery);
+    $("forgotPin").classList.toggle("hidden", inUse || showRecovery);
+    $("recoveryForm").classList.toggle("hidden", !showRecovery);
     const released = gateOccupied && !inUse;
     gateOccupied = inUse;
     if (released) {
       setTimeout(() => {
         const active = document.activeElement;
         const busy = active && ["INPUT", "SELECT", "TEXTAREA", "BUTTON"].includes(active.tagName);
-        if (!busy) $("pin").focus();
+        if (!busy) $(showRecovery ? "recoveryCode" : "pin").focus();
       }, 50);
     }
   }
 
+  // The recovery form is reachable without a PIN session: a parent who forgot the password,
+  // or whose login is temporarily locked out, can reset it with the one-time setup code.
+  function openRecovery() {
+    if (adminToken && Date.now() < adminExpiresAt) return;
+    recoveryOpen = true;
+    $("gateError").textContent = "";
+    $("gateOk").textContent = "";
+    $("recoveryError").textContent = "";
+    $("recoveryCode").value = "";
+    $("recoveryNewPin").value = "";
+    $("recoveryConfirmPin").value = "";
+    $("gateTitle").textContent = t("recoveryTitle");
+    $("gateText").textContent = t("recoveryLead");
+    $("pinForm").classList.add("hidden");
+    $("forgotPin").classList.add("hidden");
+    $("recoveryForm").classList.remove("hidden");
+    setTimeout(() => $("recoveryCode").focus(), 50);
+  }
+
+  function closeRecovery() {
+    recoveryOpen = false;
+    $("recoveryForm").classList.add("hidden");
+    $("recoveryError").textContent = "";
+    $("recoveryCode").value = "";
+    $("recoveryNewPin").value = "";
+    $("recoveryConfirmPin").value = "";
+    renderGateOccupation();
+  }
+
+  function recoveryErrorText(error) {
+    if (error && error.code === "RECOVERY_LOCKED") {
+      const seconds = Number(error.data && error.data.retryAfterSeconds) || 0;
+      return seconds > 0
+        ? t("err_RECOVERY_LOCKED_RETRY", { n: seconds })
+        : t("err_RECOVERY_LOCKED");
+    }
+    return errorText(error);
+  }
+
+  async function submitRecovery(event) {
+    event.preventDefault();
+    $("recoveryError").textContent = "";
+    const recoveryCode = $("recoveryCode").value.replace(/\D/g, "");
+    const newPin = $("recoveryNewPin").value.trim();
+    const confirmPin = $("recoveryConfirmPin").value.trim();
+    if (recoveryCode.length !== 12) {
+      $("recoveryError").textContent = t("recoveryFormat");
+      return;
+    }
+    if (!/^\d{6}$/.test(newPin)) {
+      $("recoveryError").textContent = t("err_NEW_PIN_INVALID");
+      return;
+    }
+    if (newPin !== confirmPin) {
+      $("recoveryError").textContent = t("recoveryMismatch");
+      return;
+    }
+    $("recoveryBtn").disabled = true;
+    try {
+      await parentRequest("/api/parent/recover", {
+        method: "POST",
+        body: { recoveryCode, newPin },
+        quizAuth: false,
+      });
+      // The TV revoked every web session opened under the old PIN.
+      stopHeartbeat();
+      adminToken = null;
+      adminExpiresAt = 0;
+      clearAuth();
+      if (publicState) publicState.parentInUse = false;
+      recoveryOpen = false;
+      $("recoveryForm").classList.add("hidden");
+      $("recoveryCode").value = "";
+      $("recoveryNewPin").value = "";
+      $("recoveryConfirmPin").value = "";
+      $("recoveryError").textContent = "";
+      $("gateError").textContent = "";
+      $("gateOk").textContent = t("recoveryDone");
+      renderGateOccupation();
+      setTimeout(() => $("pin").focus(), 50);
+    } catch (error) {
+      $("recoveryError").textContent = recoveryErrorText(error);
+    } finally {
+      $("recoveryBtn").disabled = false;
+    }
+  }
+
+  function parentTabOpen() {
+    return Boolean(window.ParentCenterUI && window.ParentCenterUI.isOpen &&
+      window.ParentCenterUI.isOpen());
+  }
+
   function setTab(tab, force) {
     if (!TAB_VIEWS[tab]) tab = "generate";
-    if (!force && activeTab === tab) return;
+    if (tab !== "me" && tab !== "control" && parentTabOpen()) {
+      // Leaving More/Control releases the editor lease; returning reacquires it with the same
+      // quiz PIN session, so no second password prompt is needed.
+      window.ParentCenterUI.close();
+    }
+    if (!force && activeTab === tab) {
+      if (tab === "me") openParentTab();
+      else if (tab === "control") openControlTab();
+      return;
+    }
     if (!force) showGenPage("home");
     // Leaving or re-entering the bank always returns to its list; the import
     // subpage is reached only through its own button.
@@ -7251,11 +8553,37 @@ Material to organize:
       loadBank(true);
     } else if (tab === "me") {
       refreshSync();
+      updateParentAppDownloadRow();
       // Refresh the lock state on entry so the action reflects the TV now,
       // not the last heartbeat from another tab.
       heartbeat();
+      if (window.ParentCenterUI && window.ParentCenterUI.refreshEntry) {
+        window.ParentCenterUI.refreshEntry();
+      }
+      openParentTab();
+    } else if (tab === "control") {
+      if ($("controlPageState")) $("controlPageState").textContent = "";
+      openControlTab();
     }
     window.scrollTo({ top: 0 });
+  }
+
+  function openParentTab() {
+    if (parentBootstrap && parentWebAvailable(parentBootstrap) &&
+        window.ParentCenterUI && window.ParentCenterUI.open) {
+      window.ParentCenterUI.open();
+    }
+  }
+
+  function openControlTab() {
+    if (parentBootstrap && parentWebAvailable(parentBootstrap) &&
+        window.ParentCenterUI && window.ParentCenterUI.openControl) {
+      window.ParentCenterUI.openControl();
+      return;
+    }
+    if ($("controlPageState")) {
+      $("controlPageState").textContent = t("controlUnavailable");
+    }
   }
 
   async function loadUnitCatalog() {
@@ -7305,6 +8633,7 @@ Material to organize:
       })).filter((item) => item.id && item.name)
       : [];
     applyCustomLevels(data.customLevels);
+    applyWrongLevel(data.wrongLevel);
     bankSourceCounts = {
       course: Math.max(0, Number(data.bankSourceCounts && data.bankSourceCounts.course || 0)),
       custom: Math.max(0, Number(data.bankSourceCounts && data.bankSourceCounts.custom || 0)),
@@ -7317,8 +8646,7 @@ Material to organize:
     renderSync();
     renderStock();
     renderBankCounts();
-    renderMaintenance();
-    renderMaintenanceSource();
+    renderBankManage();
     renderGenConfig(false);
     renderGenerate();
     renderHome();
@@ -7446,7 +8774,39 @@ Material to organize:
     $("apiKey").value = "";
     renderProviderMessages();
     renderProvider();
-    openModal("providerDialog");
+    aiReturnTab = TAB_VIEWS[activeTab] ? activeTab : "generate";
+    aiReturnParentCenter = parentTabOpen();
+    if (aiReturnParentCenter && window.ParentCenterUI && window.ParentCenterUI.close) {
+      // The parent center overlay would otherwise cover the full-page form.
+      window.ParentCenterUI.close();
+    }
+    aiPageOpen = true;
+    document.querySelectorAll("#editor > .view").forEach((view) => view.classList.add("hidden"));
+    $("aiConfigPage").classList.remove("hidden");
+    syncSubpageClass();
+    window.scrollTo({ top: 0 });
+  }
+
+  function closeAiPage() {
+    if (!aiPageOpen) return;
+    aiPageOpen = false;
+    $("aiConfigPage").classList.add("hidden");
+    const tab = TAB_VIEWS[aiReturnTab] ? aiReturnTab : "generate";
+    activeTab = tab;
+    for (const name of Object.keys(TAB_VIEWS)) {
+      $(TAB_VIEWS[name]).classList.toggle("hidden", name !== tab);
+    }
+    document.querySelectorAll(".nav-item[data-tab]").forEach((button) => {
+      button.setAttribute("aria-pressed", String(button.dataset.tab === tab));
+    });
+    aiReturnTab = "generate";
+    syncSubpageClass();
+    const reopenParent = aiReturnParentCenter;
+    aiReturnParentCenter = false;
+    if (reopenParent && window.ParentCenterUI && window.ParentCenterUI.open) {
+      window.ParentCenterUI.open();
+    }
+    window.scrollTo({ top: 0 });
   }
 
   async function saveProvider() {
@@ -7487,7 +8847,7 @@ Material to organize:
       renderProviderMessages();
       const shouldGenerate = pendingGenerate;
       pendingGenerate = false;
-      closeModal();
+      closeAiPage();
       if (shouldGenerate) startGeneration();
     } catch (error) {
       setProviderError(error);
@@ -8969,8 +10329,35 @@ Material to organize:
     if (genPage === "customLevel") renderCustomLevelEditor();
   }
 
+  function applyWrongLevel(raw) {
+    wrongLevel = raw && typeof raw === "object" && String(raw.id || "")
+      ? {
+        id: String(raw.id || ""),
+        name: String(raw.name || "").trim(),
+        available: Math.max(0, Number(raw.available || 0)),
+        wrongReview: true,
+      }
+      : null;
+    if (genPage === "answer") renderWrongLevels();
+    if (genPage === "customLevel") renderCustomLevelEditor();
+  }
+
   function allLevelCount() {
-    return answerLevels.length + customLevels.length;
+    return answerLevels.length + customLevels.length + (wrongLevel ? 1 : 0);
+  }
+
+  function wrongLevelName() {
+    return String(wrongLevel && wrongLevel.name || "").trim() ||
+      t("wrongLevelFallbackName");
+  }
+
+  function scheduleWrongLevelMessage(text) {
+    if ($("wrongLevelState")) $("wrongLevelState").textContent = text;
+    if (wrongLevelMessageTimer) clearTimeout(wrongLevelMessageTimer);
+    wrongLevelMessageTimer = setTimeout(() => {
+      wrongLevelMessageTimer = 0;
+      if ($("wrongLevelState")) $("wrongLevelState").textContent = "";
+    }, 2600);
   }
 
   function customLevelTagName(level) {
@@ -9085,10 +10472,124 @@ Material to organize:
     $("addCustomLevel").disabled = !localBankActive || customLevelSaving || atMax;
     $("levelMaxHint").classList.toggle("hidden", !atMax);
     $("levelMaxHint").textContent = t("levelMaxHint", { n: MAX_LEVELS });
+    renderWrongLevels();
+  }
+
+  function renderWrongLevels() {
+    const list = $("wrongLevelList");
+    const section = $("wrongLevelSection");
+    const add = $("addWrongLevel");
+    if (!list || !section || !add) return;
+    list.replaceChildren();
+    section.classList.toggle("hidden", !wrongLevel);
+    const pull = Number(currentConfig().pullCount || 5);
+
+    if (wrongLevel) {
+      const row = document.createElement("div");
+      row.className = "level-row wrong";
+      row.dataset.wrongLevelId = wrongLevel.id;
+
+      const main = document.createElement("button");
+      main.type = "button";
+      main.className = "level-main";
+      main.dataset.wrongLevelEdit = wrongLevel.id;
+
+      const badge = document.createElement("span");
+      badge.className = "level-index level-index-wrong";
+      badge.textContent = "!";
+      badge.setAttribute("aria-hidden", "true");
+      main.appendChild(badge);
+
+      const copy = document.createElement("span");
+      copy.className = "level-copy";
+      const titleRow = document.createElement("span");
+      titleRow.className = "level-title-row";
+      const title = document.createElement("span");
+      title.className = "level-title";
+      title.textContent = wrongLevelName();
+      const wrongBadge = document.createElement("span");
+      wrongBadge.className = "level-custom-badge level-wrong-badge";
+      wrongBadge.textContent = t("wrongLevelBadge");
+      titleRow.append(title, wrongBadge);
+      const meta = document.createElement("span");
+      meta.className = "level-meta";
+      meta.textContent = t("wrongLevelMeta");
+      const available = document.createElement("span");
+      available.className = "level-available";
+      if (wrongLevel.available > 0) {
+        available.textContent = t("wrongLevelAvailable", {
+          n: wrongLevel.available,
+          pull,
+        });
+      } else {
+        available.textContent = t("wrongLevelEmptyPool");
+        available.classList.add("warn");
+      }
+      copy.append(titleRow, meta, available);
+      main.appendChild(copy);
+      row.appendChild(main);
+
+      const actions = document.createElement("div");
+      actions.className = "level-actions";
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "level-action";
+      remove.dataset.wrongLevelDelete = wrongLevel.id;
+      remove.setAttribute("aria-label", t("wrongLevelDeleteAria", {
+        name: wrongLevelName(),
+      }));
+      remove.textContent = "×";
+      remove.disabled = !localBankActive || wrongLevelSaving;
+      actions.appendChild(remove);
+      row.appendChild(actions);
+      list.appendChild(row);
+    }
+
+    const atMax = allLevelCount() >= MAX_LEVELS;
+    add.classList.toggle("hidden", Boolean(wrongLevel));
+    add.disabled = !localBankActive || wrongLevelSaving || atMax;
+    if ($("addWrongLevelMeta")) {
+      $("addWrongLevelMeta").textContent = !localBankActive
+        ? t("levelAddWrongMetaCloud")
+        : atMax
+          ? t("levelMaxHint", { n: MAX_LEVELS })
+          : (Math.max(0, Number(bankCounts && bankCounts.wrong || 0)) > 0
+            ? t("levelAddWrongMeta")
+            : t("levelAddWrongMetaEmpty"));
+    }
+    $("wrongLevelListCount").textContent = t("wrongLevelListCount", {
+      n: wrongLevel ? 1 : 0,
+    });
+  }
+
+  function renderWrongLevelEditor() {
+    if (!$("customLevelEditorPage")) return;
+    $("customLevelEditorTitle").textContent = t(
+      wrongLevel ? "wrongLevelEditTitle" : "wrongLevelAddTitle",
+    );
+    $("wrongLevelEditorLead").classList.remove("hidden");
+    $("customLevelNameHint").textContent = t("wrongLevelNameHint");
+    $("customLevelEditorEmpty").classList.add("hidden");
+    $("customLevelTagField").classList.add("hidden");
+    $("customLevelEditorCloudHint").classList.toggle("hidden", localBankActive);
+    $("saveCustomLevel").disabled = !localBankActive || wrongLevelSaving;
+    const pull = Number(currentConfig().pullCount || 5);
+    $("customLevelEditorAvailable").textContent = wrongLevel && wrongLevel.available > 0
+      ? t("wrongLevelEditorAvailable", { n: wrongLevel.available, pull })
+      : t("wrongLevelEditorEmpty");
+    if (wrongLevel && document.activeElement !== $("customLevelName")) {
+      $("customLevelName").value = wrongLevel.name;
+    }
   }
 
   function renderCustomLevelEditor() {
     if (!$("customLevelEditorPage")) return;
+    if (wrongLevelEditing) {
+      renderWrongLevelEditor();
+      return;
+    }
+    $("wrongLevelEditorLead").classList.add("hidden");
+    $("customLevelNameHint").textContent = t("customLevelNameHint");
     const level = customLevelEditingId
       ? customLevels.find((item) => item.id === customLevelEditingId)
       : null;
@@ -9150,6 +10651,7 @@ Material to organize:
   function openCustomLevelEditor(id, presetTagId) {
     const level = id ? customLevels.find((item) => item.id === id) : null;
     if (id && !level) return false;
+    wrongLevelEditing = false;
     customLevelEditingId = level ? level.id : null;
     customLevelDraftTag = level
       ? level.collectionId
@@ -9158,6 +10660,23 @@ Material to organize:
     $("customLevelName").value = level ? level.name : "";
     $("customLevelEditorError").textContent = "";
     $("customLevelState").textContent = "";
+    showGenPage("customLevel");
+    renderCustomLevelEditor();
+    return true;
+  }
+
+  function openWrongLevelEditor() {
+    if (!localBankActive) {
+      $("wrongLevelError").textContent = t("levelAddWrongMetaCloud");
+      return false;
+    }
+    wrongLevelEditing = true;
+    customLevelEditingId = null;
+    customLevelDraftTag = "";
+    $("customLevelName").value = wrongLevel ? wrongLevel.name : "";
+    $("customLevelEditorError").textContent = "";
+    $("wrongLevelError").textContent = "";
+    $("wrongLevelState").textContent = "";
     showGenPage("customLevel");
     renderCustomLevelEditor();
     return true;
@@ -9172,6 +10691,9 @@ Material to organize:
     if (document.activeElement !== $("levelName")) {
       $("levelName").value = levelNameDraft;
     }
+    if ($("levelEditorLead")) {
+      $("levelEditorLead").classList.toggle("hidden", Boolean(levelEditingId));
+    }
     renderCustomScopeControls();
     ensureScopeOptions();
     $("levelEditorAvailable").textContent = scopeAvailableText(customScope);
@@ -9184,7 +10706,9 @@ Material to organize:
     if (id && !level) return false;
     levelEditingId = level ? level.id : null;
     levelNameDraft = level ? level.name : "";
-    customScope = level ? Object.assign({}, level.scope) : {};
+    customScope = level
+      ? Object.assign({}, level.scope)
+      : Object.assign({}, DEFAULT_LEVEL_SCOPE);
     answerScopeMode = "custom";
     $("levelName").value = levelNameDraft;
     $("levelEditorError").textContent = "";
@@ -9413,7 +10937,88 @@ Material to organize:
     return Array.from(String(value || "")).length;
   }
 
+  async function postWrongLevel(rawLevel, successKey) {
+    if (wrongLevelSaving) return false;
+    if (!challengeConfig) {
+      $("wrongLevelError").textContent = t("settingsLoading");
+      try {
+        await loadAdminSession();
+      } catch (error) {
+        $("wrongLevelError").textContent = errorText(error);
+        return false;
+      }
+      if (!challengeConfig) return false;
+    }
+    wrongLevelSaving = true;
+    $("wrongLevelError").textContent = "";
+    $("customLevelEditorError").textContent = "";
+    $("saveCustomLevel").disabled = true;
+    renderWrongLevels();
+    try {
+      await api("/api/quiz/admin/challenge-config", {
+        method: "POST",
+        admin: true,
+        body: {
+          config: readSettingsConfig(),
+          wrongLevel: rawLevel,
+        },
+      });
+      answerDirty = false;
+      // The save response has no level payload; reload to store the assigned
+      // id and refresh the live wrong count.
+      await loadAdminSession();
+      renderHome();
+      renderAnswerPage();
+      if (successKey) scheduleWrongLevelMessage(t(successKey));
+      return true;
+    } catch (error) {
+      const message = errorText(error);
+      $("wrongLevelError").textContent = message;
+      $("customLevelEditorError").textContent = message;
+      return false;
+    } finally {
+      wrongLevelSaving = false;
+      renderWrongLevels();
+      if (genPage === "customLevel") renderCustomLevelEditor();
+    }
+  }
+
+  async function saveWrongLevelDraft() {
+    if (wrongLevelSaving) return;
+    $("customLevelEditorError").textContent = "";
+    if (!localBankActive) {
+      $("customLevelEditorError").textContent = t("levelAddWrongMetaCloud");
+      return;
+    }
+    const name = normalizeTagName($("customLevelName").value);
+    if (tagNameLength(name) > LEVEL_NAME_MAX) {
+      $("customLevelEditorError").textContent = t("levelNameTooLong");
+      return;
+    }
+    if (!wrongLevel && allLevelCount() >= MAX_LEVELS) {
+      $("customLevelEditorError").textContent = t("levelMaxHint", { n: MAX_LEVELS });
+      return;
+    }
+    const payload = { name };
+    if (wrongLevel) payload.id = wrongLevel.id;
+    const saved = await postWrongLevel(payload, "wrongLevelSaved");
+    if (!saved) return;
+    wrongLevelEditing = false;
+    showGenPage("answer");
+  }
+
+  async function deleteWrongLevel(id) {
+    if (wrongLevelSaving) return;
+    if (!wrongLevel || wrongLevel.id !== id) return;
+    if (!confirm(t("wrongLevelDeleteConfirm", { name: wrongLevelName() }))) return;
+    await postWrongLevel(null, "wrongLevelDeleted");
+  }
+
   async function saveCustomLevelDraft() {
+    if (wrongLevelEditing) {
+      await saveWrongLevelDraft();
+      return;
+    }
     if (customLevelSaving) return;
     $("customLevelEditorError").textContent = "";
     if (!localBankActive) {
@@ -9815,7 +11420,7 @@ Material to organize:
     if (data.counts) {
       applyBankCounts(data.counts);
       renderBankCounts();
-      renderMaintenance();
+      renderBankManage();
     }
     renderStock();
     renderGenerate();
@@ -10000,7 +11605,7 @@ Material to organize:
       renderStock();
       renderGenerate();
       renderBankCounts();
-      renderMaintenance();
+      renderBankManage();
       renderSettingsAttention();
       updateToggleState();
       renderGateOccupation();
@@ -10072,6 +11677,12 @@ Material to organize:
     }
     pendingEnter = false;
     showEditor();
+    if (openParentAfterLogin && parentBootstrap && parentWebAvailable(parentBootstrap)) {
+      openParentAfterLogin = false;
+      setTab("me", true);
+      return;
+    }
+    openParentAfterLogin = false;
     setTab("generate", true);
   }
 
@@ -10119,7 +11730,7 @@ Material to organize:
         };
       }
       renderBankCounts();
-      renderMaintenance();
+      renderBankManage();
       renderStock();
     } catch (error) {
       if (request !== bankRequest) return;
@@ -10146,9 +11757,9 @@ Material to organize:
     // while an input still has focus and its change event has not fired yet.
     const pull = normalizeRoundCount($("roundInput").value, configRoundCount(base));
     const time = normalizeTimeLimit($("timeInput").value, configSeconds(base));
-    const answerHold = normalizeAnswerHold(
-      $("answerHoldInput").value,
-      configAnswerHold(base),
+    const feedbackHold = normalizeFeedbackHold(
+      $("feedbackHoldInput").value,
+      configFeedbackHold(base),
     );
     const scoring = readScoringPatch();
     return Object.assign({}, base, {
@@ -10158,8 +11769,10 @@ Material to organize:
       // rounds settle from the difficulty table below.
       minutesPerPoint: Number(base.minutesPerPoint || DEFAULT_CONFIG.minutesPerPoint),
       minutesPerQuestion: Number(base.minutesPerQuestion || DEFAULT_CONFIG.minutesPerQuestion),
-      maxEarnedMinutes: numberField("maxEarned", 1, 180, Number(base.maxEarnedMinutes || 60)),
-      answerDisplaySec: answerHold,
+      maxEarnedMinutes: normalizeMaxEarned($("maxEarned").value, configMaxEarned(base)),
+      // Legacy echo only. The v6 hold is feedbackExtraHoldSec.
+      answerDisplaySec: base.answerDisplaySec,
+      feedbackExtraHoldSec: feedbackHold,
       shuffleOptions: $("shuffle").checked,
       pointsPerQuestion: 1,
     }, scoring);
@@ -10185,7 +11798,12 @@ Material to organize:
       const data = await api("/api/quiz/admin/challenge-config", {
         method: "POST",
         admin: true,
-        body: { config },
+        body: {
+          config,
+          // Explicit so the adapter updates the v6 hold; everything the form
+          // does not send (weekday/weekend profiles) is preserved server side.
+          feedback: { extraHoldSec: config.feedbackExtraHoldSec },
+        },
       });
       challengeConfig = normalizeConfig(data.config || config);
       if (Array.isArray(data.answerScopes)) applyAnswerLevels(data.answerScopes);
@@ -10204,57 +11822,9 @@ Material to organize:
     }
   }
 
-  async function clearBank(mode, confirmKey) {
-    $("maintenanceError").textContent = "";
-    $("maintenanceState").textContent = "";
-    const collection = importCollections.find((item) => item.id === clearCollectionId);
-    if (clearSource === "custom" && !collection) {
-      $("maintenanceError").textContent = t("maintenanceSourceNoTags");
-      return;
-    }
-    let message = t(confirmKey);
-    if (clearSource === "all") {
-      message = t("confirmClearAllMixed", { n: bankSourceCounts.custom }) + "\n" + message;
-    } else if (clearSource === "custom") {
-      message = t("confirmClearCustom", { name: collection.name }) + "\n" + message;
-    }
-    if (!confirm(message)) return;
-    const body = { mode, source: clearSource };
-    if (clearSource === "custom") body.collectionId = collection.id;
-    try {
-      const data = await api("/api/quiz/admin/bank/clear", {
-        method: "POST",
-        admin: true,
-        body,
-      });
-      applyBankCounts(data.counts);
-      if (data.sourceCounts) {
-        bankSourceCounts = {
-          course: Math.max(0, Number(data.sourceCounts.course || 0)),
-          custom: Math.max(0, Number(data.sourceCounts.custom || 0)),
-        };
-      }
-      if (publicState && data.bankState) publicState.bankState = data.bankState;
-      $("maintenanceState").textContent = t("clearDone");
-      renderStock();
-      renderBankCounts();
-      renderMaintenanceSource();
-      renderMaintenance();
-      await refreshStatus();
-      try {
-        await loadAdminSession();
-      } catch (_) {
-        // The clear already succeeded; the tag counts catch up next refresh.
-      }
-      if (activeTab === "bank") loadBank(true);
-    } catch (error) {
-      $("maintenanceError").textContent = errorText(error);
-    }
-  }
-
   async function toggleEnabled() {
-    $("maintenanceError").textContent = "";
-    $("maintenanceState").textContent = "";
+    $("challengeError").textContent = "";
+    $("challengeState").textContent = "";
     const enabled = Boolean($("toggleEnabled").checked);
     if (!enabled && !confirm(t("confirmDisable"))) {
       $("toggleEnabled").checked = true;
@@ -10266,10 +11836,10 @@ Material to organize:
         admin: true,
         body: {},
       });
-      $("maintenanceState").textContent = t(enabled ? "enabled" : "disabled");
+      $("challengeState").textContent = t(enabled ? "enabled" : "disabled");
       await refreshStatus();
     } catch (error) {
-      $("maintenanceError").textContent = errorText(error);
+      $("challengeError").textContent = errorText(error);
       updateToggleState();
     }
   }
@@ -10288,6 +11858,17 @@ Material to organize:
     $("pin").addEventListener("input", () => {
       $("pin").value = $("pin").value.replace(/\D/g, "").slice(0, 6);
     });
+    $("forgotPin").addEventListener("click", openRecovery);
+    $("recoveryCancel").addEventListener("click", closeRecovery);
+    $("recoveryForm").addEventListener("submit", submitRecovery);
+    $("recoveryCode").addEventListener("input", () => {
+      $("recoveryCode").value = $("recoveryCode").value.replace(/\D/g, "").slice(0, 12);
+    });
+    for (const id of ["recoveryNewPin", "recoveryConfirmPin"]) {
+      $(id).addEventListener("input", () => {
+        $(id).value = $(id).value.replace(/\D/g, "").slice(0, 6);
+      });
+    }
     $("gateTakeover").addEventListener("click", () => {
       forceTakeover = true;
       renderGateOccupation();
@@ -10296,12 +11877,11 @@ Material to organize:
     $("syncRetry").addEventListener("click", retrySync);
     $("syncUseRemote").addEventListener("click", useRemoteConfig);
     $("meAi").addEventListener("click", () => openProviderDialog(false));
+    $("backFromAi").addEventListener("click", closeAiPage);
     $("mePrivacy").addEventListener("click", () => openModal("privacyInfoDialog"));
-    $("unlockAction").addEventListener("click", openUnlockDialog);
     $("unlockForm").addEventListener("submit", submitUnlock);
     $("manualMinus").addEventListener("click", () => adjustManualMinutes(-1));
     $("manualPlus").addEventListener("click", () => adjustManualMinutes(1));
-    $("manualAction").addEventListener("click", openManualDialog);
     $("manualForm").addEventListener("submit", submitManualStart);
     $("unlockPin").addEventListener("input", () => {
       $("unlockPin").value = $("unlockPin").value.replace(/\D/g, "").slice(0, 6);
@@ -10483,6 +12063,21 @@ Material to organize:
       }
       openCustomLevelEditor(null);
     });
+    $("addWrongLevel").addEventListener("click", () => {
+      if ($("addWrongLevel").disabled) return;
+      openWrongLevelEditor();
+    });
+    $("wrongLevelList").addEventListener("click", (event) => {
+      const edit = event.target.closest("[data-wrong-level-edit]");
+      if (edit && !edit.disabled) {
+        openWrongLevelEditor();
+        return;
+      }
+      const remove = event.target.closest("[data-wrong-level-delete]");
+      if (remove && !remove.disabled) {
+        deleteWrongLevel(remove.dataset.wrongLevelDelete);
+      }
+    });
     $("customLevelList").addEventListener("click", (event) => {
       const edit = event.target.closest("[data-custom-level-edit]");
       if (edit && !edit.disabled) {
@@ -10507,11 +12102,13 @@ Material to organize:
     $("backFromCustomLevel").addEventListener("click", () => {
       customLevelEditingId = null;
       customLevelDraftTag = "";
+      wrongLevelEditing = false;
       showGenPage("answer");
       renderAnswerPage();
     });
     $("customLevelName").addEventListener("input", () => {
       $("customLevelError").textContent = "";
+      $("wrongLevelError").textContent = "";
     });
     $("customLevelTags").addEventListener("click", (event) => {
       const choice = event.target.closest("[data-custom-tag-id]");
@@ -10533,9 +12130,10 @@ Material to organize:
       (value) => updateRuleConfig({ defaultTimeLimitSec: value }),
     );
     bindStepper(
-      "answerHold", ANSWER_HOLD_MIN_SEC, ANSWER_HOLD_MAX_SEC, ANSWER_HOLD_STEP_SEC,
-      () => configAnswerHold(currentConfig()),
-      (value) => updateRuleConfig({ answerDisplaySec: value }),
+      "feedbackHold",
+      FEEDBACK_HOLD_MIN_SEC, FEEDBACK_HOLD_MAX_SEC, FEEDBACK_HOLD_STEP_SEC,
+      () => configFeedbackHold(currentConfig()),
+      (value) => updateRuleConfig({ feedbackExtraHoldSec: value }),
     );
     for (const id of [
       "easyReward", "mediumReward", "hardReward",
@@ -10543,19 +12141,21 @@ Material to organize:
     ]) {
       $(id).addEventListener("input", () => updateRuleConfig(readScoringPatch()));
     }
-    $("minUnlock").addEventListener("input", () => {
-      updateRuleConfig({ minUnlockMinutes: numberField("minUnlock", 0, 180, 0) });
-    });
-    $("unlockCounts").addEventListener("click", (event) => {
-      const chip = event.target.closest("[data-unlock]");
-      if (!chip) return;
-      $("minUnlock").value = chip.dataset.unlock;
-      updateRuleConfig({ minUnlockMinutes: Number(chip.dataset.unlock) });
-    });
+    bindStepper(
+      "unlock",
+      0, UNLOCK_MAX_MINUTES, UNLOCK_STEP_MINUTES,
+      () => scoringValues(currentConfig()).minUnlockMinutes,
+      (value) => updateRuleConfig({ minUnlockMinutes: value }),
+      "minUnlock",
+    );
     $("resetScoring").addEventListener("click", resetScoringDefaults);
-    $("maxEarned").addEventListener("change", () => {
-      updateRuleConfig({ maxEarnedMinutes: numberField("maxEarned", 1, 180, 60) });
-    });
+    bindStepper(
+      "maxEarned",
+      MAX_EARNED_MIN_MINUTES, MAX_EARNED_MAX_MINUTES, MAX_EARNED_STEP_MINUTES,
+      () => configMaxEarned(currentConfig()),
+      (value) => updateRuleConfig({ maxEarnedMinutes: value }),
+      "maxEarned",
+    );
     $("shuffle").addEventListener("change", () => {
       updateRuleConfig({ shuffleOptions: $("shuffle").checked });
     });
@@ -10619,18 +12219,30 @@ Material to organize:
     });
     bindReliableTap($("parseImport"), parseImport);
     bindReliableTap($("confirmImport"), confirmImport);
-    $("maintenanceSource").addEventListener("click", (event) => {
-      const button = event.target.closest("[data-clear-source]");
-      if (button) setClearSource(button.dataset.clearSource);
-    });
-    $("maintenanceCollection").addEventListener("change", () => {
-      clearCollectionId = $("maintenanceCollection").value;
-    });
-
-    $("clearUnused").addEventListener("click", () => clearBank("unused", "confirmClearUnused"));
-    $("clearAnswered").addEventListener("click", () => clearBank("answered", "confirmClearAnswered"));
-    $("clearWrong").addEventListener("click", () => clearBank("wrong", "confirmClearWrong"));
-    $("clearAll").addEventListener("click", () => clearBank("all", "confirmClearAll"));
+    $("openBankManage").addEventListener("click", openBankManage);
+    $("bankManageEntry").addEventListener("click", openBankManage);
+    $("backFromBankManage").addEventListener("click", backFromBankManage);
+    $("bankManageCourseUnused").addEventListener("click", () => requestBankClear({
+      mode: "unused", source: "course", count: bankSourceCounts.course,
+    }));
+    $("bankManageCourseAnswered").addEventListener("click", () => requestBankClear({
+      mode: "answered", source: "course", count: bankSourceCounts.course,
+    }));
+    $("bankManageCourseWrong").addEventListener("click", () => requestBankClear({
+      mode: "wrong", source: "course", count: bankSourceCounts.course,
+    }));
+    $("bankManageCourseClear").addEventListener("click", () => requestBankClear({
+      mode: "all", source: "course", count: bankSourceCounts.course,
+    }));
+    $("bankManageCustomClear").addEventListener("click", () => requestBankClear({
+      mode: "all", source: "custom", count: bankSourceCounts.custom,
+    }));
+    $("bankManageAllClear").addEventListener("click", () => requestBankClear({
+      mode: "all",
+      source: "all",
+      count: bankSourceCounts.course + bankSourceCounts.custom,
+    }));
+    $("bankClearNext").addEventListener("click", advanceBankClear);
     $("toggleEnabled").addEventListener("change", toggleEnabled);
 
     document.querySelectorAll(".nav-item[data-tab]").forEach((button) => {
@@ -10660,17 +12272,53 @@ Material to organize:
       heartbeat();
       refreshStatus();
     });
-    setInterval(() => {
-      if (!document.hidden) refreshStatus();
+    statusTimer = setInterval(() => {
+      if (!document.hidden && !webDisabled) refreshStatus();
     }, 3000);
+    if ($("parentCenterEntry")) {
+      $("parentCenterEntry").addEventListener("click", () => {
+        if (window.ParentCenterUI) window.ParentCenterUI.open();
+      });
+    }
+    if ($("openControlPanel")) {
+      $("openControlPanel").addEventListener("click", openControlTab);
+    }
+    if ($("parentAppDownload")) {
+      $("parentAppDownload").addEventListener("click", () => {
+        openParentAppDownload();
+      });
+    }
+    if ($("webDisabledRefresh")) {
+      $("webDisabledRefresh").addEventListener("click", () => refreshWebDisabled(true));
+    }
   }
 
   async function init() {
+    const wantsParent = window.location.hash === "#parent";
+    if (wantsParent) {
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
     loadAuth();
     applyI18n();
     bind();
     loadGeneratePrefs();
     syncGenerateComposer(true);
+    parentBootstrap = await loadParentBootstrap();
+    if (parentBootstrap && !parentWebAvailable(parentBootstrap)) {
+      // V29: remote/bound/child-mode-off is a terminal disabled page. Do not initialize the
+      // parent center or the quiz login, and do not call /api/quiz/auth/*.
+      enterWebDisabled(parentBootstrap);
+      return;
+    }
+    if (parentBootstrap) {
+      // The entry card is revealed by parent.js only after bootstrap succeeded, so an old TV
+      // (or PARENT_WEB_CENTER_ENABLED=false) shows exactly the old page with no dead button.
+      if (window.ParentCenterUI) {
+        window.ParentCenterUI.init(parentHost(), parentBootstrap);
+        window.ParentCenterUI.refreshEntry();
+      }
+      openParentAfterLogin = wantsParent;
+    }
     await refreshStatus();
     if (adminToken && Date.now() < adminExpiresAt) {
       await enterEditor();

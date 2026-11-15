@@ -14,6 +14,8 @@ object QuizSessionValidation {
     private val language = Regex("[a-z]{2,3}(-[A-Za-z]{2,8})?")
     private val date = Regex("\\d{4}-\\d{2}-\\d{2}")
     private val difficulties = setOf("easy", "medium", "hard")
+    private val DAY_TYPES = setOf("WEEKDAY", "WEEKEND")
+    private val preparedLevelId = Regex("cloud:-?[0-9]{1,18}")
 
     /** Checks every stored field, including runtime consistency. */
     fun validateStored(session: QuizSession): List<String> {
@@ -28,6 +30,25 @@ object QuizSessionValidation {
         if (session.createdAt <= 0) errors += "session.createdAt: invalid"
         if (session.updatedAt < session.createdAt) errors += "session.updatedAt: before createdAt"
         if (session.expiresAt <= 0) errors += "session.expiresAt: invalid"
+        if (session.docRevision < 0) errors += "session.docRevision: invalid"
+        if (session.dayType.isNotEmpty() && session.dayType !in DAY_TYPES) {
+            errors += "session.dayType: invalid"
+        }
+        if (session.rewardProfile != null) {
+            QuizConfigDocumentValidator.rewardProfileIssues(
+                "session.rewardProfile",
+                session.rewardProfile,
+            ).forEach { errors += "${it.field}: ${it.code}" }
+        }
+        if (session.cloudMemberId != null && session.cloudMemberId <= 0L) {
+            errors += "session.cloudMemberId: invalid"
+        }
+        if (session.qbLearnerId != null && session.qbLearnerId <= 0L) {
+            errors += "session.qbLearnerId: invalid"
+        }
+        session.preparedLevelId?.let {
+            if (!preparedLevelId.matches(it)) errors += "session.preparedLevelId: invalid"
+        }
         validateConfig(session.config, errors)
         validateItems(session.items, errors)
         validateStatus(session, errors)
@@ -63,6 +84,9 @@ object QuizSessionValidation {
         }
         if (config.answerDisplaySec !in QUIZ_MIN_ANSWER_DISPLAY_SEC..QUIZ_MAX_ANSWER_DISPLAY_SEC) {
             errors += "config.answerDisplaySec: out of range"
+        }
+        if (config.feedbackExtraHoldSec !in 0..QUIZ_DOC_MAX_EXTRA_HOLD_SEC) {
+            errors += "config.feedbackExtraHoldSec: out of range"
         }
         if (config.pullCount !in QUIZ_MIN_PULL_COUNT..QUIZ_MAX_PULL_COUNT) {
             errors += "config.pullCount: out of range"
@@ -158,6 +182,12 @@ object QuizSessionValidation {
                 if (run.earnedMinutes !in 0..maxEarned) {
                     errors += "run.earnedMinutes: out of range"
                 }
+                if (run.earnedSeconds !in 0..QUIZ_DOC_MAX_MAX_EARNED_SECONDS) {
+                    errors += "run.earnedSeconds: out of range"
+                }
+                if (run.earnedSeconds > 0 && session.originSchemaVersion < 6) {
+                    errors += "run.earnedSeconds: not allowed before schema 6"
+                }
                 if (run.savedRemainingMs < 0 || run.savedAt < 0) errors += "run.saved: invalid"
                 if (run.feedbackRemainingMs < 0) errors += "run.feedbackRemainingMs: invalid"
                 if (run.feedbackOpen) {
@@ -182,6 +212,15 @@ object QuizSessionValidation {
                     }
                     if (!submitted.add(sub.questionId)) errors += "run.submissions[$i].questionId: duplicate"
                     if (sub.answeredAt <= 0) errors += "run.submissions[$i].answeredAt: invalid"
+                    val hold = sub.feedbackHoldMs
+                    if (hold != null) {
+                        if (hold !in 0..QUIZ_MAX_FEEDBACK_HOLD_MS) {
+                            errors += "run.submissions[$i].feedbackHoldMs: out of range"
+                        }
+                        if (sub.correct && hold != 0L) {
+                            errors += "run.submissions[$i].feedbackHoldMs: correct answer must be 0"
+                        }
+                    }
                 }
                 if (run.correctCount != run.submissions.count { it.correct }) {
                     errors += "run.correctCount: inconsistent"

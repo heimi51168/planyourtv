@@ -51,8 +51,16 @@ object QbClient {
     const val CLOUD_SESSION_SOURCE = "cloud"
 
     private val ATTEMPT_UID = Regex("[0-9A-Za-z]{26}")
-    private val ULID = Regex("[0-9A-Za-z]{26}")
+
+    /**
+     * QB 云端题号：公共/年级题是 26 位 ULID；错题/我的题库由 QB 按快照合成
+     * `WRONG-<id>` / `PERSONAL-<id>`（三题库出题策略，2026-11-12）。
+     * 两种形态都原样回传 QB，电视内部统一再加 [QUESTION_ID_PREFIX]。
+     */
+    private val CLOUD_QUESTION_ID = Regex("(?:[0-9A-Za-z]{26}|(?:WRONG|PERSONAL)-[0-9]+)")
     private val DIFFICULTIES = setOf("easy", "medium", "hard")
+    private const val MAX_CLOUD_LEVELS = 20
+    private const val MAX_CLOUD_LEVEL_QUESTIONS = 20
 
     /** QB/主后端的业务拒绝：HTTP 200 + 非 200 code，message 是可直接展示的人话。 */
     class QbException(
@@ -61,6 +69,14 @@ object QbClient {
         message: String,
         val businessMessage: String? = null,
     ) : IOException(message)
+
+    /**
+     * QB 返回体不符合契约（缺字段/类型不对/id 非法）。
+     *
+     * 与网络错误区分开：这是确定性失败，重试不会变好；上层据此置 INVALID_DOCUMENT
+     * 并保留上一版文档，而不是无限退避重试。
+     */
+    class QbContractException(message: String) : IOException(message)
 
     data class CloudQuestionSet(
         val attemptUid: String,
@@ -71,12 +87,29 @@ object QbClient {
         val insufficient: Boolean,
     )
 
+    data class DeviceLearnerSelection(
+        val selectedLearnerId: Long?,
+        val learners: List<CloudLearner>,
+    )
+
     @Volatile private var sessionToken: String? = null
     @Volatile private var sessionRefreshAtElapsed: Long = 0L
 
     /** 取一轮题（默认 BANK 来源）。QB 复用未开始的旧题集，所以重复调用不额外烧配额。 */
-    fun fetchNext(count: Int): CloudQuestionSet {
-        val json = authorized("GET", "/api/v1/quiz/next?count=$count", null, NEXT_TIMEOUT_MS)
+    fun fetchNext(count: Int, levelId: Long? = null): CloudQuestionSet {
+        // 负数 id 是 QB 内置默认关卡（-1..-4），不是非法值；只有 0 不存在。
+        if (levelId != null && levelId == 0L) {
+            throw QbContractException("QB level id is invalid")
+        }
+        val query = buildString {
+            append("/api/v1/quiz/next?count=")
+            append(count)
+            if (levelId != null) {
+                append("&levelId=")
+                append(levelId)
+            }
+        }
+        val json = authorized("GET", query, null, NEXT_TIMEOUT_MS)
         val result = json.optJSONObject("result")
             ?: throw IOException("QB next response missing result")
         val attemptUid = result.optString("attemptUid", "").trim()
@@ -105,6 +138,164 @@ object QbClient {
             insufficient = result.optBoolean("insufficient", false),
         )
     }
+
+    /** 家庭孩子列表；`selected` 是 QB 的 qb_device_learner 当前选择。 */
+    fun deviceLearners(): DeviceLearnerSelection {
+        val json = authorized("GET", "/api/v1/quiz/learners", null, TIMEOUT_MS)
+        val result = json.optJSONObject("result")
+            ?: throw QbContractException("QB learners response missing result")
+        val array = result.optJSONArray("learners")
+            ?: throw QbContractException("QB learners response missing learners")
+        val learners = (0 until array.length()).map { index ->
+            val raw = array.optJSONObject(index)
+                ?: throw QbContractException("QB learner is not an object")
+            val learnerId = raw.optLong("learnerId", 0L)
+            if (learnerId <= 0L) throw QbContractException("QB learner id is invalid")
+            val memberId = raw.optLong("memberId", 0L).takeIf { it > 0L }
+            val name = raw.optString("name", "").trim().take(64)
+            CloudLearner(
+                learnerId = learnerId,
+                memberId = memberId,
+                name = name,
+                selected = raw.optBoolean("selected", false),
+            )
+        }
+        if (learners.map { it.learnerId }.toSet().size != learners.size) {
+            throw QbContractException("QB learners contain duplicate ids")
+        }
+        val selectedLearnerId = result.optLong("selectedLearnerId", 0L).takeIf { it > 0L }
+        return DeviceLearnerSelection(selectedLearnerId, learners)
+    }
+
+    /** QB 的已启用关卡（QCD 关卡部分）。字段缺失/形态不对一律拒绝，不静默补默认值。 */
+    fun deviceLevels(learnerId: Long): CloudLevelsBundle {
+        if (learnerId <= 0L) throw QbContractException("QB learner id is invalid")
+        val json = authorized(
+            "GET",
+            "/api/v1/quiz/learners/$learnerId/levels",
+            null,
+            TIMEOUT_MS,
+        )
+        return parseLevelsResult(
+            json.optJSONObject("result")
+                ?: throw QbContractException("QB levels response missing result"),
+            learnerId,
+        )
+    }
+
+    internal fun parseLevelsResult(result: JSONObject, requestedLearnerId: Long): CloudLevelsBundle {
+        val learner = result.optJSONObject("learner")
+            ?: throw QbContractException("QB levels response missing learner")
+        val responseLearnerId = learner.optLong("learnerId", 0L)
+        if (responseLearnerId != requestedLearnerId) {
+            throw QbContractException("QB levels learner does not match the request")
+        }
+        val memberId = learner.optLong("memberId", 0L).takeIf { it > 0L }
+        val array = result.optJSONArray("levels")
+            ?: throw QbContractException("QB levels response missing levels")
+        if (array.length() > MAX_CLOUD_LEVELS) {
+            throw QbContractException("QB levels exceed the TV limit")
+        }
+        val levels = (0 until array.length()).map { index ->
+            parseLevel(array.optJSONObject(index)
+                ?: throw QbContractException("QB level is not an object"))
+        }
+        if (levels.map { it.id }.toSet().size != levels.size) {
+            throw QbContractException("QB levels contain duplicate ids")
+        }
+        val revision = result.optString("revision", "").trim()
+        if (!CloudLevelsClient.revisionIsValid(revision)) {
+            throw QbContractException("QB levels revision is invalid")
+        }
+        val levelsSource = result.optString("levelsSource", "").trim()
+        if (levelsSource != "DEFAULT" && levelsSource != "CUSTOM") {
+            throw QbContractException("QB levels source is invalid")
+        }
+        val checkin = result.optJSONObject("checkin")
+            ?: throw QbContractException("QB levels response missing checkin")
+        return CloudLevelsBundle(
+            learnerId = responseLearnerId,
+            memberId = memberId,
+            levels = levels,
+            checkin = checkin,
+            revision = revision,
+            levelsSource = levelsSource,
+        )
+    }
+
+    private fun parseLevel(raw: JSONObject): CloudLevel {
+        val id = raw.optLong("id", 0L)
+        // QB 内置默认关卡用负数 id（DEFAULT_LEVEL_MIXED=-4 等），0 才是非法值。
+        if (id == 0L) throw QbContractException("QB level id is invalid")
+        val sources = stringList(raw.optJSONArray("sources"), "sources")
+        if (sources.isEmpty()) throw QbContractException("QB level sources is empty")
+        val questionTypes = stringList(raw.optJSONArray("questionTypes"), "questionTypes")
+        if (questionTypes.isEmpty()) throw QbContractException("QB level questionTypes is empty")
+        val origin = raw.optString("origin", "").trim()
+        if (origin != "CLOUD") throw QbContractException("QB level origin is invalid")
+        val sourceScopes = raw.optJSONObject("sourceScopes")
+            ?: throw QbContractException("QB level sourceScopes is missing")
+        val sortNo = raw.optInt("sortNo", -1)
+        if (sortNo < 0) throw QbContractException("QB level sortNo is invalid")
+        val questionCount = raw.optInt("questionCount", 0)
+        if (questionCount !in 1..MAX_CLOUD_LEVEL_QUESTIONS) {
+            throw QbContractException("QB level questionCount is invalid")
+        }
+        val advisory = optionalInt(raw, "advisoryQuestionCount")
+        if (advisory != null && advisory !in 1..MAX_CLOUD_LEVEL_QUESTIONS) {
+            throw QbContractException("QB level advisoryQuestionCount is invalid")
+        }
+        val grade = optionalInt(raw, "grade")
+        val semester = optionalInt(raw, "semester")
+        val textbookId = raw.optLong("textbookId", 0L).takeIf { it > 0L }
+        return CloudLevel(
+            id = id,
+            name = optionalText(raw, "name")?.take(40).orEmpty(),
+            enabled = raw.optBoolean("enabled", false),
+            sortNo = sortNo,
+            sources = sources,
+            subjects = stringList(raw.optJSONArray("subjects"), "subjects"),
+            scopeType = optionalText(raw, "scopeType"),
+            unitNos = intList(raw.optJSONArray("unitNos"), "unitNos"),
+            unitGroups = intList(raw.optJSONArray("unitGroups"), "unitGroups"),
+            textbookId = textbookId,
+            grade = grade,
+            semester = semester,
+            difficulty = optionalText(raw, "difficulty")?.uppercase(Locale.ROOT),
+            advisoryQuestionCount = advisory,
+            questionTypes = questionTypes,
+            sourceScopes = sourceScopes,
+            origin = origin,
+            questionCount = questionCount,
+            available = raw.optBoolean("available", false),
+            availableCount = raw.optInt("availableCount", 0).coerceAtLeast(0),
+            unavailableReason = optionalText(raw, "unavailableReason")?.take(160),
+        )
+    }
+
+    private fun stringList(array: JSONArray?, field: String): List<String> {
+        if (array == null) throw QbContractException("QB level $field is missing")
+        return (0 until array.length()).map { index ->
+            val value = array.optString(index, "").trim().uppercase(Locale.ROOT)
+            if (value.isEmpty()) throw QbContractException("QB level $field contains an empty value")
+            value
+        }
+    }
+
+    private fun intList(array: JSONArray?, field: String): List<Int> {
+        if (array == null) throw QbContractException("QB level $field is missing")
+        return (0 until array.length()).map { index ->
+            val value = array.optInt(index, -1)
+            if (value < 0) throw QbContractException("QB level $field contains an invalid value")
+            value
+        }
+    }
+
+    private fun optionalInt(raw: JSONObject, key: String): Int? =
+        if (!raw.has(key) || raw.isNull(key)) null else raw.optInt(key, -1).takeIf { it >= 0 }
+
+    private fun optionalText(raw: JSONObject, key: String): String? =
+        if (!raw.has(key) || raw.isNull(key)) null else raw.optString(key, "").trim().ifEmpty { null }
 
     /** 幂等；QB 在作答/提交时也会补做，这里提前烧掉配额并留下开始时间。 */
     fun startAttempt(attemptUid: String) {
@@ -158,15 +349,15 @@ object QbClient {
 
     private fun qbQuestionId(questionId: String): String {
         val raw = questionId.removePrefix(QUESTION_ID_PREFIX)
-        if (!ULID.matches(raw)) {
+        if (!CLOUD_QUESTION_ID.matches(raw)) {
             throw IOException("cached cloud question id is invalid")
         }
         return raw
     }
 
-    private fun parseItem(raw: JSONObject): QuizItem {
+    internal fun parseItem(raw: JSONObject): QuizItem {
         val uid = raw.optString("questionId", "").trim()
-        if (!ULID.matches(uid)) throw IOException("QB question id is invalid")
+        if (!CLOUD_QUESTION_ID.matches(uid)) throw IOException("QB question id is invalid")
         val prompt = raw.optString("prompt", "").trim()
         if (prompt.isEmpty() || prompt.length > QUIZ_MAX_PROMPT_CHARS) {
             throw IOException("QB question prompt is out of range")

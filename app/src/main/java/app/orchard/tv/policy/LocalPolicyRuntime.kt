@@ -509,6 +509,17 @@ object LocalPolicyRuntime {
     }
 
     /**
+     * V29 removes the automatic/manual choice from every local surface. An upgraded TV may still
+     * have AUTO persisted, so entering LOCAL forces MANUAL without touching either stored rule
+     * set: the old automatic values remain available if this model ever returns.
+     */
+    @Synchronized
+    fun ensureLocalManualActivation(): Boolean {
+        if (!initialized) return false
+        return if (activation == Activation.MANUAL) true else setActivation(Activation.MANUAL)
+    }
+
+    /**
      * The only activation switch. AUTO follows the scheduler and may start immediately; MANUAL
      * only changes the lock state because every manual segment needs a parent action. A real
      * switch also ends the rest cursor earned by the previous activation.
@@ -717,6 +728,10 @@ object LocalPolicyRuntime {
     @Synchronized
     fun verifyRecovery(code: String): PinResult = LocalPolicyStore.verifyRecovery(code)
 
+    /** Seconds left on the recovery-code lockout; zero once another attempt may run. */
+    @Synchronized
+    fun recoveryLockSeconds(): Long = LocalPolicyStore.recoveryLockSeconds()
+
     @Synchronized
     fun setRules(newRules: LocalRules): Boolean =
         setRulesWithVersion(newRules, templateVersion)
@@ -815,6 +830,15 @@ object LocalPolicyRuntime {
     val currentRules: LocalRules?
         get() = rules
 
+    /**
+     * Monotonic revision of the materialized rule configuration. Every legitimate write
+     * (setup, rules, activation switch, remote mirror) bumps the stored epoch; the web parent
+     * center only reads it to reject a stale write, never to make its own counter.
+     */
+    @get:Synchronized
+    val rulesEpoch: Long
+        get() = policyEpoch
+
     /** Both stored sets; null before setup or when the v2 document failed to parse. */
     val currentRuleSets: LocalRuleSets?
         get() = ruleSets
@@ -828,6 +852,13 @@ object LocalPolicyRuntime {
 
     val isActive: Boolean
         get() = session != null
+
+    /**
+     * Start time of the running segment, zero when idle. The web control API uses it in the
+     * confirmation fingerprint so a token issued for one timer cannot end a later one.
+     */
+    @Synchronized
+    fun activeSessionStartedAtEpochMs(): Long = session?.startedAtEpochMs ?: 0L
 
     fun isLockScreen(): Boolean =
         initialized && guardStatus == GuardStatus.ENFORCING && session == null && !studyMode
@@ -1204,7 +1235,6 @@ object LocalPolicyRuntime {
         pendingRemoteStart = null
         commitStart(
             ready,
-            pending.durationSeconds,
             origin = SessionOrigin.REMOTE,
             remoteRecordId = pending.recordId,
         )
@@ -1281,6 +1311,8 @@ object LocalPolicyRuntime {
         data class Ready(
             val configured: LocalRules,
             val scope: ResolvedScope,
+            /** Already capped to the daily quota and the per-session limit for local starts. */
+            val budgetSeconds: Long,
             val restAfterSeconds: Long,
             val nowMs: Long,
             val windowEndEpochMs: Long,
@@ -1307,7 +1339,7 @@ object LocalPolicyRuntime {
     ) {
         is StartAdmission.Refused -> SessionStartResult.Rejected(admission.reason)
         is StartAdmission.Ready -> {
-            commitStart(admission, durationSeconds, origin)
+            commitStart(admission, origin)
             SessionStartResult.Started
         }
     }
@@ -1367,11 +1399,22 @@ object LocalPolicyRuntime {
         val scope = resolveScope(configured, requestedScope)
             ?: return StartAdmission.Refused(RejectReason.INVALID_SCOPE)
         val secondsLeft = (window.endSecond - secondOfDay(now)).coerceAtLeast(1)
+        // V29 has no automatic/manual switch on the page: the local rules are the manual rules.
+        // The web page no longer exposes a per-session cap; a quiz reward is already capped by
+        // its own maxEarnedMinutes, and a parent-chosen duration still obeys the daily quota.
+        // Remote hosted grants keep their own server-side budget.
+        val budgetSeconds = if (origin == SessionOrigin.LOCAL) {
+            val dailyRemaining = (configured.autoDailyLimitMinutes * 60L - usedSeconds)
+                .coerceAtLeast(0L)
+            if (dailyRemaining <= 0L) return StartAdmission.Refused(RejectReason.DAILY_LIMIT)
+            minOf(durationSeconds, dailyRemaining)
+        } else {
+            durationSeconds
+        }
         return StartAdmission.Ready(
             configured = configured,
             scope = scope,
-            // Manual time comes from the parent's choice on the lock screen (or the phone
-            // command after binding); sessionLimitMinutes only caps automatic segments.
+            budgetSeconds = budgetSeconds,
             restAfterSeconds = configured.restMinutes * 60L,
             nowMs = nowMs,
             windowEndEpochMs = nowMs + secondsLeft * 1_000L,
@@ -1380,7 +1423,6 @@ object LocalPolicyRuntime {
 
     private fun commitStart(
         admission: StartAdmission.Ready,
-        durationSeconds: Long,
         origin: SessionOrigin,
         remoteRecordId: Int = 0,
     ) {
@@ -1392,7 +1434,7 @@ object LocalPolicyRuntime {
         }
         startPlan(
             activation = PolicyActivation.MANUAL,
-            budgetSeconds = durationSeconds,
+            budgetSeconds = admission.budgetSeconds,
             endReason = PolicyEndReason.SESSION_LIMIT,
             restAfterSeconds = admission.restAfterSeconds,
             accessMode = admission.scope.accessMode,

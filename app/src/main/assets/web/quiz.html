@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="color-scheme" content="light dark">
   <title>家长网页</title>
-  <link rel="stylesheet" href="quiz.css">
+  <link rel="stylesheet" href="quiz.css?v=38">
+  <link rel="stylesheet" href="parent.css?v=38">
 </head>
 <body>
   <header class="top">
@@ -19,6 +20,17 @@
   </header>
 
   <main>
+    <section id="webDisabledCard" class="web-disabled card hidden" aria-live="polite">
+      <div class="web-disabled-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64A9 9 0 0 1 20.77 15"/><path d="M6.16 6.16a9 9 0 1 0 12.68 12.68"/><path d="M12 2v4"/><path d="m2 2 20 20"/></svg>
+      </div>
+      <h2 id="webDisabledTitle">—</h2>
+      <p id="webDisabledText" class="muted"></p>
+      <p id="webDisabledState" class="web-disabled-state"></p>
+      <p id="webDisabledError" class="error hidden" role="alert"></p>
+      <button id="webDisabledRefresh" class="btn primary block" type="button" data-i18n="webDisabledRefresh"></button>
+    </section>
+
     <section id="gateCard" class="gate card">
       <p id="gateStatus" class="gate-status hidden">
         <span class="gate-status-dot" aria-hidden="true"></span>
@@ -37,7 +49,20 @@
         <input id="pin" name="pin" type="password" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" required>
         <button id="pinBtn" class="btn primary" type="submit" data-i18n="pinButton"></button>
       </form>
+      <button id="forgotPin" class="btn text block hidden" type="button" data-i18n="forgotPin"></button>
+      <form id="recoveryForm" class="pin-form hidden">
+        <label for="recoveryCode" data-i18n="recoveryCodeLabel"></label>
+        <input id="recoveryCode" name="recoveryCode" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" maxlength="14" placeholder="0000-0000-0000" required>
+        <label for="recoveryNewPin" data-i18n="recoveryNewPinLabel"></label>
+        <input id="recoveryNewPin" name="recoveryNewPin" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" pattern="[0-9]*" required>
+        <label for="recoveryConfirmPin" data-i18n="recoveryConfirmLabel"></label>
+        <input id="recoveryConfirmPin" name="recoveryConfirmPin" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" pattern="[0-9]*" required>
+        <p id="recoveryError" class="error" role="alert"></p>
+        <button id="recoveryBtn" class="btn primary" type="submit" data-i18n="recoverySubmit"></button>
+        <button id="recoveryCancel" class="btn text block" type="button" data-i18n="recoveryCancel"></button>
+      </form>
       <p id="gateError" class="error" role="alert"></p>
+      <p id="gateOk" class="ok" role="status"></p>
       <p class="fineprint" data-i18n="securityNote"></p>
     </section>
 
@@ -247,6 +272,13 @@
                   <span id="addCustomLevelMeta" class="level-add-meta" data-i18n="levelAddCustomMeta"></span>
                 </span>
               </button>
+              <button id="addWrongLevel" class="level-add-card wrong" type="button">
+                <span class="level-add-plus" aria-hidden="true">+</span>
+                <span class="level-add-copy">
+                  <span class="level-add-title" data-i18n="levelAddWrongTitle"></span>
+                  <span id="addWrongLevelMeta" class="level-add-meta" data-i18n="levelAddWrongMeta"></span>
+                </span>
+              </button>
             </div>
             <p id="levelMaxHint" class="hint level-max-hint hidden" data-i18n="levelMaxHint"></p>
 
@@ -277,7 +309,6 @@
               <span class="field-label" data-i18n="customLevelListTitle"></span>
               <span id="customLevelListCount" class="level-count" aria-live="polite"></span>
             </div>
-            <p class="hint level-lead" data-i18n="customLevelListLead"></p>
             <p id="customLevelCombined" class="hint levels-combined"></p>
 
             <div id="customLevelList" class="level-list"></div>
@@ -287,6 +318,20 @@
             </div>
             <p id="customLevelState" class="ok" role="status"></p>
             <p id="customLevelError" class="error" role="alert"></p>
+
+            <div id="wrongLevelSection" class="hidden">
+              <div class="level-divider"></div>
+
+              <div class="level-head">
+                <span class="field-label" data-i18n="wrongLevelListTitle"></span>
+                <span id="wrongLevelListCount" class="level-count" aria-live="polite"></span>
+              </div>
+              <p class="hint level-lead" data-i18n="wrongLevelListLead"></p>
+
+              <div id="wrongLevelList" class="level-list"></div>
+              <p id="wrongLevelState" class="ok" role="status"></p>
+              <p id="wrongLevelError" class="error" role="alert"></p>
+            </div>
           </div>
 
           <div id="answerPaneRules" class="hidden">
@@ -301,7 +346,7 @@
                 <button id="roundMinus" class="icon-btn" type="button"
                         data-i18n-aria="roundDecrease">−</button>
                 <input id="roundInput" type="number" inputmode="numeric"
-                       min="5" max="50" step="5" value="5" aria-describedby="roundHint">
+                       min="5" max="1000" step="5" value="5" aria-describedby="roundHint">
                 <span class="settings-stepper-unit" data-i18n="roundUnit"></span>
                 <button id="roundPlus" class="icon-btn" type="button"
                         data-i18n-aria="roundIncrease">+</button>
@@ -316,7 +361,7 @@
                 <button id="timeMinus" class="icon-btn" type="button"
                         data-i18n-aria="timeDecrease">−</button>
                 <input id="timeInput" type="number" inputmode="numeric"
-                       min="15" max="1800" step="30" value="60" aria-describedby="timeHint">
+                       min="5" max="1800" step="5" value="60" aria-describedby="timeHint">
                 <span class="settings-stepper-unit" data-i18n="secondsUnit"></span>
                 <button id="timePlus" class="icon-btn" type="button"
                         data-i18n-aria="timeIncrease">+</button>
@@ -325,17 +370,17 @@
             </div>
 
             <div class="field">
-              <label class="field-label" for="answerHoldInput" data-i18n="settingsAnswerHold"></label>
+              <label class="field-label" for="feedbackHoldInput" data-i18n="settingsFeedbackHold"></label>
               <div class="settings-stepper">
-                <button id="answerHoldMinus" class="icon-btn" type="button"
-                        data-i18n-aria="answerHoldDecrease">−</button>
-                <input id="answerHoldInput" type="number" inputmode="numeric"
-                       min="1" max="30" step="1" value="3" aria-describedby="answerHoldHint">
+                <button id="feedbackHoldMinus" class="icon-btn" type="button"
+                        data-i18n-aria="feedbackHoldDecrease">−</button>
+                <input id="feedbackHoldInput" type="number" inputmode="numeric"
+                       min="0" max="2147483" step="1" value="10" aria-describedby="feedbackHoldHint">
                 <span class="settings-stepper-unit" data-i18n="secondsUnit"></span>
-                <button id="answerHoldPlus" class="icon-btn" type="button"
-                        data-i18n-aria="answerHoldIncrease">+</button>
+                <button id="feedbackHoldPlus" class="icon-btn" type="button"
+                        data-i18n-aria="feedbackHoldIncrease">+</button>
               </div>
-              <p id="answerHoldHint" class="hint" data-i18n="settingsAnswerHoldHint"></p>
+              <p id="feedbackHoldHint" class="hint" data-i18n="settingsFeedbackHoldHint"></p>
             </div>
 
             <div class="field">
@@ -374,26 +419,35 @@
 
             <div class="field">
               <span class="field-label" data-i18n="unlockThresholdTitle"></span>
-              <div id="unlockCounts" class="chip-row" role="group" data-i18n-aria="unlockThresholdTitle"></div>
-              <input id="minUnlock" type="number" min="0" max="180" value="0"
-                inputmode="numeric" data-i18n-aria="unlockThresholdTitle">
-              <p class="hint" data-i18n="unlockHint"></p>
+              <div class="settings-stepper">
+                <button id="unlockMinus" class="icon-btn" type="button"
+                        data-i18n-aria="unlockDecrease">−</button>
+                <input id="minUnlock" type="number" inputmode="numeric"
+                       min="0" max="35791394" step="5" value="0" aria-describedby="unlockHint">
+                <span class="settings-stepper-unit" data-i18n="minutesUnit"></span>
+                <button id="unlockPlus" class="icon-btn" type="button"
+                        data-i18n-aria="unlockIncrease">+</button>
+              </div>
+              <p id="unlockHint" class="hint" data-i18n="unlockHint"></p>
             </div>
 
             <div class="field">
               <p id="settingsActiveHint" class="hint hidden" data-i18n="settingsActiveHint"></p>
-              <div class="row">
-                <div>
-                  <label for="maxEarned" data-i18n="maxEarned"></label>
-                  <input id="maxEarned" type="number" min="1" max="180" value="60">
-                </div>
-                <div>
-                  <label class="check" for="shuffle">
-                    <input id="shuffle" type="checkbox" checked>
-                    <span data-i18n="shuffle"></span>
-                  </label>
-                </div>
+              <label class="field-label" for="maxEarned" data-i18n="maxEarned"></label>
+              <div class="settings-stepper">
+                <button id="maxEarnedMinus" class="icon-btn" type="button"
+                        data-i18n-aria="maxEarnedDecrease">−</button>
+                <input id="maxEarned" type="number" inputmode="numeric"
+                       min="1" max="180" step="5" value="60" aria-describedby="maxEarnedHint">
+                <span class="settings-stepper-unit" data-i18n="minutesUnit"></span>
+                <button id="maxEarnedPlus" class="icon-btn" type="button"
+                        data-i18n-aria="maxEarnedIncrease">+</button>
               </div>
+              <p id="maxEarnedHint" class="hint" data-i18n="maxEarnedHint"></p>
+              <label class="check" for="shuffle">
+                <input id="shuffle" type="checkbox" checked>
+                <span data-i18n="shuffle"></span>
+              </label>
             </div>
 
             <div class="fold-section">
@@ -420,6 +474,8 @@
             </button>
             <h1 id="levelEditorTitle"></h1>
           </header>
+
+          <p id="levelEditorLead" class="hint" data-i18n="levelEditorLead"></p>
 
           <div class="field">
             <label id="levelNameLabel" for="levelName" data-i18n="levelNameLabel"></label>
@@ -484,12 +540,13 @@
           </header>
 
           <p id="customLevelEditorCloudHint" class="hint custom-level-cloud hidden" data-i18n="customLevelCloudHint"></p>
+          <p id="wrongLevelEditorLead" class="hint hidden" data-i18n="wrongLevelEditorLead"></p>
 
           <div class="field">
             <label id="customLevelNameLabel" for="customLevelName" data-i18n="levelNameLabel"></label>
             <input id="customLevelName" type="text" maxlength="10" autocomplete="off"
               aria-labelledby="customLevelNameLabel" data-i18n-placeholder="levelNamePlaceholder">
-            <p class="hint" data-i18n="customLevelNameHint"></p>
+            <p id="customLevelNameHint" class="hint" data-i18n="customLevelNameHint"></p>
           </div>
 
           <div id="customLevelEditorEmpty" class="empty-state hidden">
@@ -544,6 +601,7 @@
             </div>
             <div class="head-actions">
               <button id="openBankImport" class="btn secondary small" type="button" data-i18n="bankImport"></button>
+              <button id="openBankManage" class="btn secondary small" type="button" data-i18n="bankManageEntry"></button>
               <button id="refreshBank" class="btn text small" type="button" data-i18n="refresh"></button>
             </div>
           </div>
@@ -565,6 +623,45 @@
           <button id="bankMore" class="btn secondary block hidden" type="button" data-i18n="loadMore"></button>
           <p id="bankError" class="error" role="alert"></p>
         </div>
+
+        <section id="bankManagePage" class="subpage hidden">
+          <header class="page-head">
+            <button id="backFromBankManage" class="back-btn" type="button" data-i18n-aria="back">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <h1 data-i18n="bankManageTitle"></h1>
+          </header>
+
+          <p class="hint" data-i18n="bankManageLead"></p>
+
+          <section class="card">
+            <h2 data-i18n="bankManageCourseTitle"></h2>
+            <p id="bankManageCourseMeta" class="muted"></p>
+            <div class="maintenance-grid">
+              <button id="bankManageCourseUnused" class="btn secondary" type="button" data-i18n="clearUnused"></button>
+              <button id="bankManageCourseAnswered" class="btn secondary" type="button" data-i18n="clearAnswered"></button>
+              <button id="bankManageCourseWrong" class="btn secondary" type="button" data-i18n="clearWrong"></button>
+              <button id="bankManageCourseClear" class="btn danger" type="button" data-i18n="bankManageClearCourse"></button>
+            </div>
+          </section>
+
+          <section class="card">
+            <h2 data-i18n="bankManageCustomTitle"></h2>
+            <p id="bankManageCustomMeta" class="muted"></p>
+            <div id="bankManageCustomList" class="settings-list"></div>
+            <p id="bankManageCustomEmpty" class="hint hidden" data-i18n="maintenanceSourceNoTags"></p>
+            <button id="bankManageCustomClear" class="btn danger block hidden" type="button" data-i18n="bankManageClearCustom"></button>
+          </section>
+
+          <section class="card">
+            <h2 data-i18n="bankManageAllTitle"></h2>
+            <p id="bankManageAllMeta" class="muted"></p>
+            <button id="bankManageAllClear" class="btn danger block" type="button" data-i18n="bankManageClearAll"></button>
+          </section>
+
+          <p id="bankManageState" class="ok" role="status"></p>
+          <p id="bankManageError" class="error" role="alert"></p>
+        </section>
 
         <section id="bankImportPage" class="subpage hidden">
           <header class="page-head">
@@ -665,26 +762,41 @@
         </section>
       </section>
 
-      <section id="view-me" class="view hidden">
+      <section id="view-control" class="view hidden">
         <section class="card">
-          <h2 data-i18n="tabMe"></h2>
-          <p class="section-label lock-actions-label" data-i18n="lockActionsLabel"></p>
-          <div class="settings-list lock-action-list">
-            <button id="unlockAction" class="setting-row lock-action-row" type="button">
+          <h2 data-i18n="controlPanelTitle"></h2>
+          <p class="hint" data-i18n="controlOpenHint"></p>
+          <div id="controlPageState" class="hint" role="status" aria-live="polite"></div>
+          <button id="openControlPanel" class="btn primary" type="button" data-i18n="controlOpenAction"></button>
+        </section>
+      </section>
+
+      <section id="view-me" class="view hidden">
+        <section id="parentEntryCard" class="card parent-entry-card hidden">
+          <button id="parentCenterEntry" class="setting-row parent-entry-row" type="button">
+            <span class="parent-entry-shield" aria-hidden="true">🛡</span>
+            <span class="setting-main">
+              <span data-parent-i18n="parentCenterTitle"></span>
+              <span id="parentEntryState" class="setting-value" role="status" aria-live="polite"></span>
+            </span>
+            <span class="chevron" aria-hidden="true">›</span>
+          </button>
+        </section>
+
+        <section id="parentAppDownloadCard" class="card hidden">
+          <div class="settings-list">
+            <button id="parentAppDownload" class="setting-row" type="button">
               <span class="setting-main">
-                <span data-i18n="unlockTitle"></span>
-                <span id="unlockState" class="setting-value" role="status" aria-live="polite"></span>
-              </span>
-              <span class="chevron" aria-hidden="true">›</span>
-            </button>
-            <button id="manualAction" class="setting-row lock-action-row" type="button">
-              <span class="setting-main">
-                <span data-i18n="manualTitle"></span>
-                <span id="manualState" class="setting-value" role="status" aria-live="polite"></span>
+                <span data-i18n="parentAppDownload"></span>
+                <span id="parentAppDownloadState" class="setting-value" role="status" aria-live="polite">Android 7.0+</span>
               </span>
               <span class="chevron" aria-hidden="true">›</span>
             </button>
           </div>
+        </section>
+
+        <section class="card quiz-only">
+          <h2 data-i18n="tabMe"></h2>
           <div class="settings-list">
             <button id="meAi" class="setting-row" type="button">
               <span class="setting-main">
@@ -694,34 +806,13 @@
               <span class="chevron" aria-hidden="true">›</span>
             </button>
 
-            <details id="maintenanceFold" class="setting-fold">
-              <summary class="setting-row">
-                <span class="setting-main">
-                  <span data-i18n="meMaintenance"></span>
-                  <span id="maintenanceCounts" class="setting-value">—</span>
-                </span>
-                <span class="chevron" aria-hidden="true">›</span>
-              </summary>
-              <div class="fold-body">
-                <span class="field-label" data-i18n="maintenanceSourceLabel"></span>
-                <div id="maintenanceSource" class="segmented compact" role="group" data-i18n-aria="maintenanceSourceLabel">
-                  <button type="button" data-clear-source="course" aria-pressed="true" data-i18n="maintenanceSourceCourse"></button>
-                  <button type="button" data-clear-source="custom" aria-pressed="false" data-i18n="maintenanceSourceCustom"></button>
-                  <button type="button" data-clear-source="all" aria-pressed="false" data-i18n="maintenanceSourceAll"></button>
-                </div>
-                <select id="maintenanceCollection" class="tag-select maintenance-tag hidden"
-                  data-i18n-aria="maintenanceSourceLabel"></select>
-                <p id="maintenanceSourceHint" class="hint maintenance-source-hint"></p>
-                <div class="maintenance-grid">
-                  <button id="clearUnused" class="btn secondary" type="button" data-i18n="clearUnused"></button>
-                  <button id="clearAnswered" class="btn secondary" type="button" data-i18n="clearAnswered"></button>
-                  <button id="clearWrong" class="btn secondary" type="button" data-i18n="clearWrong"></button>
-                  <button id="clearAll" class="btn danger" type="button" data-i18n="clearAll"></button>
-                </div>
-              </div>
-            </details>
-            <p id="maintenanceState" class="ok fold-status" role="status"></p>
-            <p id="maintenanceError" class="error fold-status" role="alert"></p>
+            <button id="bankManageEntry" class="setting-row" type="button">
+              <span class="setting-main">
+                <span data-i18n="bankManageEntry"></span>
+                <span id="bankManageEntryState" class="setting-value">—</span>
+              </span>
+              <span class="chevron" aria-hidden="true">›</span>
+            </button>
 
             <label class="setting-row switch-row" for="toggleEnabled">
               <span class="setting-main"><span data-i18n="challengeToggle"></span></span>
@@ -730,6 +821,8 @@
                 <span class="switch-track" aria-hidden="true"></span>
               </span>
             </label>
+            <p id="challengeState" class="ok fold-status" role="status"></p>
+            <p id="challengeError" class="error fold-status" role="alert"></p>
           </div>
         </section>
 
@@ -745,13 +838,65 @@
                 <option value="kk">Қазақша</option>
               </select>
             </label>
-            <button id="logout" class="setting-row" type="button" data-i18n="logout"></button>
+            <button id="logout" class="setting-row quiz-only" type="button" data-i18n="logout"></button>
             <button id="mePrivacy" class="setting-row" type="button">
               <span class="setting-main"><span data-i18n="privacyInfo"></span></span>
               <span class="chevron" aria-hidden="true">›</span>
             </button>
           </div>
         </section>
+      </section>
+
+      <section id="aiConfigPage" class="subpage hidden">
+        <header class="page-head">
+          <button id="backFromAi" class="back-btn" type="button" data-i18n-aria="back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+          </button>
+          <h1 data-i18n="aiTitle"></h1>
+        </header>
+
+        <p class="hint" data-i18n="aiIntro"></p>
+        <p class="hint" data-i18n="setupAiHint"></p>
+
+        <section class="card">
+          <div class="field-stack">
+            <div>
+              <label for="baseUrl" data-i18n="baseUrl"></label>
+              <input id="baseUrl" type="url" autocomplete="off" spellcheck="false">
+              <div id="providerPresets" class="chip-row provider-presets" role="group" data-i18n-aria="providerPresetLabel">
+                <button class="choice-chip" type="button" data-provider-preset="deepseek" aria-pressed="false">DeepSeek</button>
+                <button class="choice-chip" type="button" data-provider-preset="qwen" aria-pressed="false">Qwen</button>
+                <button class="choice-chip" type="button" data-provider-preset="kimi" aria-pressed="false">Kimi</button>
+                <button class="choice-chip" type="button" data-provider-preset="glm" aria-pressed="false">GLM</button>
+                <button class="choice-chip" type="button" data-provider-preset="doubao" aria-pressed="false">Doubao</button>
+                <button class="choice-chip" type="button" data-provider-preset="hunyuan" aria-pressed="false">Hunyuan</button>
+                <button class="choice-chip" type="button" data-provider-preset="ernie" aria-pressed="false">ERNIE</button>
+                <button class="choice-chip" type="button" data-provider-preset="spark" aria-pressed="false">Spark</button>
+                <button class="choice-chip" type="button" data-provider-preset="minimax" aria-pressed="false">MiniMax</button>
+                <button class="choice-chip" type="button" data-provider-preset="longcat" aria-pressed="false">LongCat</button>
+                <button class="choice-chip" type="button" data-provider-preset="stepfun" aria-pressed="false">StepFun</button>
+              </div>
+              <p class="hint" data-i18n="providerPresetNote"></p>
+              <p class="hint"><a href="https://platform.deepseek.com" target="_blank" rel="noopener" data-i18n="deepseekKeyHint"></a></p>
+            </div>
+            <div>
+              <label for="model" data-i18n="model"></label>
+              <input id="model" type="text" autocomplete="off" spellcheck="false">
+              <p id="providerModelHint" class="hint"></p>
+            </div>
+          </div>
+          <label for="apiKey" data-i18n="apiKey"></label>
+          <input id="apiKey" type="password" autocomplete="off" spellcheck="false">
+          <p id="keyHint" class="hint"></p>
+          <p id="providerError" class="error" role="alert"></p>
+          <p id="providerWarn" class="warn" role="status"></p>
+          <p id="providerOk" class="ok" role="status"></p>
+        </section>
+
+        <div class="sticky-bar split">
+          <button id="testProvider" class="btn secondary" type="button" data-i18n="testProvider"></button>
+          <button id="saveProvider" class="btn primary" type="button" data-i18n="saveProvider"></button>
+        </div>
       </section>
     </section>
   </main>
@@ -770,10 +915,19 @@
       </svg>
       <span data-i18n="tabBank"></span>
     </button>
+    <button class="nav-item" type="button" data-tab="control" aria-pressed="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <rect x="4" y="5" width="16" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <circle cx="9" cy="10" r="1.5" fill="currentColor"/>
+        <path d="M6.5 16h7M16.5 9.5v5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <span data-i18n="tabControl"></span>
+    </button>
     <button class="nav-item" type="button" data-tab="me" aria-pressed="false">
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <circle cx="12" cy="8.5" r="3.5" fill="none" stroke="currentColor" stroke-width="1.8"/>
-        <path d="M5.5 19a6.5 6.5 0 0 1 13 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="5" cy="12" r="1.7" fill="currentColor"/>
+        <circle cx="12" cy="12" r="1.7" fill="currentColor"/>
+        <circle cx="19" cy="12" r="1.7" fill="currentColor"/>
       </svg>
       <span data-i18n="tabMe"></span>
     </button>
@@ -850,52 +1004,6 @@
       </form>
     </section>
 
-    <section id="providerDialog" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="providerTitle">
-      <div class="modal-head">
-        <h2 id="providerTitle" data-i18n="aiTitle"></h2>
-        <button class="icon-btn close" type="button" data-close-modal data-i18n-aria="close">×</button>
-      </div>
-      <p class="muted" data-i18n="aiIntro"></p>
-      <p class="hint" data-i18n="setupAiHint"></p>
-      <div class="field-stack">
-        <div>
-          <label for="baseUrl" data-i18n="baseUrl"></label>
-          <input id="baseUrl" type="url" autocomplete="off" spellcheck="false">
-          <div id="providerPresets" class="chip-row provider-presets" role="group" data-i18n-aria="providerPresetLabel">
-            <button class="choice-chip" type="button" data-provider-preset="deepseek" aria-pressed="false">DeepSeek</button>
-            <button class="choice-chip" type="button" data-provider-preset="qwen" aria-pressed="false">Qwen</button>
-            <button class="choice-chip" type="button" data-provider-preset="kimi" aria-pressed="false">Kimi</button>
-            <button class="choice-chip" type="button" data-provider-preset="glm" aria-pressed="false">GLM</button>
-            <button class="choice-chip" type="button" data-provider-preset="doubao" aria-pressed="false">Doubao</button>
-            <button class="choice-chip" type="button" data-provider-preset="hunyuan" aria-pressed="false">Hunyuan</button>
-            <button class="choice-chip" type="button" data-provider-preset="ernie" aria-pressed="false">ERNIE</button>
-            <button class="choice-chip" type="button" data-provider-preset="spark" aria-pressed="false">Spark</button>
-            <button class="choice-chip" type="button" data-provider-preset="minimax" aria-pressed="false">MiniMax</button>
-            <button class="choice-chip" type="button" data-provider-preset="longcat" aria-pressed="false">LongCat</button>
-            <button class="choice-chip" type="button" data-provider-preset="stepfun" aria-pressed="false">StepFun</button>
-          </div>
-          <p class="hint" data-i18n="providerPresetNote"></p>
-          <p class="hint"><a href="https://platform.deepseek.com" target="_blank" rel="noopener" data-i18n="deepseekKeyHint"></a></p>
-        </div>
-        <div>
-          <label for="model" data-i18n="model"></label>
-          <input id="model" type="text" autocomplete="off" spellcheck="false">
-          <p id="providerModelHint" class="hint"></p>
-        </div>
-      </div>
-      <label for="apiKey" data-i18n="apiKey"></label>
-      <input id="apiKey" type="password" autocomplete="off" spellcheck="false">
-      <p id="keyHint" class="hint"></p>
-      <div class="modal-actions">
-        <button id="saveProvider" class="btn primary" type="button" data-i18n="saveProvider"></button>
-        <button id="testProvider" class="btn secondary" type="button" data-i18n="testProvider"></button>
-        <button class="btn text" type="button" data-close-modal data-i18n="close"></button>
-      </div>
-      <p id="providerError" class="error" role="alert"></p>
-      <p id="providerWarn" class="warn" role="status"></p>
-      <p id="providerOk" class="ok" role="status"></p>
-    </section>
-
     <section id="privacyInfoDialog" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="privacyInfoTitle">
       <div class="modal-head">
         <h2 id="privacyInfoTitle" data-i18n="privacyInfo"></h2>
@@ -909,6 +1017,19 @@
       </ul>
       <div class="modal-actions">
         <button class="btn secondary" type="button" data-close-modal data-i18n="close"></button>
+      </div>
+    </section>
+
+    <section id="bankClearDialog" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="bankClearTitle">
+      <div class="modal-head">
+        <h2 id="bankClearTitle"></h2>
+        <button class="icon-btn close" type="button" data-close-modal data-i18n-aria="close">×</button>
+      </div>
+      <p id="bankClearLead" class="muted"></p>
+      <p id="bankClearWarning" class="warn" role="alert"></p>
+      <div class="modal-actions">
+        <button class="btn text" type="button" data-close-modal data-i18n="cancel"></button>
+        <button id="bankClearNext" class="btn primary" type="button"></button>
       </div>
     </section>
 
@@ -929,6 +1050,9 @@
     </section>
   </div>
 
-  <script src="quiz.js"></script>
+  <div id="parentCenterRoot" class="parent-root hidden"></div>
+
+  <script src="parent.js?v=38"></script>
+  <script src="quiz.js?v=39"></script>
 </body>
 </html>

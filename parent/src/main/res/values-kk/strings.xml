@@ -2,12 +2,11 @@
 <resources>
     <string name="app_name">PlanYourTV Ата-ана</string>
     <string name="pair_title">Теледидарға қосылу</string>
-    <string name="pair_intro">Теледидарда «Ата-ана орталығын» ашып, QR кодты сканерлеңіз. Мекенжай есте сақталады, сканерлеу бір рет қана қажет.</string>
+    <string name="pair_intro">Телефон мен теледидар бір жергілікті желіде. Теледидардағы QR кодты сканерлеңіз.</string>
     <string name="pair_scan">Теледидар QR кодын сканерлеу</string>
     <string name="pair_manual_toggle">Сканерлеу мүмкін болмады ма? Мекенжайды қолмен енгізіңіз</string>
     <string name="pair_url_hint">192.0.2.10:8790/abcd2345/quiz</string>
     <string name="pair_connect">Қосылу</string>
-    <string name="pair_note">Телефон мен теледидар бір Wi-Fi желісінде болуы керек. Бұл қолданба тек теледидар ұсынған «Ата-ана орталығы» бетін ашады; оның өз тіркелгісі немесе бұлт қызметі жоқ.</string>
     <string name="pair_invalid_url">Теледидар QR кодындағы толық мекенжайды енгізіңіз: IP, порт және одан кейінгі код.</string>
     <string name="scan_failed">Сканерді іске қосу мүмкін болмады. Қайталап көріңіз.</string>
     <string name="camera_permission_hint">Теледидардағы QR кодты сканерлеу үшін камераға рұқсат беріңіз.</string>
@@ -31,6 +30,9 @@
     <string name="error_retry">Қайталау</string>
     <string name="error_repair">Басқа теледидарды сканерлеу</string>
     <string name="scan_prompt">Камераны теледидардағы QR кодқа бағыттаңыз</string>
+    <string name="scan_torch">Фонарь</string>
+    <string name="scan_zoom">Масштаб</string>
+    <string name="scan_zoom_default">1.0×</string>
     <string name="saved">Жүктеу сақталды.</string>
     <string name="save_failed">Жүктеуді сақтау мүмкін болмады.</string>
     <string name="download_unsupported">Бұл жүктеуді ашу мүмкін емес. Мәзірден браузерді таңдап көріңіз.</string>

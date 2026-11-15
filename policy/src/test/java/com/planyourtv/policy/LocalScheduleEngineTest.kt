@@ -195,9 +195,14 @@ class LocalScheduleEngineTest {
                 ),
             ).validationError(),
         )
+        // Zero is a valid automatic quota: it locks entertainment for the day.
         assertEquals(
-            LocalRulesError.INVALID_LIMITS,
+            LocalRulesError.NONE,
             LocalRules.DEFAULTS.copy(autoDailyLimitMinutes = 0).validationError(),
+        )
+        assertEquals(
+            LocalRulesError.NONE,
+            LocalRules.DEFAULTS.copy(sessionScreenOffBufferMinutes = 0).validationError(),
         )
         assertEquals(
             LocalRulesError.INVALID_LIMITS,

@@ -86,6 +86,8 @@ import app.orchard.tv.wallpaper.AerialFormats
 import app.orchard.tv.wallpaper.ScreensaverMode
 import app.orchard.tv.wallpaper.Wallpapers
 import app.orchard.tv.ui.components.liquidGlass
+import app.orchard.tv.ui.policy.LocalPolicyHomeWallpaper
+import app.orchard.tv.ui.policy.PolicyHomeFilm
 import app.orchard.tv.ui.theme.LocalReducedMotion
 import app.orchard.tv.ui.theme.Motion
 import app.orchard.tv.ui.theme.Type
@@ -300,7 +302,8 @@ fun HomeScreen(
     val pillRequester = remember { FocusRequester() }
     val appContext = LocalContext.current
     val firmwareInputPanel = remember {
-        SystemProbe.tclInputPanel(appContext) != null || SystemProbe.coocaaInputPanel(appContext)
+        SystemProbe.tclInputPanel(appContext) != null || SystemProbe.coocaaInputPanel(appContext) ||
+            SystemProbe.tianciInputPanel(appContext)
     }
 
     var focusedKey by remember { mutableStateOf<String?>(null) }
@@ -316,6 +319,12 @@ fun HomeScreen(
     // Kids mode's lock covers Home: nothing under it takes focus.
     val kidsLock = if (Restricted.active) Restricted.lock else null
     val gridEnabled = overlay == Overlay.None && kidsLock == null
+
+    // A policy child session owns Home's wallpaper (its film and poster) for the length of the
+    // session. This is the one policy hook in Home: null for parent Home, study mode, parent
+    // override and policy-off Home.
+    val policyWallpaper = LocalPolicyHomeWallpaper.current
+    val policyActive = policyWallpaper != null
 
     // The aerial wallpaper's film, and how far it shows through.
     val filmCover = remember { Animatable(0f) }
@@ -336,8 +345,8 @@ fun HomeScreen(
     // nothing over it. A film that does not move within FILM_SAVER_WAIT_MS hands over to the
     // screensaver's own films.
     var filmFailed by remember(vm.screensaverVisible) { mutableStateOf(false) }
-    val filmSaverChosen = remember(vm.screensaverVisible) {
-        vm.screensaverVisible && saverCarriesWallpaper(appContext) &&
+    val filmSaverChosen = remember(vm.screensaverVisible, policyActive) {
+        !policyActive && vm.screensaverVisible && saverCarriesWallpaper(appContext) &&
             (filmCover.value > 0.5f || focusedRow == 0 && overlay == Overlay.None && moving == null)
     }
     val filmSaver = filmSaverChosen && !filmFailed
@@ -357,8 +366,10 @@ fun HomeScreen(
     // A photo screensaver over a picture wallpaper carries the picture on the same way: its shading
     // lifts and it slowly draws in from just as Home shows it (HomeBackground), and the photos move
     // on from it.
-    val stillSaver = remember(vm.screensaverVisible) {
-        if (vm.screensaverVisible && focusedRow == 0 && overlay == Overlay.None && moving == null && Wallpapers.backdrop != null) {
+    val stillSaver = remember(vm.screensaverVisible, policyActive) {
+        if (!policyActive && vm.screensaverVisible && focusedRow == 0 && overlay == Overlay.None &&
+            moving == null && Wallpapers.backdrop != null
+        ) {
             Wallpapers.screensaverPicture()
         } else null
     }
@@ -629,13 +640,18 @@ fun HomeScreen(
         // its picture stands in under Control Center, and a SurfaceView in a layer that is not
         // drawn cuts no hole in the window, so the paused film showed as the window's black
         // (Xiaomi MiTV-MFTR0, the aerial wallpaper under Control Center).
-        val filmMoves = vm.filmFront && overlay == Overlay.None && !vm.screensaverVisible && !pastShelf &&
-            !inGrid && moving == null
+        val filmMoves = !policyActive && vm.filmFront && overlay == Overlay.None && !vm.screensaverVisible &&
+            !pastShelf && !inGrid && moving == null
         val sourceInput = Wallpapers.sourceInput
         // Nothing over Home blurs it: a paused film stays (why: at LiveWallpaper below).
         val filmStandsIn = overlay == Overlay.None || overlay is Overlay.ControlCenter || overlay is Overlay.Wallpaper ||
             overlay is Overlay.About || (overlay is Overlay.AppMenu && overlay.inFolder == null)
         when {
+            // The child session's film replaces every Home film. Its player stays composed while
+            // the screensaver shows but is released there, so only the screensaver decodes.
+            policyActive -> policyWallpaper?.let {
+                PolicyHomeFilm(it, active = !vm.screensaverVisible)
+            }
             Wallpapers.selectedId == Wallpapers.LIVE -> LiveWallpaper(
                 moving = filmMoves,
                 keep = vm.filmFront && (!vm.screensaverVisible || filmSaver),
@@ -663,6 +679,7 @@ fun HomeScreen(
                     standIn = filmStandsIn,
                     lastInputAt = vm.lastInputAt,
                     cover = filmCover,
+                    behindApp = !vm.filmFront,
                 )
             }
             sourceInput != null -> SourceWallpaper(sourceInput, show = vm.resumed && !vm.screensaverVisible, cover = filmCover)
@@ -714,33 +731,45 @@ fun HomeScreen(
             // The aerial film's own glass for the grid: the one playing or stopped, else the one
             // the picture was taken from.
             val pictureClip = remember(Wallpapers.backdrop) { Wallpapers.livePictureSpot()?.first }
-            val clip = if (Wallpapers.selectedId == Wallpapers.LIVE) liveFilm.film?.id ?: pictureClip else null
+            val clip = if (!policyActive && Wallpapers.selectedId == Wallpapers.LIVE) {
+                liveFilm.film?.id ?: pictureClip
+            } else null
             LaunchedEffect(clip) { Wallpapers.showClipGlass(clip) }
             val clipGlass = Wallpapers.clipGlass?.takeIf { it.first == clip }?.second
             HomeBackground(
-                // The chosen wallpaper; in "Follow App" mode, light from the focused app.
-                backdrop = Wallpapers.backdrop ?: ambientApp?.art?.backdrop,
-                frosted = Wallpapers.frosted.takeIf { Wallpapers.backdrop != null },
+                // The chosen wallpaper; in "Follow App" mode, light from the focused app. An
+                // active child session replaces all of it with the lock role's still.
+                backdrop = if (policyActive) policyWallpaper?.image
+                    else Wallpapers.backdrop ?: ambientApp?.art?.backdrop,
+                frosted = if (policyActive) policyWallpaper?.frosted
+                    else Wallpapers.frosted.takeIf { Wallpapers.backdrop != null },
                 plate = plate,
                 scroll = { scroll.value },
                 collapse = collapsePx,
-                cover = { filmCover.value },
+                cover = when {
+                    !policyActive -> ({ filmCover.value })
+                    // The film's player is released under a screensaver; the poster is the picture.
+                    vm.screensaverVisible -> ({ 0f })
+                    else -> policyWallpaper?.cover ?: ({ 0f })
+                },
                 // An input's picture gets the shade a picture has; in the grid it gives way to the
                 // glass, as any wallpaper does (it cannot be blurred). Not a film, moving or not
                 // (the owner, 2026-10-29): since the aerial wallpaper keeps moving under keys
                 // (Wallpapers.keepsMoving) it was still shaded here, a full-screen draw each frame
                 // (Xiaomi MiTV-MFTR0: GPU 9.8 -> 6.9 ms a frame moving focus over the film).
-                shadeMoving = sourceInput != null,
-                filmStopped = { filmStopped },
-                toSaver = { toSaver.value },
-                filmGlass = (Wallpapers.filmFrost ?: Wallpapers.frosted).takeIf { Wallpapers.moves() && Wallpapers.backdrop != null },
-                saverImage = saverImage,
+                shadeMoving = !policyActive && sourceInput != null,
+                filmStopped = if (policyActive) ({ 0f }) else ({ filmStopped }),
+                toSaver = { if (policyActive) 0f else toSaver.value },
+                filmGlass = if (policyActive) null
+                    else (Wallpapers.filmFrost ?: Wallpapers.frosted)
+                        .takeIf { Wallpapers.moves() && Wallpapers.backdrop != null },
+                saverImage = if (policyActive) null else saverImage,
                 saverReveal = { saverReveal.value },
                 saverPush = { saverPush.value },
                 lift = { lift },
-                wallpaper = Wallpapers.selectedId,
-                glassAwaitsStop = Wallpapers.selectedId == Wallpapers.LIVE && clipGlass == null,
-                gridGlass = clipGlass,
+                wallpaper = if (policyActive) "policy:child" else Wallpapers.selectedId,
+                glassAwaitsStop = !policyActive && Wallpapers.selectedId == Wallpapers.LIVE && clipGlass == null,
+                gridGlass = if (policyActive) null else clipGlass,
             )
 
             // Before Android 7 there is no picture of Home under Control Center (issue #466), so the

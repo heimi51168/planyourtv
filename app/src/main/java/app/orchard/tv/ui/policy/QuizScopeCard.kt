@@ -232,13 +232,19 @@ private val QuizLevelPillHeight = 30.dp
 private fun levelWheelLabel(level: QuizRuntime.LevelState): String =
     level.name.ifBlank { levelSummary(level) }
 
-/** A custom level names its tag; only course levels have a curriculum scope. */
+/**
+ * A custom level names its tag, wrong review has its own title, and only
+ * course levels have a curriculum scope.
+ */
 @Composable
 private fun levelSummary(level: QuizRuntime.LevelState?): String =
-    if (level != null && level.isCustom) {
-        stringResource(R.string.policy_quiz_scope_custom_tag, level.tagName)
-    } else {
-        scopeSummary(level?.scope)
+    when {
+        level == null -> scopeSummary(null)
+        // A cloud level has no local curriculum scope: the question bank owns it.
+        level.isCloud -> stringResource(R.string.policy_quiz_scope_cloud_level)
+        level.wrongReview -> stringResource(R.string.policy_quiz_scope_wrong_review)
+        level.isCustom -> stringResource(R.string.policy_quiz_scope_custom_tag, level.tagName)
+        else -> scopeSummary(level.scope)
     }
 
 @Composable

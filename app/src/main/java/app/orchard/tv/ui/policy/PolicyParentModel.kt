@@ -4,9 +4,6 @@ package app.orchard.tv.ui.policy
 internal sealed interface ParentFocusTarget {
     data object Switch : ParentFocusTarget
     data object Remote : ParentFocusTarget
-    data object Password : ParentFocusTarget
-    data object AutoUpdate : ParentFocusTarget
-    data object QuizSetup : ParentFocusTarget
     data object WeChat : ParentFocusTarget
     data object MigrationRetry : ParentFocusTarget
     data object WaitConfigRetry : ParentFocusTarget
@@ -15,27 +12,16 @@ internal sealed interface ParentFocusTarget {
 }
 
 /**
- * The rail, top to bottom. Auto update is a device-level setting and is independent of the
- * cloud binding and of child mode, so it is always present, below the password row when there
- * is one and below the child-mode switch otherwise.
- *
- * The quiz setup row is a child-mode entry: it opens the two phone codes and stays available
- * after a cloud handoff, but it is hidden while child mode is off.
+ * The V29 rail keeps the child-mode switch and remote management; the WeChat alerts row is the
+ * one local feature that stays on the TV rail, below remote management when it is visible.
  */
 internal fun parentRailTargets(
     childOn: Boolean,
     remoteVisible: Boolean,
-    passwordVisible: Boolean,
 ): List<ParentFocusTarget> = buildList {
     add(ParentFocusTarget.Switch)
-    if (childOn) {
-        if (remoteVisible) add(ParentFocusTarget.Remote)
-        if (passwordVisible) add(ParentFocusTarget.Password)
-    }
-    add(ParentFocusTarget.AutoUpdate)
-    if (childOn) add(ParentFocusTarget.QuizSetup)
-    // WeChat chat control is a child-mode entry like the quiz setup, and it is
-    // harmless to reach while child mode is off (the pane explains that).
+    if (childOn && remoteVisible) add(ParentFocusTarget.Remote)
+    // WeChat chat control is a child-mode entry that works without a backend.
     if (childOn) add(ParentFocusTarget.WeChat)
 }
 
@@ -47,11 +33,11 @@ internal enum class ParentPaneKind {
     MIGRATION,
     WAIT_CONFIG,
     SUMMARY,
-    QUIZ_SETUP,
+    PARENT_WEB_QR,
     WECHAT,
 }
 
 internal enum class ParentZone { RAIL, PANE }
 
 /** Left always returns to the rail row that opened the pane. */
-internal enum class ParentRailOrigin { SWITCH, REMOTE, QUIZ_SETUP, WECHAT }
+internal enum class ParentRailOrigin { SWITCH, REMOTE, WECHAT }

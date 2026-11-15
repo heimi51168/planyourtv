@@ -1,6 +1,7 @@
 package app.orchard.tv.quiz
 
 import app.orchard.tv.policy.PolicyModeCoordinator
+import com.planyourtv.policy.PolicyMode
 import com.planyourtv.policy.quiz.QuizSessionStatus
 
 /**
@@ -19,7 +20,13 @@ object QuizSettings {
         QuizSessionStatus.START_FAILED,
     )
 
-    fun isEnabled(): Boolean = QuizSessionStore.enabled()
+    fun isEnabled(): Boolean =
+        if (PolicyModeCoordinator.mode == PolicyMode.LOCAL) {
+            // An unreadable document is not "probably enabled": fail explicit.
+            QuizConfigDocumentStore.localDocument()?.enabled ?: false
+        } else {
+            QuizSessionStore.enabled()
+        }
 
     fun setEnabled(enabled: Boolean): SetResult {
         if (!enabled) {
@@ -52,6 +59,18 @@ object QuizSettings {
                     QuizQuestionCache.release(current.id)
                     if (!QuizSessionStore.clearSession()) return SetResult.StorageError
                 }
+            }
+        }
+        if (PolicyModeCoordinator.mode == PolicyMode.LOCAL) {
+            // The local document owns the switch. Keep the old boolean as a
+            // mirror for readers that predate the document; a failed document
+            // write is reported instead of leaving the two disagreeing.
+            when (QuizConfigDocumentStore.markEnabled(enabled)) {
+                is QuizDocSaveResult.Ok -> Unit
+                is QuizDocSaveResult.Conflict,
+                is QuizDocSaveResult.Invalid,
+                QuizDocSaveResult.Storage,
+                -> return SetResult.StorageError
             }
         }
         QuizSessionStore.setEnabled(enabled)

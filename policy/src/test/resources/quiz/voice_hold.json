@@ -1,0 +1,55 @@
+{
+  "safetyMarginMs": 250,
+  "wrong": {
+    "files": [
+      {
+        "name": "voice_quiz_wrong_1.ogg",
+        "durationMs": 2329
+      },
+      {
+        "name": "voice_quiz_wrong_2.ogg",
+        "durationMs": 1297
+      },
+      {
+        "name": "voice_quiz_wrong_3.ogg",
+        "durationMs": 1632
+      },
+      {
+        "name": "voice_quiz_wrong_4.ogg",
+        "durationMs": 1969
+      },
+      {
+        "name": "voice_quiz_wrong_5.ogg",
+        "durationMs": 1777
+      },
+      {
+        "name": "voice_quiz_wrong_6.ogg",
+        "durationMs": 2137
+      },
+      {
+        "name": "voice_quiz_wrong_idiom_1.ogg",
+        "durationMs": 1632
+      },
+      {
+        "name": "voice_quiz_wrong_idiom_2.ogg",
+        "durationMs": 3051
+      }
+    ],
+    "maxVoiceMs": 3051,
+    "holdMs": 3301
+  },
+  "timeout": {
+    "files": [
+      {
+        "name": "voice_quiz_timeout_1.ogg",
+        "durationMs": 2137
+      },
+      {
+        "name": "voice_quiz_timeout_2.ogg",
+        "durationMs": 3171
+      }
+    ],
+    "maxVoiceMs": 3171,
+    "holdMs": 3421
+  }
+}

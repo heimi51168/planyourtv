@@ -100,6 +100,20 @@ class QuizSessionCodecTest {
     }
 
     @Test
+    fun acceptsFiveSecondTimeLimitAndRejectsBelowIt() {
+        val config = QuizSessionCodec.encodeConfig(
+            QuizConfig(defaultTimeLimitSec = QUIZ_MIN_TIME_LIMIT_SEC),
+        )
+        assertEquals(
+            QUIZ_MIN_TIME_LIMIT_SEC,
+            QuizSessionCodec.decodeConfig(config)?.defaultTimeLimitSec,
+        )
+        val tooShort = QuizSessionCodec.encodeConfig(QuizConfig())
+            .put("defaultTimeLimitSec", QUIZ_MIN_TIME_LIMIT_SEC - 1)
+        assertNull(QuizSessionCodec.decodeConfig(tooShort))
+    }
+
+    @Test
     fun acceptsThirtyMinuteTimeLimitAndRejectsBeyondIt() {
         val config = QuizSessionCodec.encodeConfig(
             QuizConfig(defaultTimeLimitSec = QUIZ_MAX_TIME_LIMIT_SEC),
@@ -425,7 +439,7 @@ class QuizSessionCodecTest {
     }
 
     @Test
-    fun roundTripsFiftyQuestionRound() {
+    fun roundTripsTheMaximumQuestionRound() {
         val items = (1..QUIZ_MAX_ITEMS).map { index ->
             item.copy(questionId = "q_" + index.toString().padStart(7, '0'))
         }

@@ -1,10 +1,8 @@
 package app.orchard.tv.quiz
 
 import android.util.Log
-import app.orchard.tv.policy.PolicyCloud
 import com.planyourtv.policy.PolicyFlowTrace
 import com.planyourtv.policy.PolicyRuntime
-import com.planyourtv.policy.quiz.QuizConfig
 import com.planyourtv.policy.quiz.QuizSession
 import com.planyourtv.policy.quiz.QuizSessionStatus
 import kotlinx.coroutines.Dispatchers
@@ -24,6 +22,8 @@ import java.io.IOException
  * Reuse rule: if the existing READY session and the cache both belong to the
  * same unexpired attempt, the round is returned as-is. That makes retrying the
  * start button (or reopening the page) free instead of burning another pull.
+ * The reuse also requires the same QCD revision, day profile and level, so a
+ * parent edit made before the first tap is never executed with stale rules.
  */
 object CloudQuizPreparer {
     private const val TAG = "CloudQuizPreparer"
@@ -35,11 +35,20 @@ object CloudQuizPreparer {
         data class Unavailable(val message: String) : Outcome
     }
 
-    suspend fun prepare(nowMs: Long = System.currentTimeMillis()): Outcome {
+    /**
+     * Fetches one round from the cloud bank for [levelId] (a QCD `cloud:<id>`).
+     * The active QCD supplies the rules and the reward profile; the QB level id
+     * provides the question scope. There is deliberately no fallback to the
+     * local document or the legacy device config.
+     */
+    suspend fun prepare(
+        levelId: String,
+        nowMs: Long = System.currentTimeMillis(),
+    ): Outcome {
         PolicyFlowTrace.event("quiz.prepare.begin")
         val outcome = prepareMutex.withLock {
             withContext(Dispatchers.IO) {
-                prepareLocked(nowMs)
+                prepareLocked(levelId, nowMs)
             }
         }
         PolicyFlowTrace.event(
@@ -79,10 +88,32 @@ object CloudQuizPreparer {
         QuizRuntime.refresh()
     }
 
-    private suspend fun prepareLocked(nowMs: Long): Outcome {
+    private suspend fun prepareLocked(levelId: String, nowMs: Long): Outcome {
         val cloud = PolicyRuntime.state.value
         if (!cloud.bound || cloud.deviceNo.isBlank()) {
             return Outcome.Unavailable("这台电视还没有绑定到家庭，请先在 App 里绑定")
+        }
+
+        // The active cloud QCD is the only rule source once bound. A missing or
+        // unsupported document is an explicit refusal, never a local fallback.
+        val plan = when (val planned = QuizCloudRoundPlanner.plan(nowMs)) {
+            is QuizCloudPlanResult.Ready -> planned.plan
+            is QuizCloudPlanResult.Rejected -> {
+                Log.w(TAG, "cloud quiz plan rejected: ${planned.code}")
+                return Outcome.Unavailable(cloudPlanMessage(planned.code))
+            }
+        }
+        if (plan.checkinBlocked) {
+            return Outcome.Unavailable(
+                plan.checkinMessage ?: "今天的打卡任务还没有完成，先完成打卡再来答题吧",
+            )
+        }
+        val selected = plan.levels.firstOrNull { it.id == levelId }
+            ?: return Outcome.Unavailable("这个关卡已经更新，请返回重新选择")
+        if (selected.available <= 0) {
+            return Outcome.Unavailable(
+                selected.unavailableReason ?: "这个关卡暂时没有可用的题目，请换一关试试",
+            )
         }
 
         // A lost round must be finished before QB accepts another pull.
@@ -90,19 +121,8 @@ object CloudQuizPreparer {
             return Outcome.Unavailable("正在同步上一轮答题，请稍后重试")
         }
 
-        val snapshot = PolicyCloud.fetchConfig(cloud.deviceNo).getOrElse { error ->
-            Log.w(TAG, "quiz config fetch failed", error)
-            return Outcome.Unavailable("网络连接失败，请稍后重试")
-        }
-        // Challenge rules and the on/off switch live in the backend once bound.
-        val applied = QuizConfigSync.applyRemote(snapshot.quiz)
-        if (applied is QuizConfigSync.ApplyResult.Rejected) {
-            Log.w(TAG, "remote quiz config rejected: ${applied.code}")
-            return Outcome.Unavailable("答题设置暂时无法同步，请稍后重试")
-        }
-        if (!QuizSessionStore.enabled()) {
-            return Outcome.Unavailable("家长还没有开启答题挑战")
-        }
+        val document = plan.document
+        val roundConfig = plan.config.copy(pullCount = selected.questionCount)
 
         val current = QuizRuntime.refresh()
         val session = current.session
@@ -110,7 +130,6 @@ object CloudQuizPreparer {
             return Outcome.Unavailable("本轮答题还没有结束，请先完成或在电视上结束它")
         }
 
-        val config = QuizSessionStore.loadChallengeConfig() ?: QuizConfig()
         val scope = QuizQuestionCache.cloudScope(cloud.deviceNo)
         QuizQuestionCache.migrateLegacyCloudScope(cloud.deviceNo)
         val cachedAttempt = QuizQuestionCache.cloudAttemptUid(scope)
@@ -121,7 +140,18 @@ object CloudQuizPreparer {
             cachedAttempt != null &&
             sessionAttempt == cachedAttempt &&
             session.expiresAt > nowMs &&
-            QuizQuestionCache.availableCount(scope, nowMs) >= session.items.size
+            QuizQuestionCache.availableCount(scope, nowMs) >= session.items.size &&
+            // Freeze match: a parent edit or a different level fetches anew so
+            // the round never executes with rules the child did not see.
+            session.cloudMemberId == plan.memberId &&
+            session.qbLearnerId == plan.qbLearnerId &&
+            session.preparedLevelId == selected.id &&
+            session.docRevision == document.revision &&
+            session.docEtag == document.etag &&
+            session.levelsEtag == document.levelsEtag &&
+            session.dayType == plan.dayType.name &&
+            session.rewardProfile == plan.profile &&
+            session.config == roundConfig
         if (reusable) {
             PolicyFlowTrace.event(
                 "quiz.prepare.reuse",
@@ -144,7 +174,7 @@ object CloudQuizPreparer {
         QuizSessionStore.clearSession()
 
         val set = try {
-            QbClient.fetchNext(config.pullCount)
+            QbClient.fetchNext(selected.questionCount, selected.qbLevelId)
         } catch (error: QbClient.QbException) {
             val message = error.businessMessage
             Log.w(TAG, "QB refused the next set: ${error.message}")
@@ -155,7 +185,13 @@ object CloudQuizPreparer {
             return Outcome.Unavailable("题目获取失败，请检查网络后重试")
         }
 
-        if (!QuizQuestionCache.replaceCloudSet(set.attemptUid, set.items, set.expiresAt, scope, nowMs)) {
+        // The member config owns the answer window. QB's per-question timer is
+        // the question's own default and must not override the parent setting.
+        val timeLimitSec = document.rules.timeLimitSec
+        val items = set.items.map {
+            it.copy(timeLimitSec = timeLimitSec, recommendedTimeSec = timeLimitSec)
+        }
+        if (!QuizQuestionCache.replaceCloudSet(set.attemptUid, items, set.expiresAt, scope, nowMs)) {
             return Outcome.Unavailable("题目保存失败，请重试")
         }
         val prepared = QuizSession(
@@ -165,8 +201,16 @@ object CloudQuizPreparer {
             updatedAt = nowMs,
             expiresAt = set.expiresAt,
             status = QuizSessionStatus.READY,
-            config = config,
-            items = set.items,
+            config = roundConfig,
+            docRevision = document.revision,
+            docEtag = document.etag,
+            levelsEtag = document.levelsEtag,
+            dayType = plan.dayType.name,
+            rewardProfile = plan.profile,
+            cloudMemberId = plan.memberId,
+            qbLearnerId = plan.qbLearnerId,
+            preparedLevelId = selected.id,
+            items = items,
         )
         if (!QuizSessionStore.saveSession(prepared)) {
             // Compensation: the cache must not outlive a session that cannot be read.
@@ -178,14 +222,16 @@ object CloudQuizPreparer {
         PolicyFlowTrace.event(
             "quiz.prepare.fetched",
             "attempt" to set.attemptUid,
-            "questions" to set.items.size,
+            "level" to selected.id,
+            "questions" to items.size,
             "requested" to set.requested,
             "available" to set.available,
         )
         Log.i(
             TAG,
-            "cloud round prepared: attempt=${set.attemptUid} questions=${set.items.size} " +
-                "requested=${set.requested} available=${set.available}",
+            "cloud round prepared: attempt=${set.attemptUid} level=${selected.id} " +
+                "questions=${items.size} requested=${set.requested} " +
+                "available=${set.available} revision=${document.revision}",
         )
         return Outcome.Ready
     }
@@ -214,4 +260,27 @@ object CloudQuizPreparer {
             QbClient.QbException(0, 0, error.message.orEmpty())
         }
     }
+}
+
+/**
+ * Human copy for a rejected cloud plan. The code itself stays internal; screens
+ * show this text and never the raw code.
+ */
+fun cloudPlanMessage(code: String): String = when (code) {
+    QuizCloudRoundPlanner.NO_ACTIVE_DOCUMENT,
+    QuizCloudRoundPlanner.CLOUD_ENVELOPE_MISSING,
+    -> "答题设置还没有同步到电视，请连接网络稍等一会儿"
+
+    QuizCloudRoundPlanner.DISABLED -> "家长还没有开启答题挑战"
+
+    QuizCloudRoundPlanner.QUESTION_COUNT_UNSUPPORTED ->
+        "答题题目数量超出电视支持范围，请让家长调整"
+
+    QuizCloudRoundPlanner.LEVEL_STATUS_MISSING,
+    QuizCloudRoundPlanner.LEVEL_ORIGIN_INVALID,
+    -> "关卡信息还没有同步完成，请稍后重试"
+
+    QuizCloudRoundPlanner.MEMBER_UNKNOWN -> "答题设置缺少孩子信息，请家长先在 App 里选择孩子"
+
+    else -> "答题设置暂时不可用，请让家长在 App 里重新保存一次"
 }

@@ -2,6 +2,8 @@ package app.orchard.tv.policy
 
 import android.content.Context
 import app.orchard.tv.bot.BotRuntime
+import app.orchard.tv.policy.media.PolicyVideoLibrary
+import app.orchard.tv.policy.web.ParentWebCenter
 import app.orchard.tv.quiz.QuizQuestionCache
 import app.orchard.tv.quiz.QuizRecovery
 import app.orchard.tv.quiz.QuizRuntime
@@ -28,7 +30,10 @@ object PolicyProduct {
     private val _parentCenterVisible = MutableStateFlow(false)
     val parentCenterVisible: StateFlow<Boolean> = _parentCenterVisible.asStateFlow()
 
+    private var appContext: Context? = null
+
     fun install(context: Context) {
+        appContext = context.applicationContext
         // Structured logging is a debug/dev/preview aid. The official release and the
         // community build keep it off so field formatting and logcat writes cost nothing.
         TvLog.setEnabled(
@@ -54,6 +59,7 @@ object PolicyProduct {
         // Chat control is opt-in: BotRuntime opens no connection until the
         // parent enabled it in the parent center and bound a WeChat account.
         BotRuntime.start(context.applicationContext)
+        ParentWebCenter.install(context.applicationContext)
         // Ship a usable local bank so the quiz works before an AI key or the
         // network exists. After the coordinator because the durable marker
         // lives in TvStore, which it initializes. The bundled set is now large
@@ -61,6 +67,10 @@ object PolicyProduct {
         // once in the background; the quiz entry refreshes when it finishes.
         val appContext = context.applicationContext
         Thread({
+            // Drop one-time legacy role values and stale media downloads. Role reads also
+            // migrate on demand, so this thread never races the lock screen.
+            runCatching { PolicyVideoLibrary.install(appContext) }
+                .onFailure { error -> TvLog.w("PolicyProduct", "video library setup failed", error) }
             // The unit catalogue is display/prompt data only, but its JSON is
             // large enough that parsing it on the first scope card would be
             // visible. Warm it on this disposable thread.
@@ -75,6 +85,8 @@ object PolicyProduct {
     }
 
     fun openParentSettings() {
+        // The V29 TV panel is read-only (switch, remote management, QR, recovery code), so it
+        // neither takes the web editor lease nor blocks a phone from configuring the TV.
         _parentCenterVisible.value = true
     }
 

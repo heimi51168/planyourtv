@@ -3,6 +3,58 @@
 This changelog covers the community source snapshot. Official hosted builds may ship different
 artifacts with the same upstream Aerial base.
 
+## [1.97.000] - 2026-11-15
+
+Kids-mode desktop, separated wallpapers, wrong-review levels and phone-first Parent Center, based
+on Aerial 1.97 / versionCode 142. Version code `142000`. The optional parent app is `1.1.0` / `4`.
+
+### Added
+
+- A wrong-review level on the phone page. One level draws from every local question whose latest
+  answer was wrong, across subjects and tags; the parent can add, rename or delete it. A correct
+  answer removes that question from the pool. The level can start only when the pool can fill the
+  whole configured round, so a short review never turns into an easier round than other levels.
+- A fresh TV starts with two ready-to-use levels: an all-subject grade-4 first-semester midterm
+  level with 500 mixed-subject questions first, then the focused maths level. Existing installs
+  keep the levels their parents designed.
+- The phone page has a dedicated Control section: temporarily leave child mode, return to child
+  mode, end the running timer, and start one manual session. The TV validates every action again,
+  keeps used time, and asks for the parent password and confirmation where the same action would
+  on the TV.
+- Kids mode has a desktop-style lock screen and Home: a large clock, mode and date, today's
+  availability and rules, the same status pill as Home, and a bottom dock for study, the quiz,
+  manual timing and Parent Center. The configured video wallpaper can play on these surfaces.
+- Child mode and parent mode keep separate wallpapers. While the guard is enforcing an active
+  child session, the lock screen and Home use the wallpaper selected for the child; parent Home,
+  Study mode, temporary parent unlock and child mode off keep the owner's Aerial wallpaper. When
+  the child wallpaper is missing or unreadable, the stock picture is used instead of exposing the
+  parent's wallpaper.
+
+### Changed
+
+- Parent Center configuration is now centred on the phone page: time and apps, quiz levels, the
+  question bank, media and wallpapers, auto-update and control actions are edited there. The TV
+  Parent Center keeps the child-mode switch, status and QR entry and no longer blocks the phone
+  editor; a second phone still has to take over explicitly.
+- The optional parent app scans with a CameraX preview and native zxing-cpp decoding. Continuous
+  focus, tap-to-focus, pinch or slider zoom and the torch make the TV QR easier to read at an
+  angle, in low light or from farther away. Parent app `1.1.0` / `4`.
+- The Aerial base moves from 1.93 to 1.97 (versionCode 131 to 142). Upstream fixes include XGIMI
+  Home chooser and accessibility guard recovery, held volume keys, recent apps on Skyworth and
+  Dangbei, inputs on Skyworth, JMGO, Hisense, LeTV, HS350 and Redmi, background-restart and boot
+  black-screen fixes, resumable in-app updates with a fallback when the installer page crashes,
+  and the weather state in diagnostics. These upstream fixes were not re-tested on every model by
+  this project; device support follows Aerial.
+
+### Fixed
+
+- A wrong-review level no longer starts with fewer mistakes than the configured round; the TV
+  shows the shortfall and the phone shows the available count.
+- The TV Parent Center can be closed with Back or Home again, and the phone control page no
+  longer flashes the Parent Center while it loads.
+- Parent Center and the phone page no longer wait on each other: opening the TV Parent Center
+  does not lock out a phone that is already editing.
+
 ## [1.93.005] - 2026-11-12
 
 Parent app scanner update, based on Aerial 1.93 / versionCode 131. Version code `131005`. There

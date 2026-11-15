@@ -98,6 +98,7 @@ internal object BotActions {
         RejectReason.PARENT_OVERRIDE -> "电视已处于临时解锁状态"
         RejectReason.BUSY -> "已有观看进行中，可发「状态」看剩余时间"
         RejectReason.RESTING -> "强制休息中，休息结束后才能开始"
+        RejectReason.DAILY_LIMIT -> "今日额度已用完，明天再试"
         RejectReason.SCREEN_OFF -> "电视处于息屏状态"
         RejectReason.OUTSIDE_WINDOW -> "不在允许观看时段内"
         RejectReason.NO_TIMED_APPS -> "尚未配置计时应用，请先在家长中心选择"

@@ -3,6 +3,7 @@ package app.orchard.tv.quiz
 import android.content.Context
 import app.orchard.tv.policy.ManualSessionLimits
 import app.orchard.tv.policy.PolicyModeCoordinator
+import app.orchard.tv.policy.web.ParentWebCenter
 import fi.iki.elonen.NanoHTTPD
 import fi.iki.elonen.NanoHTTPD.IHTTPSession
 import fi.iki.elonen.NanoHTTPD.Method
@@ -13,8 +14,13 @@ import com.planyourtv.policy.quiz.QuizAnswerScope
 import com.planyourtv.policy.quiz.QuizBankImport
 import com.planyourtv.policy.quiz.QuizCollection
 import com.planyourtv.policy.quiz.QuizCollectionLevel
+import com.planyourtv.policy.quiz.QuizConfigDocument
+import com.planyourtv.policy.quiz.QuizConfigDocumentCodec
 import com.planyourtv.policy.quiz.QuizCurriculum
 import com.planyourtv.policy.quiz.QuizDecodeResult
+import com.planyourtv.policy.quiz.QuizDocDecodeResult
+import com.planyourtv.policy.quiz.QuizDocIssue
+import com.planyourtv.policy.quiz.QuizEngineConfig
 import com.planyourtv.policy.quiz.QuizImportError
 import com.planyourtv.policy.quiz.QuizImportResult
 import com.planyourtv.policy.quiz.QuizItem
@@ -24,6 +30,7 @@ import com.planyourtv.policy.quiz.QuizSessionCodec
 import com.planyourtv.policy.quiz.QuizSessionStatus
 import com.planyourtv.policy.quiz.QuizSessionValidation
 import com.planyourtv.policy.quiz.QuizUnitCatalog
+import com.planyourtv.policy.quiz.QuizWrongReviewLevel
 import org.json.JSONArray
 import java.util.Locale
 import java.util.UUID
@@ -39,6 +46,15 @@ object QuizWebAdmin {
     private const val MAX_PROVIDER_KEY_LENGTH = 4096
     private const val IMPORT_PATH = "/api/quiz/admin/bank/import"
 
+    /** Device-capability failures share one 400 UNSUPPORTED contract. */
+    private val CAPABILITY_ISSUE_CODES = setOf(
+        "UNSUPPORTED_FILL",
+        "UNSUPPORTED_AUTO_NEXT",
+        "UNSUPPORTED_PINYIN",
+        "TIME_LIMIT_OVER_MAX",
+        "LEVEL_LIMIT_20",
+    )
+
     /**
      * NanoHTTPD keeps one [IHTTPSession] for the whole keep-alive connection,
      * so caching bodies by session would return the first request's body for
@@ -49,9 +65,15 @@ object QuizWebAdmin {
     private val requestBody = ThreadLocal<JSONObject?>()
 
     fun handle(context: Context, session: IHTTPSession, path: String): Response? {
-        // PhoneServer still serves wallpaper/setup pages in cloud mode. Only the quiz page
-        // and its API are local-mode features, so gate those paths instead of the server.
-        if (isQuizPath(path) && PolicyModeCoordinator.mode != PolicyMode.LOCAL) {
+        // PhoneServer still serves wallpaper/setup pages in cloud mode. The quiz API is a
+        // local-mode feature. With V27 enabled the page shell is also the parent-center host,
+        // so it stays available in NONE/CLOUD; its parent API has its own gate.
+        if (isQuizApiPath(path) && PolicyModeCoordinator.mode != PolicyMode.LOCAL) {
+            return error(Response.Status.GONE, "LOCAL_ONLY")
+        }
+        if (isQuizShellPath(path) && PolicyModeCoordinator.mode != PolicyMode.LOCAL &&
+            !ParentWebCenter.ENABLED
+        ) {
             return error(Response.Status.GONE, "LOCAL_ONLY")
         }
         return when {
@@ -69,12 +91,10 @@ object QuizWebAdmin {
         }
     }
 
-    private fun isQuizPath(path: String): Boolean =
-        path == "/quiz" ||
-            path == "/quiz/" ||
-            path == "/quiz.js" ||
-            path == "/quiz.css" ||
-            path.startsWith("/api/quiz/")
+    private fun isQuizShellPath(path: String): Boolean =
+        path == "/quiz" || path == "/quiz/" || path == "/quiz.js" || path == "/quiz.css"
+
+    private fun isQuizApiPath(path: String): Boolean = path.startsWith("/api/quiz/")
 
     private fun api(session: IHTTPSession, path: String): Response {
         // NanoHTTPD 2.3.1 leaves a POST body on the keep-alive stream when the
@@ -98,6 +118,8 @@ object QuizWebAdmin {
                 session.method == Method.PUT && path == "/api/quiz/admin/session" -> putSession(session)
                 session.method == Method.DELETE && path == "/api/quiz/admin/session" -> deleteSession(session)
                 session.method == Method.POST && path == "/api/quiz/admin/challenge-config" -> saveChallengeConfig(session)
+                session.method == Method.GET && path == "/api/quiz/admin/config-document" -> readConfigDocument(session)
+                session.method == Method.PUT && path == "/api/quiz/admin/config-document" -> saveConfigDocument(session)
                 session.method == Method.GET && path == "/api/quiz/admin/bank" -> readBank(session)
                 session.method == Method.GET && path == "/api/quiz/admin/bank/facets" -> readBankFacets(session)
                 session.method == Method.POST && path == IMPORT_PATH -> importBank(session)
@@ -358,11 +380,14 @@ object QuizWebAdmin {
         QuizConfigSync.refreshFromCloudAsync()
         val state = QuizRuntime.refresh()
         val current = state.session
-        val challengeConfig = QuizSessionStore.loadChallengeConfig()
-            ?: com.planyourtv.policy.quiz.QuizConfig()
+        // This page is LOCAL-only, so the active QCD is the only configuration
+        // source. An unreadable document yields the neutral default here and is
+        // reported explicitly below; the old keys are never read back.
+        val challengeConfig = state.defaultChallengeConfig
         val body = JSONObject()
             .put("ok", true)
             .put("enabled", state.enabled)
+            .put("documentUnreadable", state.documentUnreadable)
         if (current == null) {
             body.put("session", JSONObject.NULL)
         } else if (current.status in ACTIVE_STATUSES) {
@@ -404,6 +429,18 @@ object QuizWebAdmin {
                 }
             },
         )
+        val wrongReviewLevel = QuizWrongReviewLevelStore.level()
+        body.put(
+            "wrongLevel",
+            if (wrongReviewLevel == null) {
+                JSONObject.NULL
+            } else {
+                JSONObject()
+                    .put("id", wrongReviewLevel.id)
+                    .put("name", wrongReviewLevel.name)
+                    .put("available", QuizQuestionCache.wrongReviewCount())
+            },
+        )
         body.put(
             "collections",
             JSONArray().apply {
@@ -436,7 +473,7 @@ object QuizWebAdmin {
                 answerScope = answerScope,
             ),
         )
-        body.put("engineConfig", QuizSessionStore.loadEngineConfig().let {
+        body.put("engineConfig", QuizEngineConfig.from(challengeConfig).let {
             JSONObject()
                 .put("pullCount", it.pullCount)
                 .put("defaultTimeLimitSec", it.defaultTimeLimitSec)
@@ -1106,7 +1143,8 @@ object QuizWebAdmin {
     private fun cacheJson(): JSONObject {
         val state = QuizRuntime.refresh()
         val source = QuizSessionStore.loadSourceConfig()
-        val engine = QuizSessionStore.loadEngineConfig()
+        // LOCAL-only surface: project the active document, never the old key.
+        val engine = QuizEngineConfig.from(state.defaultChallengeConfig)
         val counts = state.bankCounts
         return JSONObject()
             .put("ok", true)
@@ -1197,14 +1235,82 @@ object QuizWebAdmin {
         } else {
             null
         }
-        if (levels != null || customLevels != null) {
+        // Wrong review is a single optional level under its own key. An absent
+        // field leaves it untouched; an explicit null removes it.
+        val wrongLevelProvided = body.has("wrongLevel")
+        val wrongLevel: QuizWrongReviewLevel? = if (wrongLevelProvided) {
+            if (body.isNull("wrongLevel")) {
+                null
+            } else {
+                QuizWrongReviewLevel.parse(body.optJSONObject("wrongLevel"))
+                    ?: return error(Response.Status.BAD_REQUEST, "INVALID_WRONG_LEVEL")
+            }
+        } else {
+            null
+        }
+        // Phase 1 adapter: the old form edits the active QCD's default profile
+        // and rules. Everything it cannot express survives the save.
+        val current = when (val loaded = QuizConfigDocumentStore.ensureLocalDocument()) {
+            is QuizDocLoadResult.Ok -> loaded.document
+            is QuizDocLoadResult.Unreadable -> return error(
+                Response.Status.CONFLICT,
+                "DOCUMENT_UNREADABLE",
+            )
+            QuizDocLoadResult.Storage -> return error(
+                Response.Status.INTERNAL_ERROR,
+                "STORAGE_ERROR",
+            )
+        }
+        // A cached page has no feedback object and no feedbackExtraHoldSec key,
+        // so simply opening and saving it must not wipe a JSON-set value.
+        val feedbackRequest = body.optJSONObject("feedback")
+        val feedback = QuizLegacyConfigAdapter.FeedbackOverride(
+            extraHoldSec = when {
+                feedbackRequest?.has("extraHoldSec") == true ->
+                    feedbackRequest.optInt("extraHoldSec")
+                configObject.has("feedbackExtraHoldSec") -> config.feedbackExtraHoldSec
+                else -> null
+            },
+            answerRevealSec = if (feedbackRequest?.has("answerRevealSec") == true) {
+                feedbackRequest.optInt("answerRevealSec")
+            } else {
+                null
+            },
+            autoNext = if (feedbackRequest?.has("autoNext") == true) {
+                feedbackRequest.optBoolean("autoNext")
+            } else {
+                null
+            },
+        )
+        val updated = QuizLegacyConfigAdapter.apply(
+            current = current,
+            config = config,
+            feedback = feedback,
+            hasAnswerDisplaySec = configObject.has("answerDisplaySec"),
+            levels = levels,
+        )
+        if (levels != null || customLevels != null || wrongLevelProvided) {
             val knownTags = QuizCollectionStore.collections().mapTo(HashSet()) { it.id }
             if (customLevels?.any { it.collectionId !in knownTags } == true) {
                 return error(Response.Status.BAD_REQUEST, "INVALID_CUSTOM_LEVEL")
             }
+            if (wrongLevel != null) {
+                val usedIds = (levels ?: QuizAnswerScopeStore.levels())
+                    .mapTo(HashSet()) { it.id }
+                (customLevels ?: QuizCollectionStore.customLevels())
+                    .forEach { usedIds += it.id }
+                if (wrongLevel.id in usedIds) {
+                    return error(Response.Status.BAD_REQUEST, "INVALID_WRONG_LEVEL")
+                }
+            }
             val courseCount = levels?.size ?: QuizAnswerScopeStore.levels().size
             val customCount = customLevels?.size ?: QuizCollectionStore.customLevels().size
-            if (courseCount + customCount > QuizLevel.MAX_LEVELS) {
+            val wrongCount = when {
+                wrongLevelProvided -> if (wrongLevel == null) 0 else 1
+                QuizWrongReviewLevelStore.level() != null -> 1
+                else -> 0
+            }
+            if (courseCount + customCount + wrongCount > QuizLevel.MAX_LEVELS) {
                 return error(Response.Status.BAD_REQUEST, "TOO_MANY_LEVELS")
             }
         }
@@ -1213,17 +1319,34 @@ object QuizWebAdmin {
         } else {
             null
         }
-        if (!QuizSessionStore.saveChallengeConfig(config)) {
-            return error(Response.Status.INTERNAL_ERROR, "STORAGE_ERROR")
-        }
-        if (levels != null && !QuizAnswerScopeStore.save(levels)) {
-            return error(Response.Status.INTERNAL_ERROR, "STORAGE_ERROR")
+        // One write: rules, default profile and levels land in the same revision.
+        val saved = when (val result = QuizConfigDocumentStore.saveLocal(updated, current.revision)) {
+            is QuizDocSaveResult.Ok -> result.document
+            is QuizDocSaveResult.Conflict -> return error(
+                Response.Status.CONFLICT,
+                "REVISION_CONFLICT",
+            )
+            is QuizDocSaveResult.Invalid -> return invalidDocument("INVALID_DOCUMENT", result.issues)
+            QuizDocSaveResult.Storage -> return error(
+                Response.Status.INTERNAL_ERROR,
+                "STORAGE_ERROR",
+            )
         }
         if (customLevels != null && !QuizCollectionStore.saveCustomLevels(customLevels)) {
             return error(Response.Status.INTERNAL_ERROR, "STORAGE_ERROR")
         }
+        if (wrongLevelProvided) {
+            val savedWrong = if (wrongLevel == null) {
+                QuizWrongReviewLevelStore.clear()
+            } else {
+                QuizWrongReviewLevelStore.save(wrongLevel)
+            }
+            if (!savedWrong) return error(Response.Status.INTERNAL_ERROR, "STORAGE_ERROR")
+        }
         QuizConfigSync.afterLocalEdit()
-        val effectiveLevels = QuizAnswerScopeStore.levels()
+        val effectiveConfig = saved.toLegacyConfig()
+            ?: return error(Response.Status.INTERNAL_ERROR, "DOCUMENT_PROJECTION_FAILED")
+        val effectiveLevels = saved.localLevels() ?: emptyList()
         val effectiveScope = effectiveLevels.firstOrNull()?.scope
         if (previousScopeSignature != null &&
             previousScopeSignature != QuizAnswerScopeStore.currentSignature()
@@ -1234,7 +1357,7 @@ object QuizWebAdmin {
             Response.Status.OK,
             JSONObject()
                 .put("ok", true)
-                .put("config", QuizSessionCodec.encodeConfig(config))
+                .put("config", QuizSessionCodec.encodeConfig(effectiveConfig))
                 .put("answerScope", effectiveScope?.encode() ?: JSONObject.NULL)
                 .put("answerScopeMode", if (effectiveScope == null) "bound" else "custom")
                 .put("answerScopes", answerLevelsJson(effectiveLevels))
@@ -1248,6 +1371,115 @@ object QuizWebAdmin {
                 .put("syncState", QuizSessionStore.loadSyncState().encode()),
         )
     }
+
+    /**
+     * The full QCD of this TV. [docState] explains why [document] is null: an
+     * unreadable document is an explicit state, never an empty config.
+     */
+    private fun readConfigDocument(session: IHTTPSession): Response {
+        adminError(session)?.let { return it }
+        return when (val loaded = QuizConfigDocumentStore.ensureLocalDocument()) {
+            is QuizDocLoadResult.Ok ->
+                json(Response.Status.OK, documentJson(loaded.document).put("docState", "OK"))
+            is QuizDocLoadResult.Unreadable -> {
+                val migrationInvalid = loaded.errors.any { it.startsWith("legacyConfig:") }
+                json(
+                    Response.Status.OK,
+                    JSONObject()
+                        .put("ok", true)
+                        .put(
+                            "docState",
+                            if (migrationInvalid) "MIGRATION_INVALID" else "UNREADABLE",
+                        )
+                        .put("document", JSONObject.NULL)
+                        .put("issues", JSONArray(loaded.errors)),
+                )
+            }
+            QuizDocLoadResult.Storage -> error(Response.Status.INTERNAL_ERROR, "STORAGE_ERROR")
+        }
+    }
+
+    /**
+     * Whole-document replace. The TV owns the revision counter: [baseRevision]
+     * is only a compare-and-swap guard, and the stored revision always advances
+     * by one. A running round keeps the snapshot it froze at start.
+     */
+    private fun saveConfigDocument(session: IHTTPSession): Response {
+        adminError(session)?.let { return it }
+        val body = jsonBody(session) ?: return error(Response.Status.BAD_REQUEST, "INVALID_JSON")
+        val documentObject = body.optJSONObject("document")
+            ?: return error(Response.Status.BAD_REQUEST, "INVALID_DOCUMENT")
+        val baseRevision = if (body.has("baseRevision") && !body.isNull("baseRevision")) {
+            val raw = body.optLong("baseRevision", Long.MIN_VALUE)
+            if (raw == Long.MIN_VALUE) {
+                return error(Response.Status.BAD_REQUEST, "INVALID_DOCUMENT")
+            }
+            raw
+        } else {
+            null
+        }
+        val document = when (val decoded = QuizConfigDocumentCodec.decode(documentObject.toString())) {
+            is QuizDocDecodeResult.Success -> decoded.document
+            is QuizDocDecodeResult.Failure ->
+                return invalidDocument("INVALID_DOCUMENT", decoded.issues)
+        }
+        val issues = QuizLocalConfigDocument.localWriteIssues(document)
+        if (issues.isNotEmpty()) {
+            return invalidDocument(
+                if (issues.all { it.code in CAPABILITY_ISSUE_CODES }) "UNSUPPORTED" else "INVALID_DOCUMENT",
+                issues,
+            )
+        }
+        return when (val saved = QuizConfigDocumentStore.saveLocal(document, baseRevision)) {
+            is QuizDocSaveResult.Ok -> {
+                QuizConfigSync.afterLocalEdit()
+                QuizRuntime.refresh()
+                json(Response.Status.OK, documentJson(saved.document).put("docState", "OK"))
+            }
+            is QuizDocSaveResult.Conflict -> json(
+                Response.Status.CONFLICT,
+                JSONObject()
+                    .put("ok", false)
+                    .put("error", "REVISION_CONFLICT")
+                    .put("revision", saved.current?.revision ?: 0L)
+                    .put("etag", saved.current?.etag ?: "")
+                    .put(
+                        "document",
+                        saved.current?.let { QuizConfigDocumentCodec.encodeDocument(it) }
+                            ?: JSONObject.NULL,
+                    ),
+            )
+            is QuizDocSaveResult.Invalid -> invalidDocument(
+                if (saved.issues.all { it.code in CAPABILITY_ISSUE_CODES }) {
+                    "UNSUPPORTED"
+                } else {
+                    "INVALID_DOCUMENT"
+                },
+                saved.issues,
+            )
+            QuizDocSaveResult.Storage -> error(Response.Status.INTERNAL_ERROR, "STORAGE_ERROR")
+        }
+    }
+
+    private fun documentJson(document: QuizConfigDocument): JSONObject = JSONObject()
+        .put("ok", true)
+        .put("document", QuizConfigDocumentCodec.encodeDocument(document))
+        .put("revision", document.revision)
+        .put("etag", document.etag)
+        .put("levelsEtag", document.levelsEtag)
+        .put("origin", document.origin.name)
+
+    private fun invalidDocument(errorCode: String, issues: List<QuizDocIssue>): Response = json(
+        Response.Status.BAD_REQUEST,
+        JSONObject()
+            .put("ok", false)
+            .put("error", errorCode)
+            .put("issues", JSONArray().apply {
+                issues.forEach {
+                    put(JSONObject().put("field", it.field).put("code", it.code))
+                }
+            }),
+    )
 
     private fun deleteSession(session: IHTTPSession): Response {
         adminError(session)?.let { return it }

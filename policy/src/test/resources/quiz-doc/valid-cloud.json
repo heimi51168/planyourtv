@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "documentId": "quizcfg:family:123:member:456",
+  "revision": 12,
+  "levelsEtag": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "etag": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+  "origin": "CLOUD",
+  "updatedAt": "2026-11-13T09:30:00+08:00",
+  "updatedBy": "PARENT_APP",
+  "enabled": true,
+  "rules": {
+    "questionCount": 5,
+    "timeLimitSec": 300,
+    "feedback": {
+      "extraHoldSec": 10,
+      "answerRevealSec": 60,
+      "autoNext": false
+    },
+    "shuffleOptions": true,
+    "showPinyin": false,
+    "sourceOrder": ["WRONG", "PUBLIC", "PERSONAL"],
+    "subjects": ["MATH"],
+    "legacy": {
+      "minCorrectCount": 1,
+      "minutesPerPoint": 5,
+      "minutesPerQuestion": 5,
+      "pointsPerQuestion": 1
+    }
+  },
+  "reward": {
+    "mode": "DIFFICULTY_SECONDS",
+    "profiles": {
+      "default": {
+        "correctSeconds": {"EASY": 60, "MEDIUM": 120, "HARD": 180},
+        "penaltySeconds": {"EASY": 0, "MEDIUM": 0, "HARD": 0},
+        "maxEarnedSeconds": 3600,
+        "minUnlockSeconds": 0
+      },
+      "weekday": null,
+      "weekend": {
+        "correctSeconds": {"EASY": 120, "MEDIUM": 240, "HARD": 360},
+        "penaltySeconds": {"EASY": 0, "MEDIUM": 0, "HARD": 0},
+        "maxEarnedSeconds": 5400,
+        "minUnlockSeconds": 60
+      }
+    }
+  },
+  "quota": {
+    "dailyMaxSeconds": 7200,
+    "enforcedBy": "CLOUD"
+  },
+  "calendar": {
+    "timezone": "Asia/Shanghai",
+    "weekendDays": [6, 7]
+  },
+  "questionPolicy": {
+    "allowedTypes": ["SINGLE", "FILL"],
+    "judgeMode": "LOCAL_OR_SERVER"
+  },
+  "requirements": {
+    "required": ["SINGLE", "REWARD_PROFILES"],
+    "optional": ["FILL"]
+  },
+  "levels": [
+    {
+      "levelId": "cloud:42",
+      "origin": "CLOUD",
+      "name": "数学第三单元",
+      "enabled": true,
+      "sortNo": 0,
+      "sources": ["BANK", "WRONG"],
+      "subjects": ["MATH"],
+      "scopeType": "UNIT",
+      "unitNos": [3],
+      "unitGroups": [],
+      "grade": 4,
+      "semester": 2,
+      "textbookId": 88,
+      "textbook": "RENJIAO",
+      "difficulty": "MEDIUM",
+      "advisoryQuestionCount": 5,
+      "questionTypes": ["SINGLE"],
+      "sourceScopes": {
+        "BANK": {
+          "subjects": ["MATH"],
+          "units": {"MATH": [3]},
+          "categories": {},
+          "knowledgePoints": {}
+        },
+        "WRONG": {
+          "subjects": ["MATH"],
+          "masteredOnly": false
+        }
+      }
+    },
+    {
+      "levelId": "cloud:43",
+      "origin": "CLOUD",
+      "name": "语文默写",
+      "enabled": true,
+      "sortNo": 1,
+      "sources": ["PERSONAL"],
+      "subjects": ["CHINESE"],
+      "scopeType": "MIDTERM",
+      "unitNos": [],
+      "unitGroups": [],
+      "grade": 4,
+      "semester": 2,
+      "textbookId": 91,
+      "textbook": "BUBIAN",
+      "difficulty": null,
+      "advisoryQuestionCount": 5,
+      "questionTypes": ["SINGLE", "FILL"],
+      "sourceScopes": {
+        "PERSONAL": {
+          "subjects": ["CHINESE"],
+          "ids": []
+        }
+      }
+    }
+  ],
+  "extensions": {
+    "cloud": {
+      "checkinPriority": {
+        "enabled": true,
+        "levels": ["P1", "P2", "P3"],
+        "depth": 1
+      },
+      "ec": {
+        "enabled": false
+      },
+      "levelsSource": "CUSTOM"
+    }
+  }
+}

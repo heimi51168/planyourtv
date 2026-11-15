@@ -5,6 +5,11 @@ import android.os.PowerManager
 import android.util.Log
 import app.orchard.tv.BuildConfig
 import app.orchard.tv.guard.HomeGuardService
+import app.orchard.tv.policy.web.ParentWebAccess
+import app.orchard.tv.policy.web.ParentWebCenter
+import app.orchard.tv.quiz.QuizAccess
+import app.orchard.tv.quiz.QuizChallenge
+import app.orchard.tv.quiz.QuizConfigDocumentSync
 import app.orchard.tv.quiz.QuizConfigSync
 import app.orchard.tv.quiz.QuizRuntime
 import com.planyourtv.policy.AccessMode
@@ -108,6 +113,7 @@ object PolicyModeCoordinator {
         AUTO_MODE,
         RESTING,
         OUTSIDE_WINDOW,
+        DAILY_LIMIT,
         NO_TIMED_APPS,
         STATE_CHANGED,
     }
@@ -190,6 +196,15 @@ object PolicyModeCoordinator {
         parentAuth.onParentVerified(pin)
     }
 
+    /**
+     * Whether the shared parent proof is still inside its TTL. The web parent center cannot
+     * rely on [parentAuthenticated]: the flow may stay true until the next guard event.
+     */
+    fun parentProofValid(): Boolean = parentAuth.proofValid()
+
+    /** Remaining parent proof time in milliseconds; zero when no proof is valid. */
+    fun parentProofRemainingMs(): Long = parentAuth.remainingMs()
+
     private val _revision = MutableStateFlow(0L)
     val revision: StateFlow<Long> = _revision.asStateFlow()
 
@@ -253,6 +268,7 @@ object PolicyModeCoordinator {
                 PolicyMode.LOCAL -> {
                     LocalPolicyRuntime.setSource(PolicySource.LOCAL)
                     LocalPolicyRuntime.lockForModeSwitch()
+                    LocalPolicyRuntime.ensureLocalManualActivation()
                     LocalPolicyRuntime.activate()
                 }
                 PolicyMode.CLOUD -> {
@@ -819,8 +835,10 @@ object PolicyModeCoordinator {
         return when {
             local.guardState == GuardStatus.PARENT_OVERRIDE -> true
             local.guardState == GuardStatus.STUDY_MODE -> false
-            local.sessionState == SessionState.ACTIVE &&
-                local.guardState == GuardStatus.ENFORCING -> true
+            // The switch is the parent's whole decision. The lock screen does not draw Home
+            // behind it, so allowing entries while the child is not in a session only affects
+            // the parent panel that the lock screen offers from its top-right pill.
+            local.guardState == GuardStatus.ENFORCING -> true
             else -> false
         }
     }
@@ -1075,6 +1093,9 @@ object PolicyModeCoordinator {
         if (ui.lockReason == LockReason.OUTSIDE_WINDOW) {
             return WebManualStartStatus(false, WebManualStartReason.OUTSIDE_WINDOW)
         }
+        if (ui.lockReason == LockReason.TIME_UP) {
+            return WebManualStartStatus(false, WebManualStartReason.DAILY_LIMIT)
+        }
         if (ui.noTimedApps || ui.lockReason == LockReason.NO_TIMED_APPS) {
             return WebManualStartStatus(false, WebManualStartReason.NO_TIMED_APPS)
         }
@@ -1163,6 +1184,7 @@ object PolicyModeCoordinator {
         RejectReason.RESTING -> WebManualStartReason.RESTING
         RejectReason.SCREEN_OFF -> WebManualStartReason.SCREEN_OFF
         RejectReason.OUTSIDE_WINDOW -> WebManualStartReason.OUTSIDE_WINDOW
+        RejectReason.DAILY_LIMIT -> WebManualStartReason.DAILY_LIMIT
         RejectReason.NO_TIMED_APPS -> WebManualStartReason.NO_TIMED_APPS
     }
 
@@ -1360,6 +1382,77 @@ object PolicyModeCoordinator {
     }
 
     /**
+     * Web control: temporarily hand the TV to the parent from any child-mode subflow.
+     *
+     * This is intentionally not the lock-screen unlock path. It ends a running session and
+     * skips that segment's rest, clears a quiz round without paying its reward, and leaves a
+     * pending remote grant in place. Repeating it while already overridden is a no-op and must
+     * not extend the override deadline. Returns false when there was nothing to change.
+     */
+    @Synchronized
+    fun takeOverFromWeb(): Boolean {
+        if (mode != PolicyMode.LOCAL) return false
+        if (state.value.guardState == GuardStatus.PARENT_OVERRIDE) return false
+        // Clear a live round before the guard moves. If the round's review thread wins the
+        // race, the runtime admission below still refuses a reward under PARENT_OVERRIDE.
+        QuizChallenge.abandon()
+        LocalPolicyRuntime.beginParentOverride()
+        publishCurrent()
+        return true
+    }
+
+    /** Web control: leave the parent override and return to the normal child guard. */
+    @Synchronized
+    fun enterChildModeFromWeb(): Boolean {
+        if (mode != PolicyMode.LOCAL) return false
+        if (state.value.guardState != GuardStatus.PARENT_OVERRIDE) return false
+        resumeChildGuard()
+        // resumeChildGuard() delegates to onScreenOff(), whose runtime publishes on its own
+        // thread; mirror it here so the HTTP response already carries the restored state.
+        publishCurrent()
+        return true
+    }
+
+    /**
+     * Web control: the child's "exit timer" action. It keeps the used time and follows the
+     * normal USER_EXIT path, which starts the configured rest instead of skipping it.
+     */
+    @Synchronized
+    fun stopTimerFromWeb(): Boolean {
+        if (mode != PolicyMode.LOCAL) return false
+        if (LocalPolicyRuntime.state.value.sessionState != SessionState.ACTIVE) return false
+        val ended = LocalPolicyRuntime.endSessionByUser()
+        if (ended) publishCurrent()
+        return ended
+    }
+
+    /** Live quiz state for the control page. Refreshes the lightweight persisted snapshot. */
+    fun quizRoundActive(): Boolean = QuizRuntime.isRoundActive()
+
+    /**
+     * Values that make a confirmation token single-use for the exact guard/session/quiz it was
+     * issued against. Countdowns are deliberately absent: a token remains valid while the same
+     * timer runs, but a new timer or a quiz round transition changes the string.
+     */
+    fun controlStateFingerprint(): String {
+        val ui = state.value
+        val quiz = QuizRuntime.state.value.session
+        val quizPart = quiz?.let {
+            "${it.id}:${it.status.name}:${it.run?.startedAt ?: 0L}"
+        } ?: "none"
+        return listOf(
+            ui.mode.name,
+            ui.guardState.name,
+            ui.sessionState.name,
+            ui.activation.name,
+            ui.lockReason.name,
+            ui.studyModeActive.toString(),
+            LocalPolicyRuntime.activeSessionStartedAtEpochMs().toString(),
+            quizPart,
+        ).joinToString("|")
+    }
+
+    /**
      * Study mode is an access state entered from the lock-screen overlay. The lock screen shows
      * the entry in every mode, so the redemption engine needs one too instead of delegating only
      * to the hosted/local rule executor.
@@ -1404,7 +1497,9 @@ object PolicyModeCoordinator {
     }
 
     fun onScreenOff() {
-        // The temporary-unlock proof expires with the unlock it came from.
+        // Only the temporary-unlock proof expires with the guard. The web parent center is
+        // authenticated by the normal quiz parent login in V29, so a screen-off no longer
+        // logs the web page out.
         parentAuth.clear()
         when (mode) {
             PolicyMode.CLOUD -> if (ruleGuardActive) {
@@ -1431,7 +1526,11 @@ object PolicyModeCoordinator {
      * not. ACTIVE is ended first (cloud settlement is required; pending cloud time is refused),
      * and the target mode never inherits the source mode's temporary unlock.
      */
-    suspend fun requestModeSwitch(target: PolicyMode, pin: String): SwitchResult {
+    suspend fun requestModeSwitch(
+        target: PolicyMode,
+        pin: String,
+        invalidateWeb: Boolean = true,
+    ): SwitchResult {
         if (!initialized) return SwitchResult.NotReady
         if (target == PolicyMode.CLOUD && !BuildConfig.CLOUD_ENABLED) return SwitchResult.NotReady
         if (target == mode) return SwitchResult.Success
@@ -1439,6 +1538,9 @@ object PolicyModeCoordinator {
             val verified = verifyPin(pin)
             if (verified != PinResult.OK) return SwitchResult.WrongPin(verified)
         }
+        // A TV-driven mode switch revokes both the quiz login and the parent editor: the web
+        // page is only valid in LOCAL and unbound, so the authorization changed underneath it.
+        if (invalidateWeb) invalidateWebSessions("mode_switch")
         parentAuth.clear()
         return when (mode) {
             PolicyMode.CLOUD -> {
@@ -1463,6 +1565,7 @@ object PolicyModeCoordinator {
                             ensureLocalRules()
                             LocalPolicyRuntime.setSource(PolicySource.LOCAL)
                             LocalPolicyRuntime.lockForModeSwitch()
+                            LocalPolicyRuntime.ensureLocalManualActivation()
                             LocalPolicyRuntime.activate()
                         }
                         PolicyMode.CLOUD -> Unit
@@ -1499,6 +1602,7 @@ object PolicyModeCoordinator {
                         ensureLocalRules()
                         LocalPolicyRuntime.setSource(PolicySource.LOCAL)
                         LocalPolicyRuntime.lockForModeSwitch()
+                        LocalPolicyRuntime.ensureLocalManualActivation()
                         LocalPolicyRuntime.activate()
                     }
                     PolicyMode.CLOUD -> {
@@ -1564,6 +1668,16 @@ object PolicyModeCoordinator {
         }
     }
 
+    /**
+     * One revocation point for every transition that invalidates web authorization. Clearing
+     * the remembered quiz token as well as the editor lease is what forces the page back to
+     * its login or disabled screen instead of letting a cached tab keep editing.
+     */
+    private fun invalidateWebSessions(reason: String) {
+        if (ParentWebCenter.ENABLED) ParentWebAccess.invalidate(reason)
+        QuizAccess.invalidateWebSession(reason)
+    }
+
     /** Report immediately after binding, mode switch, or when HomeGuard asks for a refresh. */
     fun reportModeNow() {
         scope.launch { reportModeOnce() }
@@ -1588,8 +1702,7 @@ object PolicyModeCoordinator {
             appliedMode = appliedRemoteMode,
             appliedConfigVersion = appliedRemoteVersion.takeIf { it > 0 },
             policyEpoch = state.value.policyEpoch,
-            supportsQuizConfig = QuizConfigSync.SUPPORTS_QUIZ_CONFIG,
-            supportsCloudQuiz = QuizConfigSync.SUPPORTS_CLOUD_QUIZ,
+            quizCapabilities = QuizConfigSync.capabilityReport(),
             appliedQuizVersion = QuizConfigSync.appliedVersion().takeIf { it > 0 },
         ).onFailure { Log.w(TAG, "mode report failed; heartbeat will retry", it) }
     }
@@ -1603,6 +1716,9 @@ object PolicyModeCoordinator {
     fun confirmCloudBinding() {
         val app = context ?: return
         Log.i(TAG, "confirm cloud binding; previous mode=$mode")
+        // Binding hands the TV to the phone app. Any web page authorized for the local,
+        // unbound state must lose both its quiz login and its editor lease.
+        invalidateWebSessions("cloud_bound")
         if (mode != PolicyMode.CLOUD) {
             // The embedded binding guide runs while LOCAL is still protecting the TV. End that
             // session before handing the guard to the cloud engine; the scan is the consent.
@@ -1680,14 +1796,16 @@ object PolicyModeCoordinator {
                 rules = rules,
                 activation = LocalPolicyRuntime.state.value.activation,
                 ruleSets = localSets.takeIf { remote.supportsRuleSets },
-                quiz = QuizConfigSync.reportPayload(),
+                // 2026-11-12: 交接只上传本地规则，不再携带本机答题配置。
+                // 绑定后答题配置完全以云端为准（题库孩子级配置 + TV 关卡）。
+                // 回滚：恢复 quiz = QuizConfigSync.reportPayload()。
+                quiz = null,
             ).getOrElse {
                 return HandoffResult.Failed(it.message ?: "handoff failed")
             } ?: return HandoffResult.Failed("handoff returned no policy")
             PolicyRuntime.onRemotePolicy(policy)
             applyRemotePolicyMode(policy)
-            // The handoff may have carried the binding snapshot; repeating the report is
-            // idempotent and clears a pending upload whose first attempt was lost.
+            // 上行关闭后 retryNow 是 no-op（只清理旧版本遗留的 pending 标记）。
             QuizConfigSync.retryNow()
             publishCurrent()
             if (policy.handoffState == RemoteHandoffState.DONE) {
@@ -1723,6 +1841,7 @@ object PolicyModeCoordinator {
                     PolicyRuntime.onRemotePolicy(policy)
                     applyRemotePolicyMode(policy)
                     QuizConfigSync.applyRemote(snapshot.quiz)
+                    QuizConfigDocumentSync.requestSync(force = true)
                     true
                 }
             },
@@ -1738,24 +1857,29 @@ object PolicyModeCoordinator {
     @Synchronized
     fun onCloudUnboundFromBackend(): Boolean {
         if (mode != PolicyMode.CLOUD) return false
+        // The web parent center was authorized against the local, unbound state. It is not
+        // available while bound, but an old tab may still hold a login; revoke it.
+        invalidateWebSessions("cloud_unbound")
         parentAuth.clear()
-        Log.i(TAG, "cloud unbound from backend; returning to NONE")
+        Log.i(TAG, "cloud unbound from backend; returning to LOCAL")
         stopRuleGuard()
         RuleUsageReporter.clear()
-        // Set the mode first: PolicyRuntime.onCloudUnbound publishes a cloud state synchronously,
-        // and the collector must not put it back on screen after the switch.
-        mode = PolicyMode.NONE
-        PolicyModeStore.save(mode)
         // This queues one final usage report for an ACTIVE record; it is not awaited.
         PolicyRuntime.onCloudUnbound()
         PolicyRuntime.setCloudActive(false)
         // Do not delete the local question cache: it is this TV's own content. Only the cloud
         // source selection and any pending upload belong to the removed family.
         QuizConfigSync.onUnbound()
-        LocalPolicyRuntime.deactivate()
-        LocalPolicyRuntime.setSource(PolicySource.NONE)
-        _state.value = noneState()
-        _revision.value = _revision.value + 1L
+        // V29: an unbind returns to LOCAL, never NONE. Child mode stays on and the local
+        // guard picks up the rules that were mirrored before binding.
+        mode = PolicyMode.LOCAL
+        PolicyModeStore.save(mode)
+        ensureLocalRules()
+        LocalPolicyRuntime.setSource(PolicySource.LOCAL)
+        LocalPolicyRuntime.lockForModeSwitch()
+        LocalPolicyRuntime.ensureLocalManualActivation()
+        LocalPolicyRuntime.activate()
+        publishModeChange()
         return true
     }
 
@@ -1763,18 +1887,21 @@ object PolicyModeCoordinator {
     @Synchronized
     fun cancelRemoteBinding() {
         if (mode != PolicyMode.CLOUD) return
+        invalidateWebSessions("cloud_bind_canceled")
         parentAuth.clear()
         // Once the backend has confirmed the binding, Back must not silently leave the TV in
         // NONE; the one-step flow is already committed at that point.
         if (PolicyRuntime.state.value.bound) return
         stopRuleGuard()
         PolicyRuntime.setCloudActive(false)
-        LocalPolicyRuntime.deactivate()
-        LocalPolicyRuntime.setSource(PolicySource.NONE)
-        mode = PolicyMode.NONE
+        mode = PolicyMode.LOCAL
         PolicyModeStore.save(mode)
-        _state.value = noneState()
-        _revision.value = _revision.value + 1L
+        ensureLocalRules()
+        LocalPolicyRuntime.setSource(PolicySource.LOCAL)
+        LocalPolicyRuntime.lockForModeSwitch()
+        LocalPolicyRuntime.ensureLocalManualActivation()
+        LocalPolicyRuntime.activate()
+        publishModeChange()
     }
 
     /** Debug-only: used by the adb harness to avoid waiting for a real clock. */
@@ -1788,6 +1915,7 @@ object PolicyModeCoordinator {
             PolicyMode.LOCAL -> {
                 PolicyRuntime.setCloudActive(false)
                 LocalPolicyRuntime.setSource(PolicySource.LOCAL)
+                LocalPolicyRuntime.ensureLocalManualActivation()
                 LocalPolicyRuntime.activate()
             }
             PolicyMode.CLOUD -> {

@@ -158,6 +158,41 @@ h3 {
   margin: clamp(18px, 6vh, 54px) auto 0;
   box-shadow: var(--shadow);
 }
+
+/* V29 disabled page: the web parent center is only writable in local, unbound mode. */
+body.web-disabled { padding-bottom: calc(env(safe-area-inset-bottom) + 24px); }
+body.web-disabled .top { margin-top: clamp(18px, 6vh, 54px); }
+.web-disabled {
+  width: min(100%, 480px);
+  margin: clamp(6vh, 12vh, 96px) auto 0;
+  padding: 32px 26px 28px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.web-disabled-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 16px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--muted);
+}
+.web-disabled-icon svg { width: 28px; height: 28px; }
+.web-disabled h2 { margin: 0 0 10px; font-size: 22px; }
+.web-disabled .muted { margin: 0 auto 16px; max-width: 380px; font-size: 14px; line-height: 1.65; }
+.web-disabled-state {
+  display: inline-block;
+  margin: 0 0 20px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.web-disabled .error { margin: 0 0 14px; }
 .gate h2 { margin-bottom: 8px; }
 .gate .muted { margin-bottom: 20px; }
 .gate .fineprint { margin: 20px 0 0; padding-top: 16px; border-top: 1px solid var(--line); }
@@ -275,6 +310,8 @@ details summary:focus-visible {
 
 .pin-form { margin-top: 4px; }
 .pin-form .btn { width: 100%; margin-top: 12px; }
+#forgotPin { margin-top: 4px; }
+#gateOk { margin-top: 12px; }
 
 .source-banner {
   display: flex;
@@ -520,6 +557,8 @@ details.solution p {
 }
 .setting-row:last-child { border-bottom: 0; }
 .setting-row.static { cursor: default; }
+.setting-row[aria-disabled="true"] { cursor: default; opacity: 0.55; }
+.setting-row[aria-disabled="true"] .chevron { opacity: 0.35; }
 .select-row .lang-select { flex: none; }
 
 .setting-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -1276,12 +1315,16 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
 .level-lead { margin: 0 0 14px; font-size: 12.5px; }
 .level-list { display: grid; gap: 10px; margin-bottom: 14px; }
 
-/* Two equal add cards: course levels on the left, tagged levels on the right. */
+/* Two equal cards on the first row; wrong review spans the row below. */
 .level-add-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
   margin: 0 0 16px;
+}
+.level-add-card.wrong {
+  grid-column: 1 / -1;
+  min-height: 64px;
 }
 .level-add-card {
   display: flex;
@@ -1303,11 +1346,15 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
 .level-add-card.custom:hover:not(:disabled) {
   border-color: color-mix(in srgb, var(--select-border) 34%, var(--line));
 }
+.level-add-card.wrong:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--warn) 40%, var(--line));
+}
 .level-add-card:active:not(:disabled) {
   background: var(--surface-2);
   border-color: var(--accent);
 }
 .level-add-card.custom:active:not(:disabled) { border-color: var(--select-border); }
+.level-add-card.wrong:active:not(:disabled) { border-color: var(--warn); }
 .level-add-card:disabled { opacity: 0.4; cursor: default; }
 .level-add-plus {
   display: grid;
@@ -1326,6 +1373,10 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
 .level-add-card.custom .level-add-plus {
   background: var(--select-soft);
   color: var(--select-ink);
+}
+.level-add-card.wrong .level-add-plus {
+  background: var(--warn-soft);
+  color: var(--warn);
 }
 .level-add-card:active:not(:disabled) .level-add-plus { transform: scale(0.94); }
 .level-add-copy { display: grid; gap: 3px; min-width: 0; }
@@ -1476,7 +1527,6 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
   font-size: 12.5px;
 }
 .scoring-warning:empty { display: none; }
-#minUnlock { margin-top: 8px; }
 
 /* Explicit steppers are easier to operate on a phone than a scroll wheel. */
 .settings-stepper {
@@ -2031,7 +2081,9 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
   font-size: 12px;
 }
 .level-row.custom { border-color: color-mix(in srgb, var(--accent) 28%, var(--line)); }
+.level-row.wrong { border-color: color-mix(in srgb, var(--warn) 32%, var(--line)); }
 .level-index-custom { background: var(--select-soft); color: var(--select-ink); }
+.level-index-wrong { background: var(--warn-soft); color: var(--warn); }
 .level-title-row {
   display: flex;
   flex-wrap: wrap;
@@ -2049,7 +2101,12 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
   font-weight: 700;
   line-height: 1.5;
 }
-.level-action[data-custom-level-delete] { color: var(--danger); }
+.level-wrong-badge {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.level-action[data-custom-level-delete],
+.level-action[data-wrong-level-delete] { color: var(--danger); }
 
 .tag-choice-list { display: grid; gap: 8px; }
 .tag-choice {

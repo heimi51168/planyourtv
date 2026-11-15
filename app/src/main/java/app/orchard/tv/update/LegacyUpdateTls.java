@@ -19,12 +19,12 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
 /** Adds the missing public root to updater connections on Android 5 and 6 (#871). */
-final class LegacyUpdateTls {
+public final class LegacyUpdateTls {
     private static SSLSocketFactory socketFactory;
 
     private LegacyUpdateTls() {}
 
-    static void configure(Context context, HttpURLConnection connection)
+    public static void configure(Context context, HttpURLConnection connection)
             throws IOException, GeneralSecurityException {
         // Android 7+ owns domain-specific trust through the app's Network Security Config.
         if (Build.VERSION.SDK_INT >= 24 || !(connection instanceof HttpsURLConnection)) return;

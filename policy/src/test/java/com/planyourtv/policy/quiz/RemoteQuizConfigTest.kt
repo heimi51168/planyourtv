@@ -75,11 +75,17 @@ class RemoteQuizConfigTest {
 
     @Test
     fun rejectsOutOfRangeNumbers() {
-        assertNull(RemoteQuizConfig.parse(valid { it.put("pullCount", 4) }))
-        assertNull(RemoteQuizConfig.parse(valid { it.put("pullCount", 51) }))
+        assertNull(RemoteQuizConfig.parse(valid { it.put("pullCount", 0) }))
+        assertNull(
+            RemoteQuizConfig.parse(valid { it.put("pullCount", QUIZ_MAX_PULL_COUNT + 1) }),
+        )
         assertNull(RemoteQuizConfig.parse(valid { it.put("minutesPerQuestion", 0) }))
         assertNull(RemoteQuizConfig.parse(valid { it.put("minutesPerQuestion", 31) }))
-        assertNull(RemoteQuizConfig.parse(valid { it.put("defaultTimeLimitSec", 14) }))
+        assertNull(
+            RemoteQuizConfig.parse(
+                valid { it.put("defaultTimeLimitSec", QUIZ_MIN_TIME_LIMIT_SEC - 1) },
+            ),
+        )
         assertNull(
             RemoteQuizConfig.parse(
                 valid { it.put("defaultTimeLimitSec", QUIZ_MAX_TIME_LIMIT_SEC + 1) },

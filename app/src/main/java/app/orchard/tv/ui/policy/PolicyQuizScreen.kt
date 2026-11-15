@@ -62,6 +62,7 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -86,9 +87,12 @@ import androidx.compose.ui.unit.sp
 import app.orchard.tv.R
 import app.orchard.tv.quiz.CloudQuizPreparer
 import app.orchard.tv.quiz.QuizChallenge
+import app.orchard.tv.quiz.QuizConfigDocumentSync
+import app.orchard.tv.policy.media.PolicyVideoLibrary
 import app.orchard.tv.quiz.QuizRecovery
 import app.orchard.tv.quiz.QuizResultTone
 import app.orchard.tv.quiz.QuizRuntime
+import app.orchard.tv.quiz.cloudPlanMessage
 import app.orchard.tv.system.Sounds
 import app.orchard.tv.ui.components.Pressable
 import app.orchard.tv.ui.components.glassEdge
@@ -107,7 +111,9 @@ import com.planyourtv.policy.PolicyVoiceCue
 import com.planyourtv.policy.quiz.QuizAnswerScope
 import com.planyourtv.policy.quiz.QuizConfig
 import com.planyourtv.policy.quiz.QuizItem
+import com.planyourtv.policy.quiz.QuizRewardProfile
 import com.planyourtv.policy.quiz.QuizScoring
+import com.planyourtv.policy.quiz.QuizScoringV6
 import com.planyourtv.policy.quiz.QuizSession
 import com.planyourtv.policy.quiz.QuizSessionStatus
 import com.planyourtv.policy.quiz.QuizSubmission
@@ -236,6 +242,7 @@ fun PolicyQuizScreen(onClose: () -> Unit) {
                 onExit = ::abandonAndClose,
             )
             hosted -> QuizCloudSetupScreen(
+                state = state,
                 onClose = ::closeCleanly,
                 onReady = { cloudReady = true },
             )
@@ -430,13 +437,21 @@ internal data class QuizQr(
  * empty square.
  */
 @Composable
-internal fun rememberQuizQr(scale: Int, attempt: Int = 0): QuizQr {
+internal fun rememberQuizQr(
+    scale: Int,
+    attempt: Int = 0,
+    enabled: Boolean = true,
+    fragment: String? = null,
+): QuizQr {
     val context = LocalContext.current
     var qr by remember { mutableStateOf(QuizQr(null, null, true)) }
-    LaunchedEffect(scale, attempt) {
+    LaunchedEffect(scale, attempt, enabled, fragment) {
+        // A pre-drawn but hidden panel may compose this; only a visible one may start the
+        // phone server or spend CPU on the bitmap.
+        if (!enabled) return@LaunchedEffect
         qr = QuizQr(qr.url, qr.bitmap, true)
         val link = withContext(Dispatchers.IO) {
-            PhoneServer.start(context)?.let { "${it}quiz" }
+            PhoneServer.start(context)?.let { "${it}quiz${fragment.orEmpty()}" }
         }
         val bitmap = link?.let {
             withContext(Dispatchers.Default) {
@@ -480,11 +495,11 @@ private fun QuizQrCard(qr: QuizQr, size: Dp, modifier: Modifier = Modifier) {
 }
 
 /**
- * The shared film-first start surface. The glass card and QR stay hidden until
- * the film ends or the child presses a direction key. During the film, a
- * direction key only reveals the card; OK is swallowed so repeated presses can
- * never pick a level or begin a round. A round starts on a fresh OK press once
- * the card is visible.
+ * The shared film-first start surface. The glass card and QR rise in with a
+ * spring on the first frame after entry, over the film rather than after it;
+ * the film keeps playing as the background. OK is swallowed until the card is
+ * visible so repeated presses can never pick a level or begin a round. A round
+ * starts on a fresh OK press once the card is visible.
  */
 @Composable
 private fun QuizStartShell(
@@ -501,6 +516,11 @@ private fun QuizStartShell(
     var pendingRelease by remember { mutableStateOf<Int?>(null) }
     val focus = remember { FocusRequester() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    // Resolve once per entry: a film selected in the parent center applies to the next
+    // quiz entry, never half-way through this screen. Null means Aerial's default
+    // wallpaper, which is also the out-of-the-box state.
+    val introSource = remember(context) { PolicyVideoLibrary.quizSource(context) }
 
     fun reveal(byKey: Int?) {
         if (revealed || leaving) return
@@ -522,9 +542,12 @@ private fun QuizStartShell(
         inputReady = true
     }
     LaunchedEffect(Unit) {
-        // The player reports its end long before this; the timer only covers a
-        // decoder that never reaches STATE_ENDED.
-        delay(INTRO_FALLBACK_MS)
+        // The card is the point of this screen, not a reward for watching the
+        // film. Reveal it on the first frame after layout so entry never waits
+        // for the video or for a timer that the startup jank can push back.
+        // The player's end callback still runs, but reveal() ignores it once
+        // the card is already visible.
+        withFrameNanos { }
         reveal(null)
     }
     LaunchedEffect(reduced) {
@@ -540,22 +563,21 @@ private fun QuizStartShell(
 
     val revealProgress by animateFloatAsState(
         targetValue = if (revealed) 1f else 0f,
-        animationSpec = if (reduced) tween(0) else tween(260, easing = Motion.EaseOut),
+        animationSpec = if (reduced) tween(0) else tween(240, easing = Motion.EaseOut),
         label = "quiz-start-reveal",
     )
-    var hintReady by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        delay(INTRO_HINT_DELAY_MS)
-        hintReady = true
-    }
-    val hintAlpha by animateFloatAsState(
-        targetValue = if (!revealed && hintReady) 1f else 0f,
-        animationSpec = tween(if (reduced) 0 else 200, easing = Motion.EaseOut),
-        label = "quiz-start-hint",
+    // The card pops in like a game panel: a fast spring with a visible
+    // overshoot, while the alpha and rise stay on a tween so the text never
+    // fades in and out again.
+    val revealScale by animateFloatAsState(
+        targetValue = if (revealed) 1f else 0.84f,
+        animationSpec = if (reduced) tween(0) else spring(dampingRatio = 0.55f, stiffness = 480f),
+        label = "quiz-start-pop",
     )
 
     Box(Modifier.fillMaxSize()) {
         QuizStartBackdrop(
+            source = introSource,
             fadeOut = busy || leaving,
             onIntroFinished = {
                 scope.launch {
@@ -646,26 +668,13 @@ private fun QuizStartShell(
                     .fillMaxSize()
                     .graphicsLayer {
                         alpha = revealProgress
-                        translationY = (1f - revealProgress) * 14.dp.toPx()
+                        translationY = (1f - revealProgress) * 30.dp.toPx()
+                        scaleX = revealScale
+                        scaleY = revealScale
+                        transformOrigin = TransformOrigin(0.5f, 1f)
                     },
             ) {
                 content()
-            }
-            if (hintAlpha > 0.01f) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 30.dp)
-                        .graphicsLayer { alpha = hintAlpha }
-                        .clip(RoundedCornerShape(18.dp))
-                        .background(Color.Black.copy(alpha = 0.52f))
-                        .padding(horizontal = 18.dp, vertical = 9.dp),
-                ) {
-                    BasicText(
-                        stringResource(R.string.policy_quiz_intro_hint),
-                        style = Type.Caption.copy(color = Palette.Label),
-                    )
-                }
             }
         }
     }
@@ -726,8 +735,6 @@ private fun isStartNavKey(code: Int): Boolean = when (code) {
 
 private const val ENTRY_INPUT_GUARD_MS = 350L
 private const val PRESS_RELEASE_GUARD_MS = 700L
-private const val INTRO_FALLBACK_MS = 12_500L
-private const val INTRO_HINT_DELAY_MS = 1_200L
 private const val INTRO_END_BEAT_MS = 200L
 
 /**
@@ -752,7 +759,8 @@ private fun QuizBankStartScreen(
     val selectedIndex = if (matchedIndex >= 0) matchedIndex else fallbackIndex
     val selected = levels.getOrNull(selectedIndex)
     // The contract is always the configured round size; a short level must not
-    // silently turn it into a smaller round.
+    // silently turn it into a smaller round. Wrong review follows the same rule:
+    // it may only start when enough mistakes remain to fill the full round.
     val roundCount = config.pullCount
     val qr = rememberQuizQr(scale = 8)
     var busy by remember { mutableStateOf(false) }
@@ -881,7 +889,11 @@ private fun QuizBankStartScreen(
                 Spacer(Modifier.width(7.dp))
                 BasicText(
                     stringResource(
-                        R.string.policy_quiz_bank_stock,
+                        if (selected?.wrongReview == true) {
+                            R.string.policy_quiz_wrong_stock
+                        } else {
+                            R.string.policy_quiz_bank_stock
+                        },
                         selected?.available ?: 0,
                     ),
                     style = Type.Caption.copy(color = Palette.SecondaryLabel),
@@ -989,12 +1001,24 @@ private fun QuizBankEmptyScreen(
             }
             Spacer(Modifier.height(10.dp))
             BasicText(
-                stringResource(R.string.policy_quiz_bank_empty_title),
+                stringResource(
+                    if (state.bankState == "blocked") {
+                        R.string.policy_quiz_bank_blocked_title
+                    } else {
+                        R.string.policy_quiz_bank_empty_title
+                    },
+                ),
                 style = Type.LargeTitle,
             )
             Spacer(Modifier.height(8.dp))
             BasicText(
-                stringResource(R.string.policy_quiz_bank_empty_body),
+                stringResource(
+                    if (state.bankState == "blocked") {
+                        R.string.policy_quiz_bank_blocked_body
+                    } else {
+                        R.string.policy_quiz_bank_empty_body
+                    },
+                ),
                 style = Type.Body.copy(color = Palette.SecondaryLabel),
                 modifier = Modifier.widthIn(max = 410.dp),
             )
@@ -1021,48 +1045,185 @@ private fun QuizBankEmptyScreen(
 }
 
 /**
- * Bound-TV setup. There is no QR and no local publish path here: the questions
- * come from the cloud bank tied to the family. A failed fetch is shown as plain
- * human text with a retry, never as a server detail.
+ * Bound-TV start face. The active QCD owns the rules and the level list, so the
+ * child picks a level here and only then fetches a round. There is no QR and no
+ * local fallback: a missing document, an unfinished checkin or an empty level
+ * list is an explicit notice with a refresh, never a server detail.
  */
 @Composable
-private fun QuizCloudSetupScreen(onClose: () -> Unit, onReady: () -> Unit) {
-    var loading by remember { mutableStateOf(true) }
-    var message by remember { mutableStateOf<String?>(null) }
-    var attempt by remember { mutableIntStateOf(0) }
-    // Give a fast fetch one second to finish before showing this card. A
-    // reusable round normally returns in a few hundred milliseconds; hiding
-    // the card until then goes straight to the start face instead of flashing
-    // the preparation screen first. A slow fetch still shows the loading card.
-    var visible by remember { mutableStateOf(false) }
-    val retryFocus = remember { FocusRequester() }
+private fun QuizCloudSetupScreen(
+    state: QuizRuntime.UiState,
+    onClose: () -> Unit,
+    onReady: () -> Unit,
+) {
+    val config = state.defaultChallengeConfig
+    val levels = state.answerLevels
+    val notice = when {
+        state.cloudPlanError != null -> cloudPlanMessage(state.cloudPlanError)
+        state.cloudCheckinBlocked -> state.cloudCheckinMessage
+            ?: stringResource(R.string.policy_quiz_cloud_checkin_default)
+        !state.enabled -> stringResource(R.string.policy_quiz_cloud_disabled)
+        levels.isEmpty() -> stringResource(R.string.policy_quiz_cloud_no_levels)
+        else -> null
+    }
+    if (notice != null) {
+        QuizCloudNoticeScreen(notice = notice, onClose = onClose)
+        return
+    }
+
+    // Default to the first level that can fill its own round, so a reordered
+    // list does not land the child on a short level.
+    val fallbackIndex = remember(levels, config.pullCount) {
+        levels.indexOfFirst {
+            it.available >= (it.questionCount ?: config.pullCount)
+        }.coerceAtLeast(0)
+    }
+    var selectedLevelId by remember { mutableStateOf<String?>(null) }
+    val matchedIndex = levels.indexOfFirst { it.id == selectedLevelId }
+    val selectedIndex = if (matchedIndex >= 0) matchedIndex else fallbackIndex
+    val selected = levels.getOrNull(selectedIndex)
+    val roundCount = selected?.questionCount ?: config.pullCount
+    var busy by remember { mutableStateOf(false) }
+    var leaving by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+
+    // The document sync is event-driven; this only reads the stored copy so a
+    // parent edit that just landed becomes visible without leaving the page.
+    LaunchedEffect(Unit) {
+        while (isActive) {
+            delay(5_000)
+            withContext(Dispatchers.IO) { QuizRuntime.refresh() }
+        }
+    }
+
+    fun choose(delta: Int) {
+        val current = levels.indexOfFirst { it.id == selectedLevelId }
+            .takeIf { it >= 0 } ?: fallbackIndex
+        val next = current + delta
+        if (next !in levels.indices) return
+        selectedLevelId = levels[next].id
+        error = null
+    }
+
+    fun begin() {
+        if (busy || leaving) return
+        val target = selected ?: return
+        busy = true
+        error = null
+        scope.launch {
+            val outcome = CloudQuizPreparer.prepare(target.id)
+            busy = false
+            when (outcome) {
+                CloudQuizPreparer.Outcome.Ready -> onReady()
+                is CloudQuizPreparer.Outcome.Unavailable -> {
+                    error = outcome.message
+                    withContext(Dispatchers.IO) { QuizRuntime.refresh() }
+                }
+            }
+        }
+    }
+
+    fun close() {
+        if (leaving) return
+        leaving = true
+        scope.launch {
+            delay(220)
+            onClose()
+        }
+    }
+
+    BackHandler { close() }
+
+    QuizStartShell(
+        busy = busy,
+        leaving = leaving,
+        onStart = ::begin,
+        onStep = ::choose,
+    ) {
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 40.dp, bottom = 28.dp)
+                .widthIn(max = 460.dp)
+                .startFilmGlass(28.dp)
+                .padding(horizontal = 28.dp, vertical = 24.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                GlyphIcon(Glyph.Cloud, Palette.Label, 20.dp)
+                Spacer(Modifier.width(10.dp))
+                BasicText(
+                    stringResource(R.string.policy_quiz_cloud_kicker),
+                    style = Type.Caption.copy(color = Palette.SecondaryLabel),
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            BasicText(
+                stringResource(R.string.policy_quiz_start_title),
+                style = Type.LargeTitle,
+            )
+            Spacer(Modifier.height(10.dp))
+            // The cloud payout is exact seconds, so the table uses the frozen
+            // day profile instead of the minute mirrors kept for legacy paths.
+            QuizScoringRules(
+                config = config,
+                roundCount = roundCount,
+                profile = state.cloudRewardProfile,
+            )
+            Spacer(Modifier.height(10.dp))
+            QuizLevelWheel(levels = levels, selectedIndex = selectedIndex)
+            selected?.takeIf { it.available < roundCount }?.let {
+                Spacer(Modifier.height(4.dp))
+                BasicText(
+                    stringResource(
+                        R.string.policy_quiz_cloud_level_short,
+                        it.available,
+                    ),
+                    style = Type.Caption.copy(color = Palette.SecondaryLabel),
+                    modifier = Modifier.widthIn(max = 404.dp),
+                )
+            }
+            error?.let {
+                Spacer(Modifier.height(8.dp))
+                BasicText(
+                    stringResource(R.string.policy_quiz_start_rejected, it),
+                    style = Type.Caption.copy(color = Palette.Orange),
+                    modifier = Modifier.widthIn(max = 404.dp),
+                )
+            }
+            Spacer(Modifier.height(14.dp))
+            QuizKeyHintRow(busy = busy)
+        }
+    }
+}
+
+/**
+ * Blocking notice for a bound TV. The only in-page action is a forced sync; the
+ * copy comes from the plan or the question bank and never names a server error.
+ */
+@Composable
+private fun QuizCloudNoticeScreen(notice: String, onClose: () -> Unit) {
+    var busy by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val refreshFocus = remember { FocusRequester() }
     val backFocus = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
-        delay(1_000)
-        visible = true
-    }
-    LaunchedEffect(attempt) {
-        loading = true
-        message = null
-        val outcome = withContext(Dispatchers.IO) { CloudQuizPreparer.prepare() }
-        loading = false
-        when (outcome) {
-            CloudQuizPreparer.Outcome.Ready -> onReady()
-            is CloudQuizPreparer.Outcome.Unavailable -> message = outcome.message
-        }
-    }
-    LaunchedEffect(loading, message, visible) {
-        // The buttons are not composed until the card is visible. Requesting
-        // focus earlier would detach it from the retry/back controls.
-        if (!visible) return@LaunchedEffect
         withFrameNanos { }
-        runCatching {
-            if (!loading && message != null) retryFocus.requestFocus() else backFocus.requestFocus()
-        }
+        runCatching { refreshFocus.requestFocus() }
     }
 
-    if (!visible) return
+    fun refresh() {
+        if (busy) return
+        busy = true
+        scope.launch {
+            withContext(Dispatchers.IO) {
+                QuizConfigDocumentSync.syncNow()
+                QuizRuntime.refresh()
+            }
+            busy = false
+        }
+    }
 
     Row(
         modifier = Modifier
@@ -1076,7 +1237,7 @@ private fun QuizCloudSetupScreen(onClose: () -> Unit, onReady: () -> Unit) {
             modifier = Modifier.size(148.dp),
             contentAlignment = Alignment.Center,
         ) {
-            GlyphIcon(Glyph.Shield, Palette.Label, 96.dp)
+            GlyphIcon(Glyph.Cloud, Palette.Label, 96.dp)
         }
         Column(modifier = Modifier.width(470.dp)) {
             BasicText(
@@ -1085,43 +1246,32 @@ private fun QuizCloudSetupScreen(onClose: () -> Unit, onReady: () -> Unit) {
             )
             Spacer(Modifier.height(10.dp))
             BasicText(
-                stringResource(R.string.policy_quiz_cloud_title),
+                stringResource(R.string.policy_quiz_cloud_unavailable_title),
                 style = Type.LargeTitle,
             )
             Spacer(Modifier.height(8.dp))
             BasicText(
-                stringResource(R.string.policy_quiz_cloud_body),
+                notice,
                 style = Type.Body.copy(color = Palette.SecondaryLabel),
-                modifier = Modifier.widthIn(max = 450.dp),
-            )
-            Spacer(Modifier.height(8.dp))
-            BasicText(
-                message ?: stringResource(R.string.policy_quiz_cloud_loading),
-                style = Type.Caption.copy(
-                    color = if (message != null) Palette.Orange else Palette.SecondaryLabel,
-                ),
                 modifier = Modifier.widthIn(max = 450.dp),
             )
             Spacer(Modifier.height(20.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (!loading && message != null) {
-                    LockButton(
-                        label = stringResource(R.string.policy_quiz_cloud_retry),
-                        onClick = { attempt += 1 },
-                        width = 180.dp,
-                        focusRequester = retryFocus,
-                        primary = true,
-                        onKey = linearDpadFocus(next = backFocus),
-                    )
-                }
+                LockButton(
+                    label = stringResource(R.string.policy_quiz_cloud_retry),
+                    onClick = ::refresh,
+                    width = 180.dp,
+                    focusRequester = refreshFocus,
+                    primary = true,
+                    enabled = !busy,
+                    onKey = linearDpadFocus(next = backFocus),
+                )
                 LockButton(
                     label = stringResource(R.string.policy_back),
                     onClick = onClose,
                     width = 160.dp,
                     focusRequester = backFocus,
-                    onKey = linearDpadFocus(
-                        previous = if (!loading && message != null) retryFocus else null,
-                    ),
+                    onKey = linearDpadFocus(previous = refreshFocus),
                 )
             }
         }
@@ -1194,10 +1344,17 @@ private fun QuizReadyScreen(
                 style = Type.LargeTitle,
             )
             Spacer(Modifier.height(10.dp))
-            if (session.originSchemaVersion >= 5 && !QuizChallenge.isCloudSession(session)) {
-                QuizScoringRules(config = session.config, roundCount = questionCount)
-            } else {
-                BasicText(
+            // A frozen v6 profile is exact seconds and wins over the minute
+            // mirrors. A legacy hosted round keeps its single-rate body copy.
+            when {
+                session.rewardProfile != null -> QuizScoringRules(
+                    config = session.config,
+                    roundCount = questionCount,
+                    profile = session.rewardProfile,
+                )
+                session.originSchemaVersion >= 5 && !QuizChallenge.isCloudSession(session) ->
+                    QuizScoringRules(config = session.config, roundCount = questionCount)
+                else -> BasicText(
                     stringResource(
                         R.string.policy_quiz_start_body,
                         questionCount,
@@ -1243,11 +1400,20 @@ private fun QuizScoringRules(
     config: QuizConfig,
     roundCount: Int,
     modifier: Modifier = Modifier,
+    profile: QuizRewardProfile? = null,
 ) {
-    val threshold = if (config.minUnlockMinutes == 0) {
-        stringResource(R.string.policy_quiz_rules_threshold_none)
-    } else {
-        stringResource(R.string.policy_quiz_rules_threshold_minutes, config.minUnlockMinutes)
+    // A frozen cloud profile is exact seconds; the minute mirrors below are
+    // only a lossy legacy projection and must not be shown for it.
+    val threshold = when {
+        profile != null && profile.minUnlockSeconds == 0 ->
+            stringResource(R.string.policy_quiz_rules_threshold_none)
+        profile != null -> durationText(profile.minUnlockSeconds)
+        config.minUnlockMinutes == 0 ->
+            stringResource(R.string.policy_quiz_rules_threshold_none)
+        else -> stringResource(
+            R.string.policy_quiz_rules_threshold_minutes,
+            config.minUnlockMinutes,
+        )
     }
     Column(
         modifier = modifier
@@ -1285,35 +1451,95 @@ private fun QuizScoringRules(
             )
         }
         Spacer(Modifier.height(2.dp))
-        QuizScoringRuleRow(
-            label = stringResource(R.string.policy_quiz_difficulty_easy),
-            reward = config.easyRewardMinutes,
-            penalty = config.easyPenaltyMinutes,
-        )
-        QuizScoringRuleRow(
-            label = stringResource(R.string.policy_quiz_difficulty_medium),
-            reward = config.mediumRewardMinutes,
-            penalty = config.mediumPenaltyMinutes,
-        )
-        QuizScoringRuleRow(
-            label = stringResource(R.string.policy_quiz_difficulty_hard),
-            reward = config.hardRewardMinutes,
-            penalty = config.hardPenaltyMinutes,
-        )
-        Spacer(Modifier.height(4.dp))
-        BasicText(
-            stringResource(
-                R.string.policy_quiz_rules_limits,
-                threshold,
-                config.maxEarnedMinutes,
-            ),
-            style = Type.Caption.copy(color = Palette.SecondaryLabel),
+        if (profile != null) {
+            QuizScoringRuleRow(
+                label = stringResource(R.string.policy_quiz_difficulty_easy),
+                reward = rewardText(profile.correctSeconds.easy),
+                penalty = penaltyText(profile.penaltySeconds.easy),
+            )
+            QuizScoringRuleRow(
+                label = stringResource(R.string.policy_quiz_difficulty_medium),
+                reward = rewardText(profile.correctSeconds.medium),
+                penalty = penaltyText(profile.penaltySeconds.medium),
+            )
+            QuizScoringRuleRow(
+                label = stringResource(R.string.policy_quiz_difficulty_hard),
+                reward = rewardText(profile.correctSeconds.hard),
+                penalty = penaltyText(profile.penaltySeconds.hard),
+            )
+            Spacer(Modifier.height(4.dp))
+            BasicText(
+                stringResource(
+                    R.string.policy_quiz_rules_limits_duration,
+                    threshold,
+                    durationText(profile.maxEarnedSeconds),
+                ),
+                style = Type.Caption.copy(color = Palette.SecondaryLabel),
+            )
+        } else {
+            QuizScoringRuleRow(
+                label = stringResource(R.string.policy_quiz_difficulty_easy),
+                reward = stringResource(R.string.policy_quiz_rules_reward, config.easyRewardMinutes),
+                penalty = config.easyPenaltyMinutes.takeIf { it > 0 }?.let {
+                    stringResource(R.string.policy_quiz_rules_penalty, it)
+                },
+            )
+            QuizScoringRuleRow(
+                label = stringResource(R.string.policy_quiz_difficulty_medium),
+                reward = stringResource(R.string.policy_quiz_rules_reward, config.mediumRewardMinutes),
+                penalty = config.mediumPenaltyMinutes.takeIf { it > 0 }?.let {
+                    stringResource(R.string.policy_quiz_rules_penalty, it)
+                },
+            )
+            QuizScoringRuleRow(
+                label = stringResource(R.string.policy_quiz_difficulty_hard),
+                reward = stringResource(R.string.policy_quiz_rules_reward, config.hardRewardMinutes),
+                penalty = config.hardPenaltyMinutes.takeIf { it > 0 }?.let {
+                    stringResource(R.string.policy_quiz_rules_penalty, it)
+                },
+            )
+            Spacer(Modifier.height(4.dp))
+            BasicText(
+                stringResource(
+                    R.string.policy_quiz_rules_limits,
+                    threshold,
+                    config.maxEarnedMinutes,
+                ),
+                style = Type.Caption.copy(color = Palette.SecondaryLabel),
+            )
+        }
+    }
+}
+
+@Composable
+private fun rewardText(seconds: Int): String =
+    stringResource(R.string.policy_quiz_rules_reward_duration, durationText(seconds))
+
+@Composable
+private fun penaltyText(seconds: Int): String? =
+    seconds.takeIf { it > 0 }?.let {
+        stringResource(R.string.policy_quiz_rules_penalty_duration, durationText(it))
+    }
+
+/** Human duration for exact-second cloud rules; never a raw seconds count. */
+@Composable
+private fun durationText(totalSeconds: Int): String {
+    val safe = totalSeconds.coerceAtLeast(0)
+    val minutes = safe / 60
+    val seconds = safe % 60
+    return when {
+        minutes <= 0 -> stringResource(R.string.policy_quiz_duration_seconds, seconds)
+        seconds == 0 -> stringResource(R.string.policy_quiz_duration_minutes, minutes)
+        else -> stringResource(
+            R.string.policy_quiz_duration_minutes_seconds,
+            minutes,
+            seconds,
         )
     }
 }
 
 @Composable
-private fun QuizScoringRuleRow(label: String, reward: Int, penalty: Int) {
+private fun QuizScoringRuleRow(label: String, reward: String, penalty: String?) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         BasicText(
             label,
@@ -1321,7 +1547,7 @@ private fun QuizScoringRuleRow(label: String, reward: Int, penalty: Int) {
             modifier = Modifier.weight(1f),
         )
         BasicText(
-            stringResource(R.string.policy_quiz_rules_reward, reward),
+            reward,
             style = Type.Caption.copy(
                 color = QuizGold,
                 textAlign = TextAlign.End,
@@ -1329,13 +1555,9 @@ private fun QuizScoringRuleRow(label: String, reward: Int, penalty: Int) {
             modifier = Modifier.width(92.dp),
         )
         BasicText(
-            if (penalty == 0) {
-                stringResource(R.string.policy_quiz_rules_no_penalty)
-            } else {
-                stringResource(R.string.policy_quiz_rules_penalty, penalty)
-            },
+            penalty ?: stringResource(R.string.policy_quiz_rules_no_penalty),
             style = Type.Caption.copy(
-                color = if (penalty == 0) Palette.SecondaryLabel else QuizLoss,
+                color = if (penalty == null) Palette.SecondaryLabel else QuizLoss,
                 textAlign = TextAlign.End,
             ),
             modifier = Modifier.width(120.dp),
@@ -1449,6 +1671,13 @@ private fun QuizRoundScreen(
                 }
                 if (!resumeFailed) return
             }
+            val feedbackHoldMs = if (submission.correct) {
+                0L
+            } else {
+                // v6 freezes the exact floor; v5 keeps its historical seconds.
+                submission.feedbackHoldMs
+                    ?: (normalizeAnswerHoldSec(session.config.answerDisplaySec) * 1_000L)
+            }
             QuizFeedbackPage(
                 item = answeredItem,
                 submission = submission,
@@ -1457,7 +1686,7 @@ private fun QuizRoundScreen(
                 isLast = run.index >= session.items.size,
                 rewardMinutes = rewardMinutes,
                 penaltyMinutes = penaltyMinutes,
-                answerHoldSec = normalizeAnswerHoldSec(session.config.answerDisplaySec),
+                holdMs = feedbackHoldMs,
             )
             return
         }
@@ -1860,22 +2089,37 @@ private fun QuizReviewScreen(
 ) {
     val run = session.run ?: return
     val total = session.items.size
-    // Only local v5 rounds settle on the difficulty table; hosted rounds keep
-    // the backend's own arithmetic and presentation.
+    // Only local rounds settle on the local difficulty table; hosted rounds keep
+    // the backend's own arithmetic and presentation. v6 pays the profile frozen
+    // into the session; a v6 record without one (written by an earlier build)
+    // falls back to the same v5 engine its settlement used.
     val difficultyScoring = session.originSchemaVersion >= 5 &&
         !QuizChallenge.isCloudSession(session)
-    val score = if (difficultyScoring) {
+    val scoreV6 = if (difficultyScoring && session.originSchemaVersion >= 6) {
+        session.rewardProfile?.let {
+            QuizScoringV6.score(session.items, run.submissions, it)
+        }
+    } else {
+        null
+    }
+    val score = if (difficultyScoring && scoreV6 == null) {
         QuizScoring.score(session.items, run.submissions, session.config)
     } else {
         null
     }
-    // The headline is the round's net score, not the granted minutes: below the
+    // The headline is the round's net score, not the granted time: below the
     // unlock threshold the round pays 0 but still has a score to show (for
     // example a 10-minute threshold with a 5-minute net score). Hosted rounds
     // have no local score, so they fall back to the backend's earned minutes.
     val scoreMinutes = score?.cappedMinutes ?: run.earnedMinutes
-    val scoreUnlocked = score?.unlockReached ?: (run.earnedMinutes > 0)
-    val scoreColor = if (QuizResultTone.isGold(scoreMinutes, scoreUnlocked)) {
+    val scoreUnlocked = when {
+        scoreV6 != null -> scoreV6.unlockReached
+        score != null -> score.unlockReached
+        else -> run.earnedMinutes > 0
+    }
+    val scoreColor = if (
+        QuizResultTone.isGold(scoreV6?.cappedSeconds ?: scoreMinutes, scoreUnlocked)
+    ) {
         QuizGold
     } else {
         QuizLoss
@@ -1945,7 +2189,7 @@ private fun QuizReviewScreen(
     LaunchedEffect(session.id) {
         if (session.status != QuizSessionStatus.SETTLING) return@LaunchedEffect
         delay(180)
-        if (run.earnedMinutes > 0) {
+        if (run.earnedMinutes > 0 || run.earnedSeconds > 0) {
             QuizSfx.play(QuizSfx.Event.SETTLE)
             PolicyVoiceBus.emit(PolicyVoiceCue.QUIZ_SETTLE)
         } else {
@@ -2035,12 +2279,65 @@ private fun QuizReviewScreen(
                 // that stayed below the line (the threshold hint explains 0
                 // granted minutes).
                 label = stringResource(R.string.policy_quiz_report_score_label),
-                value = stringResource(R.string.policy_quiz_report_minutes_value, scoreMinutes),
+                value = if (scoreV6 != null) {
+                    quizSecondsText(scoreV6.cappedSeconds)
+                } else {
+                    stringResource(R.string.policy_quiz_report_minutes_value, scoreMinutes)
+                },
                 color = scoreColor,
                 modifier = Modifier.weight(1f),
             )
         }
-        if (score != null) {
+        if (scoreV6 != null) {
+            Spacer(Modifier.height(10.dp))
+            BasicText(
+                if (scoreV6.penaltySeconds > 0) {
+                    stringResource(
+                        R.string.policy_quiz_report_breakdown_seconds,
+                        scoreV6.grossSeconds,
+                        scoreV6.penaltySeconds,
+                        quizSecondsText(scoreV6.cappedSeconds),
+                    )
+                } else {
+                    stringResource(
+                        R.string.policy_quiz_report_breakdown_no_penalty_seconds,
+                        scoreV6.grossSeconds,
+                        quizSecondsText(scoreV6.cappedSeconds),
+                    )
+                },
+                style = Type.Caption.copy(
+                    color = Palette.SecondaryLabel,
+                    textAlign = TextAlign.Center,
+                ),
+            )
+            if (scoreV6.netSeconds > scoreV6.cappedSeconds) {
+                Spacer(Modifier.height(4.dp))
+                BasicText(
+                    stringResource(
+                        R.string.policy_quiz_report_capped_seconds,
+                        quizSecondsText(scoreV6.cappedSeconds),
+                    ),
+                    style = Type.Caption.copy(
+                        color = Palette.SecondaryLabel,
+                        textAlign = TextAlign.Center,
+                    ),
+                )
+            }
+            if (scoreV6.thresholdSeconds > 0 && !scoreV6.unlockReached) {
+                Spacer(Modifier.height(4.dp))
+                BasicText(
+                    stringResource(
+                        R.string.policy_quiz_report_threshold_seconds,
+                        quizSecondsText(scoreV6.thresholdSeconds),
+                        quizSecondsText(scoreV6.netSeconds),
+                    ),
+                    style = Type.Caption.copy(
+                        color = QuizLoss,
+                        textAlign = TextAlign.Center,
+                    ),
+                )
+            }
+        } else if (score != null) {
             Spacer(Modifier.height(10.dp))
             BasicText(
                 if (score.penaltyMinutes > 0) {
@@ -2122,7 +2419,8 @@ private fun QuizReviewScreen(
             label = when {
                 failed -> stringResource(R.string.policy_quiz_exit_confirm)
                 busy || starting -> stringResource(R.string.policy_quiz_review_starting)
-                run.earnedMinutes > 0 -> stringResource(R.string.policy_quiz_review_start)
+                run.earnedMinutes > 0 || run.earnedSeconds > 0 ->
+                    stringResource(R.string.policy_quiz_review_start)
                 else -> stringResource(R.string.policy_quiz_review_return)
             },
             onClick = {
@@ -2135,6 +2433,19 @@ private fun QuizReviewScreen(
             // The report has a single action; every arrow keeps focus on it.
             onKey = linearDpadFocus(),
         )
+    }
+}
+
+/** "45 秒" / "1 分 45 秒"; exact minutes reuse the existing minute wording. */
+@Composable
+private fun quizSecondsText(seconds: Int): String {
+    val safe = seconds.coerceAtLeast(0)
+    val minutes = safe / 60
+    val rest = safe % 60
+    return when {
+        minutes == 0 -> stringResource(R.string.policy_quiz_report_seconds_value, rest)
+        rest == 0 -> stringResource(R.string.policy_quiz_report_minutes_value, minutes)
+        else -> stringResource(R.string.policy_quiz_report_minutes_seconds_value, minutes, rest)
     }
 }
 
@@ -2203,7 +2514,7 @@ private fun QuizFeedbackPage(
     isLast: Boolean,
     rewardMinutes: Int,
     penaltyMinutes: Int?,
-    answerHoldSec: Int,
+    holdMs: Long,
 ) {
     val scope = rememberCoroutineScope()
     val scroll = rememberScrollState()
@@ -2217,12 +2528,12 @@ private fun QuizFeedbackPage(
     val correct = submission.correct
     // A correct answer normally never reaches this page. If a storage failure
     // falls back here, do not add a hold to the retry path.
-    val holdSec = if (correct) 0 else normalizeAnswerHoldSec(answerHoldSec)
-    val holdDeadlineAt = submission.answeredAt + holdSec * 1_000L
-    var holdRemaining by remember(item.questionId, submission.answeredAt, holdSec) {
+    val effectiveHoldMs = if (correct) 0L else holdMs
+    val holdDeadlineAt = submission.answeredAt + effectiveHoldMs
+    var holdRemaining by remember(item.questionId, submission.answeredAt, effectiveHoldMs) {
         mutableStateOf(remainingHoldSeconds(holdDeadlineAt))
     }
-    LaunchedEffect(item.questionId, submission.answeredAt, holdSec) {
+    LaunchedEffect(item.questionId, submission.answeredAt, effectiveHoldMs) {
         while (true) {
             val remaining = remainingHoldSeconds(holdDeadlineAt)
             holdRemaining = remaining

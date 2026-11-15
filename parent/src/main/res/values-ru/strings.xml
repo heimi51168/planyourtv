@@ -2,12 +2,11 @@
 <resources>
     <string name="app_name">PlanYourTV Родитель</string>
     <string name="pair_title">Подключение к телевизору</string>
-    <string name="pair_intro">Откройте «Родительский центр» на телевизоре и отсканируйте QR-код. Адрес запомнится, сканировать нужно один раз.</string>
+    <string name="pair_intro">Телефон и телевизор в одной локальной сети. Сканируйте QR-код на телевизоре.</string>
     <string name="pair_scan">Сканировать QR-код</string>
     <string name="pair_manual_toggle">Не получается отсканировать? Введите адрес вручную</string>
     <string name="pair_url_hint">192.0.2.10:8790/abcd2345/quiz</string>
     <string name="pair_connect">Подключиться</string>
-    <string name="pair_note">Телефон и телевизор должны быть в одной сети Wi-Fi. Приложение открывает только страницу «Родительского центра» с телевизора; у него нет собственной учётной записи или облака.</string>
     <string name="pair_invalid_url">Введите полный адрес из QR-кода телевизора: IP, порт и код после него.</string>
     <string name="scan_failed">Не удалось запустить сканер. Повторите попытку.</string>
     <string name="camera_permission_hint">Разрешите доступ к камере, чтобы сканировать QR-код на телевизоре.</string>
@@ -31,6 +30,9 @@
     <string name="error_retry">Повторить</string>
     <string name="error_repair">Сканировать другой телевизор</string>
     <string name="scan_prompt">Наведите камеру на QR-код на телевизоре</string>
+    <string name="scan_torch">Фонарик</string>
+    <string name="scan_zoom">Масштаб</string>
+    <string name="scan_zoom_default">1.0×</string>
     <string name="saved">Загрузка сохранена.</string>
     <string name="save_failed">Не удалось сохранить загрузку.</string>
     <string name="download_unsupported">Не удалось открыть эту загрузку. Попробуйте браузер из меню.</string>

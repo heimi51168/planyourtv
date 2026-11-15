@@ -216,6 +216,18 @@ object QuizSessionStore {
         runCatching { QuizSessionCodec.decodeConfig(JSONObject(raw ?: return null)) }.getOrNull()
     }
 
+    fun hasChallengeConfig(): Boolean = TvStore.getString(KEY_CHALLENGE_CONFIG) != null
+
+    /**
+     * Read-only view for the one-way QCD migration. Unlike [loadChallengeConfig],
+     * this never rewrites the key: the legacy record must stay byte-identical
+     * until the parent saves through the new document endpoint.
+     */
+    fun challengeConfigRawForMigration(): JSONObject? = synchronized(lock) {
+        val raw = TvStore.getString(KEY_CHALLENGE_CONFIG) ?: return null
+        runCatching { JSONObject(raw) }.getOrNull()
+    }
+
     fun saveChallengeConfig(config: QuizConfig): Boolean = synchronized(lock) {
         val saved = TvStore.putStringDurable(
             KEY_CHALLENGE_CONFIG,
@@ -390,6 +402,11 @@ object QuizSessionStore {
             // Drop legacy extra tokens too; only this parent session was valid.
             return persistWebTokens(emptyList())
         }
+    }
+
+    /** Revokes every remembered web session; used when binding or a TV mode change occurs. */
+    fun clearWebTokens(): Boolean = synchronized(lock) {
+        TvStore.removeDurable(KEY_WEB_TOKENS)
     }
 
     private fun persistWebTokens(tokens: List<WebToken>): Boolean {

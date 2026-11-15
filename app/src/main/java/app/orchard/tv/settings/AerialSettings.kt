@@ -153,8 +153,11 @@ object AerialSettings {
     /** The clock, with the date and weather, in the top right instead of the top left. */
     var clockRight by mutableStateOf(false); private set
 
-    /** The date and weather over a big clock above the top row, instead of one small line in the corner. */
-    var largeClock by mutableStateOf(false); private set
+    /**
+     * The date and weather over a big clock above the top row, instead of one small line in the
+     * corner. PlanYourTV starts with the large clock; the choice is still the owner's.
+     */
+    var largeClock by mutableStateOf(true); private set
 
     /**
      * How often "My Photos, in turn" moves to the next photo, in minutes; a day (1440) unless the
@@ -250,7 +253,7 @@ object AerialSettings {
         peekNextRow = prefs.getBoolean("peek_next_row", true)
         chosenColumns = prefs.getInt("home_columns", DEFAULT_HOME_COLUMNS).takeIf { it in HOME_COLUMNS } ?: DEFAULT_HOME_COLUMNS
         clockRight = prefs.getBoolean("clock_right", false)
-        largeClock = prefs.getBoolean("large_clock", false)
+        largeClock = prefs.getBoolean("large_clock", true)
         clockHours = ClockHours.of(prefs.getString("clock_hours", null))
         homeLocked = prefs.getBoolean("home_locked", false)
         photoMinutes = prefs.getInt("photo_minutes", DAY_MINUTES).takeIf { it in PHOTO_MINUTES } ?: DAY_MINUTES

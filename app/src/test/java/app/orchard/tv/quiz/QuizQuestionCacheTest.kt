@@ -708,4 +708,194 @@ class QuizQuestionCacheTest {
         assertEquals(QuizQuestionCache.BANK_CAPACITY, QuizQuestionCache.bankCounts(QuizQuestionCache.LOCAL_SCOPE, now).total)
         assertEquals(0, QuizQuestionCache.availableCollectionCount(tag, now))
     }
+
+    @Test
+    fun wrongReviewOnlyReselectsConsumedWrongRowsAndClearsThemOnCorrect() {
+        QuizQuestionCache.appendLocalQuestions("batch_wrong_review", (1..3).map(::item), now)
+        val seed = QuizQuestionCache.reserveForRound(
+            count = 3,
+            sessionId = "sess_wrong_seed",
+            scopeKey = QuizQuestionCache.LOCAL_SCOPE,
+            minRequired = 3,
+            nowMs = now,
+        )
+        assertEquals(3, seed.size)
+        assertTrue(
+            QuizQuestionCache.settleRound(
+                "sess_wrong_seed",
+                QuizQuestionCache.LOCAL_SCOPE,
+                seed.mapIndexed { index, cached ->
+                    QuizQuestionCache.AnswerWrite(
+                        cacheId = cached.cacheId,
+                        questionId = cached.question.questionId,
+                        selectedIndex = 0,
+                        correct = index == 0,
+                        timedOut = false,
+                        answeredAt = now + index + 1,
+                    )
+                },
+                now + 10,
+            ),
+        )
+        assertEquals(2, QuizQuestionCache.wrongReviewCount())
+        assertEquals(0, QuizQuestionCache.availableCount(nowMs = now + 10))
+
+        val review = QuizQuestionCache.reserveWrongForRound(
+            count = 5,
+            sessionId = "sess_wrong_review",
+            scopeKey = QuizQuestionCache.LOCAL_SCOPE,
+            minRequired = 1,
+            nowMs = now + 20,
+        )
+        assertEquals(2, review.size)
+        assertTrue(review.none { it.cacheId == seed[0].cacheId })
+        // Re-asking a wrong row must not hand it back to course/custom levels.
+        assertEquals(0, QuizQuestionCache.availableCount(nowMs = now + 20))
+        assertEquals(2, QuizQuestionCache.wrongReviewCount())
+
+        val correct = QuizQuestionCache.AnswerWrite(
+            cacheId = review[0].cacheId,
+            questionId = review[0].question.questionId,
+            selectedIndex = 1,
+            correct = true,
+            timedOut = false,
+            answeredAt = now + 30,
+        )
+        assertTrue(
+            QuizQuestionCache.writeAnswers(
+                "sess_wrong_review",
+                QuizQuestionCache.LOCAL_SCOPE,
+                listOf(correct),
+                now + 31,
+            ),
+        )
+        assertEquals(1, QuizQuestionCache.wrongReviewCount())
+        assertTrue(
+            QuizQuestionCache.writeAnswers(
+                "sess_wrong_review",
+                QuizQuestionCache.LOCAL_SCOPE,
+                listOf(correct),
+                now + 32,
+            ),
+        )
+        assertEquals(1, QuizQuestionCache.wrongReviewCount())
+    }
+
+    @Test
+    fun aFailedWrongReviewReservationDoesNotReleaseTheRows() {
+        QuizQuestionCache.appendLocalQuestions("batch_wrong_short", listOf(item(1)), now)
+        val seed = QuizQuestionCache.reserveForRound(
+            count = 1,
+            sessionId = "sess_wrong_short_seed",
+            scopeKey = QuizQuestionCache.LOCAL_SCOPE,
+            minRequired = 1,
+            nowMs = now,
+        )
+        assertTrue(
+            QuizQuestionCache.settleRound(
+                "sess_wrong_short_seed",
+                QuizQuestionCache.LOCAL_SCOPE,
+                listOf(
+                    QuizQuestionCache.AnswerWrite(
+                        cacheId = seed.single().cacheId,
+                        questionId = seed.single().question.questionId,
+                        selectedIndex = 0,
+                        correct = false,
+                        timedOut = false,
+                        answeredAt = now + 1,
+                    ),
+                ),
+                now + 2,
+            ),
+        )
+
+        assertTrue(
+            QuizQuestionCache.reserveWrongForRound(
+                count = 5,
+                sessionId = "sess_wrong_too_many",
+                scopeKey = QuizQuestionCache.LOCAL_SCOPE,
+                minRequired = 2,
+                nowMs = now + 3,
+            ).isEmpty(),
+        )
+        // The rejected attempt must leave the seed round's ownership intact.
+        assertTrue(
+            QuizQuestionCache.writeAnswers(
+                "sess_wrong_other",
+                QuizQuestionCache.LOCAL_SCOPE,
+                listOf(
+                    QuizQuestionCache.AnswerWrite(
+                        cacheId = seed.single().cacheId,
+                        questionId = seed.single().question.questionId,
+                        selectedIndex = 1,
+                        correct = true,
+                        timedOut = false,
+                        answeredAt = now + 4,
+                    ),
+                ),
+                now + 5,
+            ),
+        )
+        assertEquals(1, QuizQuestionCache.wrongReviewCount())
+
+        val short = QuizQuestionCache.reserveWrongForRound(
+            count = 5,
+            sessionId = "sess_wrong_short_review",
+            scopeKey = QuizQuestionCache.LOCAL_SCOPE,
+            minRequired = 1,
+            nowMs = now + 6,
+        )
+        assertEquals(1, short.size)
+    }
+
+    @Test
+    fun wrongReviewCollapsesDuplicateContentWithinOneRound() {
+        QuizQuestionCache.appendLocalQuestions("batch_wrong_dupe_ai", listOf(item(1)), now)
+        val imported = QuizQuestionCache.importLocalQuestions(
+            "col-wrong-dupe",
+            "import-wrong-dupe",
+            listOf(item(1)),
+            now,
+        )
+        assertEquals(1, imported.appended)
+        assertEquals(1, imported.crossSourceDuplicates)
+
+        val reserved = QuizQuestionCache.reserveForRound(
+            count = 2,
+            sessionId = "sess_wrong_dupe_seed",
+            scopeKey = QuizQuestionCache.LOCAL_SCOPE,
+            minRequired = 2,
+            nowMs = now,
+        )
+        assertEquals(2, reserved.size)
+        assertTrue(
+            QuizQuestionCache.settleRound(
+                "sess_wrong_dupe_seed",
+                QuizQuestionCache.LOCAL_SCOPE,
+                reserved.map { cached ->
+                    QuizQuestionCache.AnswerWrite(
+                        cacheId = cached.cacheId,
+                        questionId = cached.question.questionId,
+                        selectedIndex = 0,
+                        correct = false,
+                        timedOut = false,
+                        answeredAt = now + 1,
+                    )
+                },
+                now + 2,
+            ),
+        )
+        assertEquals(2, QuizQuestionCache.wrongReviewCount())
+
+        val review = QuizQuestionCache.reserveWrongForRound(
+            count = 5,
+            sessionId = "sess_wrong_dupe_review",
+            scopeKey = QuizQuestionCache.LOCAL_SCOPE,
+            minRequired = 1,
+            nowMs = now + 3,
+        )
+        assertEquals(1, review.size)
+        // The duplicate row stays wrong for a later round; only this round dedupes.
+        assertEquals(2, QuizQuestionCache.wrongReviewCount())
+    }
 }

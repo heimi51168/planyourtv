@@ -550,6 +550,20 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     /** An app or folder on Home, or an app inside a folder. */
     fun entry(key: String): AppEntry? = apps.firstOrNull { it.key == key } ?: folderApps.values.flatten().firstOrNull { it.key == key }
 
+    /**
+     * Tiles for the parent's study list, using every installed app rather than Home's visible
+     * arrangement: a study app stays on the lock desktop even when it is hidden from Home or put
+     * in a folder. The order is the catalog's own, so the row matches the TV's app list.
+     */
+    fun studyApps(packages: Set<String>): List<AppEntry> {
+        if (packages.isEmpty()) return emptyList()
+        return all
+            .asSequence()
+            .filter { it.packageName in packages }
+            .map { e -> AppNames.of(e.key)?.let { e.copy(label = it) } ?: e }
+            .toList()
+    }
+
     /** The folders on Home, in order, for "Move to Folder". */
     fun folders() = store.folders()
 

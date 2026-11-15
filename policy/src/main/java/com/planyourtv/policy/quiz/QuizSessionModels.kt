@@ -5,20 +5,33 @@ import org.json.JSONObject
 import java.security.MessageDigest
 
 /** The wire schema stored under `quiz.session`. Bump this for any incompatible edit. */
-const val QUIZ_SCHEMA_VERSION = 5
+const val QUIZ_SCHEMA_VERSION = 6
 /** v2 differs only by the removed daily-attempt limit, so old records remain readable. */
 const val QUIZ_MIN_SCHEMA_VERSION = 2
 const val QUIZ_MAX_EARNED_MINUTES = 180
 const val QUIZ_MAX_DIFFICULTY_MINUTES = 30
-const val QUIZ_MAX_UNLOCK_MINUTES = 180
-const val QUIZ_MIN_PULL_COUNT = 5
-const val QUIZ_MAX_PULL_COUNT = 50
+/**
+ * No product-level threshold cap. This is the largest whole-minute value whose
+ * seconds form still fits in an Int (the QCD wire uses seconds).
+ */
+const val QUIZ_MAX_UNLOCK_MINUTES = Int.MAX_VALUE / 60
+/**
+ * The shared session/bank range. Cloud rounds follow the member config (1–10,
+ * capped by [QuizDeviceCapabilities.CLOUD_MAX_QUESTIONS]); local rounds keep
+ * their own 5-question minimum via [QUIZ_MIN_LOCAL_PULL_COUNT]. There is no
+ * product-level upper limit on a round; the technical ceiling matches the QCD
+ * question ceiling.
+ */
+const val QUIZ_MIN_PULL_COUNT = 1
+const val QUIZ_MAX_PULL_COUNT = QUIZ_DOC_MAX_QUESTION_COUNT
+const val QUIZ_MIN_LOCAL_PULL_COUNT = 5
 const val QUIZ_DEFAULT_PULL_COUNT = 5
-const val QUIZ_MAX_ITEMS = 50
+const val QUIZ_MAX_ITEMS = QUIZ_DOC_MAX_QUESTION_COUNT
 const val QUIZ_MIN_ITEMS = 1
 const val QUIZ_MIN_OPTIONS = 2
 const val QUIZ_MAX_OPTIONS = 6
-const val QUIZ_MAX_SESSION_CHARS = 512 * 1024
+/** Technical size guard for the encrypted session record; not a UI limit. */
+const val QUIZ_MAX_SESSION_CHARS = 4 * 1024 * 1024
 const val QUIZ_MAX_PROMPT_CHARS = 200
 const val QUIZ_MAX_OPTION_CHARS = 60
 const val QUIZ_MAX_EXPLANATION_CHARS = 600
@@ -27,6 +40,14 @@ const val QUIZ_MAX_ANSWER_DISPLAY_SEC = 30
 const val QUIZ_DEFAULT_ANSWER_DISPLAY_SEC = 3
 /** Old cloud rows could still carry the former auto-advance range. */
 const val QUIZ_LEGACY_MAX_ANSWER_DISPLAY_SEC = 120
+
+/**
+ * Longest defensible frozen hold: the larger of the timeout voice floor and the
+ * largest documented configured minimum. A larger value is a corrupt record,
+ * not a policy.
+ */
+val QUIZ_MAX_FEEDBACK_HOLD_MS: Long =
+    maxOf(QuizVoiceHold.TIMEOUT_HOLD_MS, QUIZ_DOC_MAX_EXTRA_HOLD_SEC * 1_000L)
 
 /**
  * Answer display is now a minimum stay, not an auto-advance delay. Values left
@@ -40,7 +61,7 @@ fun normalizeAnswerHoldSec(value: Int): Int =
         QUIZ_DEFAULT_ANSWER_DISPLAY_SEC
     }
 /** One question's answer window, shared by the web editor and the session codec. */
-const val QUIZ_MIN_TIME_LIMIT_SEC = 15
+const val QUIZ_MIN_TIME_LIMIT_SEC = 5
 const val QUIZ_MAX_TIME_LIMIT_SEC = 30 * 60
 
 enum class QuizSessionStatus {
@@ -63,7 +84,16 @@ data class QuizConfig(
     val minCorrectCount: Int = 1,
     val maxEarnedMinutes: Int = 60,
     val shuffleOptions: Boolean = true,
+    /** Legacy display-only field. v6 feedback uses [feedbackExtraHoldSec]. */
     val answerDisplaySec: Int = QUIZ_DEFAULT_ANSWER_DISPLAY_SEC,
+    /**
+     * v6: minimum total stay before Continue unlocks after a wrong or timed-out
+     * answer. 0 leaves the local voice floor as the only minimum; a longer voice
+     * clip still wins. A correct answer never holds. New configs default to
+     * [QUIZ_DEFAULT_EXTRA_HOLD_SEC] seconds. The wire name is kept for
+     * compatibility with stored records.
+     */
+    val feedbackExtraHoldSec: Int = QUIZ_DEFAULT_EXTRA_HOLD_SEC,
     /** v4: how many questions one round reserves from the cache. */
     val pullCount: Int = QUIZ_DEFAULT_PULL_COUNT,
     /** v4: minutes earned per correctly answered question; old rounds and cloud only. */
@@ -124,6 +154,11 @@ data class QuizSubmission(
     val correct: Boolean,
     val timedOut: Boolean,
     val answeredAt: Long,
+    /**
+     * v6 minimum feedback stay, frozen when the answer is recorded. Null on v5
+     * records so an in-flight round keeps its old answerDisplaySec semantics.
+     */
+    val feedbackHoldMs: Long? = null,
 )
 
 /**
@@ -139,6 +174,8 @@ data class QuizRun(
     val correctCount: Int = 0,
     val earnedPoints: Int = 0,
     val earnedMinutes: Int = 0,
+    /** v6 local payout in canonical seconds. [earnedMinutes] stays for old UI. */
+    val earnedSeconds: Int = 0,
     val deadlineAt: Long = 0L,
     val savedRemainingMs: Long = 0L,
     val savedAt: Long = 0L,
@@ -181,6 +218,25 @@ data class QuizSession(
     val status: QuizSessionStatus,
     val language: String = "zh",
     val config: QuizConfig = QuizConfig(),
+    /**
+     * v6 local rounds freeze the document identity and the resolved day profile
+     * at start, so a mid-round parent edit cannot change this round's payout.
+     */
+    val docRevision: Long = 0L,
+    val docEtag: String = "",
+    val levelsEtag: String = "",
+    /** [QuizDayType] name; empty for records that did not freeze one. */
+    val dayType: String = "",
+    val rewardProfile: QuizRewardProfile? = null,
+    /**
+     * Bound cloud rounds freeze the QCD/member identity at prepare time. A
+     * later binding change or document sync must not repoint a round that is
+     * already on screen. Null for local and legacy sessions.
+     */
+    val cloudMemberId: Long? = null,
+    val qbLearnerId: Long? = null,
+    /** QCD level id (`cloud:<qbLevelId>`) this round was fetched from. */
+    val preparedLevelId: String? = null,
     val items: List<QuizItem> = emptyList(),
     val run: QuizRun? = null,
 ) {
@@ -213,6 +269,17 @@ object QuizSessionCodec {
         .put("status", session.status.name)
         .put("language", session.language)
         .put("config", encodeConfig(session.config))
+        .put("docRevision", session.docRevision)
+        .put("docEtag", session.docEtag)
+        .put("levelsEtag", session.levelsEtag)
+        .put("dayType", session.dayType)
+        .put(
+            "rewardProfile",
+            session.rewardProfile?.let(::encodeRewardProfile) ?: JSONObject.NULL,
+        )
+        .put("cloudMemberId", session.cloudMemberId ?: JSONObject.NULL)
+        .put("qbLearnerId", session.qbLearnerId ?: JSONObject.NULL)
+        .put("preparedLevelId", session.preparedLevelId ?: JSONObject.NULL)
         .put("items", JSONArray().apply { session.items.forEach { put(encodeItem(it)) } })
         .put("run", session.run?.let(::encodeRun) ?: JSONObject.NULL)
         .toString()
@@ -247,6 +314,28 @@ object QuizSessionCodec {
         val statusText = root.requiredString("status", "session", errors)
         val language = root.requiredString("language", "session", errors)
         val configObject = root.requiredObject("config", "session", errors)
+        val docRevision = root.optionalLong("docRevision", 0L)
+        val docEtag = root.optString("docEtag", "")
+        val levelsEtag = root.optString("levelsEtag", "")
+        val dayType = root.optString("dayType", "")
+        val rewardProfile = parseRewardProfile(root, errors)
+        // Encoded as JSON NULL on local sessions; optString would return the
+        // literal "null" and fail validation, so absence is checked first.
+        val cloudMemberId = if (root.isNull("cloudMemberId")) {
+            null
+        } else {
+            root.optLong("cloudMemberId", 0L).takeIf { it > 0L }
+        }
+        val qbLearnerId = if (root.isNull("qbLearnerId")) {
+            null
+        } else {
+            root.optLong("qbLearnerId", 0L).takeIf { it > 0L }
+        }
+        val preparedLevelId = if (root.isNull("preparedLevelId")) {
+            null
+        } else {
+            root.optString("preparedLevelId", "").trim().takeIf { it.isNotEmpty() }
+        }
         val itemsArray = root.requiredArray("items", "session", errors)
         val config = configObject?.let { parseConfig(it, errors) }
         val items = itemsArray?.let { parseItems(it, errors) }
@@ -280,6 +369,19 @@ object QuizSessionCodec {
         }
         if (run != null && status !in RUNTIME_STATUSES) errors += "session.run: not allowed for status"
         if (run == null && status in RUNTIME_STATUSES) errors += "session.run: required for status"
+        if (docRevision < 0) errors += "session.docRevision: invalid"
+        if (docEtag.isNotEmpty() && !ETAG_RE.matches(docEtag)) errors += "session.docEtag: invalid"
+        if (levelsEtag.isNotEmpty() && !ETAG_RE.matches(levelsEtag)) {
+            errors += "session.levelsEtag: invalid"
+        }
+        if (dayType.isNotEmpty() && dayType !in DAY_TYPES) errors += "session.dayType: invalid"
+        if (rewardProfile != null) {
+            QuizConfigDocumentValidator.rewardProfileIssues("session.rewardProfile", rewardProfile)
+                .forEach { errors += "${it.field}: ${it.code}" }
+        }
+        if (preparedLevelId != null && !preparedLevelId.matches(PREPARED_LEVEL_ID_RE)) {
+            errors += "session.preparedLevelId: invalid"
+        }
         return QuizSession(
             // v2/v3 records are upgraded on read so the next save writes the
             // current shape, while [originSchemaVersion] preserves their reward
@@ -294,6 +396,14 @@ object QuizSessionCodec {
             status = status,
             language = language,
             config = config,
+            docRevision = docRevision.coerceAtLeast(0L),
+            docEtag = docEtag.takeIf { ETAG_RE.matches(it) }.orEmpty(),
+            levelsEtag = levelsEtag.takeIf { ETAG_RE.matches(it) }.orEmpty(),
+            dayType = dayType.takeIf { it in DAY_TYPES }.orEmpty(),
+            rewardProfile = rewardProfile,
+            cloudMemberId = cloudMemberId,
+            qbLearnerId = qbLearnerId,
+            preparedLevelId = preparedLevelId?.takeIf { it.matches(PREPARED_LEVEL_ID_RE) },
             items = items,
             run = run,
         )
@@ -311,6 +421,10 @@ object QuizSessionCodec {
         val answerDisplay = normalizeAnswerHoldSec(
             root.optInt("answerDisplaySec", QUIZ_DEFAULT_ANSWER_DISPLAY_SEC),
         )
+        // v6 optional: old configs and cloud caches carry no extra hold; they
+        // now pick up the product default instead of waiting for the voice floor.
+        val feedbackExtraHold =
+            optionalInt(root, "feedbackExtraHoldSec", "config", errors) ?: QUIZ_DEFAULT_EXTRA_HOLD_SEC
         // v4 fields are optional on read: a v2/v3 record derives them from the
         // legacy fields instead of being rejected.
         val pullCount = root.optInt("pullCount", QUIZ_DEFAULT_PULL_COUNT)
@@ -350,6 +464,9 @@ object QuizSessionCodec {
         if (minUnlock !in 0..QUIZ_MAX_UNLOCK_MINUTES) {
             errors += "config.minUnlockMinutes: out of range"
         }
+        if (feedbackExtraHold !in 0..QUIZ_DOC_MAX_EXTRA_HOLD_SEC) {
+            errors += "config.feedbackExtraHoldSec: out of range"
+        }
         return QuizConfig(
             defaultTimeLimitSec = defaultTime,
             minutesPerPoint = minutesPerPoint,
@@ -357,6 +474,7 @@ object QuizSessionCodec {
             maxEarnedMinutes = maxEarned,
             shuffleOptions = shuffle,
             answerDisplaySec = answerDisplay,
+            feedbackExtraHoldSec = feedbackExtraHold,
             pullCount = pullCount,
             minutesPerQuestion = minutesPerQuestion,
             pointsPerQuestion = pointsPerQuestion,
@@ -509,6 +627,7 @@ object QuizSessionCodec {
         val correct = root.requiredInt("correctCount", "run", errors)
         val points = root.requiredInt("earnedPoints", "run", errors)
         val minutes = root.requiredInt("earnedMinutes", "run", errors)
+        val earnedSeconds = root.optInt("earnedSeconds", 0)
         val deadline = root.requiredLong("deadlineAt", "run", errors)
         val savedRemaining = root.optLong("savedRemainingMs", 0L)
         val savedAt = root.optLong("savedAt", 0L)
@@ -532,8 +651,24 @@ object QuizSessionCodec {
                 val isCorrect = obj.requiredBoolean("correct", prefix, errors)
                 val timedOut = obj.requiredBoolean("timedOut", prefix, errors)
                 val answeredAt = obj.requiredLong("answeredAt", prefix, errors)
+                // Null on v5 records; v6 always freezes the nominal hold.
+                val holdMs = if (obj.has("feedbackHoldMs") && !obj.isNull("feedbackHoldMs")) {
+                    obj.requiredLong("feedbackHoldMs", prefix, errors)
+                } else {
+                    null
+                }
+                if (holdMs != null && holdMs !in 0..QUIZ_MAX_FEEDBACK_HOLD_MS) {
+                    errors += "$prefix.feedbackHoldMs: out of range"
+                }
                 if (questionId != null && isCorrect != null && timedOut != null && answeredAt != null) {
-                    subs += QuizSubmission(questionId, selected, isCorrect, timedOut, answeredAt)
+                    subs += QuizSubmission(
+                        questionId,
+                        selected,
+                        isCorrect,
+                        timedOut,
+                        answeredAt,
+                        holdMs,
+                    )
                 }
             }
         }
@@ -549,6 +684,9 @@ object QuizSessionCodec {
             errors += "run.score: out of range"
         }
         if (minutes !in 0..180) errors += "run.earnedMinutes: out of range"
+        if (earnedSeconds !in 0..QUIZ_DOC_MAX_MAX_EARNED_SECONDS) {
+            errors += "run.earnedSeconds: out of range"
+        }
         if (savedRemaining < 0 || savedAt < 0) errors += "run.saved: invalid"
         if (feedbackRemaining < 0) errors += "run.feedbackRemainingMs: invalid"
         if (feedbackOpen && subs.isEmpty()) errors += "run.feedbackOpen: missing submission"
@@ -559,6 +697,7 @@ object QuizSessionCodec {
             correctCount = correct,
             earnedPoints = points,
             earnedMinutes = minutes,
+            earnedSeconds = earnedSeconds,
             deadlineAt = deadline,
             savedRemainingMs = savedRemaining,
             savedAt = savedAt,
@@ -593,6 +732,7 @@ object QuizSessionCodec {
         .put("pointsPerQuestion", config.pointsPerQuestion)
         .apply {
             if (!includeScoring) return@apply
+            put("feedbackExtraHoldSec", config.feedbackExtraHoldSec)
             put("easyRewardMinutes", config.easyRewardMinutes)
             put("mediumRewardMinutes", config.mediumRewardMinutes)
             put("hardRewardMinutes", config.hardRewardMinutes)
@@ -656,6 +796,7 @@ object QuizSessionCodec {
         .put("correctCount", run.correctCount)
         .put("earnedPoints", run.earnedPoints)
         .put("earnedMinutes", run.earnedMinutes)
+        .put("earnedSeconds", run.earnedSeconds)
         .put("deadlineAt", run.deadlineAt)
         .put("savedRemainingMs", run.savedRemainingMs)
         .put("savedAt", run.savedAt)
@@ -672,10 +813,69 @@ object QuizSessionCodec {
                         .put("selectedIndex", sub.selectedIndex ?: JSONObject.NULL)
                         .put("correct", sub.correct)
                         .put("timedOut", sub.timedOut)
-                        .put("answeredAt", sub.answeredAt),
+                        .put("answeredAt", sub.answeredAt)
+                        .put("feedbackHoldMs", sub.feedbackHoldMs ?: JSONObject.NULL),
                 )
             }
         })
+
+    private fun JSONObject.optionalLong(name: String, fallback: Long): Long {
+        if (!has(name) || isNull(name)) return fallback
+        val value = opt(name)
+        if (value !is Number || value.toDouble() != value.toLong().toDouble()) return fallback
+        return value.toLong()
+    }
+
+    private fun encodeRewardProfile(profile: QuizRewardProfile): JSONObject = JSONObject()
+        .put("correctSeconds", encodeDifficultySeconds(profile.correctSeconds))
+        .put("penaltySeconds", encodeDifficultySeconds(profile.penaltySeconds))
+        .put("maxEarnedSeconds", profile.maxEarnedSeconds)
+        .put("minUnlockSeconds", profile.minUnlockSeconds)
+
+    private fun encodeDifficultySeconds(value: QuizDifficultySeconds): JSONObject = JSONObject()
+        .put("easy", value.easy)
+        .put("medium", value.medium)
+        .put("hard", value.hard)
+
+    private fun parseRewardProfile(
+        root: JSONObject,
+        errors: MutableList<String>,
+    ): QuizRewardProfile? {
+        if (!root.has("rewardProfile") || root.isNull("rewardProfile")) return null
+        val obj = root.optJSONObject("rewardProfile")
+        if (obj == null) {
+            errors += "session.rewardProfile: not an object"
+            return null
+        }
+        val correct = parseDifficultySeconds(obj, "correctSeconds", errors) ?: return null
+        val penalty = parseDifficultySeconds(obj, "penaltySeconds", errors) ?: return null
+        val maxEarned = optionalInt(obj, "maxEarnedSeconds", "session.rewardProfile", errors)
+        val minUnlock = optionalInt(obj, "minUnlockSeconds", "session.rewardProfile", errors)
+        if (maxEarned == null || minUnlock == null) return null
+        return QuizRewardProfile(
+            correctSeconds = correct,
+            penaltySeconds = penalty,
+            maxEarnedSeconds = maxEarned,
+            minUnlockSeconds = minUnlock,
+        )
+    }
+
+    private fun parseDifficultySeconds(
+        root: JSONObject,
+        name: String,
+        errors: MutableList<String>,
+    ): QuizDifficultySeconds? {
+        val obj = root.optJSONObject(name)
+        if (obj == null) {
+            errors += "session.rewardProfile.$name: missing"
+            return null
+        }
+        val easy = optionalInt(obj, "easy", "session.rewardProfile.$name", errors)
+        val medium = optionalInt(obj, "medium", "session.rewardProfile.$name", errors)
+        val hard = optionalInt(obj, "hard", "session.rewardProfile.$name", errors)
+        if (easy == null || medium == null || hard == null) return null
+        return QuizDifficultySeconds(easy, medium, hard)
+    }
 
     private fun JSONObject.requiredString(name: String, prefix: String, errors: MutableList<String>): String? {
         if (!has(name) || isNull(name)) {
@@ -793,4 +993,8 @@ object QuizSessionCodec {
     private val SOURCE_RE = Regex("[a-z][a-z0-9_-]{0,23}")
     private val LANGUAGE_RE = Regex("[a-z]{2,3}(-[A-Za-z]{2,8})?")
     private val DATE_RE = Regex("\\d{4}-\\d{2}-\\d{2}")
+    private val ETAG_RE = Regex("^sha256:[0-9a-f]{64}$")
+    private val DAY_TYPES = setOf("WEEKDAY", "WEEKEND")
+    /** QCD level ids are `cloud:<qbLevelId>`; QB built-in levels may be negative. */
+    private val PREPARED_LEVEL_ID_RE = Regex("cloud:-?[0-9]{1,18}")
 }

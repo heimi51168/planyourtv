@@ -4,7 +4,7 @@ import android.util.Log
 import app.orchard.tv.policy.PolicyCloud
 import com.planyourtv.policy.PolicyRuntime
 import com.planyourtv.policy.quiz.QuizConfig
-import com.planyourtv.policy.quiz.QuizLevel
+import com.planyourtv.policy.quiz.QuizDeviceCapabilities
 import com.planyourtv.policy.quiz.QuizPendingKind
 import com.planyourtv.policy.quiz.QuizSessionCodec
 import com.planyourtv.policy.quiz.QuizSessionStatus
@@ -18,6 +18,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.json.JSONArray
 import org.json.JSONObject
 
 /**
@@ -36,6 +37,36 @@ object QuizConfigSync {
 
     /** This build pulls questions from QB, so the backend may issue device tickets. */
     const val SUPPORTS_CLOUD_QUIZ = true
+
+    /** This build reads QCD v1 documents from the cloud (QuizConfigDocumentSync). */
+    const val SUPPORTS_QUIZ_DOCUMENT = true
+
+    /**
+     * V25 §8.5 capability advertisement. Every value mirrors [QuizDeviceCapabilities]:
+     * a document the TV rejects locally must never be advertised as supported.
+     */
+    fun capabilityReport(): JSONObject = JSONObject()
+        .put("supportsQuizConfig", SUPPORTS_QUIZ_CONFIG)
+        .put("supportsCloudQuiz", SUPPORTS_CLOUD_QUIZ)
+        .put("supportsQuizDocument", SUPPORTS_QUIZ_DOCUMENT)
+        .put("quizSchemaVersions", JSONArray().put(1))
+        .put("quizQuestionTypes", JSONArray().put("SINGLE"))
+        .put("quizMaxLevels", QuizDeviceCapabilities.MAX_LEVELS)
+        .put("quizMaxQuestionsPerRound", QuizDeviceCapabilities.CLOUD_MAX_QUESTIONS)
+        .put("quizSupportsRewardProfiles", true)
+        .put("quizSupportsPinyin", false)
+        .put("quizSupportsCheckinGate", true)
+        .put("quizSupportsVoiceHold", true)
+        .put("quizSupportsExtraHold", true)
+        .put("quizSupportsAutoNext", false)
+
+    /**
+     * 2026-11-12: 绑定后答题配置完全以云端为准（题库孩子级配置 + TV 关卡）。
+     * 本机不再上行答题配置：绑定成功时不上报本机快照，本地编辑也不再排队上传，
+     * 避免旧数据结构覆盖云端造成不兼容。下行拉取与 [applyRemote] 保持启用。
+     * [pushNow] / [reportPayload] 完整保留，回滚时把开关改回 true 即可。
+     */
+    private const val LOCAL_QUIZ_UPLOAD_ENABLED = false
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val pushMutex = Mutex()
@@ -73,7 +104,7 @@ object QuizConfigSync {
      * A confirmed binding switches the TV to the cloud bank immediately: bound TVs never serve
      * locally published questions again. The previous family's attempt, cached pool and pending
      * uploads are dropped here so the new learner cannot inherit them. The local challenge config
-     * is kept: it is this TV's actual configuration and is what the binding report uploads.
+     * is kept only as this TV's offline view; it is never uploaded (见 [LOCAL_QUIZ_UPLOAD_ENABLED]).
      */
     fun onBindingConfirmed(deviceNo: String) {
         if (deviceNo.isBlank()) return
@@ -82,6 +113,8 @@ object QuizConfigSync {
         // before the TV switches to the cloud source.
         QuizRecovery.importLegacyLocalReady(now)
         CloudQuizPreparer.discardCloudState(deviceNo)
+        // 新家庭：清掉上一个家庭的 QCD 云端缓存与 active；本机 QCD 保留。
+        QuizConfigDocumentSync.onBindingConfirmed()
         synchronized(stateLock) {
             cancelRetryLocked()
             val source = QuizSessionStore.loadSourceConfig()
@@ -93,24 +126,19 @@ object QuizConfigSync {
                     updatedAt = now,
                 ),
             )
-            QuizSessionStore.saveSyncState(
-                QuizSessionStore.loadSyncState().copy(
-                    pendingLocal = true,
-                    conflict = false,
-                    pendingKind = QuizPendingKind.BINDING,
-                    lastError = "",
-                    updatedAt = now,
-                ),
-            )
+            // 绑定后云端权威：不再把本机快照标记为待上传，配置由云端下行覆盖。
+            QuizSessionStore.saveSyncState(emptySyncState(now))
         }
     }
 
     /**
      * Uploads the challenge configuration right after the QR binding succeeds. Failure keeps
      * [QuizSyncState.pendingLocal] and is retried; it never blocks the binding success screen.
+     * 2026-11-12 起上行默认关闭，直接返回 [PushResult.CloudManaged]。
      */
     suspend fun reportBinding(deviceNo: String): PushResult {
         if (deviceNo.isBlank()) return PushResult.Skipped
+        if (!LOCAL_QUIZ_UPLOAD_ENABLED) return PushResult.CloudManaged
         markPending(QuizPendingKind.BINDING)
         return pushNow()
     }
@@ -129,9 +157,14 @@ object QuizConfigSync {
                 updatedAt = now,
             )
             QuizSessionStore.saveSourceConfig(next)
-            // Unbound: there is no cloud row yet. The binding report uploads this snapshot;
-            // showing "pending sync" before a binding would describe an upload that cannot exist.
+            // Unbound: there is no cloud row yet, and binding no longer uploads this snapshot.
+            // Showing "pending sync" before a binding would describe an upload that cannot exist.
             if (!isBound()) return
+            if (!LOCAL_QUIZ_UPLOAD_ENABLED) {
+                // 绑定后云端权威：本地编辑只影响本机视图，不排队上传，也不制造同步冲突。
+                QuizSessionStore.saveSyncState(emptySyncState(now))
+                return
+            }
             QuizSessionStore.saveSyncState(
                 QuizSessionStore.loadSyncState().copy(
                     pendingLocal = true,
@@ -160,6 +193,11 @@ object QuizConfigSync {
                 ),
             )
             if (!isBound()) return
+            if (!LOCAL_QUIZ_UPLOAD_ENABLED) {
+                // 绑定后云端权威：本地开关只改本机视图，不排队上传。
+                QuizSessionStore.saveSyncState(emptySyncState(now))
+                return
+            }
             QuizSessionStore.saveSyncState(
                 QuizSessionStore.loadSyncState().copy(
                     pendingLocal = true,
@@ -187,8 +225,7 @@ object QuizConfigSync {
                 // the backend explicitly reports CLOUD for this device. An edit made on the TV
                 // stays local and is surfaced as a conflict instead of being overwritten.
                 if (sync.pendingKind == QuizPendingKind.BINDING && remote.source == QuizSource.CLOUD) {
-                    // 扫码绑定后的交接以本机范围为准；绑定的上报响应才会带回云端权威范围。
-                    val appliedResult = applyRemoteLocked(remote, current, nowMs, applyScope = false)
+                    val appliedResult = applyRemoteLocked(remote, current, nowMs)
                     if (appliedResult is ApplyResult.Applied) {
                         QuizSessionStore.saveSyncState(
                             emptySyncState(nowMs),
@@ -228,28 +265,11 @@ object QuizConfigSync {
         remote: RemoteQuizConfig,
         current: com.planyourtv.policy.quiz.QuizSourceConfig,
         nowMs: Long,
-        applyScope: Boolean = true,
     ): ApplyResult {
         val local = QuizSessionStore.loadChallengeConfig() ?: QuizConfig()
         val next = remote.toQuizConfig(local)
-        // The cloud still speaks one scope. A concrete remote scope replaces the
-        // local level list with that single level; an explicit "bound" (null)
-        // leaves the parent-designed levels alone, because the new TV surfaces
-        // never fall back to the generation settings.
-        val shouldApplyScope = applyScope && remote.scopeProvided && remote.scope != null
-        val previousScope = if (shouldApplyScope) QuizAnswerScopeStore.currentSignature() else null
-        if (shouldApplyScope && !QuizAnswerScopeStore.save(
-                listOf(
-                    QuizLevel(
-                        id = "cloud-1",
-                        name = "",
-                        scope = requireNotNull(remote.scope),
-                    ),
-                ),
-            )
-        ) {
-            return ApplyResult.Rejected("STORAGE")
-        }
+        // 云端不再下发单范围。关卡是孩子级的，来自 QB 的 `deviceLevels`
+        // （见 QuizConfigDocumentSync）；本机关卡只属于本机文档，绝不因远端配置改写。
         if (!QuizSessionStore.saveChallengeConfig(next)) return ApplyResult.Rejected("STORAGE")
         QuizSessionStore.setEnabled(remote.enabled)
         val saved = QuizSessionStore.saveSourceConfig(
@@ -262,15 +282,11 @@ object QuizConfigSync {
             ),
         )
         if (!saved) return ApplyResult.Rejected("STORAGE")
-        if (previousScope != null && previousScope != QuizAnswerScopeStore.currentSignature()) {
-            Log.i(TAG, "answer scope changed remotely; dropping stale cloud round")
-            invalidateCloudRoundAfterScopeChange(remote.deviceNo)
-        }
         updateReadySession(next, nowMs)
         Log.i(
             TAG,
             "applied remote quiz config: version=${remote.version} source=${remote.source} " +
-                "enabled=${remote.enabled} scopeProvided=$shouldApplyScope",
+                "enabled=${remote.enabled}",
         )
         return ApplyResult.Applied
     }
@@ -330,16 +346,26 @@ object QuizConfigSync {
         val cloud = PolicyRuntime.state.value
         if (!cloud.bound || cloud.deviceNo.isBlank()) return
         if (QuizSessionStore.loadSyncState().pendingLocal) {
-            synchronized(stateLock) {
-                retryAttempt = 0
-                scheduleRetryLocked()
+            if (LOCAL_QUIZ_UPLOAD_ENABLED) {
+                synchronized(stateLock) {
+                    retryAttempt = 0
+                    scheduleRetryLocked()
+                }
+                scope.launch { pushNow() }
+            } else {
+                // 旧版本可能留下 pendingLocal；上行关闭后直接清掉，避免一直显示"待同步"。
+                clearPendingUpload()
             }
-            scope.launch { pushNow() }
         }
         refreshFromCloudAsync(force = true)
+        QuizConfigDocumentSync.resume()
     }
 
     fun retryNow() {
+        if (!LOCAL_QUIZ_UPLOAD_ENABLED) {
+            clearPendingUpload()
+            return
+        }
         scope.launch { pushNow() }
     }
 
@@ -358,6 +384,7 @@ object QuizConfigSync {
 
     fun onUnbound() {
         CloudQuizPreparer.discardCloudState()
+        QuizConfigDocumentSync.onUnbound()
         synchronized(stateLock) {
             cancelRetryLocked()
             retryAttempt = 0
@@ -375,6 +402,10 @@ object QuizConfigSync {
     }
 
     private suspend fun pushNow(): PushResult = pushMutex.withLock {
+        if (!LOCAL_QUIZ_UPLOAD_ENABLED) {
+            clearPendingUpload()
+            return PushResult.CloudManaged
+        }
         val cloud = PolicyRuntime.state.value
         if (!cloud.bound || cloud.deviceNo.isBlank()) return PushResult.Skipped
         val sync = synchronized(stateLock) {
@@ -480,7 +511,20 @@ object QuizConfigSync {
         return PushResult.Synced
     }
 
+    /** 上行关闭期间清掉历史遗留的待上传/冲突标记，避免 UI 一直提示同步。 */
+    private fun clearPendingUpload() {
+        synchronized(stateLock) {
+            cancelRetryLocked()
+            retryAttempt = 0
+            val sync = QuizSessionStore.loadSyncState()
+            if (sync.pendingLocal || sync.conflict) {
+                QuizSessionStore.saveSyncState(emptySyncState(System.currentTimeMillis()))
+            }
+        }
+    }
+
     private fun markPending(kind: QuizPendingKind) {
+        if (!LOCAL_QUIZ_UPLOAD_ENABLED) return
         val now = System.currentTimeMillis()
         synchronized(stateLock) {
             val source = QuizSessionStore.loadSourceConfig()

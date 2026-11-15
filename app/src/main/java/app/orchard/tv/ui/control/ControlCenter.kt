@@ -118,6 +118,7 @@ import app.orchard.tv.ui.home.VpnBadge
 import app.orchard.tv.ui.home.dateText
 import app.orchard.tv.ui.home.timeText
 import app.orchard.tv.ui.policy.LockButton
+import app.orchard.tv.ui.policy.ParentCenterQrHint
 import app.orchard.tv.ui.policy.linearDpadFocus
 import app.orchard.tv.ui.theme.Glyph
 import app.orchard.tv.ui.theme.GlyphIcon
@@ -603,6 +604,13 @@ private fun MainPage(
                     focusRequester = menuFallback,
                     onClick = { confirmExitTimer = true },
                 )
+            }
+            // A parent passing the timer panel can scan into the parent center without first
+            // opening the quiz gate. Study mode keeps its own panel: this is the timer surface.
+            // The static code takes no focus; the warm copy renders its fixed placeholder only.
+            if (restriction == ChildRestriction.GUARDED) {
+                Spacer(Modifier.height(12.dp))
+                ParentCenterQrHint(load = takeFocus)
             }
         } else {
             // A parent left Kids and Elders mode: one press back into it, no PIN.
@@ -1125,9 +1133,12 @@ private fun HealthRow(
     }
 }
 
-/** A round Control Center button: frosted at rest, white when focused. */
+/**
+ * A round Control Center button: frosted at rest, white when focused. Also used by the lock
+ * screen's parent panel so its input button keeps Control Center's top-left position and look.
+ */
 @Composable
-private fun RoundButton(
+internal fun RoundButton(
     glyph: Glyph,
     label: String,
     focusRequester: FocusRequester? = null,
@@ -1224,10 +1235,11 @@ private fun SliderRow(
 }
 
 @Composable
-private fun VolumeRow(
+internal fun VolumeRow(
     vm: HomeViewModel,
     returnTo: FocusRequester,
     focusRequester: FocusRequester? = null,
+    modifier: Modifier = Modifier,
 ) {
     val volume = vm.volume
     SliderRow(
@@ -1236,7 +1248,7 @@ private fun VolumeRow(
         value = if (volume.muted) stringResource(R.string.cc_muted) else volume.level.toString(),
         steps = volume.max,
         onStep = vm::adjustVolume,
-        modifier = Modifier.focusProperties { up = returnTo },
+        modifier = modifier.focusProperties { up = returnTo },
         focusRequester = focusRequester,
         onClick = vm::toggleMute,
     )
@@ -1251,7 +1263,7 @@ private fun VolumeRow(
  * too — that copy would read the picture service for a panel nobody can see.
  */
 @Composable
-private fun PollBrightness(vm: HomeViewModel, laser: Boolean, enabled: Boolean) {
+internal fun PollBrightness(vm: HomeViewModel, laser: Boolean, enabled: Boolean) {
     val context = LocalContext.current
     val xgimi = remember { SystemProbe.xgimiBrightnessLevel() != null }
     LaunchedEffect(xgimi, laser, enabled) {
@@ -1270,7 +1282,12 @@ private fun PollBrightness(vm: HomeViewModel, laser: Boolean, enabled: Boolean) 
  * says so: a bare "Brightness" with no slider read as broken (Vidda 85V1F-S, FFalcon, issue #130).
  */
 @Composable
-private fun BrightnessRow(vm: HomeViewModel, laser: Boolean, focusRequester: FocusRequester? = null) {
+internal fun BrightnessRow(
+    vm: HomeViewModel,
+    laser: Boolean,
+    focusRequester: FocusRequester? = null,
+    modifier: Modifier = Modifier,
+) {
     val context = LocalContext.current
     // XGIMI (GMUI): the real brightness is the DLP light-engine level. It reads through the HAL
     // class (SystemProbe.xgimiBrightnessLevel) and, on this firmware, writes through it too, so the
@@ -1283,7 +1300,7 @@ private fun BrightnessRow(vm: HomeViewModel, laser: Boolean, focusRequester: Foc
         MenuRow(Glyph.Sun, stringResource(R.string.cc_brightness), onClick = {
             vm.overlay = Overlay.None
             SystemProbe.openPictureSettings(context)
-        }, focusRequester = focusRequester, trailing = stringResource(R.string.cc_brightness_in_settings) + " ›")
+        }, modifier = modifier, focusRequester = focusRequester, trailing = stringResource(R.string.cc_brightness_in_settings) + " ›")
     } else {
         SliderRow(
             glyph = Glyph.Sun,
@@ -1304,6 +1321,7 @@ private fun BrightnessRow(vm: HomeViewModel, laser: Boolean, focusRequester: Foc
                 else -> 20
             },
             onStep = vm::adjustBrightness,
+            modifier = modifier,
             focusRequester = focusRequester,
             onClick = {},
         )

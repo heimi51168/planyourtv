@@ -2,12 +2,11 @@
 <resources>
     <string name="app_name">PlanYourTV Parent</string>
     <string name="pair_title">Connect to your TV</string>
-    <string name="pair_intro">Open Parent Center on the TV and scan the QR code shown there. The address is remembered, so you only scan once.</string>
+    <string name="pair_intro">Phone and TV on the same local network. Scan the QR code on the TV.</string>
     <string name="pair_scan">Scan TV QR code</string>
     <string name="pair_manual_toggle">Can\'t scan? Enter the address manually</string>
     <string name="pair_url_hint">192.0.2.10:8790/abcd2345/quiz</string>
     <string name="pair_connect">Connect</string>
-    <string name="pair_note">The phone and the TV must be on the same Wi-Fi network. This app opens the Parent Center page served by your TV; it has no account or cloud service of its own.</string>
     <string name="pair_invalid_url">Enter the complete address from the TV\'s QR code: IP, port and the code after it.</string>
     <string name="scan_failed">The scanner could not start. Try again.</string>
     <string name="camera_permission_hint">Allow camera access to scan the QR code on the TV.</string>
@@ -31,6 +30,9 @@
     <string name="error_retry">Retry</string>
     <string name="error_repair">Scan another TV</string>
     <string name="scan_prompt">Point the camera at the QR code on the TV</string>
+    <string name="scan_torch">Torch</string>
+    <string name="scan_zoom">Zoom</string>
+    <string name="scan_zoom_default">1.0×</string>
     <string name="saved">Download saved.</string>
     <string name="save_failed">Could not save the download.</string>
     <string name="download_unsupported">This download cannot be opened here. Try the browser from the menu.</string>

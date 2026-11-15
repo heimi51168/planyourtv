@@ -17,6 +17,7 @@ import app.orchard.tv.apps.IconLibrary
 import app.orchard.tv.apps.SourceDevice
 import app.orchard.tv.apps.SourceLooks
 import app.orchard.tv.apps.TileArtFactory
+import app.orchard.tv.policy.web.ParentWebAdmin
 import app.orchard.tv.quiz.QuizWebAdmin
 import app.orchard.tv.settings.AerialSettings
 import app.orchard.tv.settings.KidsLock
@@ -71,6 +72,7 @@ class PhoneServer private constructor(
         val path = uri.removePrefix(prefix).ifEmpty { "/" }
         // The quiz page has its own one-time pairing secret and parent PIN; it is
         // not the general wallpaper page and cannot change any other setting.
+        ParentWebAdmin.handle(context, session, path)?.let { return it }
         QuizWebAdmin.handle(context, session, path)?.let { return it }
         return runCatching {
             // In Kids and Elders mode the page changes nothing without the parental PIN: anyone on

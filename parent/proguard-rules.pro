@@ -6,6 +6,7 @@
 }
 -keep class app.orchard.tv.parent.MainActivity$ShellBridge { *; }
 
-# ZXing core selects readers reflectively in some code paths; keep it intact.
--keep class com.google.zxing.** { *; }
--dontwarn com.google.zxing.**
+# zxing-cpp's AAR carries its own consumer keep rule for the JNI bridge. Keep
+# the wrapper here too so a future AAR update cannot silently strip it.
+-keep class zxingcpp.** { *; }
+-dontwarn zxingcpp.**

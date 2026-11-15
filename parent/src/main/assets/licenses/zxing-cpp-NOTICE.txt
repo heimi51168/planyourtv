@@ -1,0 +1,3 @@
+zxing-cpp Android wrapper
+Project: https://github.com/zxing-cpp/zxing-cpp
+License: Apache License 2.0 (see zxing-cpp-LICENSE.txt in this directory)
