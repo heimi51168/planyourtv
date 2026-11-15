@@ -82,8 +82,17 @@ internal object BotActions {
                 allowHostedRule = true,
             )
         ) {
-            SessionStartResult.Started ->
-                Outcome("✅ 已开始 ${minutes} 分钟观看", "✅ $actorName 加时 $minutes 分钟")
+            SessionStartResult.Started -> {
+                // V29 admission clips a local start to the daily quota remaining,
+                // so report what actually started, not what was asked for.
+                val actualMinutes = (LocalPolicyRuntime.state.value.totalSeconds / 60L).toInt()
+                val text = if (actualMinutes < minutes) {
+                    "✅ 已开始 $actualMinutes 分钟观看（今日额度只剩这么多，申请的是 $minutes 分钟）"
+                } else {
+                    "✅ 已开始 $minutes 分钟观看"
+                }
+                Outcome(text, "✅ $actorName 加时 $minutes 分钟")
+            }
             SessionStartResult.Pending ->
                 Outcome("电视上有等待确认的操作，请稍后再试")
             is SessionStartResult.Rejected ->

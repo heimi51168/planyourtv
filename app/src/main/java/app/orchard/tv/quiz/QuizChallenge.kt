@@ -1,6 +1,7 @@
 package app.orchard.tv.quiz
 
 import app.orchard.tv.policy.PolicyCloud
+import app.orchard.tv.policy.LocalPolicyRuntime
 import app.orchard.tv.policy.PolicyModeCoordinator
 import app.orchard.tv.policy.QuizSettlementAnswer
 import com.planyourtv.policy.Activation
@@ -743,8 +744,14 @@ object QuizChallenge {
             SessionStartResult.Started -> {
                 // Count only what really plays out: the ledger moves after the
                 // session started, so a failed or abandoned settlement (and its
-                // later retry) never spends the day's allowance twice.
-                QuizEarnedStore.recordEarned(run.earnedMinutes, nowMs)
+                // later retry) never spends the day's allowance twice. V29
+                // admission may clip the reward to the daily quota remaining;
+                // the ledger records the granted amount, not the report number.
+                val grantedMinutes = minOf(
+                    run.earnedMinutes,
+                    (LocalPolicyRuntime.state.value.totalSeconds / 60L).toInt(),
+                )
+                QuizEarnedStore.recordEarned(grantedMinutes, nowMs)
                 QuizSessionStore.clearSession()
                 QuizRuntime.refresh()
                 ReviewOutcome.Started
