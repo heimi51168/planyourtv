@@ -125,4 +125,25 @@
     <string name="policy_v6_auto_consent_body">Turning on child mode also turns on Auto Update, so this TV gets new versions and fixes promptly. New versions download and install automatically while the TV is idle, without interrupting viewing. You can turn Auto Update off at any time in Parent Center.</string>
     <string name="policy_v6_auto_consent_confirm">Turn both on</string>
     <string name="policy_v6_auto_consent_cancel">Cancel</string>
+
+    <string name="policy_v6_wechat">WeChat alerts</string>
+    <string name="policy_v6_wechat_sub">Control the TV from WeChat</string>
+    <string name="policy_v6_wechat_status">Available after scanning</string>
+    <string name="policy_v6_wechat_summary">Bind a parent\'s WeChat to check status, add time, unlock and get quiz updates from chat</string>
+    <string name="policy_v6_wechat_enable">Enable WeChat alerts</string>
+    <string name="policy_v6_wechat_on">On</string>
+    <string name="policy_v6_wechat_off">Off</string>
+    <string name="policy_v6_wechat_add">Add binding</string>
+    <string name="policy_v6_wechat_remove">Remove %1$s</string>
+    <string name="policy_v6_wechat_bound">Bound</string>
+    <string name="policy_v6_wechat_count">%1$d of %2$d bound</string>
+    <string name="policy_v6_wechat_full">Binding limit reached (max 4)</string>
+    <string name="policy_v6_wechat_hint">After binding, send “help” to the bot for the full command list. No password is needed; every control command is logged and announced to every bound parent.</string>
+    <string name="policy_v6_wechat_qr_title">Scan with WeChat</string>
+    <string name="policy_v6_wechat_qr_hint">Open WeChat → Scan, point at the code, then confirm on the phone. The bot sends the command menu right after binding.</string>
+    <string name="policy_v6_wechat_qr_waiting">Waiting for scan…</string>
+    <string name="policy_v6_wechat_qr_scanned">Scanned — confirm on your phone</string>
+    <string name="policy_v6_wechat_qr_digits">Enter this code in WeChat: %1$s</string>
+    <string name="policy_v6_wechat_qr_loading">Generating QR…</string>
+    <string name="policy_v6_wechat_qr_failed">The code expired or the network is down — go back and retry</string>
 </resources>

@@ -7,6 +7,7 @@ internal sealed interface ParentFocusTarget {
     data object Password : ParentFocusTarget
     data object AutoUpdate : ParentFocusTarget
     data object QuizSetup : ParentFocusTarget
+    data object WeChat : ParentFocusTarget
     data object MigrationRetry : ParentFocusTarget
     data object WaitConfigRetry : ParentFocusTarget
     data object SummaryRead : ParentFocusTarget
@@ -33,6 +34,9 @@ internal fun parentRailTargets(
     }
     add(ParentFocusTarget.AutoUpdate)
     if (childOn) add(ParentFocusTarget.QuizSetup)
+    // WeChat chat control is a child-mode entry like the quiz setup, and it is
+    // harmless to reach while child mode is off (the pane explains that).
+    if (childOn) add(ParentFocusTarget.WeChat)
 }
 
 /** The right-hand pane. The rail no longer selects a guard mode. */
@@ -44,9 +48,10 @@ internal enum class ParentPaneKind {
     WAIT_CONFIG,
     SUMMARY,
     QUIZ_SETUP,
+    WECHAT,
 }
 
 internal enum class ParentZone { RAIL, PANE }
 
 /** Left always returns to the rail row that opened the pane. */
-internal enum class ParentRailOrigin { SWITCH, REMOTE, QUIZ_SETUP }
+internal enum class ParentRailOrigin { SWITCH, REMOTE, QUIZ_SETUP, WECHAT }

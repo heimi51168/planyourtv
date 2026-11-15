@@ -5,9 +5,9 @@ import org.junit.Test
 
 /**
  * Auto update is a device-level setting: it must be reachable with child mode off and after a
- * handoff hides the remote and password rows. Quiz setup is a child-mode row and stays below
- * auto update in every state that keeps child mode on. These cases pin the rail order the
- * d-pad follows.
+ * handoff hides the remote and password rows. Quiz setup and WeChat alerts are child-mode rows
+ * and stay below auto update in every state that keeps child mode on. These cases pin the rail
+ * order the d-pad follows.
  */
 class PolicyParentRailTest {
     @Test
@@ -26,6 +26,7 @@ class PolicyParentRailTest {
                 ParentFocusTarget.Password,
                 ParentFocusTarget.AutoUpdate,
                 ParentFocusTarget.QuizSetup,
+                ParentFocusTarget.WeChat,
             ),
             parentRailTargets(childOn = true, remoteVisible = false, passwordVisible = true),
         )
@@ -40,6 +41,7 @@ class PolicyParentRailTest {
                 ParentFocusTarget.Password,
                 ParentFocusTarget.AutoUpdate,
                 ParentFocusTarget.QuizSetup,
+                ParentFocusTarget.WeChat,
             ),
             parentRailTargets(childOn = true, remoteVisible = true, passwordVisible = true),
         )
@@ -52,6 +54,7 @@ class PolicyParentRailTest {
                 ParentFocusTarget.Switch,
                 ParentFocusTarget.AutoUpdate,
                 ParentFocusTarget.QuizSetup,
+                ParentFocusTarget.WeChat,
             ),
             parentRailTargets(childOn = true, remoteVisible = false, passwordVisible = false),
         )

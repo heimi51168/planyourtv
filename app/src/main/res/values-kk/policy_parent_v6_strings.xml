@@ -124,4 +124,25 @@
     <string name="policy_v6_auto_consent_body">Балалар режимін қосқанда «Автоматты жаңарту» да қосылады, сондықтан теледидар жаңа нұсқалар мен түзетулерді уақытында алады. Жаңа нұсқалар теледидар бос тұрғанда автоматты түрде жүктеліп, орнатылады, көруге кедергі жасамайды. Қажет болмаса, автоматты жаңартуды ата-ана орталығында кез келген уақытта өшіруге болады.</string>
     <string name="policy_v6_auto_consent_confirm">Екеуін де қосу</string>
     <string name="policy_v6_auto_consent_cancel">Болдырмау</string>
+
+    <string name="policy_v6_wechat">WeChat хабарламалары</string>
+    <string name="policy_v6_wechat_sub">Теледидарды WeChat арқылы басқарыңыз</string>
+    <string name="policy_v6_wechat_status">Сканерлеуден кейін қолжетімді</string>
+    <string name="policy_v6_wechat_summary">Ата-ананың WeChat-ін байланыстырып, күйді біліп, уақыт қосып, блоктауды алып, викторина туралы хабарлама алыңыз</string>
+    <string name="policy_v6_wechat_enable">WeChat хабарламаларын қосу</string>
+    <string name="policy_v6_wechat_on">Қосулы</string>
+    <string name="policy_v6_wechat_off">Өшірулі</string>
+    <string name="policy_v6_wechat_add">Байланыстыруды қосу</string>
+    <string name="policy_v6_wechat_remove">%1$s-ді өшіру</string>
+    <string name="policy_v6_wechat_bound">Байланысқан</string>
+    <string name="policy_v6_wechat_count">Байланысқан: %2$d-ден %1$d</string>
+    <string name="policy_v6_wechat_full">Байланыстыру шегіне жетті (көбі 4)</string>
+    <string name="policy_v6_wechat_hint">Байланыстырғаннан кейін ботқа «帮助» (анықтама) жіберіңіз — командалар тізімі келеді. Құпиясөз қажет емес: әрбір команда жазылып, әрбір байланысқан ата-анаға хабарланады.</string>
+    <string name="policy_v6_wechat_qr_title">WeChat-те сканерлеңіз</string>
+    <string name="policy_v6_wechat_qr_hint">WeChat → сканерлеуді ашып, кодқа бағыттаңыз да, телефонда растаңыз. Бот байланысқаннан кейін командалар мәзірін жібереді.</string>
+    <string name="policy_v6_wechat_qr_waiting">Сканерлеуді күту…</string>
+    <string name="policy_v6_wechat_qr_scanned">Сканерленді — телефонда растаңыз</string>
+    <string name="policy_v6_wechat_qr_digits">Мына кодты WeChat-те енгізіңіз: %1$s</string>
+    <string name="policy_v6_wechat_qr_loading">QR-код жасалуда…</string>
+    <string name="policy_v6_wechat_qr_failed">Код мерзімі өтті немесе желі жоқ — қайтып қайталап көріңіз</string>
 </resources>
