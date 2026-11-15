@@ -46,6 +46,7 @@ internal class BotBindingFlow(
         pendingCode = null
         effectiveBase = baseUrl
         ticket = WeixinClawApi.requestQr(transport, baseUrl, knownTokens)
+        ticket?.let { logTicket("begin", it) }
         return ticket?.let(Event::Showing) ?: Event.Stopped
     }
 
@@ -92,6 +93,7 @@ internal class BotBindingFlow(
         refreshes++
         pendingCode = null
         val next = WeixinClawApi.requestQr(transport, effectiveBase, emptyList())
+        next?.let { logTicket("refresh", it) }
         return if (next == null) {
             stopped = true
             Event.Stopped
@@ -99,6 +101,14 @@ internal class BotBindingFlow(
             ticket = next
             Event.Showing(next)
         }
+    }
+
+    /** Field-level trace: with the live backend these two fields decide what renders. */
+    private fun logTicket(where: String, ticket: QrTicket) {
+        com.planyourtv.log.TvLog.i(
+            "WeChatQR",
+            "$where qrcode=${ticket.qrcode.take(48)} img=${ticket.imageContent.take(160)}",
+        )
     }
 
     companion object {

@@ -98,7 +98,16 @@ internal object WeixinClawApi {
             body = body.toString(),
             readTimeoutMs = POLL_READ_TIMEOUT_MS,
         ) ?: return UpdatesResult.NetworkError
-        return WeixinClawCodec.decodeUpdates(json)
+        val result = WeixinClawCodec.decodeUpdates(json)
+        if (result is UpdatesResult.Rejected) {
+            // Full envelope (no bearer in responses); shows fields the doc did not name.
+            com.planyourtv.log.TvLog.w(
+                "WeixinClaw",
+                "getupdates refused host=${java.net.URI(baseUrl).host.takeIf { it.isNotBlank() } ?: baseUrl} " +
+                    "body=${json.toString().take(300)}",
+            )
+        }
+        return result
     }
 
     /** Sends one text message as the bot. Needs the chat's context_token. */
@@ -285,7 +294,10 @@ internal object WeixinClawCodec {
     }
 
     fun decodeUpdates(json: JSONObject): UpdatesResult {
-        val ret = json.optInt("ret", -1)
+        // Live-verified 2026-11-15: the success envelope carries msgs/cursor and
+        // NO "ret" at all, so a missing ret means success; only an explicit
+        // non-zero ret is a refusal.
+        val ret = json.optInt("ret", 0)
         val errcode = json.optInt("errcode", 0)
         if (ret != 0) {
             return if (errcode == -14) UpdatesResult.PauseOneHour else UpdatesResult.Rejected

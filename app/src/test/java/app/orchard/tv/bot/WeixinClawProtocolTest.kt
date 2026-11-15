@@ -169,6 +169,18 @@ class WeixinClawProtocolTest {
     }
 
     @Test
+    fun successEnvelopeWithoutRetFieldIsStillSuccess() {
+        // Live-verified against the production backend: success carries msgs and
+        // the cursor with no "ret" at all.
+        val json = JSONObject()
+            .put("get_updates_buf", "C1")
+            .put("msgs", JSONArray().put(userTextMessage("m1", "帮助")))
+        val page = WeixinClawCodec.decodeUpdates(json) as UpdatesResult.Ok
+        assertEquals("C1", page.cursor)
+        assertEquals(1, page.messages.size)
+    }
+
+    @Test
     fun botEchoesAndNonTextItemsAreIgnored() {
         val botMessage = userTextMessage("m2", "hi").put("message_type", 2)
         val noText = JSONObject()

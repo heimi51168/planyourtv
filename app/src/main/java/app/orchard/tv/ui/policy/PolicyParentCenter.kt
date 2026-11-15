@@ -526,13 +526,15 @@ fun PolicyParentCenter(onClose: () -> Unit) {
             actionError = R.string.policy_v6_wechat_qr_failed
             return@LaunchedEffect
         }
-        wechatQrPayload = first.ticket.qrcode
+        // The scannable payload is img_content (a WeChat-openable link); the
+        // qrcode field is only the poll key — live-verified 2026-11-15.
+        wechatQrPayload = first.ticket.imageContent.ifBlank { first.ticket.qrcode }
         while (wechatQrActive) {
             kotlinx.coroutines.delay(2_000)
             val event = withContext(Dispatchers.IO) { wechatFlow.poll() }
             when (event) {
                 is app.orchard.tv.bot.BotBindingFlow.Event.Showing ->
-                    wechatQrPayload = event.ticket.qrcode
+                    wechatQrPayload = event.ticket.imageContent.ifBlank { event.ticket.qrcode }
                 app.orchard.tv.bot.BotBindingFlow.Event.Waiting -> {
                     wechatQrDigits = null
                     wechatQrStatus = R.string.policy_v6_wechat_qr_waiting
