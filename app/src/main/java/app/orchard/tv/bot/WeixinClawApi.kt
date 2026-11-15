@@ -43,8 +43,13 @@ internal object WeixinClawApi {
         transport: HttpTransport,
         baseUrl: String = DEFAULT_BASE_URL,
         knownTokens: List<String>,
+        channelVersion: String = CHANNEL_VERSION_BASE,
     ): QrTicket? {
-        val body = JSONObject().put("local_token_list", JSONArray(knownTokens))
+        val body = JSONObject()
+            .put("local_token_list", JSONArray(knownTokens))
+            // Register our product name at bind time: the backend's offline
+            // auto-reply names the client, and its default is "OpenClaw".
+            .put("base_info", WeixinClawCodec.baseInfo(channelVersion))
         val json = transport.call(
             method = "POST",
             url = "$baseUrl$PATH_QRCODE?bot_type=3",
@@ -248,8 +253,11 @@ data class InboundMessage(
  */
 internal object WeixinClawCodec {
 
+    /** The product identity the backend shows for this client; defaults to "OpenClaw". */
+    const val BOT_AGENT = "PlanYourTV"
+
     fun baseInfo(channelVersion: String): JSONObject =
-        JSONObject().put("channel_version", channelVersion).put("bot_agent", "planyourtv")
+        JSONObject().put("channel_version", channelVersion).put("bot_agent", BOT_AGENT)
 
     fun decodeQrTicket(json: JSONObject): QrTicket? {
         val qrcode = json.optString("qrcode", "")

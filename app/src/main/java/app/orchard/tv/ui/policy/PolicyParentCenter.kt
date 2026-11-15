@@ -197,7 +197,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
     var wechatQrPayload by remember { mutableStateOf<String?>(null) }
     var wechatQrStatus by remember { mutableStateOf<Int?>(null) }
     var wechatQrDigits by remember { mutableStateOf<String?>(null) }
-    val wechatFlow = remember { app.orchard.tv.bot.BotBindingFlow(app.orchard.tv.bot.BotRuntime.transport) }
+    val wechatFlow = remember { app.orchard.tv.bot.BotBindingFlow(app.orchard.tv.bot.BotRuntime.transport, channelVersion = app.orchard.tv.bot.BotRuntime.channelVersion) }
     var activeZone by remember { mutableStateOf(ParentZone.RAIL) }
     var railOrigin by remember { mutableStateOf(ParentRailOrigin.SWITCH) }
     var focusedTarget by remember { mutableStateOf<ParentFocusTarget?>(ParentFocusTarget.Switch) }

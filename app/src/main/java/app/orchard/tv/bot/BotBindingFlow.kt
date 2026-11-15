@@ -13,6 +13,7 @@ package app.orchard.tv.bot
 internal class BotBindingFlow(
     private val transport: HttpTransport,
     private val baseUrl: String = WeixinClawApi.DEFAULT_BASE_URL,
+    private val channelVersion: String = WeixinClawApi.CHANNEL_VERSION_BASE,
 ) {
     /** Events the QR page renders; every poll returns exactly one. */
     sealed interface Event {
