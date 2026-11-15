@@ -540,8 +540,11 @@ object QuizChallenge {
             // v5 local rounds score by difficulty and use a net-minute threshold.
             // Cloud rounds keep their backend-authoritative v4 formula; they may
             // carry schema 5 but must never be settled with local scoring.
+            // The daily earned allowance caps what a local round can still pay
+            // today, so the report the child reads matches what will be granted.
             session.originSchemaVersion >= 5 && !isCloudSession(session) -> {
                 QuizScoring.score(session.items, run.submissions, config).earnedMinutes
+                    .coerceAtMost(QuizEarnedStore.remainingToday(nowMs))
             }
             session.originSchemaVersion >= 4 -> {
                 if (run.correctCount >= config.minCorrectCount) {
@@ -678,6 +681,10 @@ object QuizChallenge {
         }.getOrElse { SessionStartResult.Rejected(RejectReason.INVALID_COMMAND) }
         return when (startResult) {
             SessionStartResult.Started -> {
+                // Count only what really plays out: the ledger moves after the
+                // session started, so a failed or abandoned settlement (and its
+                // later retry) never spends the day's allowance twice.
+                QuizEarnedStore.recordEarned(run.earnedMinutes, nowMs)
                 QuizSessionStore.clearSession()
                 QuizRuntime.refresh()
                 ReviewOutcome.Started
@@ -696,14 +703,15 @@ object QuizChallenge {
                 ReviewOutcome.Failed(RejectReason.INVALID_COMMAND.name)
             }
             is SessionStartResult.Rejected -> {
-                // A recovered STARTING record with BUSY means the previous
-                // process already started the policy session and died before
-                // clearing the quiz record. Treat it as success.
-                if (recovered && startResult.reason == RejectReason.BUSY) {
-                    QuizSessionStore.clearSession()
-                    QuizRuntime.refresh()
-                    return ReviewOutcome.Started
-                }
+            // A recovered STARTING record with BUSY means the previous
+            // process already started the policy session and died before
+            // clearing the quiz record. Treat it as success.
+            if (recovered && startResult.reason == RejectReason.BUSY) {
+                QuizEarnedStore.recordEarned(run.earnedMinutes, nowMs)
+                QuizSessionStore.clearSession()
+                QuizRuntime.refresh()
+                return ReviewOutcome.Started
+            }
                 val code = startResult.reason.name
                 QuizSessionStore.saveSession(
                     session.copy(
