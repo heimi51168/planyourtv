@@ -15,7 +15,10 @@ The app stores the following in its private app storage:
 - photos and videos added through the local phone page;
 - cached weather and daily-wallpaper metadata;
 - crash/diagnostic log lines with addresses masked when shown in the diagnostics report;
-- local pairing state if the TV has been bound to a hosted account.
+- local pairing state if the TV has been bound to a hosted account;
+- WeChat ClawBot bindings when the parent turns the feature on: the bot token, the bound WeChat
+  user id, a parent-chosen nickname, the reply context token and per-binding push toggles. These
+  never leave the TV except as protocol authentication to WeChat's bot backend.
 
 Clearing the app's data or uninstalling it removes this local data. Android backup is disabled
 (`android:allowBackup="false"`).
@@ -42,6 +45,13 @@ makes these optional requests:
 | Daily wallpaper | Bing image service | Image request and market/locale |
 | App icon artwork | Disabled in the community build | None |
 | Phone settings page | Local TV network | LAN traffic only |
+| WeChat alerts (off by default) | `ilinkai.weixin.qq.com` (WeChat ClawBot backend) | The bot token as authentication, and the chat messages themselves: parent commands, status/push replies. Only messages to/from bound WeChat users; no rules, app lists or family data are attached |
+| WeChat AI parsing (only when both WeChat alerts and an AI provider are configured) | The parent's own OpenAI-compatible model service | The single unrecognized chat message text, for command translation only |
+
+The WeChat alert connection is outbound HTTPS long-polling; the TV opens no listening port for it.
+Command parsing that fails the deterministic layers may send that one message text to the parent's
+own model service under a daily call cap. Turn the feature off or unbind a WeChat account in
+Parent Center at any time; unbinding deletes the stored token on the TV.
 
 The community snapshot omits Aerial's Apple-hosted film catalogue, so it makes no requests to
 Apple's film servers. There is no analytics, advertising, crash-reporting or attribution SDK in the
