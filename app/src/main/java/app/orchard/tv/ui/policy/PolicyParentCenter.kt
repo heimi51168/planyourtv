@@ -1295,8 +1295,15 @@ fun PolicyParentCenter(onClose: () -> Unit) {
         // onto the remote row must not open the bind/QR pane behind the privacy notice.
         val remoteContext =
             REMOTE_MANAGEMENT_ENABLED && wantsRemote && (bound || cloudConsentAccepted)
+        // The WeChat pane is a rail-opened detour like the remote one; the auto-pane
+        // normalizer must hold it while the row or its pane owns focus, or it snaps
+        // straight back to the default pane.
+        val wechatContext = (activeZone == ParentZone.RAIL &&
+            focusedTarget == ParentFocusTarget.WeChat) ||
+            (activeZone == ParentZone.PANE && railOrigin == ParentRailOrigin.WECHAT)
         val next = when {
             remoteContext -> remotePaneKind()
+            wechatContext -> ParentPaneKind.WECHAT
             activeZone == ParentZone.RAIL && focusedTarget == ParentFocusTarget.Switch ->
                 defaultPaneKind()
             bound || state.mode == PolicyMode.CLOUD -> remotePaneKind()
