@@ -188,6 +188,16 @@ fun PolicyParentCenter(onClose: () -> Unit) {
     var switching by remember { mutableStateOf(false) }
     var retrying by remember { mutableStateOf(false) }
     var paneKind by remember { mutableStateOf(ParentPaneKind.OFF) }
+
+    // WeChat chat control. The pane owns the flow state; the bindings snapshot
+    // is reread after every action and when the pane opens.
+    var wechatBindings by remember { mutableStateOf(app.orchard.tv.bot.BotBindingStore.list()) }
+    var wechatEnabled by remember { mutableStateOf(app.orchard.tv.bot.BotBindingStore.enabled()) }
+    var wechatQrActive by remember { mutableStateOf(false) }
+    var wechatQrPayload by remember { mutableStateOf<String?>(null) }
+    var wechatQrStatus by remember { mutableStateOf<Int?>(null) }
+    var wechatQrDigits by remember { mutableStateOf<String?>(null) }
+    val wechatFlow = remember { app.orchard.tv.bot.BotBindingFlow(app.orchard.tv.bot.BotRuntime.transport, channelVersion = app.orchard.tv.bot.BotRuntime.channelVersion) }
     var activeZone by remember { mutableStateOf(ParentZone.RAIL) }
     var railOrigin by remember { mutableStateOf(ParentRailOrigin.SWITCH) }
     var focusedTarget by remember { mutableStateOf<ParentFocusTarget?>(ParentFocusTarget.Switch) }
@@ -208,6 +218,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
     val rootFocus = remember { FocusRequester() }
     val railSwitchFocus = remember { FocusRequester() }
     val railRemoteFocus = remember { FocusRequester() }
+    val railWeChatFocus = remember { FocusRequester() }
     val migrationRetryFocus = remember { FocusRequester() }
     val waitRetryFocus = remember { FocusRequester() }
     val summaryReadFocus = remember { FocusRequester() }
@@ -310,6 +321,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
         activeZone = when (target) {
             ParentFocusTarget.Switch,
             ParentFocusTarget.Remote,
+            ParentFocusTarget.WeChat,
             -> ParentZone.RAIL
             else -> ParentZone.PANE
         }
@@ -346,6 +358,20 @@ fun PolicyParentCenter(onClose: () -> Unit) {
         // The bind and quiz pages are display-only and keep their rail row focused.
         ParentPaneKind.BIND -> emptyList()
         ParentPaneKind.PARENT_WEB_QR -> emptyList()
+        // The QR view is display-only; the list view has one row per binding.
+        ParentPaneKind.WECHAT -> {
+            if (wechatQrActive) {
+                emptyList()
+            } else {
+                buildList {
+                    add(ParentFocusTarget.LocalRow("wechat-enable"))
+                    wechatBindings.forEachIndexed { index, _ ->
+                        add(ParentFocusTarget.LocalRow("wechat-remove-$index"))
+                    }
+                    add(ParentFocusTarget.LocalRow("wechat-add"))
+                }
+            }
+        }
         ParentPaneKind.MIGRATION -> listOf(ParentFocusTarget.MigrationRetry)
         ParentPaneKind.WAIT_CONFIG -> listOf(ParentFocusTarget.WaitConfigRetry)
         ParentPaneKind.SUMMARY -> listOf(ParentFocusTarget.SummaryRead)
@@ -389,6 +415,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
             focusNow(
                 when (origin) {
                     ParentRailOrigin.REMOTE -> ParentFocusTarget.Remote
+                    ParentRailOrigin.WECHAT -> ParentFocusTarget.WeChat
                     ParentRailOrigin.SWITCH -> ParentFocusTarget.Switch
                 },
             )
@@ -437,11 +464,123 @@ fun PolicyParentCenter(onClose: () -> Unit) {
         enterPane(ParentPaneKind.PARENT_WEB_QR, ParentRailOrigin.SWITCH)
     }
 
+    fun refreshWeChat() {
+        wechatBindings = app.orchard.tv.bot.BotBindingStore.list()
+        wechatEnabled = app.orchard.tv.bot.BotBindingStore.enabled()
+    }
+
+    fun enterWeChatPane() {
+        if (!childOn) {
+            focusNow(ParentFocusTarget.Switch)
+            return
+        }
+        refreshWeChat()
+        enterPane(ParentPaneKind.WECHAT, ParentRailOrigin.WECHAT)
+    }
+
+    /**
+     * OK on a wechat-* row. The QR view is driven by the poll effect; this
+     * only handles the list rows.
+     */
+    fun handleWeChatActivate(key: String) {
+        when {
+            key == "wechat-enable" -> {
+                app.orchard.tv.bot.BotBindingStore.setEnabled(!wechatEnabled)
+                app.orchard.tv.bot.BotRuntime.restartChannels()
+                refreshWeChat()
+            }
+            key == "wechat-add" -> {
+                if (wechatBindings.size >= app.orchard.tv.bot.BotBindingStore.MAX_BINDINGS) {
+                    actionError = R.string.policy_v6_wechat_full
+                    return
+                }
+                wechatQrActive = true
+                wechatQrPayload = null
+                wechatQrStatus = null
+                wechatQrDigits = null
+            }
+            key.startsWith("wechat-remove-") -> {
+                val index = key.removePrefix("wechat-remove-").toIntOrNull() ?: return
+                val binding = wechatBindings.getOrNull(index) ?: return
+                if (armedRemoveKey == key) {
+                    cancelRemoveConfirm()
+                    app.orchard.tv.bot.BotRuntime.unbind(binding.id, notify = true)
+                    refreshWeChat()
+                } else {
+                    armRemove(key)
+                }
+            }
+        }
+    }
+
+    /**
+     * The QR binding session: begin once, then poll every two seconds until
+     * the parent confirms in WeChat, the flow gives up, or Back leaves.
+     */
+    androidx.compose.runtime.LaunchedEffect(wechatQrActive) {
+        if (!wechatQrActive) return@LaunchedEffect
+        val known = app.orchard.tv.bot.BotBindingStore.list().map { it.botToken }
+        val first = withContext(Dispatchers.IO) { wechatFlow.begin(known) }
+        if (first !is app.orchard.tv.bot.BotBindingFlow.Event.Showing) {
+            wechatQrActive = false
+            actionError = R.string.policy_v6_wechat_qr_failed
+            return@LaunchedEffect
+        }
+        // The scannable payload is img_content (a WeChat-openable link); the
+        // qrcode field is only the poll key — live-verified 2026-11-15.
+        wechatQrPayload = first.ticket.imageContent.ifBlank { first.ticket.qrcode }
+        while (wechatQrActive) {
+            kotlinx.coroutines.delay(2_000)
+            val event = withContext(Dispatchers.IO) { wechatFlow.poll() }
+            when (event) {
+                is app.orchard.tv.bot.BotBindingFlow.Event.Showing ->
+                    wechatQrPayload = event.ticket.imageContent.ifBlank { event.ticket.qrcode }
+                app.orchard.tv.bot.BotBindingFlow.Event.Waiting -> {
+                    wechatQrDigits = null
+                    wechatQrStatus = R.string.policy_v6_wechat_qr_waiting
+                }
+                app.orchard.tv.bot.BotBindingFlow.Event.Scanned -> {
+                    wechatQrDigits = null
+                    wechatQrStatus = R.string.policy_v6_wechat_qr_scanned
+                }
+                is app.orchard.tv.bot.BotBindingFlow.Event.NeedCode ->
+                    wechatQrDigits = event.digits
+                is app.orchard.tv.bot.BotBindingFlow.Event.Bound -> {
+                    val binding = app.orchard.tv.bot.BotBindingStore.upsert(
+                        botToken = event.botToken,
+                        botId = event.botId,
+                        userId = event.userId,
+                        baseUrl = event.baseUrl,
+                        nickname = "",
+                        nowMs = System.currentTimeMillis(),
+                    )
+                    wechatQrActive = false
+                    if (binding != null) {
+                        val index = app.orchard.tv.bot.BotBindingStore.list()
+                            .indexOfFirst { it.id == binding.id }
+                        app.orchard.tv.bot.BotRuntime.onBindingAdded(
+                            binding.displayName(index.coerceAtLeast(0)),
+                        )
+                        refreshWeChat()
+                    } else {
+                        actionError = R.string.policy_v6_wechat_full
+                    }
+                }
+                app.orchard.tv.bot.BotBindingFlow.Event.Stopped -> {
+                    wechatQrActive = false
+                    actionError = R.string.policy_v6_wechat_qr_failed
+                }
+            }
+        }
+    }
+
     fun focusRailFromPane() {
         val targets = railTargetsNow()
         val target = when {
             railOrigin == ParentRailOrigin.REMOTE && ParentFocusTarget.Remote in targets ->
                 ParentFocusTarget.Remote
+            railOrigin == ParentRailOrigin.WECHAT &&
+                ParentFocusTarget.WeChat in targets -> ParentFocusTarget.WeChat
             else -> ParentFocusTarget.Switch
         }
         focusNow(target)
@@ -864,6 +1003,10 @@ fun PolicyParentCenter(onClose: () -> Unit) {
 
     fun activateLocalByKey(key: String) {
         if (readOnlyLocal) return
+        if (key.startsWith("wechat-")) {
+            handleWeChatActivate(key)
+            return
+        }
         when {
             key.endsWith("-remove") -> {
                 val parts = key.split("-")
@@ -1005,11 +1148,18 @@ fun PolicyParentCenter(onClose: () -> Unit) {
             armed != null -> cancelArmed()
             armedRemoveKey != null -> cancelRemoveConfirm()
             editingKey != null -> editingKey = null
+            // Back inside the QR view returns to the binding list first.
+            paneKind == ParentPaneKind.WECHAT && wechatQrActive -> {
+                wechatQrActive = false
+                wechatQrStatus = null
+                wechatQrDigits = null
+            }
             activeZone == ParentZone.PANE -> focusRailFromPane()
             // A QR page opened as a detour returns to the default pane first. When it already is
             // the default (the local-only parent center), Back leaves instead of re-selecting it,
-            // so the key can always close the overlay.
-            paneKind == ParentPaneKind.PARENT_WEB_QR && paneKind != defaultPaneKind() ->
+            // so the key can always close the overlay. The WeChat pane follows the same rule.
+            (paneKind == ParentPaneKind.PARENT_WEB_QR || paneKind == ParentPaneKind.WECHAT) &&
+                paneKind != defaultPaneKind() ->
                 paneKind = defaultPaneKind()
             else -> onClose()
         }
@@ -1147,8 +1297,15 @@ fun PolicyParentCenter(onClose: () -> Unit) {
         // onto the remote row must not open the bind/QR pane behind the privacy notice.
         val remoteContext =
             REMOTE_MANAGEMENT_ENABLED && wantsRemote && (bound || cloudConsentAccepted)
+        // The WeChat pane is a rail-opened detour like the remote one; the auto-pane
+        // normalizer must hold it while the row or its pane owns focus, or it snaps
+        // straight back to the default pane.
+        val wechatContext = (activeZone == ParentZone.RAIL &&
+            focusedTarget == ParentFocusTarget.WeChat) ||
+            (activeZone == ParentZone.PANE && railOrigin == ParentRailOrigin.WECHAT)
         val next = when {
             remoteContext -> remotePaneKind()
+            wechatContext -> ParentPaneKind.WECHAT
             activeZone == ParentZone.RAIL && focusedTarget == ParentFocusTarget.Switch ->
                 defaultPaneKind()
             bound || state.mode == PolicyMode.CLOUD -> remotePaneKind()
@@ -1220,6 +1377,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
                 }
             }
             ParentFocusTarget.Remote -> enterRemotePane()
+            ParentFocusTarget.WeChat -> enterWeChatPane()
             ParentFocusTarget.MigrationRetry -> requestHandoff()
             ParentFocusTarget.WaitConfigRetry -> retryRemoteConfig()
             ParentFocusTarget.SummaryRead -> Unit
@@ -1339,6 +1497,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
             when (target) {
                 ParentFocusTarget.Switch -> enterPaneFromSwitch()
                 ParentFocusTarget.Remote -> enterRemotePane()
+                ParentFocusTarget.WeChat -> enterWeChatPane()
                 else -> Unit
             }
             return true
@@ -1471,6 +1630,13 @@ fun PolicyParentCenter(onClose: () -> Unit) {
             paneSummary = stringResource(R.string.policy_v29_qr_pane_summary)
             paneSummaryColor = Palette.SecondaryLabel
         }
+        ParentPaneKind.WECHAT -> {
+            paneTitle = stringResource(R.string.policy_v6_wechat)
+            paneStatus = stringResource(R.string.policy_v6_wechat_status)
+            paneStatusColor = Palette.SecondaryLabel
+            paneSummary = stringResource(R.string.policy_v6_wechat_summary)
+            paneSummaryColor = Palette.SecondaryLabel
+        }
     }
 
     Box(
@@ -1539,6 +1705,22 @@ fun PolicyParentCenter(onClose: () -> Unit) {
                         onUp = railUp(ParentFocusTarget.Remote),
                         onDown = railDown(ParentFocusTarget.Remote),
                         onRight = ::enterRemotePane,
+                    )
+                }
+
+                // WeChat alerts work in plain LOCAL mode, so the row does not
+                // follow the remote-management visibility gate.
+                if (childOn) {
+                    Spacer(Modifier.height(8.dp))
+                    V6RailRow(
+                        title = stringResource(R.string.policy_v6_wechat),
+                        subtitle = stringResource(R.string.policy_v6_wechat_sub),
+                        focusRequester = railWeChatFocus,
+                        highlighted = focusedTarget == ParentFocusTarget.WeChat,
+                        onClick = ::enterWeChatPane,
+                        onUp = railUp(ParentFocusTarget.WeChat),
+                        onDown = railDown(ParentFocusTarget.WeChat),
+                        onRight = ::enterWeChatPane,
                     )
                 }
 
@@ -1615,6 +1797,22 @@ fun PolicyParentCenter(onClose: () -> Unit) {
                         ParentPaneKind.PARENT_WEB_QR -> V6ParentWebQrPane(
                             rules = rules,
                             dailyUsedSeconds = state.dailyUsedSeconds,
+                        )
+                        ParentPaneKind.WECHAT -> PolicyWeChatPane(
+                            enabled = wechatEnabled,
+                            bindings = wechatBindings,
+                            qrActive = wechatQrActive,
+                            qrPayload = wechatQrPayload,
+                            qrStatus = wechatQrStatus,
+                            qrDigits = wechatQrDigits,
+                            armedRemoveKey = armedRemoveKey?.takeIf { it.startsWith("wechat-") },
+                            focusedTarget = focusedTarget,
+                            focusFor = ::localRequester,
+                            onFocusRow = { key ->
+                                focusNow(ParentFocusTarget.LocalRow(key))
+                            },
+                            onActivate = ::handleWeChatActivate,
+                            onFocusRail = ::focusRailFromPane,
                         )
                         ParentPaneKind.MIGRATION -> V6MigrationPane(
                             busy = handoffBusy,

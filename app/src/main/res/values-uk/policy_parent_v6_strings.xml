@@ -128,4 +128,25 @@
     <string name="policy_v6_auto_consent_body">Під час увімкнення дитячого режиму також вмикається «Автооновлення», щоб телевізор вчасно отримував нові версії та виправлення. Нові версії завантажуються й встановлюються автоматично, коли телевізор не використовується, не заважаючи перегляду. За потреби автооновлення можна будь-коли вимкнути в батьківському центрі.</string>
     <string name="policy_v6_auto_consent_confirm">Увімкнути обидва</string>
     <string name="policy_v6_auto_consent_cancel">Скасувати</string>
+
+    <string name="policy_v6_wechat">Сповіщення WeChat</string>
+    <string name="policy_v6_wechat_sub">Керуйте телевізором з WeChat</string>
+    <string name="policy_v6_wechat_status">Доступно після сканування</string>
+    <string name="policy_v6_wechat_summary">Прив\'яжіть WeChat батька, щоб дізнаватись статус, додавати час, знімати блокування й отримувати сповіщення про вікторини</string>
+    <string name="policy_v6_wechat_enable">Увімкнути сповіщення WeChat</string>
+    <string name="policy_v6_wechat_on">Увімк.</string>
+    <string name="policy_v6_wechat_off">Вимк.</string>
+    <string name="policy_v6_wechat_add">Додати прив\'язку</string>
+    <string name="policy_v6_wechat_remove">Прибрати %1$s</string>
+    <string name="policy_v6_wechat_bound">Прив\'язано</string>
+    <string name="policy_v6_wechat_count">Прив\'язано: %1$d із %2$d</string>
+    <string name="policy_v6_wechat_full">Досягнуто ліміту прив\'язок (максимум 4)</string>
+    <string name="policy_v6_wechat_hint">Після прив\'язки надішліть боту «帮助» (довідка) — прийде список команд. Пароль не потрібен: кожна команда записується і повідомляється кожному прив\'язаному батькові.</string>
+    <string name="policy_v6_wechat_qr_title">Відскануйте в WeChat</string>
+    <string name="policy_v6_wechat_qr_hint">Відкрийте WeChat → сканування, наведіть на код і підтвердьте на телефоні. Бот надішле меню команд одразу після прив\'язки.</string>
+    <string name="policy_v6_wechat_qr_waiting">Очікування сканування…</string>
+    <string name="policy_v6_wechat_qr_scanned">Відскановано — підтвердьте на телефоні</string>
+    <string name="policy_v6_wechat_qr_digits">Введіть цей код у WeChat: %1$s</string>
+    <string name="policy_v6_wechat_qr_loading">Створення QR-коду…</string>
+    <string name="policy_v6_wechat_qr_failed">Код закінчився або немає мережі — поверніться й повторіть</string>
 </resources>

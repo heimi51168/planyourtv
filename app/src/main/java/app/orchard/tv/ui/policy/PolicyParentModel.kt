@@ -4,6 +4,7 @@ package app.orchard.tv.ui.policy
 internal sealed interface ParentFocusTarget {
     data object Switch : ParentFocusTarget
     data object Remote : ParentFocusTarget
+    data object WeChat : ParentFocusTarget
     data object MigrationRetry : ParentFocusTarget
     data object WaitConfigRetry : ParentFocusTarget
     data object SummaryRead : ParentFocusTarget
@@ -11,11 +12,8 @@ internal sealed interface ParentFocusTarget {
 }
 
 /**
- * The V29 rail has only two entries: the child-mode switch and remote management. Every local
- * rule is configured on the phone; the TV never edits them.
- *
- * Remote management is hidden while child mode is off and while the cloud service is not
- * enabled; the caller decides that through [remoteVisible].
+ * The V29 rail keeps the child-mode switch and remote management; the WeChat alerts row is the
+ * one local feature that stays on the TV rail, below remote management when it is visible.
  */
 internal fun parentRailTargets(
     childOn: Boolean,
@@ -23,6 +21,8 @@ internal fun parentRailTargets(
 ): List<ParentFocusTarget> = buildList {
     add(ParentFocusTarget.Switch)
     if (childOn && remoteVisible) add(ParentFocusTarget.Remote)
+    // WeChat chat control is a child-mode entry that works without a backend.
+    if (childOn) add(ParentFocusTarget.WeChat)
 }
 
 /** The right-hand pane. The rail no longer selects a guard mode. */
@@ -34,9 +34,10 @@ internal enum class ParentPaneKind {
     WAIT_CONFIG,
     SUMMARY,
     PARENT_WEB_QR,
+    WECHAT,
 }
 
 internal enum class ParentZone { RAIL, PANE }
 
 /** Left always returns to the rail row that opened the pane. */
-internal enum class ParentRailOrigin { SWITCH, REMOTE }
+internal enum class ParentRailOrigin { SWITCH, REMOTE, WECHAT }

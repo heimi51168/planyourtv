@@ -1,6 +1,7 @@
 package app.orchard.tv.policy
 
 import android.content.Context
+import app.orchard.tv.bot.BotRuntime
 import app.orchard.tv.policy.media.PolicyVideoLibrary
 import app.orchard.tv.policy.web.ParentWebCenter
 import app.orchard.tv.quiz.QuizQuestionCache
@@ -55,6 +56,9 @@ object PolicyProduct {
             context,
             debugPin = if (BuildConfig.DEBUG) "123456" else null,
         )
+        // Chat control is opt-in: BotRuntime opens no connection until the
+        // parent enabled it in the parent center and bound a WeChat account.
+        BotRuntime.start(context.applicationContext)
         ParentWebCenter.install(context.applicationContext)
         // Ship a usable local bank so the quiz works before an AI key or the
         // network exists. After the coordinator because the durable marker

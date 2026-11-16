@@ -1,6 +1,7 @@
 package app.orchard.tv.quiz
 
 import app.orchard.tv.policy.PolicyCloud
+import app.orchard.tv.policy.LocalPolicyRuntime
 import app.orchard.tv.policy.PolicyModeCoordinator
 import app.orchard.tv.policy.QuizSettlementAnswer
 import com.planyourtv.policy.Activation
@@ -585,22 +586,27 @@ object QuizChallenge {
         val config = session.config
         // v6 local rounds use the frozen seconds profile and v5 local rounds the
         // minute engine ([QuizSettlement]); cloud rounds stay backend-authoritative
-        // and v2/v3/v4 records keep the legacy fields below.
-        val earnedSeconds = QuizSettlement.earnedSeconds(session) ?: when {
-            session.originSchemaVersion >= 4 -> {
-                if (run.correctCount >= config.minCorrectCount) {
-                    min(
-                        run.correctCount * config.minutesPerQuestion,
-                        min(config.maxEarnedMinutes, QUIZ_MAX_EARNED_MINUTES),
-                    ) * 60
-                } else {
-                    0
+        // and v2/v3/v4 records keep the legacy fields below. The daily earned
+        // allowance caps what a local round may still pay today, so the report
+        // the child reads matches what will be granted; cloud payouts stay uncapped.
+        val earnedSeconds = when (val settled = QuizSettlement.earnedSeconds(session)) {
+            null -> when {
+                session.originSchemaVersion >= 4 -> {
+                    if (run.correctCount >= config.minCorrectCount) {
+                        min(
+                            run.correctCount * config.minutesPerQuestion,
+                            min(config.maxEarnedMinutes, QUIZ_MAX_EARNED_MINUTES),
+                        ) * 60
+                    } else {
+                        0
+                    }
                 }
+                run.correctCount >= config.minCorrectCount -> {
+                    min(run.earnedPoints * config.minutesPerPoint, config.maxEarnedMinutes) * 60
+                }
+                else -> 0
             }
-            run.correctCount >= config.minCorrectCount -> {
-                min(run.earnedPoints * config.minutesPerPoint, config.maxEarnedMinutes) * 60
-            }
-            else -> 0
+            else -> settled.coerceAtMost((QuizEarnedStore.remainingToday(nowMs) * 60L).toInt())
         }
         // Old UI and the policy engine still read minutes; v6 seconds are kept
         // separately so a sub-minute payout is never truncated before settlement.
@@ -736,6 +742,16 @@ object QuizChallenge {
         }.getOrElse { SessionStartResult.Rejected(RejectReason.INVALID_COMMAND) }
         return when (startResult) {
             SessionStartResult.Started -> {
+                // Count only what really plays out: the ledger moves after the
+                // session started, so a failed or abandoned settlement (and its
+                // later retry) never spends the day's allowance twice. V29
+                // admission may clip the reward to the daily quota remaining;
+                // the ledger records the granted amount, not the report number.
+                val grantedMinutes = minOf(
+                    run.earnedMinutes,
+                    (LocalPolicyRuntime.state.value.totalSeconds / 60L).toInt(),
+                )
+                QuizEarnedStore.recordEarned(grantedMinutes, nowMs)
                 QuizSessionStore.clearSession()
                 QuizRuntime.refresh()
                 ReviewOutcome.Started
@@ -754,14 +770,15 @@ object QuizChallenge {
                 ReviewOutcome.Failed(RejectReason.INVALID_COMMAND.name)
             }
             is SessionStartResult.Rejected -> {
-                // A recovered STARTING record with BUSY means the previous
-                // process already started the policy session and died before
-                // clearing the quiz record. Treat it as success.
-                if (recovered && startResult.reason == RejectReason.BUSY) {
-                    QuizSessionStore.clearSession()
-                    QuizRuntime.refresh()
-                    return ReviewOutcome.Started
-                }
+            // A recovered STARTING record with BUSY means the previous
+            // process already started the policy session and died before
+            // clearing the quiz record. Treat it as success.
+            if (recovered && startResult.reason == RejectReason.BUSY) {
+                QuizEarnedStore.recordEarned(run.earnedMinutes, nowMs)
+                QuizSessionStore.clearSession()
+                QuizRuntime.refresh()
+                return ReviewOutcome.Started
+            }
                 val code = startResult.reason.name
                 QuizSessionStore.saveSession(
                     session.copy(

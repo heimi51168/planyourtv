@@ -128,4 +128,25 @@
     <string name="policy_v6_auto_consent_body">开启儿童模式时会一并开启「自动升级」，以便及时获得新版本和问题修复。新版本会在电视空闲时自动下载并安装，不影响正常观看。如不需要，可随时在家长中心关闭。</string>
     <string name="policy_v6_auto_consent_confirm">确认开启</string>
     <string name="policy_v6_auto_consent_cancel">取消</string>
+
+    <string name="policy_v6_wechat">微信通知</string>
+    <string name="policy_v6_wechat_sub">用微信遥控电视</string>
+    <string name="policy_v6_wechat_status">扫码绑定后可用</string>
+    <string name="policy_v6_wechat_summary">绑定家长的微信后，可以在微信里查询状态、加时、解锁和接收答题通知</string>
+    <string name="policy_v6_wechat_enable">启用微信通知</string>
+    <string name="policy_v6_wechat_on">已开启</string>
+    <string name="policy_v6_wechat_off">已关闭</string>
+    <string name="policy_v6_wechat_add">添加绑定</string>
+    <string name="policy_v6_wechat_remove">移除 %1$s</string>
+    <string name="policy_v6_wechat_bound">已绑定</string>
+    <string name="policy_v6_wechat_count">已绑定 %1$d/%2$d</string>
+    <string name="policy_v6_wechat_full">已达绑定上限（最多4个）</string>
+    <string name="policy_v6_wechat_hint">绑定后，在微信里对机器人发送「帮助」即可查看全部指令。操作无需密码，所有控制指令都会记录并通知每位绑定的家长。</string>
+    <string name="policy_v6_wechat_qr_title">微信扫码绑定</string>
+    <string name="policy_v6_wechat_qr_hint">打开微信 → 扫一扫，对准二维码，然后在手机上确认。绑定成功后机器人会主动发来指令菜单。</string>
+    <string name="policy_v6_wechat_qr_waiting">等待扫码…</string>
+    <string name="policy_v6_wechat_qr_scanned">已扫码，请在手机上确认</string>
+    <string name="policy_v6_wechat_qr_digits">请在微信中输入验证码：%1$s</string>
+    <string name="policy_v6_wechat_qr_loading">二维码生成中…</string>
+    <string name="policy_v6_wechat_qr_failed">二维码已失效或网络不可用，请返回后重试</string>
 </resources>
