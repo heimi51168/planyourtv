@@ -1272,6 +1272,19 @@ object PolicyModeCoordinator {
     }
 
     /**
+     * The quiz reward's own grant: local-only like the reward path always was, but the
+     * runtime exempts it from the daily-quota refusal — a child who just earned minutes by
+     * answering must not be told the day's quota is gone (reproduced on device 2026-11-16:
+     * 14/15 correct answers granted nothing and stranded the child on the QR page).
+     */
+    fun startQuizRewardSession(durationSeconds: Long): SessionStartResult =
+        if (mode == PolicyMode.LOCAL) {
+            LocalPolicyRuntime.startQuizRewardSession(durationSeconds)
+        } else {
+            SessionStartResult.Rejected(RejectReason.HOSTED_MANUAL_REMOTE_ONLY)
+        }
+
+    /**
      * Hosted control-plane start. The caller (command admission) has already verified TV
      * presence, the signed envelope and the command TTL; the executor repeats every policy check
      * locally against the cached config and epoch.

@@ -738,7 +738,7 @@ object QuizChallenge {
         }
 
         val startResult = runCatching {
-            PolicyModeCoordinator.startLocalManualSession(earnedSeconds.toLong())
+            PolicyModeCoordinator.startQuizRewardSession(earnedSeconds.toLong())
         }.getOrElse { SessionStartResult.Rejected(RejectReason.INVALID_COMMAND) }
         return when (startResult) {
             SessionStartResult.Started -> {
