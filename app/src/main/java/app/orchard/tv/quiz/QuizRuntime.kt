@@ -280,7 +280,16 @@ object QuizRuntime {
         // This legacy field always means a curriculum scope; a custom level in
         // front must not turn it into null for cloud/reporting callers.
         val answerScope = courseLevels.firstOrNull()?.scope
-        val playable = answerLevels.maxOfOrNull { it.available } ?: 0
+        // A wrong book past its week is practice in itself: the start still has to be
+        // reachable when no level has unused questions left (see WrongBookPolicy), so
+        // its count joins what counts as playable.
+        val wrongBook = if (localMode) {
+            runCatching { WrongBookPolicy.state() }.getOrNull()
+        } else {
+            null
+        }
+        val wrongBookPlays = wrongBook?.count?.takeIf { it > 0 } ?: 0
+        val playable = maxOf(answerLevels.maxOfOrNull { it.available } ?: 0, wrongBookPlays)
         val bankState = when {
             !localMode && cloudPlanError != null -> "blocked"
             localMode && documentUnreadable -> "blocked"

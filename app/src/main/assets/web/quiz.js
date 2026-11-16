@@ -4474,6 +4474,30 @@ Material to organize:
     },
   };
 
+  // The weekly wrong book: what practice does with the mistakes already collected.
+  const V35_TEXTS = {
+    zh: {
+      wrongBookMixed: "错题本有 {n} 道题，会混进练习里；{days} 天后仍未订正，练习就只出错题。",
+      wrongBookOverdue: "错题本还剩 {n} 道题，本周练习只出这些错题；答对就会移出错题本。",
+    },
+    en: {
+      wrongBookMixed: "The wrong book holds {n} questions and they are mixed into practice. In {days} days, if they are still unchecked, practice will serve only them.",
+      wrongBookOverdue: "{n} questions are left in the wrong book, so practice serves only those this week. Answering one correctly removes it.",
+    },
+    ru: {
+      wrongBookMixed: "В сборнике ошибок {n} вопросов, они попадают в тренировку. Через {days} дн. они станут единственными вопросами тренировки.",
+      wrongBookOverdue: "В сборнике ошибок осталось {n} вопросов, поэтому на этой неделе тренировка выдаёт только их. Правильный ответ убирает вопрос.",
+    },
+    uk: {
+      wrongBookMixed: "У збірці помилок {n} питань, вони потрапляють у тренування. Через {days} дн. вони стануть єдиними питаннями тренування.",
+      wrongBookOverdue: "У збірці помилок залишилося {n} питань, тому цього тижня тренування видає лише їх. Правильна відповідь прибирає питання.",
+    },
+    kk: {
+      wrongBookMixed: "Қателер жинағында {n} сұрақ бар, олар жаттығуға қосылады. {days} күннен кейін олар жаттығудың жалғыз сұрақтары болады.",
+      wrongBookOverdue: "Қателер жинағында {n} сұрақ қалды, сондықтан осы аптада жаттығу тек соларды береді. Дұрыс жауап сұрақты алып тастайды.",
+    },
+  };
+
   const LANGS = ["zh", "en", "ru", "uk", "kk"];
   for (const code of LANGS) {
     Object.assign(
@@ -4488,6 +4512,7 @@ Material to organize:
       V26_TEXTS[code],
       V28_TEXTS[code],
       V34_TEXTS[code],
+      V35_TEXTS[code],
     );
   }
 
@@ -4744,6 +4769,9 @@ Material to organize:
   let cloudManaged = false;
   let bankCapacity = 6000;
   let bankCounts = null;
+  // The weekly wrong-book cycle the round assembly follows, so the bank page can
+  // explain why practice stopped offering new questions.
+  let wrongBook = null;
   let providerState = { aiSupported: true, consentAccepted: false, configured: false, baseUrl: "", model: "" };
   let providerMsg = null;
   let pendingGenerate = false;
@@ -5563,6 +5591,16 @@ Material to organize:
       wrong: Number(counts.wrong || 0),
       legacy: Number(counts.legacy || 0),
       expired: Number(counts.expired || 0),
+    };
+  }
+
+  function applyWrongBook(data) {
+    if (!data) return;
+    wrongBook = {
+      count: Number(data.count || 0),
+      overdue: Boolean(data.overdue),
+      daysLeft: Number(data.daysLeft || 0),
+      mixing: Boolean(data.mixing),
     };
   }
 
@@ -6750,6 +6788,27 @@ Material to organize:
     if ($("bankInRoundNotice")) {
       $("bankInRoundNotice").classList.toggle("hidden", counts.inRound <= 0);
     }
+    renderWrongBookHint();
+  }
+
+  /**
+   * Explains the weekly wrong book on the bank page: while it is open, practice
+   * mixes it in; once the week is over, practice serves only the wrong book until
+   * it is empty.
+   */
+  function renderWrongBookHint() {
+    if (!$("wrongBookHint")) return;
+    const book = wrongBook;
+    const count = book ? Number(book.count || 0) : 0;
+    $("wrongBookHint").classList.toggle("hidden", count <= 0);
+    if (count <= 0) {
+      $("wrongBookHint").textContent = "";
+      return;
+    }
+    $("wrongBookHint").classList.toggle("warn", Boolean(book.overdue));
+    $("wrongBookHint").textContent = book.overdue
+      ? t("wrongBookOverdue", { n: count })
+      : t("wrongBookMixed", { n: count, days: Number(book.daysLeft || 0) });
   }
 
   function statusChip(item) {
@@ -7795,6 +7854,7 @@ Material to organize:
         body,
       });
       applyBankCounts(data.counts);
+      applyWrongBook(data.wrongBook);
       if (data.sourceCounts) {
         bankSourceCounts = {
           course: Math.max(0, Number(data.sourceCounts.course || 0)),
@@ -8597,6 +8657,7 @@ Material to organize:
     cloudManaged = Boolean(data.cloudManaged);
     bankCapacity = Number(data.bankCapacity || 6000);
     applyBankCounts(data.bank);
+    applyWrongBook(data.wrongBook);
     renderSync();
     renderStock();
     renderBankCounts();
@@ -11693,6 +11754,7 @@ Material to organize:
       bankOffset = bankItems.length;
       bankHasMore = items.length >= Number(data.limit || BANK_PAGE_SIZE);
       applyBankCounts(data.counts);
+      applyWrongBook(data.wrongBook);
       if (data.sourceCounts) {
         bankSourceCounts = {
           course: Math.max(0, Number(data.sourceCounts.course || 0)),

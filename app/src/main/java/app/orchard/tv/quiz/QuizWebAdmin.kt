@@ -444,6 +444,17 @@ object QuizWebAdmin {
                     .put("available", QuizQuestionCache.wrongReviewCount())
             },
         )
+        // The weekly wrong-book cycle the round assembly follows: parents need to see
+        // why practice has stopped offering new questions.
+        val wrongBook = WrongBookPolicy.state()
+        body.put(
+            "wrongBook",
+            JSONObject()
+                .put("count", wrongBook.count)
+                .put("overdue", wrongBook.overdue)
+                .put("daysLeft", wrongBook.daysLeft)
+                .put("mixing", wrongBook.mixing),
+        )
         body.put(
             "collections",
             JSONArray().apply {
@@ -633,6 +644,7 @@ object QuizWebAdmin {
             )
         }
         val counts = QuizQuestionCache.bankCounts(QuizQuestionCache.LOCAL_SCOPE, now)
+        val wrongBook = WrongBookPolicy.state(now)
         return json(
             Response.Status.OK,
             JSONObject()
@@ -642,6 +654,14 @@ object QuizWebAdmin {
                 .put("limit", limit)
                 .put("items", items)
                 .put("counts", bankCountsJson(counts))
+                .put(
+                    "wrongBook",
+                    JSONObject()
+                        .put("count", wrongBook.count)
+                        .put("overdue", wrongBook.overdue)
+                        .put("daysLeft", wrongBook.daysLeft)
+                        .put("mixing", wrongBook.mixing),
+                )
                 .put(
                     "sourceCounts",
                     QuizQuestionCache.sourceCounts(QuizQuestionCache.LOCAL_SCOPE).let {
@@ -1096,6 +1116,11 @@ object QuizWebAdmin {
         ) {
             return error(Response.Status.INTERNAL_ERROR, "CACHE_UNAVAILABLE")
         }
+        // Emptying the wrong book is what starts a new weekly cycle, so a parent who
+        // clears it here gets a fresh week instead of an immediate overdue gate.
+        val clearedAt = System.currentTimeMillis()
+        if (QuizQuestionCache.wrongReviewCount() <= 0) WrongBookPolicy.markCleared(clearedAt)
+        val wrongBook = WrongBookPolicy.state(clearedAt)
         val state = QuizRuntime.refresh()
         val sourceCounts = QuizQuestionCache.sourceCounts(QuizQuestionCache.LOCAL_SCOPE)
         return json(
@@ -1109,7 +1134,15 @@ object QuizWebAdmin {
                         .put("course", sourceCounts.course)
                         .put("custom", sourceCounts.custom),
                 )
-                .put("bankState", state.bankState),
+                .put("bankState", state.bankState)
+                .put(
+                    "wrongBook",
+                    JSONObject()
+                        .put("count", wrongBook.count)
+                        .put("overdue", wrongBook.overdue)
+                        .put("daysLeft", wrongBook.daysLeft)
+                        .put("mixing", wrongBook.mixing),
+                ),
         )
     }
 

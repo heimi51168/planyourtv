@@ -317,6 +317,35 @@ object QuizChallenge {
             is QuizLocalPlanResult.Rejected -> return BeginResult.Rejected(planned.code)
         }
         val config = plan.config
+        // The wrong book's own weekly cycle. Once a wrong answer is a week old practice
+        // serves only the wrong book, whatever level was picked: new questions wait until
+        // it is empty again.
+        val book = WrongBookPolicy.state(nowMs)
+        val roundId = QbClient.SESSION_ID_PREFIX + UUID.randomUUID().toString().replace("-", "")
+        if (book.overdue) {
+            val wrongOnly = try {
+                QuizQuestionCache.reserveWrongForRound(
+                    count = config.pullCount,
+                    sessionId = roundId,
+                    scopeKey = QuizQuestionCache.LOCAL_SCOPE,
+                    minRequired = 1,
+                    nowMs = nowMs,
+                )
+            } catch (_: QuizQuestionCache.CacheException) {
+                return BeginResult.Rejected("CACHE_UNAVAILABLE")
+            }
+            if (wrongOnly.isNotEmpty()) {
+                PolicyFlowTrace.event(
+                    "quiz.start.wrongbook",
+                    "overdue" to true,
+                    "questions" to wrongOnly.size,
+                )
+                return publishLocalRound(nowMs, plan, config, roundId, wrongOnly)
+            }
+            // Nothing left to answer: the week's work is done, so the next wrong answer
+            // starts a fresh cycle instead of blocking practice for good.
+            WrongBookPolicy.markCleared(nowMs)
+        }
         // An explicit level that disappeared while the dialog was open must not
         // silently start a different one. Without an id, take the first level
         // that can actually fill a round across course levels and custom tags.
@@ -324,13 +353,38 @@ object QuizChallenge {
             ?: return BeginResult.Rejected("NO_LEVELS")
         val explicitLevel = !levelId.isNullOrBlank()
         val scope = QuizQuestionCache.LOCAL_SCOPE
+        // Wrong answers ride along with practice: up to half the round, and only for a
+        // plain curriculum round. A chosen custom tag or the wrong-review level itself
+        // means exactly that set, so they stay untouched.
+        val mixBudget = if (!explicitLevel && !target.wrongReview && target.collectionId == null &&
+            book.mixing
+        ) {
+            min(book.count, maxOf(1, config.pullCount / 2))
+        } else {
+            0
+        }
+        val mixed = if (mixBudget > 0) {
+            try {
+                QuizQuestionCache.reserveWrongForRound(
+                    count = mixBudget,
+                    sessionId = roundId,
+                    scopeKey = scope,
+                    minRequired = 1,
+                    nowMs = nowMs,
+                )
+            } catch (_: QuizQuestionCache.CacheException) {
+                emptyList()
+            }
+        } else {
+            emptyList()
+        }
         val unused = when {
             target.wrongReview -> QuizQuestionCache.wrongReviewCount(scope)
             target.collectionId != null ->
                 QuizQuestionCache.availableCollectionCount(target.collectionId, nowMs)
             else -> QuizQuestionCache.availableCount(scope, nowMs, target.scope)
         }
-        if (unused <= 0) return BeginResult.Rejected("LOCAL_BANK_EMPTY")
+        if (unused <= 0 && mixed.isEmpty()) return BeginResult.Rejected("LOCAL_BANK_EMPTY")
         // Any level the child explicitly picked, including wrong review, must
         // supply the full configured round. Only the legacy caller without a
         // level id keeps the old clamp.
@@ -338,39 +392,66 @@ object QuizChallenge {
         if (requiresFullRound && unused < config.pullCount) {
             return BeginResult.Rejected("LOCAL_BANK_INSUFFICIENT")
         }
-        val count = if (requiresFullRound) config.pullCount else min(config.pullCount, unused)
+        val count = if (requiresFullRound) config.pullCount else min(config.pullCount, unused + mixed.size)
         val required = if (requiresFullRound) config.pullCount else 1
-        val roundId = QbClient.SESSION_ID_PREFIX + UUID.randomUUID().toString().replace("-", "")
-        val reserved = try {
-            when {
-                target.wrongReview -> QuizQuestionCache.reserveWrongForRound(
-                    count = count,
-                    sessionId = roundId,
-                    scopeKey = scope,
-                    minRequired = required,
-                    nowMs = nowMs,
-                )
-                target.collectionId != null -> QuizQuestionCache.reserveCollectionForRound(
-                    count = count,
-                    sessionId = roundId,
-                    collectionId = target.collectionId,
-                    minRequired = required,
-                    nowMs = nowMs,
-                )
-                else -> QuizQuestionCache.reserveForRound(
-                    count = count,
-                    sessionId = roundId,
-                    scopeKey = scope,
-                    minRequired = required,
-                    nowMs = nowMs,
-                    answerScope = target.scope,
-                )
+        val normalCount = (count - mixed.size).coerceAtLeast(0)
+        val normalRequired = (required - mixed.size).coerceAtLeast(1)
+        val reserved = if (normalCount <= 0) {
+            emptyList()
+        } else {
+            try {
+                when {
+                    target.wrongReview -> QuizQuestionCache.reserveWrongForRound(
+                        count = normalCount,
+                        sessionId = roundId,
+                        scopeKey = scope,
+                        minRequired = normalRequired,
+                        nowMs = nowMs,
+                    )
+                    target.collectionId != null -> QuizQuestionCache.reserveCollectionForRound(
+                        count = normalCount,
+                        sessionId = roundId,
+                        collectionId = target.collectionId,
+                        minRequired = normalRequired,
+                        nowMs = nowMs,
+                    )
+                    else -> QuizQuestionCache.reserveForRound(
+                        count = normalCount,
+                        sessionId = roundId,
+                        scopeKey = scope,
+                        minRequired = normalRequired,
+                        nowMs = nowMs,
+                        answerScope = target.scope,
+                    )
+                }
+            } catch (_: QuizQuestionCache.CacheException) {
+                return BeginResult.Rejected("CACHE_UNAVAILABLE")
             }
-        } catch (_: QuizQuestionCache.CacheException) {
-            return BeginResult.Rejected("CACHE_UNAVAILABLE")
         }
-        if (reserved.isEmpty()) return BeginResult.Rejected("LOCAL_BANK_INSUFFICIENT")
+        val picked = mixed + reserved
+        if (picked.isEmpty()) return BeginResult.Rejected("LOCAL_BANK_INSUFFICIENT")
+        if (mixed.isNotEmpty()) {
+            PolicyFlowTrace.event(
+                "quiz.start.wrongbook",
+                "overdue" to false,
+                "questions" to mixed.size,
+            )
+        }
+        return publishLocalRound(nowMs, plan, config, roundId, picked)
+    }
 
+    /**
+     * Publishes the round from the questions already reserved. A failed save settles
+     * them straight back, so nothing is left stranded in RESERVED.
+     */
+    private fun publishLocalRound(
+        nowMs: Long,
+        plan: QuizLocalRoundPlan,
+        config: QuizConfig,
+        roundId: String,
+        reserved: List<QuizQuestionCache.CachedQuestion>,
+    ): BeginResult {
+        val scope = QuizQuestionCache.LOCAL_SCOPE
         val published = reserved.map { cached ->
             cached.question.copy(
                 cacheId = cached.cacheId,
@@ -515,6 +596,9 @@ object QuizChallenge {
                 ),
                 nowMs,
             )
+            // The local bank dates the wrong book from its first wrong answer and closes
+            // the cycle once the book is empty; a cloud scope never touches it.
+            if (cacheScope == QuizQuestionCache.LOCAL_SCOPE) WrongBookPolicy.state(nowMs)
         }
         // Queue the answer before showing feedback. The queue uploads in the
         // background; settlement flushes it again, so a slow network never eats
@@ -623,6 +707,9 @@ object QuizChallenge {
                 answers = QuizRecovery.answerWrites(session),
                 nowMs = nowMs,
             )
+            // The settle may have taken the last wrong answer out of the book, which
+            // closes the cycle; see WrongBookPolicy.
+            if (cacheScope == QuizQuestionCache.LOCAL_SCOPE) WrongBookPolicy.state(nowMs)
         }
         // All answers are in: close the cloud attempt now, so the wrong book is
         // written while the child reads the report and QB never keeps it RUNNING.
@@ -661,6 +748,7 @@ object QuizChallenge {
                     answers = QuizRecovery.answerWrites(it),
                     nowMs = nowMs,
                 )
+                if (cacheScope == QuizQuestionCache.LOCAL_SCOPE) WrongBookPolicy.state(nowMs)
             }
             cloudAttempt(it)?.let { attemptUid ->
                 QuizCloudOutbox.markAbandon(attemptUid)
