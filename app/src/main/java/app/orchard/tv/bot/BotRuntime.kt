@@ -21,6 +21,10 @@ import kotlinx.coroutines.launch
 internal object BotRuntime {
     private const val TAG = "BotRuntime"
 
+    /** Boot-window store readiness: 24 tries x 5s = two minutes of patience. */
+    private const val READINESS_ATTEMPTS = 24
+    private const val READINESS_INTERVAL_MS = 5_000L
+
     /** Injectable for tests; the default is the project's HttpURLConnection shell. */
     var transport: HttpTransport = UrlConnectionTransport()
 
@@ -39,6 +43,7 @@ internal object BotRuntime {
     private val channels = LinkedHashMap<String, Job>()
     private var eventJob: Job? = null
     private var reportJob: Job? = null
+    private var readinessJob: Job? = null
 
     /** Pushes that arrived before the parent's first message, flushed on first contact. */
     private val pendingPushes = LinkedHashMap<String, MutableList<String>>()
@@ -52,7 +57,29 @@ internal object BotRuntime {
     fun start(context: Context) {
         appContext = context.applicationContext
         started = true
-        restartChannels()
+        if (com.planyourtv.policy.TvStore.isReady) {
+            restartChannels()
+            return
+        }
+        // Boot can reach us before credential-protected storage unlocks, when
+        // binding reads return empty and no channel would ever start. Wait for
+        // the store (bounded), then bring the channels up ourselves instead of
+        // hoping a later install() call arrives.
+        readinessJob?.cancel()
+        readinessJob = scope.launch(Dispatchers.IO) {
+            repeat(READINESS_ATTEMPTS) {
+                if (com.planyourtv.policy.TvStore.isReady) return@launch
+                runCatching { com.planyourtv.policy.TvStore.init(appContext ?: return@launch) }
+                if (com.planyourtv.policy.TvStore.isReady) return@launch
+                kotlinx.coroutines.delay(READINESS_INTERVAL_MS)
+            }
+            if (com.planyourtv.policy.TvStore.isReady) {
+                TvLog.i(TAG, "store became ready; starting bot channels")
+                restartChannels()
+            } else {
+                TvLog.w(TAG, "store never became ready; bot channels not started")
+            }
+        }
     }
 
     /** Starts/stops loop jobs to match the persisted bindings; safe to call on any change. */
@@ -123,12 +150,17 @@ internal object BotRuntime {
 
     /**
      * Removes a binding and stops its loop. [notify] sends a farewell first;
-     * the self-unbind path has already replied, so it passes false.
+     * the self-unbind path has already replied, so it passes false. The parent
+     * center calls this from the UI thread, so the farewell HTTP hops to IO —
+     * a synchronous send there is a NetworkOnMainThreadException swallowed by
+     * sendText, and the goodbye never went out.
      */
     fun unbind(id: String, notify: Boolean) {
         val binding = BotBindingStore.find(id) ?: return
         if (notify && binding.contextToken.isNotEmpty()) {
-            sendText(binding, binding.contextToken, "你已与本电视解绑。")
+            scope.launch(Dispatchers.IO) {
+                sendText(binding, binding.contextToken, "你已与本电视解绑。")
+            }
         }
         synchronized(this) {
             channels.remove(id)?.cancel()
@@ -202,6 +234,8 @@ internal object BotRuntime {
         eventJob = null
         reportJob?.cancel()
         reportJob = null
+        readinessJob?.cancel()
+        readinessJob = null
     }
 
     /** Test/teardown hook; the TV process never calls this in production. */

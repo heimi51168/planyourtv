@@ -48,41 +48,71 @@ internal class BotChannel(
 
     fun start(): Job = scope.launch(Dispatchers.IO) {
         var backoffMs = INITIAL_BACKOFF_MS
+        var consecutiveRejected = 0
         while (isActive) {
             if (System.currentTimeMillis() < pausedUntilMs) {
                 delay(POLL_PAUSE_CHECK_MS)
                 continue
             }
             val current = BotBindingStore.find(binding.id) ?: break
-            when (val page = api.getUpdates(
-                transport = runtime.transport,
-                baseUrl = current.baseUrl,
-                botToken = current.botToken,
-                channelVersion = runtime.channelVersion,
-                cursor = current.cursor,
-            )) {
-                is UpdatesResult.Ok -> {
-                    backoffMs = INITIAL_BACKOFF_MS
-                    BotBindingStore.updateCursor(binding.id, page.cursor)
-                    for (message in page.messages) {
-                        deliver(current, message)
+            // The loop must survive anything one iteration can throw (storage,
+            // an odd response, a crash inside a command): catch, log, keep
+            // polling. Before this guard a single unexpected exception killed
+            // the channel coroutine and the bot stayed silent until the next
+            // app restart — the "no reply after boot" symptom.
+            try {
+                when (
+                    val page = api.getUpdates(
+                        transport = runtime.transport,
+                        baseUrl = current.baseUrl,
+                        botToken = current.botToken,
+                        channelVersion = runtime.channelVersion,
+                        cursor = current.cursor,
+                    )
+                ) {
+                    is UpdatesResult.Ok -> {
+                        backoffMs = INITIAL_BACKOFF_MS
+                        consecutiveRejected = 0
+                        BotBindingStore.updateCursor(binding.id, page.cursor)
+                        for (message in page.messages) {
+                            // One poison message must not stop the rest of the page.
+                            runCatching { deliver(current, message) }
+                                .onFailure { TvLog.w(TAG, "deliver failed for ${binding.id}", it) }
+                        }
+                        // Loop immediately: the server holds the next call ~35s.
                     }
-                    // Loop immediately: the server holds the next call ~35s.
+                    UpdatesResult.PauseOneHour -> {
+                        // Per the protocol, keep this binding quiet for an hour.
+                        pausedUntilMs = System.currentTimeMillis() + PAUSE_ONE_HOUR_MS
+                        consecutiveRejected = 0
+                    }
+                    UpdatesResult.Rejected -> {
+                        consecutiveRejected++
+                        TvLog.w(TAG, "getupdates rejected for ${binding.id} (#$consecutiveRejected)")
+                        // A stale cursor can be rejected forever; after a streak,
+                        // drop it and re-sync from now — the gate's dedup absorbs
+                        // whatever the server redelivers.
+                        if (consecutiveRejected >= REJECTED_BEFORE_RESYNC) {
+                            TvLog.w(TAG, "resetting cursor for ${binding.id} after rejection streak")
+                            BotBindingStore.updateCursor(binding.id, "")
+                            consecutiveRejected = 0
+                            backoffMs = INITIAL_BACKOFF_MS
+                            continue
+                        }
+                        delay(backoffMs)
+                        backoffMs = nextBackoffMs(UpdatesResult.Rejected, backoffMs)
+                    }
+                    UpdatesResult.NetworkError -> {
+                        // Ordinary while the TV's network comes up after boot.
+                        delay(backoffMs)
+                        backoffMs = nextBackoffMs(UpdatesResult.NetworkError, backoffMs)
+                    }
                 }
-                UpdatesResult.PauseOneHour -> {
-                    // Per the protocol, keep this binding quiet for an hour.
-                    pausedUntilMs = System.currentTimeMillis() + PAUSE_ONE_HOUR_MS
-                }
-                UpdatesResult.Rejected -> {
-                    TvLog.w(TAG, "getupdates rejected for ${binding.id}")
-                    delay(backoffMs)
-                    backoffMs = (backoffMs * 2).coerceAtMost(MAX_BACKOFF_MS)
-                }
-                UpdatesResult.NetworkError -> {
-                    // Ordinary on a TV network; try again quietly.
-                    delay(backoffMs)
-                    backoffMs = (backoffMs * 2).coerceAtMost(MAX_BACKOFF_MS)
-                }
+            } catch (error: Exception) {
+                if (error is kotlinx.coroutines.CancellationException) throw error
+                TvLog.w(TAG, "poll iteration crashed for ${binding.id}; continuing", error)
+                delay(EXCEPTION_BACKOFF_MS)
+                backoffMs = INITIAL_BACKOFF_MS
             }
         }
     }
@@ -334,11 +364,28 @@ internal class BotChannel(
     companion object {
         private const val TAG = "BotChannel"
         private const val INITIAL_BACKOFF_MS = 1_000L
-        private const val MAX_BACKOFF_MS = 5 * 60_000L
+
+        /** Boot flakiness: a TV's network can take a minute to come up; stay nimble. */
+        private const val NETWORK_ERROR_BACKOFF_CAP_MS = 15_000L
+
+        /** Protocol refusals deserve a calmer rhythm, but not five silent minutes. */
+        private const val REJECTED_BACKOFF_CAP_MS = 60_000L
+        private const val EXCEPTION_BACKOFF_MS = 5_000L
+        private const val REJECTED_BEFORE_RESYNC = 10
         private const val POLL_PAUSE_CHECK_MS = 60_000L
         private const val PAUSE_ONE_HOUR_MS = 60 * 60_000L
         private const val CONFIRM_TTL_MS = 120_000L
         private const val UNDO_TTL_MS = 60_000L
+
+        /** Pure backoff step so the policy is unit-testable. */
+        fun nextBackoffMs(result: UpdatesResult, current: Long): Long {
+            val cap = if (result is UpdatesResult.NetworkError) {
+                NETWORK_ERROR_BACKOFF_CAP_MS
+            } else {
+                REJECTED_BACKOFF_CAP_MS
+            }
+            return (current * 2).coerceIn(INITIAL_BACKOFF_MS, cap)
+        }
 
         private val CONFIRM_WORDS = setOf("y", "yes", "是", "确认", "好", "好的", "确定")
         private val CANCEL_WORDS = setOf("n", "no", "否", "取消", "不", "算了")

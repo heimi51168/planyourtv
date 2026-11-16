@@ -47,8 +47,10 @@ internal object WeixinClawApi {
     ): QrTicket? {
         val body = JSONObject()
             .put("local_token_list", JSONArray(knownTokens))
-            // Register our product name at bind time: the backend's offline
-            // auto-reply names the client, and its default is "OpenClaw".
+            // The offline auto-reply names the client; polling-time bot_agent
+            // proved not to change it, so register at bind time too. (The
+            // earlier "this breaks the endpoint" finding was the router
+            // blackout, not the payload — retested 2026-11-16.)
             .put("base_info", WeixinClawCodec.baseInfo(channelVersion))
         val json = transport.call(
             method = "POST",
@@ -388,12 +390,24 @@ class UrlConnectionTransport : HttpTransport {
             val code = c.responseCode
             val stream = if (code in 200..299) c.inputStream else c.errorStream
             val text = stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
-            if (code !in 200..299 || text.isBlank()) null else JSONObject(text)
+            if (code !in 200..299) {
+                // Path only, never the query (tokens live in headers anyway).
+                com.planyourtv.log.TvLog.w(
+                    "WeixinClaw",
+                    "http $code ${c.requestMethod} ${c.url.path} body=${text.take(160)}",
+                )
+                null
+            } else if (text.isBlank()) {
+                null
+            } else {
+                JSONObject(text)
+            }
         } catch (_: IOException) {
             // A timeout or dropped route is an ordinary poll outcome, not an error state.
             null
         } catch (_: org.json.JSONException) {
             // A non-JSON body is as unusable as no body; the caller backs off.
+            com.planyourtv.log.TvLog.w("WeixinClaw", "non-JSON response on ${url.substringBefore('?')}")
             null
         } finally {
             // Long-poll connections never reuse the pool; always drop them.

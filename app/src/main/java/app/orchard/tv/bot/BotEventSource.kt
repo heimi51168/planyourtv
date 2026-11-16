@@ -23,9 +23,25 @@ import kotlinx.coroutines.launch
 internal object BotEventSource {
 
     fun start(scope: CoroutineScope, onTimer: (String) -> Unit, onQuiz: (String) -> Unit): Job {
+        // A throw inside any push path must never kill its collector job, or
+        // pushes go silent for the rest of the process.
+        val safeTimer: (String) -> Unit = { text ->
+            runCatching { onTimer(text) }.onFailure {
+                com.planyourtv.log.TvLog.w("BotEvent", "timer push failed", it)
+            }
+        }
+        val safeQuiz: (String) -> Unit = { text ->
+            runCatching { onQuiz(text) }.onFailure {
+                com.planyourtv.log.TvLog.w("BotEvent", "quiz push failed", it)
+            }
+        }
         val collector = scope.launch(Dispatchers.Default) {
-            launch { collectPolicy(onTimer) }
-            launch { collectQuiz(onQuiz) }
+            launch { runCatching { collectPolicy(safeTimer) }.onFailure {
+                com.planyourtv.log.TvLog.w("BotEvent", "policy collector died", it)
+            } }
+            launch { runCatching { collectQuiz(safeQuiz) }.onFailure {
+                com.planyourtv.log.TvLog.w("BotEvent", "quiz collector died", it)
+            } }
         }
         return collector
     }
