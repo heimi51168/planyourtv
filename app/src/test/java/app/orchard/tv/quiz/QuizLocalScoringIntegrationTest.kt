@@ -86,7 +86,7 @@ class QuizLocalScoringIntegrationTest {
     fun invalidDocumentIsRejectedInsteadOfStarting() {
         val document = documentWithProfiles()
         val shortRound = document.copy(
-            rules = document.rules.copy(questionCount = 4),
+            rules = document.rules.copy(questionCount = 0),
         ).let(QuizLocalConfigDocument::withContentHashes)
         assertRejected(shortRound, QuizLocalRoundPlanner.DOCUMENT_INVALID)
 

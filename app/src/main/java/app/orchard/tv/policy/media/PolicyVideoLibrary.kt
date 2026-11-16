@@ -8,11 +8,12 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 
-/** A playable file plus the poster the start screen can show before its first frame. */
+/** A playable file or a still picture, plus the cover the child surfaces show before a video frame. */
 data class PolicyVideoSource(
     val uri: Uri,
     val official: Boolean,
     val poster: File?,
+    val kind: PolicyMediaKind = PolicyMediaKind.VIDEO,
 )
 
 /**
@@ -44,6 +45,7 @@ object PolicyVideoLibrary {
     data class LibraryItem(
         val id: String,
         val source: String,
+        val kind: PolicyMediaKind,
         val name: String,
         val nameEn: String,
         val durationMs: Long,
@@ -109,6 +111,7 @@ object PolicyVideoLibrary {
                     uri = Uri.fromFile(local.file),
                     official = true,
                     poster = local.poster,
+                    kind = local.item.kind,
                 )
             }
             localIdPattern.matches(id) -> {
@@ -117,6 +120,7 @@ object PolicyVideoLibrary {
                     uri = Uri.fromFile(upload.file),
                     official = false,
                     poster = QuizIntroVideo.posterOf(context, id),
+                    kind = upload.kind,
                 )
             }
             else -> null
@@ -186,7 +190,14 @@ object PolicyVideoLibrary {
     }
 
     fun capabilityRoles(context: Context, id: String): Set<PolicyVideoRole> = when {
-        localIdPattern.matches(id) -> PolicyVideoRole.entries.toSet()
+        localIdPattern.matches(id) -> {
+            val upload = QuizIntroVideo.all(context).firstOrNull { it.id == id }
+            when (upload?.kind) {
+                PolicyMediaKind.IMAGE -> setOf(PolicyVideoRole.LOCK_WALLPAPER)
+                PolicyMediaKind.VIDEO -> PolicyVideoRole.entries.toSet()
+                null -> emptySet()
+            }
+        }
         officialIdPattern.matches(id) -> {
             val catalog = OfficialMediaCatalog.find(context, id)
             val installed = OfficialMediaStore.read(context, id)
@@ -223,6 +234,7 @@ object PolicyVideoLibrary {
             items += LibraryItem(
                 id = item.id,
                 source = "official",
+                kind = item.kind,
                 name = item.name,
                 nameEn = item.nameEn,
                 durationMs = item.durationMs,
@@ -231,8 +243,10 @@ object PolicyVideoLibrary {
                 fps = item.fps,
                 sizeBytes = item.bytes,
                 sha256 = item.sha256,
-                posterUrl = item.poster.url.takeIf { it.isNotBlank() }
-                    ?: posterRoute(item.id, local?.poster),
+                // A downloaded cover comes from the TV first, so the page still shows it
+                // offline and a cloud picture (its own cover) never leaves the device again.
+                posterUrl = posterRoute(item.id, local?.poster)
+                    ?: item.poster.url.takeIf { it.isNotBlank() },
                 state = state,
                 roles = roles.filter { it.value == item.id }.keys,
                 downloadedAtMs = local?.downloadedAtMs ?: 0L,
@@ -249,6 +263,7 @@ object PolicyVideoLibrary {
                 items += LibraryItem(
                     id = local.id,
                     source = "official",
+                    kind = local.item.kind,
                     name = local.item.name,
                     nameEn = local.item.nameEn,
                     durationMs = local.item.durationMs,
@@ -272,8 +287,9 @@ object PolicyVideoLibrary {
             items += LibraryItem(
                 id = upload.id,
                 source = "local",
-                name = upload.name.removeSuffix(".mp4"),
-                nameEn = upload.name.removeSuffix(".mp4"),
+                kind = upload.kind,
+                name = upload.name.substringBeforeLast('.', upload.name),
+                nameEn = upload.name.substringBeforeLast('.', upload.name),
                 durationMs = upload.durationMs,
                 width = upload.width,
                 height = upload.height,
@@ -287,7 +303,11 @@ object PolicyVideoLibrary {
                 catalog = null,
                 local = null,
                 upload = upload,
-                capabilityRoles = PolicyVideoRole.entries.toSet(),
+                capabilityRoles = if (upload.kind == PolicyMediaKind.IMAGE) {
+                    setOf(PolicyVideoRole.LOCK_WALLPAPER)
+                } else {
+                    PolicyVideoRole.entries.toSet()
+                },
             )
         }
 
@@ -298,6 +318,7 @@ object PolicyVideoLibrary {
                 JSONObject()
                     .put("id", item.id)
                     .put("source", item.source)
+                    .put("kind", item.kind.wire)
                     .put("name", item.name)
                     .put("nameEn", item.nameEn)
                     .put("durationMs", item.durationMs)
@@ -347,6 +368,8 @@ object PolicyVideoLibrary {
                     .put("maxLocalBytes", QuizIntroVideo.MAX_TOTAL_BYTES)
                     .put("keepFreeBytes", OfficialMediaDownloader.KEEP_FREE_BYTES)
                     .put("maxFileBytes", PolicyVideoValidation.MAX_FILE_BYTES)
+                    .put("maxUploadBytes", QuizIntroVideo.MAX_UPLOAD_BYTES)
+                    .put("maxImageBytes", QuizIntroVideo.MAX_IMAGE_BYTES)
                     .put("maxDurationMs", PolicyVideoValidation.MAX_DURATION_MS),
             )
     }
@@ -358,7 +381,9 @@ object PolicyVideoLibrary {
             localIdPattern.matches(id) -> QuizIntroVideo.posterOf(context, id)
             else -> null
         } ?: return null
-        if (file.length() !in 1..PolicyVideoValidation.MAX_POSTER_BYTES) return null
+        // A picture is its own cover, so this route serves 1920x1080 JPEGs as well as the much
+        // smaller video poster. The page still fetches it with the editor header and blobs it.
+        if (file.length() !in 1..PolicyImageValidation.MAX_STORED_BYTES) return null
         val bytes = runCatching { file.readBytes() }.getOrNull() ?: return null
         return bytes.takeIf(PolicyVideoValidation::isJpeg)
     }
@@ -387,7 +412,7 @@ object PolicyVideoLibrary {
      */
     private fun posterRoute(id: String, file: File?): String? {
         if (file == null || !file.isFile) return null
-        if (file.length() !in 1..PolicyVideoValidation.MAX_POSTER_BYTES) return null
+        if (file.length() !in 1..PolicyImageValidation.MAX_STORED_BYTES) return null
         return "/api/parent/media/poster?id=" + Uri.encode(id)
     }
 }

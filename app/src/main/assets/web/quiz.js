@@ -101,15 +101,10 @@
       shuffle: "打乱选项顺序",
       publish: "发布到电视",
       deleteSession: "删除挑战",
-      disableQuiz: "关闭答题挑战",
-      enableQuiz: "开启答题挑战",
       logout: "退出家长设置",
-      disabled: "答题挑战已关闭。",
-      enabled: "答题挑战已开启。",
       published: "已发布到电视。请在电视锁屏开始挑战。",
       deleted: "挑战已删除。",
       confirmDelete: "确定删除当前挑战？",
-      confirmDisable: "确定关闭答题挑战？未开始的挑战会被删除。",
       qErrPrompt: "请填写题目。",
       qErrOptions: "请填写 2–6 个互不相同的选项。",
       qErrCount: "至少需要一道题。",
@@ -441,15 +436,10 @@
       shuffle: "Shuffle options",
       publish: "Publish to TV",
       deleteSession: "Delete challenge",
-      disableQuiz: "Disable quiz",
-      enableQuiz: "Enable quiz",
       logout: "Exit parent settings",
-      disabled: "Quiz challenge disabled.",
-      enabled: "Quiz challenge enabled.",
       published: "Published to the TV. Start it from the lock screen.",
       deleted: "Challenge deleted.",
       confirmDelete: "Delete the current challenge?",
-      confirmDisable: "Disable the quiz? An unstarted challenge will be deleted.",
       qErrPrompt: "Enter a question.",
       qErrOptions: "Enter 2–6 different options.",
       qErrCount: "Add at least one question.",
@@ -781,15 +771,10 @@
       shuffle: "Перемешивать варианты",
       publish: "Опубликовать на ТВ",
       deleteSession: "Удалить викторину",
-      disableQuiz: "Отключить викторину",
-      enableQuiz: "Включить викторину",
       logout: "Выйти из настроек",
-      disabled: "Викторина отключена.",
-      enabled: "Викторина включена.",
       published: "Опубликовано на телевизоре. Начните с экрана блокировки.",
       deleted: "Викторина удалена.",
       confirmDelete: "Удалить текущую викторину?",
-      confirmDisable: "Отключить викторину? Не начатая викторина будет удалена.",
       qErrPrompt: "Введите вопрос.",
       qErrOptions: "Введите 2–6 разных вариантов.",
       qErrCount: "Добавьте хотя бы один вопрос.",
@@ -1121,15 +1106,10 @@
       shuffle: "Перемішувати варіанти",
       publish: "Опублікувати на ТБ",
       deleteSession: "Видалити вікторину",
-      disableQuiz: "Вимкнути вікторину",
-      enableQuiz: "Увімкнути вікторину",
       logout: "Вийти з налаштувань",
-      disabled: "Вікторину вимкнено.",
-      enabled: "Вікторину ввімкнено.",
       published: "Опубліковано на телевізорі. Почніть з екрана блокування.",
       deleted: "Вікторину видалено.",
       confirmDelete: "Видалити поточну вікторину?",
-      confirmDisable: "Вимкнути вікторину? Непочату вікторину буде видалено.",
       qErrPrompt: "Введіть питання.",
       qErrOptions: "Введіть 2–6 різних варіантів.",
       qErrCount: "Додайте хоча б одне питання.",
@@ -1461,15 +1441,10 @@
       shuffle: "Нұсқаларды араластыру",
       publish: "ТВ-ға жариялау",
       deleteSession: "Викторинаны жою",
-      disableQuiz: "Викторинаны өшіру",
-      enableQuiz: "Викторинаны қосу",
       logout: "Ата-ана баптауынан шығу",
-      disabled: "Викторина өшірілді.",
-      enabled: "Викторина қосылды.",
       published: "Теледидарға жарияланды. Құлыптау экранынан бастаңыз.",
       deleted: "Викторина жойылды.",
       confirmDelete: "Ағымдағы викторинаны жою керек пе?",
-      confirmDisable: "Викторинаны өшіру керек пе? Басталмаған викторина жойылады.",
       qErrPrompt: "Сұрақты енгізіңіз.",
       qErrOptions: "2–6 түрлі нұсқа енгізіңіз.",
       qErrCount: "Кемінде бір сұрақ қосыңыз.",
@@ -1767,7 +1742,6 @@
       cloudJuniorUnsupported: "云端题库暂不支持初中，请选择小学年级。",
       settingsSummary: "每轮 {pull} 题 · 每题 {minutes} 分钟",
       settingsActiveHint: "本轮答题进行中，修改将在下一轮生效。",
-      challengeToggle: "答题挑战",
       settingsSaved: "已保存",
       meSource: "答题来源",
       meAdvanced: "高级",
@@ -1869,7 +1843,6 @@
       cloudJuniorUnsupported: "The cloud question bank does not support junior high yet. Choose a primary grade.",
       settingsSummary: "{pull} per round · {minutes} min per question",
       settingsActiveHint: "A round is running; changes apply from the next round.",
-      challengeToggle: "Quiz challenge",
       settingsSaved: "Saved",
       meSource: "Quiz source",
       meAdvanced: "Advanced",
@@ -1971,7 +1944,6 @@
       cloudJuniorUnsupported: "Облачная база вопросов пока не поддерживает среднюю школу. Выберите класс начальной школы.",
       settingsSummary: "{pull} за раунд · {minutes} мин на вопрос",
       settingsActiveHint: "Раунд идёт; изменения применятся со следующего раунда.",
-      challengeToggle: "Викторина",
       settingsSaved: "Сохранено",
       meSource: "Источник викторины",
       meAdvanced: "Дополнительно",
@@ -2073,7 +2045,6 @@
       cloudJuniorUnsupported: "Хмарна база запитань поки не підтримує середню школу. Виберіть клас початкової школи.",
       settingsSummary: "{pull} за раунд · {minutes} хв на питання",
       settingsActiveHint: "Раунд триває; зміни застосуються з наступного раунду.",
-      challengeToggle: "Вікторина",
       settingsSaved: "Збережено",
       meSource: "Джерело вікторини",
       meAdvanced: "Додатково",
@@ -2175,7 +2146,6 @@
       cloudJuniorUnsupported: "Бұлттық сұрақ базасы әзірге орта мектепті қолдамайды. Бастауыш сыныпты таңдаңыз.",
       settingsSummary: "Раундта {pull} сұрақ · сұраққа {minutes} мин",
       settingsActiveHint: "Раунд жүріп жатыр; өзгерістер келесі раундтан қолданылады.",
-      challengeToggle: "Викторина",
       settingsSaved: "Сақталды",
       meSource: "Викторина көзі",
       meAdvanced: "Қосымша",
@@ -2280,7 +2250,6 @@
       homeAnswerSub: "每轮 {n} 题 · {seconds} 秒/题 · 每题 +{minutes} 分钟",
       roundN: "{n} 题",
       roundUnit: "题",
-      settingsRoundHint: "上下滑动 · 5–50 题，每次 5 题",
       rewardMinutes: "单题奖励",
       rewardMinutesN: "+{n} 分钟",
       scopeAvailableCount: "题库中 {n} 题符合",
@@ -2364,7 +2333,6 @@
       homeAnswerSub: "{n} per round · {seconds}s each · +{minutes} min per question",
       roundN: "{n} questions",
       roundUnit: "questions",
-      settingsRoundHint: "Swipe up or down · 5–50, step 5",
       rewardMinutes: "Reward per question",
       rewardMinutesN: "+{n} min",
       scopeAvailableCount: "{n} bank questions match",
@@ -2448,7 +2416,6 @@
       homeAnswerSub: "{n} за раунд · {seconds} с на вопрос · +{minutes} мин за вопрос",
       roundN: "{n} вопр.",
       roundUnit: "вопр.",
-      settingsRoundHint: "Смахните · 5–50, шаг 5",
       rewardMinutes: "Награда за вопрос",
       rewardMinutesN: "+{n} мин",
       scopeAvailableCount: "В банке подходят {n} вопр.",
@@ -2532,7 +2499,6 @@
       homeAnswerSub: "{n} за раунд · {seconds} с на питання · +{minutes} хв за питання",
       roundN: "{n} питань",
       roundUnit: "питань",
-      settingsRoundHint: "Проведіть · 5–50, крок 5",
       rewardMinutes: "Винагорода за питання",
       rewardMinutesN: "+{n} хв",
       scopeAvailableCount: "У банку відповідають {n} питань",
@@ -2616,7 +2582,6 @@
       homeAnswerSub: "раундта {n} · сұраққа {seconds} с · сұраққа +{minutes} мин",
       roundN: "{n} сұрақ",
       roundUnit: "сұрақ",
-      settingsRoundHint: "Сырғытыңыз · 5–50, қадам 5",
       rewardMinutes: "Сұрақ сыйақысы",
       rewardMinutesN: "+{n} мин",
       scopeAvailableCount: "Банкте {n} сұрақ сәйкес",
@@ -2829,7 +2794,6 @@
       scoringLead: "答对按题目难度加时间；答错或超时按同一难度扣时间。",
       scoringCorrect: "答对（分钟）",
       scoringWrong: "答错/超时（分钟）",
-      scoringRangeHint: "每题 0–30 分钟；填 0 表示答错不扣时间。",
       scoringReset: "恢复默认计分",
       scoringExample: "示例：答对简单 3 道、中等 2 道、困难 1 道，答错中等 1 道 → 加分 {gross}，扣分 {penalty}，净得 {net} 分钟",
       scoringExampleNoPenalty: "示例：答对简单 3 道、中等 2 道、困难 1 道 → 净得 {net} 分钟",
@@ -2838,7 +2802,7 @@
       scoringWarnThreshold: "最低解锁时长 {threshold} 分钟高于单轮上限 {cap} 分钟，可能永远无法解锁。",
       scoringWarnPenalty: "有难度的扣分不低于答对奖励，答错一题可能抵消多道答对。",
       unlockTitle: "最低解锁时长（分钟）",
-      unlockHint: "净得分钟达到门槛才能解锁；0 表示不设门槛，不设上限。门槛只做判断，不会从奖励里扣除。",
+      unlockHint: "净得分钟达到门槛才能解锁；0 表示不设门槛。门槛只做判断，不会从奖励里扣除。",
       unlockNone: "不设门槛",
       minuteN: "{n} 分钟",
       homeAnswerSub: "每轮 {n} 题 · 简单 +{easy} / 中等 +{medium} / 困难 +{hard} 分钟 · {unlock}",
@@ -2850,7 +2814,6 @@
       scoringLead: "Correct answers add time by difficulty; wrong answers and timeouts subtract time at the same difficulty.",
       scoringCorrect: "Correct (min)",
       scoringWrong: "Wrong/timeout (min)",
-      scoringRangeHint: "0–30 minutes per question; 0 means no deduction.",
       scoringReset: "Reset scoring",
       scoringExample: "Example: 3 easy, 2 medium and 1 hard correct, 1 medium wrong → +{gross}, −{penalty}, net {net} min",
       scoringExampleNoPenalty: "Example: 3 easy, 2 medium and 1 hard correct → net {net} min",
@@ -2859,7 +2822,7 @@
       scoringWarnThreshold: "The {threshold} min unlock threshold is above the {cap} min round cap, so it may never unlock.",
       scoringWarnPenalty: "A deduction is at least its reward, so one wrong answer can cancel several correct ones.",
       unlockTitle: "Minimum unlock time (minutes)",
-      unlockHint: "The round unlocks when net minutes reach this line; 0 means no threshold, and there is no upper limit. The threshold only checks the result and is never deducted.",
+      unlockHint: "The round unlocks when net minutes reach this line; 0 means no threshold. The threshold only checks the result and is never deducted.",
       unlockNone: "No threshold",
       minuteN: "{n} min",
       homeAnswerSub: "{n} per round · easy +{easy} / medium +{medium} / hard +{hard} min · {unlock}",
@@ -2871,7 +2834,6 @@
       scoringLead: "Верный ответ добавляет время по сложности; ошибка или тайм-аут вычитает время той же сложности.",
       scoringCorrect: "Верно (мин)",
       scoringWrong: "Ошибка/тайм-аут (мин)",
-      scoringRangeHint: "0–30 минут за вопрос; 0 — без вычета.",
       scoringReset: "Сбросить очки",
       scoringExample: "Пример: верно 3 простых, 2 средних и 1 сложный, 1 средняя ошибка → +{gross}, −{penalty}, итог {net} мин",
       scoringExampleNoPenalty: "Пример: верно 3 простых, 2 средних и 1 сложный → итог {net} мин",
@@ -2880,7 +2842,7 @@
       scoringWarnThreshold: "Порог {threshold} мин выше лимита раунда {cap} мин — разблокировка может не сработать.",
       scoringWarnPenalty: "Штраф не меньше награды: одна ошибка может перекрыть несколько верных ответов.",
       unlockTitle: "Минимум для разблокировки (минуты)",
-      unlockHint: "Раунд разблокируется, когда чистые минуты достигают порога; 0 — без порога, верхнего предела нет. Порог только проверяет результат и не вычитается.",
+      unlockHint: "Раунд разблокируется, когда чистые минуты достигают порога; 0 — без порога. Порог только проверяет результат и не вычитается.",
       unlockNone: "Без порога",
       minuteN: "{n} мин",
       homeAnswerSub: "{n} за раунд · лёгкий +{easy} / средний +{medium} / сложный +{hard} мин · {unlock}",
@@ -2892,7 +2854,6 @@
       scoringLead: "Правильна відповідь додає час за складністю; помилка або тайм-аут віднімає час тієї ж складності.",
       scoringCorrect: "Правильно (хв)",
       scoringWrong: "Помилка/тайм-аут (хв)",
-      scoringRangeHint: "0–30 хвилин за питання; 0 — без відрахування.",
       scoringReset: "Скинути очки",
       scoringExample: "Приклад: правильно 3 простих, 2 середніх і 1 складний, 1 середня помилка → +{gross}, −{penalty}, разом {net} хв",
       scoringExampleNoPenalty: "Приклад: правильно 3 простих, 2 середніх і 1 складний → разом {net} хв",
@@ -2901,7 +2862,7 @@
       scoringWarnThreshold: "Поріг {threshold} хв вищий за ліміт раунду {cap} хв — розблокування може не спрацювати.",
       scoringWarnPenalty: "Штраф не менший за нагороду: одна помилка може перекрити кілька правильних відповідей.",
       unlockTitle: "Мінімум для розблокування (хвилини)",
-      unlockHint: "Раунд розблоковується, коли чисті хвилини сягають порогу; 0 — без порогу, верхньої межі немає. Поріг лише перевіряє результат і не віднімається.",
+      unlockHint: "Раунд розблоковується, коли чисті хвилини сягають порогу; 0 — без порогу. Поріг лише перевіряє результат і не віднімається.",
       unlockNone: "Без порогу",
       minuteN: "{n} хв",
       homeAnswerSub: "{n} за раунд · легкий +{easy} / середній +{medium} / складний +{hard} хв · {unlock}",
@@ -2913,7 +2874,6 @@
       scoringLead: "Дұрыс жауап қиындыққа қарай уақыт қосады; қате немесе уақыт біту сол қиындықтан уақыт шегереді.",
       scoringCorrect: "Дұрыс (мин)",
       scoringWrong: "Қате/уақыт біту (мин)",
-      scoringRangeHint: "Әр сұраққа 0–30 минут; 0 — шегерусіз.",
       scoringReset: "Ұпайды әдепкіге қайтару",
       scoringExample: "Мысал: 3 жеңіл, 2 орташа және 1 қиын дұрыс, 1 орташа қате → +{gross}, −{penalty}, қорытынды {net} мин",
       scoringExampleNoPenalty: "Мысал: 3 жеңіл, 2 орташа және 1 қиын дұрыс → қорытынды {net} мин",
@@ -2922,7 +2882,7 @@
       scoringWarnThreshold: "Ең төмен ашу шегі {threshold} мин раунд шегінен {cap} мин жоғары — ашу мүмкін болмауы мүмкін.",
       scoringWarnPenalty: "Шегерім сыйақыдан кем емес: бір қате бірнеше дұрыс жауапты жаба алады.",
       unlockTitle: "Ашуға қажет ең аз уақыт (минут)",
-      unlockHint: "Раунд таза минуттар шекке жеткенде ашылады; 0 — шек жоқ, жоғарғы шектеу де жоқ. Шек тек нәтижені тексереді, сыйақыдан шегерілмейді.",
+      unlockHint: "Раунд таза минуттар шекке жеткенде ашылады; 0 — шек жоқ. Шек тек нәтижені тексереді, сыйақыдан шегерілмейді.",
       unlockNone: "Шек жоқ",
       minuteN: "{n} мин",
       homeAnswerSub: "Раундта {n} сұрақ · жеңіл +{easy} / орташа +{medium} / қиын +{hard} мин · {unlock}",
@@ -4195,35 +4155,30 @@ Material to organize:
   const V25_TEXTS = {
     zh: {
       settingsCountdown: "答题时间",
-      settingsTimeRange: "15 秒 – 30 分钟",
       timeDecrease: "减少 15 秒",
       timeIncrease: "增加 15 秒",
       secondsUnit: "秒",
     },
     en: {
       settingsCountdown: "Answer time",
-      settingsTimeRange: "15 seconds – 30 minutes",
       timeDecrease: "Decrease by 15 seconds",
       timeIncrease: "Increase by 15 seconds",
       secondsUnit: "s",
     },
     ru: {
       settingsCountdown: "Время ответа",
-      settingsTimeRange: "От 15 секунд до 30 минут",
       timeDecrease: "Уменьшить на 15 секунд",
       timeIncrease: "Увеличить на 15 секунд",
       secondsUnit: "с",
     },
     uk: {
       settingsCountdown: "Час відповіді",
-      settingsTimeRange: "Від 15 секунд до 30 хвилин",
       timeDecrease: "Зменшити на 15 секунд",
       timeIncrease: "Збільшити на 15 секунд",
       secondsUnit: "с",
     },
     kk: {
       settingsCountdown: "Жауап уақыты",
-      settingsTimeRange: "15 секундтан 30 минутқа дейін",
       timeDecrease: "15 секундқа азайту",
       timeIncrease: "15 секундқа қосу",
       secondsUnit: "с",
@@ -4232,11 +4187,9 @@ Material to organize:
 
   const V26_TEXTS = {
     zh: {
-      settingsRoundHint: "至少 5 题，每次 5 题",
       unlockThresholdTitle: "答题看电视的时间门槛（分钟）",
-      settingsTimeRange: "5 秒 – 30 分钟，每次 5 秒",
       settingsFeedbackHold: "答错查看解答最少停留时间",
-      settingsFeedbackHoldHint: "0 秒起，不设上限；答错或超时时，解答至少停留这么久（语音更长时以语音结束为准）。答对不停留。",
+      settingsFeedbackHoldHint: "答错或超时时，解答至少停留这么久（语音更长时以语音结束为准）。答对不停留。",
       roundDecrease: "减少 5 题",
       roundIncrease: "增加 5 题",
       timeDecrease: "减少 5 秒",
@@ -4248,11 +4201,9 @@ Material to organize:
       unlockIncrease: "增加 5 分钟",
     },
     en: {
-      settingsRoundHint: "At least 5 questions, step 5",
       unlockThresholdTitle: "TV time threshold (minutes)",
-      settingsTimeRange: "5 seconds – 30 minutes, step 5 seconds",
       settingsFeedbackHold: "Minimum explanation stay after a wrong answer",
-      settingsFeedbackHoldHint: "Starts at 0, no upper limit. After a wrong answer or timeout, the explanation stays at least this long; a longer voice clip still wins. Correct answers have no hold.",
+      settingsFeedbackHoldHint: "After a wrong answer or timeout, the explanation stays at least this long; a longer voice clip still wins. Correct answers have no hold.",
       roundDecrease: "Decrease by 5 questions",
       roundIncrease: "Increase by 5 questions",
       timeDecrease: "Decrease by 5 seconds",
@@ -4264,11 +4215,9 @@ Material to organize:
       unlockIncrease: "Increase by 5 minutes",
     },
     ru: {
-      settingsRoundHint: "Не менее 5 вопросов, шаг 5",
       unlockThresholdTitle: "Порог времени для ТВ (минуты)",
-      settingsTimeRange: "От 5 секунд до 30 минут, шаг 5 секунд",
       settingsFeedbackHold: "Минимальное время просмотра объяснения после ошибки",
-      settingsFeedbackHoldHint: "От 0 секунд, без верхнего предела. После неверного ответа или тайм-аута объяснение остаётся на экране не меньше этого времени; более длинная озвучка имеет приоритет. На верные ответы задержка не действует.",
+      settingsFeedbackHoldHint: "После неверного ответа или тайм-аута объяснение остаётся на экране не меньше этого времени; более длинная озвучка имеет приоритет. На верные ответы задержка не действует.",
       roundDecrease: "Уменьшить на 5 вопросов",
       roundIncrease: "Увеличить на 5 вопросов",
       timeDecrease: "Уменьшить на 5 секунд",
@@ -4280,11 +4229,9 @@ Material to organize:
       unlockIncrease: "Увеличить на 5 минут",
     },
     uk: {
-      settingsRoundHint: "Щонайменше 5 питань, крок 5",
       unlockThresholdTitle: "Поріг часу для ТБ (хвилини)",
-      settingsTimeRange: "Від 5 секунд до 30 хвилин, крок 5 секунд",
       settingsFeedbackHold: "Мінімальний час перегляду пояснення після помилки",
-      settingsFeedbackHoldHint: "Від 0 секунд, без верхньої межі. Після неправильної відповіді або тайм-ауту пояснення залишається на екрані щонайменше стільки часу; довше озвучення має пріоритет. На правильні відповіді затримка не діє.",
+      settingsFeedbackHoldHint: "Після неправильної відповіді або тайм-ауту пояснення залишається на екрані щонайменше стільки часу; довше озвучення має пріоритет. На правильні відповіді затримка не діє.",
       roundDecrease: "Зменшити на 5 питань",
       roundIncrease: "Збільшити на 5 питань",
       timeDecrease: "Зменшити на 5 секунд",
@@ -4296,11 +4243,9 @@ Material to organize:
       unlockIncrease: "Збільшити на 5 хвилин",
     },
     kk: {
-      settingsRoundHint: "Кемінде 5 сұрақ, қадам 5",
       unlockThresholdTitle: "Теледидар уақытының шегі (минут)",
-      settingsTimeRange: "5 секундтан 30 минутқа дейін, қадам 5 секунд",
       settingsFeedbackHold: "Қате жауаптан кейін түсіндірмені көруге қажет ең аз уақыт",
-      settingsFeedbackHoldHint: "0 секундтан бастап, жоғарғы шектеусіз. Қате жауап немесе уақыт біткен кезде түсіндірме кемінде осы уақыт бойы тұрады; ұзағырақ дауыс басым болады. Дұрыс жауаптарға кідіріс жоқ.",
+      settingsFeedbackHoldHint: "Қате жауап немесе уақыт біткен кезде түсіндірме кемінде осы уақыт бойы тұрады; ұзағырақ дауыс басым болады. Дұрыс жауаптарға кідіріс жоқ.",
       roundDecrease: "5 сұраққа азайту",
       roundIncrease: "5 сұраққа қосу",
       timeDecrease: "5 секундқа азайту",
@@ -4586,7 +4531,7 @@ Material to organize:
   };
   // Technical ceilings only. The UI does not present them as product limits:
   // they keep the session record and the seconds-based wire fields in range.
-  const ROUND_MIN = 5;
+  const ROUND_MIN = 1;
   const ROUND_MAX = 1000;
   const ROUND_STEP = 5;
   const ANSWER_TIME_MIN_SEC = 5;
@@ -4771,6 +4716,9 @@ Material to organize:
   // land on More instead of the generation tab. The fragment is consumed at startup so a
   // refresh inside the editor does not jump back to More.
   let openParentAfterLogin = false;
+  // Re-entering from the Control tab's login gate returns to Control, not to the
+  // generation tab. The parent center is served by the TV, so both flags stay local.
+  let openControlAfterLogin = false;
   let forceTakeover = false;
   let gateShown = false;
   let gateOccupied = false;
@@ -4804,6 +4752,9 @@ Material to organize:
   let pendingEnter = false;
   let activeTab = "generate";
   let bankPage = "home";
+  // Manage-banks is reachable from More as well as from the Bank tab. Remember
+  // the page that opened it so its back button does not strand the user on Bank.
+  let bankManageReturnTab = null;
   let bankFilter = "all";
   let bankItems = [];
   let bankOffset = 0;
@@ -5931,7 +5882,6 @@ Material to organize:
     if (genPage === "level") renderLevelEditor();
     if (genPage === "customLevel") renderCustomLevelEditor();
     if (genPage === "questions") renderQuestions();
-    updateToggleState();
     updateParentAppDownloadRow();
     if (webDisabled) renderWebDisabled();
     if (window.ParentCenterUI && window.ParentCenterUI.setLang) {
@@ -6979,6 +6929,8 @@ Material to organize:
   }
 
   function openBankManage() {
+    bankManageReturnTab =
+      activeTab === "me" || activeTab === "control" ? activeTab : null;
     setTab("bank", true);
     showBankPage("manage");
     $("bankManageState").textContent = "";
@@ -6993,6 +6945,14 @@ Material to organize:
   function backFromBankManage() {
     $("bankManageState").textContent = "";
     $("bankManageError").textContent = "";
+    const returnTab = bankManageReturnTab;
+    bankManageReturnTab = null;
+    if (returnTab) {
+      // Reopen More/Control with the existing quiz session; setTab reacquires
+      // the editor lease without asking for the PIN again.
+      setTab(returnTab, true);
+      return;
+    }
     showBankPage("home");
     loadBank(true);
     window.scrollTo({ top: 0 });
@@ -7864,12 +7824,6 @@ Material to organize:
     }
   }
 
-  function updateToggleState() {
-    if (!$("toggleEnabled")) return;
-    const enabled = !publicState || publicState.enabled !== false;
-    $("toggleEnabled").checked = enabled;
-  }
-
   async function api(path, options = {}) {
     const headers = {};
     const method = options.method || "GET";
@@ -8042,7 +7996,9 @@ Material to organize:
         refreshStatus();
         heartbeat();
       },
-      openQuizLogin: () => {
+      openQuizLogin: (mode) => {
+        openControlAfterLogin = mode === "control";
+        openParentAfterLogin = false;
         if (!gateShown) showPinGate();
       },
       openQuizBank: () => openBankManage(),
@@ -8329,8 +8285,6 @@ Material to organize:
     $("rangeError").textContent = "";
     $("settingsError").textContent = "";
     $("settingsState").textContent = "";
-    $("challengeError").textContent = "";
-    $("challengeState").textContent = "";
     $("bankManageState").textContent = "";
     $("bankManageError").textContent = "";
     bankClearPending = null;
@@ -8913,7 +8867,7 @@ Material to organize:
       if (pendingEnter) {
         pendingEnter = false;
         showEditor();
-        setTab("generate", true);
+        enterPostLoginTab();
         return;
       }
       // Accepting privacy does not force AI setup. Only a pending "generate"
@@ -11607,7 +11561,6 @@ Material to organize:
       renderBankCounts();
       renderBankManage();
       renderSettingsAttention();
-      updateToggleState();
       renderGateOccupation();
       if (adminToken && previous && previous.sessionState !== publicState.sessionState) {
         loadAdminSession().catch((error) => {
@@ -11617,7 +11570,7 @@ Material to organize:
         });
       }
     } catch (_) {
-      updateToggleState();
+      // Keep the last known state; the next refresh retries.
     }
   }
 
@@ -11652,6 +11605,28 @@ Material to organize:
     }
   }
 
+  /**
+   * The login gate is shared by More and Control. Returning to Control must not re-open it:
+   * showEditor already selected the current tab, and a second open would race the first
+   * editor acquire and surface the two-page takeover gate.
+   */
+  function enterPostLoginTab() {
+    if (openControlAfterLogin && parentBootstrap && parentWebAvailable(parentBootstrap)) {
+      openControlAfterLogin = false;
+      openParentAfterLogin = false;
+      if (activeTab !== "control") setTab("control", true);
+      return;
+    }
+    openControlAfterLogin = false;
+    if (openParentAfterLogin && parentBootstrap && parentWebAvailable(parentBootstrap)) {
+      openParentAfterLogin = false;
+      setTab("me", true);
+      return;
+    }
+    openParentAfterLogin = false;
+    setTab("generate", true);
+  }
+
   async function enterEditor() {
     $("settingsError").textContent = "";
     $("gateError").textContent = "";
@@ -11677,18 +11652,13 @@ Material to organize:
     }
     pendingEnter = false;
     showEditor();
-    if (openParentAfterLogin && parentBootstrap && parentWebAvailable(parentBootstrap)) {
-      openParentAfterLogin = false;
-      setTab("me", true);
-      return;
-    }
-    openParentAfterLogin = false;
-    setTab("generate", true);
+    enterPostLoginTab();
   }
 
   function logout() {
     // Drop local auth immediately; revoking the token on the TV is best-effort
     // so declining the privacy gate never waits on the network.
+    openControlAfterLogin = false;
     stopHeartbeat();
     if (adminToken) {
       api("/api/quiz/auth/logout", { method: "POST", admin: true, body: {} })
@@ -11819,28 +11789,6 @@ Material to organize:
     } finally {
       settingsSaving = false;
       setButtonSaving($("saveAnswer"), false);
-    }
-  }
-
-  async function toggleEnabled() {
-    $("challengeError").textContent = "";
-    $("challengeState").textContent = "";
-    const enabled = Boolean($("toggleEnabled").checked);
-    if (!enabled && !confirm(t("confirmDisable"))) {
-      $("toggleEnabled").checked = true;
-      return;
-    }
-    try {
-      await api("/api/quiz/admin/" + (enabled ? "enable" : "disable"), {
-        method: "POST",
-        admin: true,
-        body: {},
-      });
-      $("challengeState").textContent = t(enabled ? "enabled" : "disabled");
-      await refreshStatus();
-    } catch (error) {
-      $("challengeError").textContent = errorText(error);
-      updateToggleState();
     }
   }
 
@@ -12243,7 +12191,6 @@ Material to organize:
       count: bankSourceCounts.course + bankSourceCounts.custom,
     }));
     $("bankClearNext").addEventListener("click", advanceBankClear);
-    $("toggleEnabled").addEventListener("change", toggleEnabled);
 
     document.querySelectorAll(".nav-item[data-tab]").forEach((button) => {
       button.addEventListener("click", () => setTab(button.dataset.tab, false));

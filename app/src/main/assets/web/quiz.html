@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light dark">
   <title>家长网页</title>
   <link rel="stylesheet" href="quiz.css?v=38">
-  <link rel="stylesheet" href="parent.css?v=38">
+  <link rel="stylesheet" href="parent.css?v=39">
 </head>
 <body>
   <header class="top">
@@ -346,12 +346,11 @@
                 <button id="roundMinus" class="icon-btn" type="button"
                         data-i18n-aria="roundDecrease">−</button>
                 <input id="roundInput" type="number" inputmode="numeric"
-                       min="5" max="1000" step="5" value="5" aria-describedby="roundHint">
+                       min="1" max="1000" step="5" value="5">
                 <span class="settings-stepper-unit" data-i18n="roundUnit"></span>
                 <button id="roundPlus" class="icon-btn" type="button"
                         data-i18n-aria="roundIncrease">+</button>
               </div>
-              <p id="roundHint" class="hint" data-i18n="settingsRoundHint"></p>
             </div>
 
             <div class="field">
@@ -361,12 +360,11 @@
                 <button id="timeMinus" class="icon-btn" type="button"
                         data-i18n-aria="timeDecrease">−</button>
                 <input id="timeInput" type="number" inputmode="numeric"
-                       min="5" max="1800" step="5" value="60" aria-describedby="timeHint">
+                       min="5" max="1800" step="5" value="60">
                 <span class="settings-stepper-unit" data-i18n="secondsUnit"></span>
                 <button id="timePlus" class="icon-btn" type="button"
                         data-i18n-aria="timeIncrease">+</button>
               </div>
-              <p id="timeHint" class="hint" data-i18n="settingsTimeRange"></p>
             </div>
 
             <div class="field">
@@ -409,7 +407,6 @@
                 <input id="hardPenalty" type="number" min="0" max="30" value="0"
                   inputmode="numeric" aria-labelledby="scoringHard scoringWrongHead">
               </div>
-              <p class="hint scoring-range" data-i18n="scoringRangeHint"></p>
               <div class="inline-actions scoring-actions">
                 <button id="resetScoring" class="btn text small" type="button" data-i18n="scoringReset"></button>
               </div>
@@ -814,15 +811,6 @@
               <span class="chevron" aria-hidden="true">›</span>
             </button>
 
-            <label class="setting-row switch-row" for="toggleEnabled">
-              <span class="setting-main"><span data-i18n="challengeToggle"></span></span>
-              <span class="switch">
-                <input id="toggleEnabled" type="checkbox">
-                <span class="switch-track" aria-hidden="true"></span>
-              </span>
-            </label>
-            <p id="challengeState" class="ok fold-status" role="status"></p>
-            <p id="challengeError" class="error fold-status" role="alert"></p>
           </div>
         </section>
 
@@ -1052,7 +1040,7 @@
 
   <div id="parentCenterRoot" class="parent-root hidden"></div>
 
-  <script src="parent.js?v=38"></script>
+  <script src="parent.js?v=39"></script>
   <script src="quiz.js?v=39"></script>
 </body>
 </html>

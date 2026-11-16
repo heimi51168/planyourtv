@@ -94,8 +94,15 @@ class QuizLocalConfigProjectionTest {
 
     @Test
     fun legacyProjectionRejectsARoundTheLocalSurfaceCannotRun() {
-        val document = document().copy(rules = document().rules.copy(questionCount = 4))
+        val document = document().copy(rules = document().rules.copy(questionCount = 0))
         assertNull(document.toLegacyConfig())
+    }
+
+    @Test
+    fun legacyProjectionAcceptsASingleQuestionRound() {
+        val document = document().copy(rules = document().rules.copy(questionCount = 1))
+        val config = requireNotNull(document.toLegacyConfig())
+        assertEquals(1, config.pullCount)
     }
 
     @Test

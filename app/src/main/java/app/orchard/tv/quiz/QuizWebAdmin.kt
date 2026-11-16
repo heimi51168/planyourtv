@@ -138,8 +138,11 @@ object QuizWebAdmin {
                 session.method == Method.POST && path == "/api/quiz/admin/generate/cancel" -> cancelGeneration(session)
                 session.method == Method.POST && path == "/api/quiz/admin/generate/add" -> addGeneration(session)
                 session.method == Method.POST && path == "/api/quiz/admin/generate/discard" -> discardGeneration(session)
-                session.method == Method.POST && path == "/api/quiz/admin/enable" -> setEnabled(session, true)
-                session.method == Method.POST && path == "/api/quiz/admin/disable" -> setEnabled(session, false)
+                // The quiz feature switch was removed: local mode always has the quiz, and a
+                // cached page must not be able to delete an unstarted challenge here.
+                session.method == Method.POST &&
+                    (path == "/api/quiz/admin/enable" || path == "/api/quiz/admin/disable") ->
+                    error(Response.Status.GONE, "QUIZ_SWITCH_REMOVED")
                 session.method == Method.GET && path == "/api/quiz/admin/sync" -> syncStatus(session)
                 session.method == Method.POST && path == "/api/quiz/admin/sync/retry" -> syncRetry(session)
                 session.method == Method.POST && path == "/api/quiz/admin/sync/use-remote" -> syncUseRemote(session)
@@ -1513,24 +1516,6 @@ object QuizWebAdmin {
         }
         QuizRuntime.refresh()
         return json(Response.Status.OK, JSONObject().put("ok", true))
-    }
-
-    private fun setEnabled(session: IHTTPSession, enabled: Boolean): Response {
-        adminError(session)?.let { return it }
-        when (QuizSettings.setEnabled(enabled)) {
-            QuizSettings.SetResult.SessionRunning ->
-                return error(Response.Status.CONFLICT, "SESSION_RUNNING")
-            QuizSettings.SetResult.StorageError ->
-                return error(Response.Status.INTERNAL_ERROR, "STORAGE_ERROR")
-            QuizSettings.SetResult.Changed -> Unit
-        }
-        return json(
-            Response.Status.OK,
-            JSONObject()
-                .put("ok", true)
-                .put("enabled", enabled)
-                .put("syncState", QuizSessionStore.loadSyncState().encode()),
-        )
     }
 
     private fun syncStatus(session: IHTTPSession): Response {

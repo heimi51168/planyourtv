@@ -158,7 +158,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
                 ?: LocalRules.defaultsFor(LocalPolicyRuntime.state.value.activation),
         )
     }
-    var quizEnabled by remember { mutableStateOf(QuizSettings.isEnabled()) }
+    var quizEntryVisible by remember { mutableStateOf(QuizSettings.isLockEntryVisible()) }
     var quizChanging by remember { mutableStateOf(false) }
     var sourceEntriesVisible by remember { mutableStateOf(SourceEntrySettings.isVisible()) }
     var savedNotice by remember { mutableStateOf<Int?>(null) }
@@ -874,25 +874,23 @@ fun PolicyParentCenter(onClose: () -> Unit) {
         showSaved(R.string.policy_v6_source_entries_saved)
     }
 
-    fun toggleQuizChallenge() {
-        // The quiz switch is local configuration, not a cloud rule, but the read-only pane
-        // keeps its promise: a bound TV changes settings on the phone.
+    fun toggleQuizEntry() {
+        // Display only: this never enables, disables or deletes a challenge. The read-only
+        // pane keeps its promise that a bound TV changes settings on the phone.
         if (quizChanging || readOnlyLocal) return
-        val next = !quizEnabled
+        val next = !quizEntryVisible
         quizChanging = true
         actionError = null
         scope.launch {
-            val result = withContext(Dispatchers.IO) { QuizSettings.setEnabled(next) }
+            val saved = withContext(Dispatchers.IO) {
+                runCatching { QuizSettings.setLockEntryVisible(next) }.isSuccess
+            }
             quizChanging = false
-            when (result) {
-                QuizSettings.SetResult.Changed -> {
-                    quizEnabled = next
-                    showSaved(R.string.policy_parent_saved)
-                }
-                QuizSettings.SetResult.SessionRunning ->
-                    actionError = R.string.policy_v6_quiz_busy
-                QuizSettings.SetResult.StorageError ->
-                    actionError = R.string.policy_v6_save_failed
+            if (saved) {
+                quizEntryVisible = next
+                showSaved(R.string.policy_parent_saved)
+            } else {
+                actionError = R.string.policy_v6_save_failed
             }
         }
     }
@@ -1024,7 +1022,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
             key == "activation-auto" -> selectLocalActivation(Activation.AUTO)
             key == "activation-manual" -> selectLocalActivation(Activation.MANUAL)
             // The root key catcher routes OK here, so the row's own Pressable never sees it.
-            key == "quiz" -> toggleQuizChallenge()
+            key == "quiz" -> toggleQuizEntry()
             key == "sources" -> toggleSourceEntries()
             key == "apps" -> openAppPicker()
             key == "study" -> openAppPicker(study = true)
@@ -1750,7 +1748,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
                         ParentPaneKind.LOCAL -> V6LocalPane(
                             rules = displayedRules,
                             activation = displayedActivation,
-                            quizEnabled = quizEnabled,
+                            quizEntryVisible = quizEntryVisible,
                             sourceEntriesVisible = sourceEntriesVisible,
                             sessionActive = localSessionActive,
                             readOnly = readOnlyLocal,
@@ -1767,7 +1765,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
                             onActivateValue = { key -> activateLocalByKey(key) },
                             onAdjust = ::adjustLocalByKey,
                             onSelectActivation = ::selectLocalActivation,
-                            onToggleQuiz = ::toggleQuizChallenge,
+                            onToggleQuizEntry = ::toggleQuizEntry,
                             onToggleSourceEntries = ::toggleSourceEntries,
                             onRemoveWindow = { weekday, index ->
                                 val key = "${if (weekday) "wd" else "we"}-$index-remove"

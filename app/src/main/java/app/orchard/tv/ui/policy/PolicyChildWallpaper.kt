@@ -1,6 +1,7 @@
 package app.orchard.tv.ui.policy
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.graphics.BitmapFactory
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.Image
@@ -8,10 +9,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -19,6 +23,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import app.orchard.tv.policy.media.PolicyMediaKind
 import app.orchard.tv.policy.media.PolicyVideoLibrary
 import app.orchard.tv.policy.media.PolicyVideoSource
 import app.orchard.tv.ui.policy.lockdesktop.PolicyLockFilm
@@ -37,7 +42,7 @@ import kotlinx.coroutines.withContext
  * the video is paused or not yet rendering.
  *
  * The fallback is [PolicyDefaultWallpaper], never the owner's Home wallpaper. A missing or
- * unreadable poster therefore leaves child mode on Aerial's stock picture instead of leaking the
+ * unreadable poster therefore leaves child mode on the bundled kids picture instead of leaking the
  * parent wallpaper into the child's screens.
  *
  * The poster is decoded and shaded once per process. [PolicyChildWallpaper] can be returned before
@@ -51,9 +56,7 @@ internal data class PolicyChildWallpaper(
     val image: ImageBitmap?,
     val frosted: ImageBitmap?,
     val loading: Boolean,
-) {
-    val configured: Boolean get() = lockId != null
-}
+)
 
 /**
  * Wallpaper for Home while a child session is active. Null means Aerial's own wallpaper.
@@ -73,7 +76,8 @@ internal class PolicyHomeWallpaper(
 /** The child wallpaper's film under Home. [active] false lets the screensaver's decoder have it. */
 @Composable
 internal fun PolicyHomeFilm(wallpaper: PolicyHomeWallpaper, active: Boolean) {
-    val source = wallpaper.source ?: return
+    // A picture is drawn by HomeBackground; only a video may reach the player.
+    val source = wallpaper.source?.takeIf { it.kind == PolicyMediaKind.VIDEO } ?: return
     PolicyLockFilm(source = source, cover = wallpaper.filmCover, active = active)
 }
 
@@ -95,8 +99,22 @@ private var cachedChildWallpaper: CachedChildWallpaper? = null
 @Composable
 internal fun rememberPolicyChildWallpaperState(): PolicyChildWallpaper {
     val context = LocalContext.current.applicationContext
-    val initial = remember(context) { initialChildWallpaper(context) }
-    val state by produceState(initialValue = initial, context) {
+    // The parent center is an overlay above the lock screen: choosing a wallpaper there must
+    // update the picture underneath it without waiting for the next lock entry.
+    var roleRevision by remember(context) { mutableIntStateOf(0) }
+    DisposableEffect(context) {
+        val prefs = context.getSharedPreferences("quiz-intro", Context.MODE_PRIVATE)
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == null || key == "lock_id") roleRevision++
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
+    val initial = remember(context, roleRevision) { initialChildWallpaper(context) }
+    val state by produceState(initialValue = initial, context, roleRevision) {
+        // produceState keeps its state across key changes; show the new role's initial picture
+        // (often the bundled default) before any slower decode replaces it.
+        value = initial
         if (!initial.loading) return@produceState
         value = loadPolicyChildWallpaper(context, initial)
     }
@@ -107,7 +125,15 @@ private fun initialChildWallpaper(context: Context): PolicyChildWallpaper {
     val lockId = runCatching { PolicyVideoLibrary.lockRoleId(context) }.getOrNull()
     if (lockId == null) {
         val fallback = cachedPolicyDefaultWallpaper()
-        return PolicyChildWallpaper(null, null, fallback?.image, fallback?.frosted, loading = false)
+        // A fresh install has no lock role: the bundled default still has to load, and Home waits
+        // for it instead of showing a blank policy backdrop.
+        return PolicyChildWallpaper(
+            null,
+            null,
+            fallback?.image,
+            fallback?.frosted,
+            loading = fallback == null,
+        )
     }
     val hit = cachedChildWallpaper?.takeIf { it.lockId == lockId }
     if (hit != null) {
@@ -121,7 +147,17 @@ private suspend fun loadPolicyChildWallpaper(
     context: Context,
     initial: PolicyChildWallpaper,
 ): PolicyChildWallpaper {
-    val lockId = initial.lockId ?: return initial.copy(loading = false)
+    val lockId = initial.lockId
+    if (lockId == null) {
+        val fallback = loadPolicyDefaultWallpaper(context)
+        return PolicyChildWallpaper(
+            null,
+            null,
+            fallback?.image ?: initial.image,
+            fallback?.frosted ?: initial.frosted,
+            loading = false,
+        )
+    }
     cachedChildWallpaper?.takeIf { it.lockId == lockId }?.let {
         return PolicyChildWallpaper(lockId, it.source, it.image, it.frosted, loading = false)
     }
@@ -137,7 +173,7 @@ private suspend fun loadPolicyChildWallpaper(
                 runCatching { BitmapFactory.decodeFile(it.path) }.getOrNull()
             }
             val wallpaper = if (decoded == null) {
-                val fallback = loadPolicyDefaultWallpaper()
+                val fallback = loadPolicyDefaultWallpaper(context)
                 CachedChildWallpaper(lockId, source, fallback?.image, fallback?.frosted)
             } else {
                 val frosted = runCatching { Images.frost(decoded) }.getOrNull()

@@ -64,32 +64,18 @@ class UpdatesAutoTest {
     }
 
     @Test
-    fun autoUpdateIsOffAndTheFirstChoiceIsRemembered() {
-        Updates.init(app)
-        assertFalse(Updates.auto)
-        assertFalse(Updates.autoChoiceMade())
-
-        Updates.setAuto(app, true)
-        assertTrue(Updates.auto)
-        assertTrue(Updates.autoChoiceMade())
-
-        // A restart keeps the switch where the parent left it.
-        ReflectionHelpers.setField(Updates, "started", false)
+    fun autoUpdateDefaultsOnAndAnExplicitOffIsRemembered() {
+        // An existing install with no stored choice follows the new default.
         Updates.init(app)
         assertTrue(Updates.auto)
-        assertTrue(Updates.autoChoiceMade())
-    }
 
-    @Test
-    fun turningAutoUpdateOffIsAlsoRemembered() {
-        Updates.init(app)
-        Updates.setAuto(app, true)
         Updates.setAuto(app, false)
+        assertFalse(Updates.auto)
 
+        // A restart keeps the explicit off; the default must not turn it back on.
         ReflectionHelpers.setField(Updates, "started", false)
         Updates.init(app)
         assertFalse(Updates.auto)
-        assertTrue(Updates.autoChoiceMade())
     }
 
     @Test

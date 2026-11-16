@@ -17,14 +17,13 @@ const val QUIZ_MAX_DIFFICULTY_MINUTES = 30
 const val QUIZ_MAX_UNLOCK_MINUTES = Int.MAX_VALUE / 60
 /**
  * The shared session/bank range. Cloud rounds follow the member config (1–10,
- * capped by [QuizDeviceCapabilities.CLOUD_MAX_QUESTIONS]); local rounds keep
- * their own 5-question minimum via [QUIZ_MIN_LOCAL_PULL_COUNT]. There is no
- * product-level upper limit on a round; the technical ceiling matches the QCD
- * question ceiling.
+ * capped by [QuizDeviceCapabilities.CLOUD_MAX_QUESTIONS]); local rounds follow
+ * [QUIZ_MIN_LOCAL_PULL_COUNT]. There is no product-level upper limit on a
+ * round; the technical ceiling matches the QCD question ceiling.
  */
 const val QUIZ_MIN_PULL_COUNT = 1
 const val QUIZ_MAX_PULL_COUNT = QUIZ_DOC_MAX_QUESTION_COUNT
-const val QUIZ_MIN_LOCAL_PULL_COUNT = 5
+const val QUIZ_MIN_LOCAL_PULL_COUNT = 1
 const val QUIZ_DEFAULT_PULL_COUNT = 5
 const val QUIZ_MAX_ITEMS = QUIZ_DOC_MAX_QUESTION_COUNT
 const val QUIZ_MIN_ITEMS = 1

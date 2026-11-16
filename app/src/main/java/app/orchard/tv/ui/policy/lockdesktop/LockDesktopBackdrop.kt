@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import app.orchard.tv.settings.AerialSettings
@@ -64,8 +65,10 @@ fun LockDesktopFilm(cover: Animatable<Float, *>) {
  * [scroll], [collapse] and [lift] are the dock grid's own, so the plate rides up and fades into
  * the grid's glass exactly as it does when Home scrolls down to its rows.
  *
- * [policyDefault] replaces the Home wallpaper with Aerial's stock default (the V30 behavior),
+ * [policyDefault] replaces the Home wallpaper with the child default picture (the V30 behavior),
  * while keeping the same plate, frost and veil; [cover] then belongs to a policy film.
+ * [policyImage]/[policyFrosted] carry the child role's selected picture (or video poster); when
+ * they are null the bundled default is drawn instead.
  */
 @Composable
 fun LockDesktopBackdrop(
@@ -78,19 +81,27 @@ fun LockDesktopBackdrop(
     collapse: Float = 1f,
     lift: () -> Float = { 0f },
     /**
-     * Child mode uses Aerial's stock default picture instead of following the owner's Home
-     * wallpaper, so an unconfigured TV looks exactly like stock Aerial and selecting a Home
+     * Child mode uses the child default picture instead of following the owner's Home
+     * wallpaper, so a fresh install looks different from parent mode and selecting a Home
      * picture never changes the child-mode background.
      */
     policyDefault: Boolean = false,
+    /** The child role's picture, or the lock video's poster; null falls back to the default. */
+    policyImage: ImageBitmap? = null,
+    /** The frost matching [policyImage], used by the dock plate. */
+    policyFrosted: ImageBitmap? = null,
 ) {
     val columns = AerialSettings.homeColumns
     val plateEnabled = AerialSettings.homePlate
     val peek = AerialSettings.peekNextRow
     val policyWallpaper = if (policyDefault) rememberPolicyDefaultWallpaperState() else null
-    val backdrop = if (policyDefault) policyWallpaper?.image else Wallpapers.backdrop
+    val backdrop = if (policyDefault) {
+        policyImage ?: policyWallpaper?.image
+    } else {
+        Wallpapers.backdrop
+    }
     val frosted = if (policyDefault) {
-        policyWallpaper?.frosted
+        policyFrosted ?: policyWallpaper?.frosted
     } else {
         Wallpapers.frosted.takeIf { Wallpapers.backdrop != null }
     }

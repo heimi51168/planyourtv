@@ -531,6 +531,18 @@ class MainActivity : AppCompatActivity() {
                 openExternal(uri)
             }
         }
+
+        /**
+         * The page's "log out" action means forgetting this TV and returning to the
+         * native pairing screen; the TV-side session is cleared by the page first.
+         */
+        @JavascriptInterface
+        fun logout() {
+            runOnUiThread {
+                if (!isTrustedPage()) return@runOnUiThread
+                showPairing()
+            }
+        }
     }
 
     private fun startSave(filename: String, mimeType: String, base64: String) {

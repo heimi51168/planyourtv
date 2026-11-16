@@ -38,9 +38,10 @@ import java.util.Locale
 /**
  * Whether a newer release is out (issues #24, #76). Most owners stay on the version they installed
  * and report bugs fixed long ago. PlanYourTV reads the latest community release from GitHub;
- * Control Center then names the new version and says how to update. Nothing is downloaded or
- * installed in the background: only when the owner picks "Download and Install" does PlanYourTV
- * fetch the new APK and hand it to the system installer ([install]).
+ * Control Center then names the new version and says how to update. With the parent center's
+ * auto-update switch on, a silent-capable TV downloads ahead and installs while another app is in
+ * front; everywhere else the owner picks "Download and Install" and PlanYourTV hands the APK to
+ * the system installer ([install]).
  *
  * Home and network events check at most every three hours; opening Control Center shortens that
  * to ten minutes. Failed checks retry while Home is in front (#912).
@@ -86,7 +87,8 @@ object Updates {
 
     /**
      * The parent center's auto-update switch. Device-level on purpose: it does not depend on the
-     * cloud binding, on child mode or on whether the password row is shown. Default off.
+     * cloud binding, on child mode or on whether the password row is shown. Default on; an
+     * explicit off is kept across restarts.
      */
     var auto by mutableStateOf(false); private set
 
@@ -96,6 +98,13 @@ object Updates {
     /** A silent auto-update download is in flight; Control Center must not start a second one. */
     var autoBusy by mutableStateOf(false); private set
 
+    /**
+     * Why the last automatic update did not finish ("download" or "install"), or null. Kept for
+     * the version it happened to, so the parent center can point at the manual install after the
+     * silent path gave up instead of silently waiting for the next release.
+     */
+    var autoFailure by mutableStateOf<String?>(null); private set
+
     private lateinit var prefs: SharedPreferences
     private lateinit var appContext: Context
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -103,9 +112,10 @@ object Updates {
     private var checker: UpdateCheck? = null
 
     private const val KEY_AUTO = "auto"
-    private const val KEY_AUTO_CHOICE = "auto_choice"
     private const val KEY_AUTO_READY = "auto_ready"
     private const val KEY_AUTO_TRIED = "auto_tried"
+    private const val KEY_AUTO_FAILED = "auto_failed"
+    private const val KEY_AUTO_FAILED_FOR = "auto_failed_for"
     /** Another app must stay in front this long before Aerial replaces itself unseen. */
     private const val AUTO_INSTALL_DELAY_MS = 20_000L
     /** A failed background download waits this long before Home resumes retry it. */
@@ -122,8 +132,9 @@ object Updates {
         appContext = context.applicationContext
         prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         available = prefs.getString("latest", null)?.takeIf { newer(it, current) }
-        auto = prefs.getBoolean(KEY_AUTO, false)
+        auto = prefs.getBoolean(KEY_AUTO, true)
         autoReady = prefs.getString(KEY_AUTO_READY, null)?.takeIf { newer(it, current) }
+        syncAutoFailure()
         checker = UpdateCheck(
             scope = scope,
             lastSuccess = { prefs.getLong("checked_at", 0) },
@@ -132,6 +143,7 @@ object Updates {
                 prefs.edit { putString("latest", latest); putLong("checked_at", checkedAt) }
                 available = latest.takeIf { newer(it, current) }
                 dropStaleAutoReady()
+                syncAutoFailure()
                 loadNotes()
                 scheduleAuto()
             },
@@ -171,12 +183,50 @@ object Updates {
     fun silentInstallSupported(context: Context): Boolean =
         canInstall(context) && mayInstallSilently(context.applicationContext)
 
+    /** Whether the TV still withholds "install unknown apps" from this copy (Android 8+). */
+    fun installPermissionMissing(context: Context): Boolean =
+        Build.VERSION.SDK_INT >= 26 &&
+            !context.applicationContext.packageManager.canRequestPackageInstalls()
+
+    /** A web-triggered update check is in flight. */
+    val checking: Boolean get() = checker?.checkingNow == true
+
+    /** The last update check failed and no later check has succeeded. */
+    val checkFailed: Boolean get() = checker?.failed == true
+
+    /** When the version file was last read successfully, in epoch milliseconds (0 = never). */
+    fun lastCheckedAt(): Long = if (started) prefs.getLong("checked_at", 0) else 0L
+
     /** SelfCompile must not reinstall the running APK while an automatic update is in flight. */
     internal fun autoUpdateBusy(): Boolean =
         autoDownloading || autoArmedFor != null || awaiting?.auto == true
 
-    /** Whether the parent has already chosen auto update on or off (the first-enable notice is one-time). */
-    fun autoChoiceMade(): Boolean = started && prefs.getBoolean(KEY_AUTO_CHOICE, false)
+    /**
+     * The web parent center asks for a check now. Its HTTP thread must not enter the update
+     * code's main-thread state, so the check is posted; false means one is already in flight.
+     */
+    fun requestCheck(): Boolean {
+        if (!started) return false
+        if (checking) return false
+        main.post { checkIfStale(force = true) }
+        return true
+    }
+
+    /**
+     * The web parent center asks to download and install [available] now. The page polls the
+     * snapshot for progress; false means another download or installer already holds it.
+     */
+    fun requestInstall(context: Context): Boolean {
+        if (!started || available == null) return false
+        val busy = when (install) {
+            Install.Idle, is Install.Failed,
+            Install.NeedsPermission, Install.NeedsStoragePermission -> false
+            else -> true
+        }
+        if (busy || awaiting != null || autoDownloading) return false
+        main.post { install(context.applicationContext) }
+        return true
+    }
 
     /**
      * The parent center's auto-update switch. The choice belongs to this TV, not to a cloud
@@ -186,10 +236,7 @@ object Updates {
      */
     fun setAuto(context: Context, enabled: Boolean) {
         if (!started) init(context)
-        prefs.edit {
-            putBoolean(KEY_AUTO, enabled)
-            putBoolean(KEY_AUTO_CHOICE, true)
-        }
+        prefs.edit { putBoolean(KEY_AUTO, enabled) }
         auto = enabled
         if (enabled) {
             autoRetryAt = 0
@@ -216,6 +263,30 @@ object Updates {
         val ready = prefs.getString(KEY_AUTO_READY, null)
         if (ready != null && ready != available) prefs.edit { remove(KEY_AUTO_READY) }
         autoReady = ready?.takeIf { it == available }
+    }
+
+    /** Shows a failure only while it belongs to the release that is still on offer. */
+    private fun syncAutoFailure() {
+        autoFailure = prefs.getString(KEY_AUTO_FAILED, null)
+            ?.takeIf { prefs.getString(KEY_AUTO_FAILED_FOR, null) == available }
+    }
+
+    private fun noteAutoFailure(reason: String) {
+        val version = available ?: return
+        prefs.edit {
+            putString(KEY_AUTO_FAILED, reason)
+            putString(KEY_AUTO_FAILED_FOR, version)
+        }
+        autoFailure = reason
+    }
+
+    private fun clearAutoFailure() {
+        if (autoFailure == null && !prefs.contains(KEY_AUTO_FAILED)) return
+        prefs.edit {
+            remove(KEY_AUTO_FAILED)
+            remove(KEY_AUTO_FAILED_FOR)
+        }
+        autoFailure = null
     }
 
     /**
@@ -252,12 +323,14 @@ object Updates {
                     versionCode(ready) >= BuildConfig.VERSION_CODE
                 if (!ok) {
                     autoRetryAt = SystemClock.elapsedRealtime() + AUTO_RETRY_MS
+                    noteAutoFailure("download")
                     Log.w(TAG, "auto update: download failed")
                     DiagLog.i("auto update: download failed")
                     return@launch
                 }
                 prefs.edit { putString(KEY_AUTO_READY, latest) }
                 autoReady = latest
+                clearAutoFailure()
                 DiagLog.i("auto update: $latest downloaded")
                 armAutoInstall()
             } finally {
@@ -312,6 +385,7 @@ object Updates {
             DiagLog.i("auto update: the system would not take the update")
             install = Install.Idle
             autoReady = version
+            noteAutoFailure("install")
         }
     }
 
@@ -519,6 +593,7 @@ object Updates {
             Log.w(TAG, "auto update: no install session", it)
             DiagLog.i("auto update: no install session")
             install = Install.Idle
+            noteAutoFailure("install")
             false
         } else {
             Log.w(TAG, "no install session; opening the installer", it)
@@ -690,6 +765,7 @@ object Updates {
             DiagLog.i("auto update: $why; left for Control Center")
             install = Install.Idle
             autoReady = available
+            noteAutoFailure("install")
             return
         }
         Log.w(TAG, "$why; abandoned, opening the installer")
@@ -722,6 +798,7 @@ object Updates {
                     DiagLog.i("auto update: confirmation needed; left for Control Center")
                     install = Install.Idle
                     autoReady = available
+                    noteAutoFailure("install")
                     return
                 }
                 @Suppress("DEPRECATION")
@@ -733,11 +810,19 @@ object Updates {
                     confirmation = true, showConfirmation = Runnable { openConfirmation(app, id, confirm) },
                 )
             }
-            PackageInstaller.STATUS_SUCCESS -> install = Install.Idle // normally this process is replaced
+            PackageInstaller.STATUS_SUCCESS -> {
+                // Normally this process is replaced; clearing here keeps a failed auto attempt
+                // from outliving the version it belonged to.
+                clearAutoFailure()
+                install = Install.Idle
+            }
             PackageInstaller.STATUS_FAILURE_ABORTED -> {
                 Log.i(TAG, "update not confirmed")
                 install = Install.Idle
-                if (auto) autoReady = available
+                if (auto) {
+                    autoReady = available
+                    noteAutoFailure("install")
+                }
             }
             else -> {
                 val message = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)
@@ -755,6 +840,7 @@ object Updates {
                     DiagLog.i("auto update: session failed ($status); left for Control Center")
                     install = Install.Idle
                     autoReady = available
+                    noteAutoFailure("install")
                     return
                 }
                 Log.w(TAG, "install session failed ($status, $message); opening the installer")

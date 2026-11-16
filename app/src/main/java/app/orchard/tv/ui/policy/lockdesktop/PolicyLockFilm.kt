@@ -24,6 +24,7 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionParameters
 import androidx.media3.exoplayer.ExoPlayer
+import app.orchard.tv.policy.media.PolicyMediaKind
 import app.orchard.tv.policy.media.PolicyVideoSource
 import app.orchard.tv.ui.theme.Motion
 
@@ -49,6 +50,8 @@ internal fun PolicyLockFilm(
     modifier: Modifier = Modifier,
     active: Boolean = true,
 ) {
+    // A still picture is drawn by the caller's backdrop; it must never reach ExoPlayer.
+    if (source.kind != PolicyMediaKind.VIDEO) return
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var surface by remember(source) { mutableStateOf<SurfaceView?>(null) }

@@ -79,9 +79,8 @@
     <string name="policy_v6_activation_confirm_end_session">本次计时和休息倒计时会立即结束。</string>
     <string name="policy_v6_activation_confirm_cancel">取消</string>
     <string name="policy_v6_activation_confirm_switch">切换</string>
-    <string name="policy_v6_quiz_challenge">答题挑战</string>
-    <string name="policy_v6_quiz_hint">手动模式下，答对题目可解锁电视时间；关闭后锁屏不再显示答题入口。</string>
-    <string name="policy_v6_quiz_busy">本轮答题进行中，结束后再修改。</string>
+    <string name="policy_v6_quiz_challenge">展示答题闯关入口</string>
+    <string name="policy_v6_quiz_hint">开启后，锁屏最前面显示答题闯关图标；关闭不影响点击娱乐应用进入答题。</string>
     <string name="policy_v6_quiz_setup">题库设置</string>
     <string name="policy_v6_quiz_setup_sub">手机扫码打开家长中心</string>
     <string name="policy_v6_quiz_setup_status">手机扫码</string>

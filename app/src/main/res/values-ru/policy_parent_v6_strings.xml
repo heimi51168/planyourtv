@@ -79,9 +79,8 @@
     <string name="policy_v6_activation_confirm_end_session">Текущий сеанс и обратный отсчёт перерыва немедленно завершатся.</string>
     <string name="policy_v6_activation_confirm_cancel">Отмена</string>
     <string name="policy_v6_activation_confirm_switch">Переключить</string>
-    <string name="policy_v6_quiz_challenge">Викторина</string>
-    <string name="policy_v6_quiz_hint">В ручном режиме правильные ответы дают время на телевизоре. Если выключено, экран блокировки больше не показывает вход в викторину.</string>
-    <string name="policy_v6_quiz_busy">Идёт раунд викторины. Измените это после его завершения.</string>
+    <string name="policy_v6_quiz_challenge">Показывать вход в тесты</string>
+    <string name="policy_v6_quiz_hint">Если включено, значок тестов показывается первым на экране блокировки. Выключение не мешает входить в тесты из приложений развлечений.</string>
     <string name="policy_v6_quiz_setup">Банк вопросов</string>
     <string name="policy_v6_quiz_setup_sub">Откройте центр для родителей с телефона</string>
     <string name="policy_v6_quiz_setup_status">Сканируйте</string>

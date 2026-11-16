@@ -64,6 +64,11 @@ object QuizRuntime {
     data class UiState(
         val loaded: Boolean = false,
         val enabled: Boolean = true,
+        /**
+         * Whether the lock desktop shows its dedicated quiz tile. Local mode
+         * reads the display-only switch; cloud keeps the legacy feature flag.
+         */
+        val lockEntryVisible: Boolean = false,
         val session: QuizSession? = null,
         val providerConfigured: Boolean = false,
         val consentAccepted: Boolean = false,
@@ -187,10 +192,18 @@ object QuizRuntime {
                 is QuizCloudPlanResult.Rejected -> cloudPlanError = planned.code
             }
         }
+        // Local mode has no quiz feature switch: a legacy document that still
+        // says enabled=false is ignored, and the child can always use the quiz
+        // entries. The dedicated lock tile is governed by the display switch.
         val enabled = if (localMode) {
-            localDocument?.enabled ?: false
+            true
         } else {
             cloudPlan?.document?.enabled ?: false
+        }
+        val lockEntryVisible = if (localMode) {
+            QuizSessionStore.lockEntryVisible()
+        } else {
+            enabled
         }
         val sourceConfig = QuizSessionStore.loadSourceConfig()
         val defaultConfig = if (localMode) {
@@ -271,7 +284,7 @@ object QuizRuntime {
         val bankState = when {
             !localMode && cloudPlanError != null -> "blocked"
             localMode && documentUnreadable -> "blocked"
-            !enabled -> "disabled"
+            !localMode && !enabled -> "disabled"
             // Local mode hides the start page when no level has questions. The
             // cloud start page stays visible whenever the parent configured
             // levels, so an unavailable reason can be shown instead of the QR.
@@ -282,6 +295,7 @@ object QuizRuntime {
         val next = UiState(
             loaded = true,
             enabled = enabled,
+            lockEntryVisible = lockEntryVisible,
             session = session,
             providerConfigured = QuizSessionStore.providerConfigured(),
             consentAccepted = QuizSessionStore.consentAccepted(),

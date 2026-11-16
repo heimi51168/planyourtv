@@ -104,6 +104,17 @@ body.parent-open .modal-root { z-index: 80; }
   overflow-wrap: anywhere;
 }
 
+.parent-bar-state.is-media::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  vertical-align: 1px;
+}
+
 .parent-content { padding: 14px 16px 20px; }
 
 .parent-hero { margin-bottom: 14px; }
@@ -432,6 +443,121 @@ body.parent-open .modal-root { z-index: 80; }
 
 .parent-media-panel[hidden] { display: none !important; }
 
+/* Second-level filter: the same kind of switch, one step lighter than the type tabs. */
+.parent-media-source-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+
+.parent-media-source-tabs {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 4px;
+  min-width: 0;
+}
+
+.parent-media-source-tab {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  gap: 2px 6px;
+  min-width: 0;
+  min-height: 36px;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.parent-media-source-tab.is-active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.parent-media-source-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.parent-media-source-count {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.parent-media-source-tab.is-active .parent-media-source-count { color: var(--accent); }
+
+.parent-media-library-hint { margin: 0 3px 10px; }
+
+.parent-media-isolation-note { margin: 7px 2px 0; }
+
+.parent-media-timing-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.parent-media-timing-text { flex: 1 1 auto; min-width: 0; }
+.parent-media-timing-text strong { color: var(--ink); font-weight: 600; }
+
+.parent-media-note-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.parent-media-readonly {
+  flex: none;
+  margin-left: auto;
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 9.5px;
+}
+
+.parent-media-kind-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 1;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.58);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+}
+
 .parent-media-refresh-icon {
   display: grid;
   place-items: center;
@@ -449,6 +575,15 @@ body.parent-open .modal-root { z-index: 80; }
 .parent-media-refresh-icon:active { background: var(--surface-2); }
 .parent-media-refresh-icon:disabled { opacity: 0.45; }
 
+/* The page-level refresh is an icon in the header, matching the mock's app bar. */
+.parent-media-bar-refresh {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  border-color: transparent;
+  background: transparent;
+}
+
 .parent-media-toolbar {
   display: flex;
   align-items: center;
@@ -464,6 +599,23 @@ body.parent-open .modal-root { z-index: 80; }
 .parent-card.parent-media-modules { margin-top: 0; }
 
 .parent-media-module-row { min-height: 64px; }
+
+.parent-media-module-action {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+  color: var(--accent);
+  font-size: 12.5px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.parent-media-module-action .chevron {
+  color: var(--muted);
+  font-size: 19px;
+  line-height: 1;
+}
 
 .parent-media-module-thumb {
   position: relative;
@@ -485,21 +637,36 @@ body.parent-open .modal-root { z-index: 80; }
 }
 
 .parent-media-default-thumb {
-  display: grid;
-  place-items: center;
+  position: relative;
+  display: block;
+  overflow: hidden;
   background: linear-gradient(135deg, #3d5a6a, #121d25);
 }
 
-.parent-media-default-mark {
-  color: rgba(255, 255, 255, 0.86);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+.parent-media-default-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
 }
 
-.parent-media-module-thumb .parent-media-default-mark { font-size: 10px; }
-.parent-media-option-cover .parent-media-default-mark { font-size: 9px; }
-.parent-media-stage-cover .parent-media-default-mark { font-size: 20px; letter-spacing: 0.1em; }
+.parent-media-default-mark {
+  position: absolute;
+  left: 6px;
+  bottom: 5px;
+  z-index: 1;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.5;
+  pointer-events: none;
+}
 
 .parent-media-notice {
   margin: 0 0 10px;
@@ -618,8 +785,36 @@ body.parent-open .modal-root { z-index: 80; }
   background: rgba(0, 0, 0, 0.35);
 }
 
-.parent-media-local-hint { margin: 0 3px 10px; }
-.parent-media-upload { padding: 0 0 10px; }
+.parent-media-upload-zone {
+  margin: 0 0 12px;
+  padding: 13px;
+  border: 1px dashed var(--line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 56%, transparent);
+}
+
+.parent-media-upload { padding: 0; }
+
+.parent-media-upload-btn {
+  width: 100%;
+  min-height: 42px;
+  font-size: 13.5px;
+  font-weight: 650;
+}
+
+.parent-media-upload-hint {
+  margin: 8px 2px 0;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.parent-media-local-hint {
+  margin: 2px 2px 0;
+  font-size: 11px;
+  line-height: 1.5;
+  opacity: 0.82;
+}
+
 .parent-media-upload-progress { padding: 0 0 10px; }
 
 /* Preview and picker share one sheet: a scrolling body over a sticky single action. */
@@ -830,29 +1025,40 @@ body.parent-open .modal-root { z-index: 80; }
 
 .parent-media-option-current {
   position: absolute;
-  top: 5px;
   left: 5px;
-  padding: 2px 6px;
+  bottom: 5px;
+  z-index: 1;
+  padding: 1px 5px;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.58);
   color: #fff;
   font-size: 9.5px;
   font-weight: 600;
+  pointer-events: none;
+}
+
+.parent-media-option-kind {
+  top: 5px;
+  left: 5px;
+  padding: 1px 5px;
+  font-size: 9.5px;
 }
 
 .parent-media-option-check {
   position: absolute;
+  top: 5px;
   right: 5px;
-  bottom: 5px;
+  z-index: 1;
   display: grid;
   place-items: center;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: var(--accent);
-  color: var(--accent-ink);
-  font-size: 12px;
+  color: #fff;
+  font-size: 10px;
   font-weight: 700;
+  pointer-events: none;
 }
 
 .parent-media-picker-note { margin: 6px 0 0; }
@@ -1363,6 +1569,62 @@ body.parent-open .modal-root { z-index: 80; }
 
 .parent-sheet h2 { margin: 0 0 6px; font-size: 19px; }
 .parent-sheet p { color: var(--muted); font-size: 13.5px; overflow-wrap: anywhere; }
+
+/* Software update: the version at a glance, then one action and the TV's own progress. */
+.parent-update-hero {
+  margin: 12px 0 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.parent-update-caption {
+  display: block;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.parent-update-version {
+  display: block;
+  margin-top: 3px;
+  font-size: 24px;
+  font-weight: 680;
+  letter-spacing: 0.01em;
+}
+
+.parent-update-status { margin: 0; }
+.parent-update-status.is-ready { color: var(--ok); }
+.parent-update-status.is-warning { color: var(--danger); }
+
+.parent-update-progress { padding-top: 10px; }
+
+.parent-update-auto {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.parent-update-notes {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.parent-update-notes-title {
+  margin: 0 0 6px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 620;
+}
+
+.parent-update-notes-list {
+  margin: 0;
+  padding-inline-start: 18px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.parent-update-notes-list li + li { margin-top: 4px; }
 
 .parent-choice {
   display: block;

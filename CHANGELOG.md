@@ -3,6 +3,39 @@
 This changelog covers the community source snapshot. Official hosted builds may ship different
 artifacts with the same upstream Aerial base.
 
+## [1.97.001] - 2026-11-16
+
+Kids-mode wallpaper import, quiz-entry and update-flow refinements, based on Aerial 1.97 /
+versionCode 142. Version code `142001`. The optional parent app is `1.1.1` / `5`.
+
+### Added
+
+- Kids-mode wallpapers can now be imported from the phone: JPG/PNG/WebP images and MP4/MOV videos
+  are supported, alongside the official cloud wallpaper library. Imported images are validated and
+  fitted for the TV screen; videos are transcoded for wider TV compatibility. A built-in kids default
+  wallpaper is included.
+- Configured entertainment apps can act as quiz entries on the lock desktop. A successful round
+  opens the app that started the quiz once the earned session begins. The phone controls whether
+  the dedicated lock-screen quiz entry is shown, without disabling quiz entry from entertainment
+  apps, and a round can be set to a single question.
+- The phone's More page shows the TV's current version and supports checking, downloading and
+  installing a newer release manually.
+
+### Changed
+
+- Auto update and Software update moved from Local settings to Other on the phone's More page.
+- The lock screen no longer shows a single-session timing shortcut; manual sessions are started
+  from the phone's Control page.
+- Local video uploads accept a wider range of MP4/MOV codecs.
+
+### Fixed
+
+- Logging out of the phone parent app now returns to the native QR pairing screen instead of the
+  TV PIN page.
+- Back from Quiz management returns to More when the page was opened there, instead of the Bank
+  tab.
+- The phone Control page recovers automatically when its editor lease briefly expires.
+
 ## [1.97.000] - 2026-11-15
 
 Kids-mode desktop, separated wallpapers, wrong-review levels and phone-first Parent Center, based

@@ -107,7 +107,8 @@
       sourceEntries: "来源入口",
       sourceHint: "只影响桌面入口，不是强制锁定",
       quizChallenge: "答题挑战",
-      quizHint: "答对题目可提前结束本次儿童模式",
+      quizEntryVisible: "展示答题闯关入口",
+      quizEntryHint: "开启后，锁屏最前面显示答题闯关图标；关闭不影响点击娱乐应用进入答题。",
       quizManage: "题库管理",
       quizManageHint: "在题库页面管理题目与答题设置",
       quizPageQrTitle: "扫码打开题库页",
@@ -133,9 +134,6 @@
       sensitivePinDefault: "请先在电视上修改初始家长密码",
       sensitivePinExpired: "验证已过期，请重新输入",
       sensitivePinRequired: "请先验证家长密码",
-      confirmQuizOffTitle: "关闭答题挑战？",
-      confirmQuizOffBody: "未开始的挑战会被删除；关闭后孩子不能再通过答题赚取时间。",
-      confirmQuizOffAction: "关闭",
       confirmAutoUpdateOffTitle: "关闭自动升级？",
       confirmAutoUpdateOffBody: "关闭后电视不再自动获取新版本，需要手动安装更新。",
       confirmAutoUpdateOffAction: "关闭",
@@ -166,6 +164,38 @@
       passwordSyncPending: "云端同步中",
       autoUpdate: "自动升级",
       autoUpdateHint: "有新版本时自动更新",
+      softwareUpdate: "软件更新",
+      softwareUpdateHint: "查看电视版本，有新版本时可升级",
+      updateCurrent: "当前版本",
+      updateNotChecked: "尚未检查更新",
+      updateChecking: "正在检查更新…",
+      updateLatest: "已是最新版本",
+      updateFound: "发现新版本 {version}",
+      updateCheckFailed: "检查失败，请确认电视已联网",
+      updateCheckAction: "检查更新",
+      updateInstallAction: "下载并安装",
+      updateDownloading: "正在下载 {percent}%",
+      updateWaiting: "正在等待系统确认…",
+      updateOpened: "已打开系统安装界面，请在电视上确认",
+      updateNeedsPermission: "请在电视上允许安装应用，然后重试",
+      updateNeedsStoragePermission: "请在电视上允许存储权限，然后重试",
+      updateFailedDownload: "下载失败，请稍后重试",
+      updateFailedBlocked: "系统拒绝了安装，请在电视上手动升级",
+      updateFailedNotOfficial: "安装包与当前版本不匹配，请从官网重新下载",
+      updateFailedNotNewer: "安装包不比当前版本新，请稍后再试",
+      updateConfirmTitle: "升级这台电视？",
+      updateConfirmText: "电视会下载并安装新版本；安装期间可能重启，当前观看会中断。",
+      updateConfirmAction: "开始升级",
+      updateAutoReady: "新版本已下载，将在后台自动安装；也可以现在安装",
+      updateAutoDownloading: "自动升级正在后台下载新版本",
+      updateAutoFailedDownload: "自动升级下载失败，请手动升级",
+      updateAutoFailedInstall: "自动安装未完成，请手动升级",
+      updateAutoUnsupported: "这台电视需要手动确认升级，自动安装不可用",
+      updateAutoPermission: "电视尚未允许安装应用，自动升级已暂停",
+      updateNotes: "更新内容",
+      updateClose: "关闭",
+      updateUnavailable: "这个版本不支持在线升级，请从官网下载",
+      updateBusy: "升级正在进行，请稍候",
       remoteManagement: "远程管理",
       notBound: "未绑定",
       bound: "已绑定",
@@ -190,10 +220,6 @@
       childEnableLead: "儿童模式会按你设置的时间规则守护这台电视。开启前请先设置家长密码。",
       childSetupPinTitle: "设置家长密码",
       childSetupPinLead: "首次开启儿童模式需要 6 位家长密码。密码只保存在电视上；请记住它。",
-      autoConsentTitle: "开启自动升级",
-      autoConsentText: "首次开启儿童模式时，建议允许自动升级，以便及时获得守护修复。不开启也可以继续使用儿童模式。",
-      autoConsentAccept: "开启并继续",
-      autoConsentCancel: "暂不开启",
       newPin: "新的 6 位家长密码",
       confirmPin: "再次输入密码",
       currentPin: "当前家长密码",
@@ -281,12 +307,12 @@
       personalizeHint: "云端片库、本地上传与默认壁纸",
       introVideoTitle: "闯关启动视频",
       introVideoHint: "仅保存在本机，不上传云端",
-      introVideoLimit: "16:9 MP4（H.264）· 单段 ≤15 秒 / ≤4 MB · 上传视频最多 6 段 / 共 24 MB",
+      introVideoLimit: "16:9 MP4/MOV · H.264/H.265 等（需电视支持）· 单段 ≤15 秒 / ≤4 MB · 上传视频最多 6 段 / 共 24 MB",
       introVideoBuiltin: "内置片头",
       introVideoActive: "当前使用",
       introVideoSetActive: "设为闯关片头",
       introVideoRestore: "恢复内置片头",
-      introVideoUpload: "上传视频",
+      introVideoUpload: "上传视频或图片",
       introVideoUploading: "正在上传…",
       introVideoEmpty: "还没有上传视频",
       introVideoDelete: "删除",
@@ -298,40 +324,49 @@
       introVideoUploaded: "视频已上传，点「设为闯关片头」使用",
       introVideoTooLarge: "视频超过 4 MB，请压缩后再试",
       introVideoBadDuration: "视频超过 15 秒，请剪短后再试",
-      introVideoBadFormat: "只支持 16:9、H.264 编码的 MP4 视频",
+      introVideoBadFormat: "只支持 JPG/PNG/WebP 图片，或 16:9 MP4/MOV 视频（编码需电视支持）",
       introVideoInvalid: "视频无法读取或格式不受支持",
-      introVideoFull: "上传视频已达上限（最多 6 段、共 24 MB），请先删除一段",
+      introVideoFull: "上传已达上限（最多 6 个、共 24 MB）；请先删除一个",
       introVideoNoSpace: "电视存储空间不足",
       introVideoMeta: "{size} MB · {seconds} 秒 · {width}×{height}",
       introVideoListTitle: "视频库",
       introVideoUploadHint: "可一次选择多段视频；上传完成后点「设为片头」",
       introVideoUploadProgress: "正在上传 {index}/{total}：{name} · {percent}%",
-      introVideoBatchDone: "已上传 {added} 段视频",
-      introVideoBatchFailed: "有 {failed} 段未上传：{reason}",
-      introVideoBatchFull: "视频库上限 {max} 段，本次只上传了 {n} 段",
+      introVideoBatchDone: "已上传 {added} 个壁纸",
+      introVideoBatchFailed: "有 {failed} 个未上传：{reason}",
+      introVideoBatchFull: "上传上限 {max} 个，本次只上传了 {n} 个",
       introVideoUse: "设为片头",
-      introVideoHevc: "这是 H.265/HEVC 视频，电视端只支持 H.264；请转换为 H.264 后重试",
+      introVideoHevc: "此电视无法解码 H.265/HEVC；请转换为 H.264 后重试",
+      introVideoUnsupportedCodec: "此电视无法解码该视频编码；请转换为 H.264 后重试",
       mediaPageTitle: "儿童模式壁纸",
-      mediaCurrentTitle: "模块设置",
+      mediaCurrentTitle: "当前选择",
       mediaModulesNote: "两者互不影响",
       mediaRoleQuiz: "闯关片头壁纸",
       mediaRoleLock: "儿童模式壁纸",
       mediaRoleBoth: "两者都使用",
-      mediaRoleQuizHint: "答题开始时播放",
-      mediaRoleLockHint: "自律模式锁屏循环播放，静音",
+      mediaRoleQuizHint: "答题开始时显示",
+      mediaRoleLockHint: "儿童模式锁屏和自律桌面显示；视频静音循环",
       mediaRoleLabel: "使用位置",
-      mediaSourceDefault: "Aerial 默认壁纸",
+      mediaSourceDefault: "儿童模式默认壁纸",
       mediaSourceOfficial: "云端片库",
       mediaSourceLocal: "本地上传",
+      mediaKindVideo: "视频",
+      mediaKindImage: "图片",
+      mediaKindTabsLabel: "壁纸类型",
+      mediaSourceTabsLabel: "壁纸来源",
+      mediaMetaImage: "{size} MB · {width}×{height}",
+      mediaDefaultBadge: "默认",
+      mediaImageRoleNote: "图片只能用于儿童模式壁纸，不能用于闯关片头。",
+      mediaIsolationNote: "未选择时使用儿童模式默认壁纸；家长模式始终使用 Aerial 壁纸。",
       mediaChoose: "选择",
       mediaChange: "更换",
       mediaCustomized: "已自定义",
       mediaTabCloud: "云端片库",
       mediaTabLocal: "本地上传",
-      mediaOfficialHint: "↓ 下载 · ✓ 已下载；最多下载 8 段，满了先删一段再下载。",
-      mediaEmpty: "片库暂时没有视频",
+      mediaOfficialHint: "↓ 下载 · ✓ 已下载；最多 8 个，满了先删一个再下载。",
+      mediaEmpty: "片库暂时没有壁纸",
       mediaCatalogOff: "此版本未配置云端片库",
-      mediaCatalogUnavailable: "云端片库暂时不可用，仍可使用本地上传或 Aerial 默认壁纸",
+      mediaCatalogUnavailable: "云端片库暂时不可用，仍可使用本地上传或儿童模式默认壁纸",
       mediaRefresh: "刷新片库",
       mediaRefreshing: "正在刷新…",
       mediaLoading: "正在读取电视片库…",
@@ -343,15 +378,17 @@
       mediaStateFailed: "下载失败",
       mediaStateUpdate: "有新版本",
       mediaMeta: "{duration} · {size} MB · {width}×{height}",
-      mediaPreviewHint: "这里只预览封面；视频下载后在电视上播放。",
-      mediaDownloadHint: "下载后可设置为闯关片头壁纸或儿童模式壁纸。",
-      mediaDownload: "下载这段视频",
-      mediaDownloadedHint: "已下载。到上方模块设置中选择。",
-      mediaLocalReadyHint: "已上传。到上方模块设置中选择。",
-      mediaDownloadDone: "已下载，可在模块设置中使用",
+      mediaPreviewHint: "这里只预览封面；视频下载后在电视上播放，图片下载后作为静态壁纸。",
+      mediaDownloadHint: "下载后可以设为闯关片头或儿童模式壁纸。",
+      mediaDownload: "下载这个壁纸",
+      mediaDownloadedHint: "已下载。到上方「当前选择」中选择。",
+      mediaLocalReadyHint: "已上传。到上方「当前选择」中选择。",
+      mediaDownloadDone: "已下载，可在「当前选择」中使用",
       mediaPickerTitle: "选择{module}",
       mediaPickerHint: "只影响这个模块。",
-      mediaPickerEmpty: "还没有已下载的视频",
+      mediaPickerHintQuiz: "只影响闯关片头；这里只显示视频。",
+      mediaPickerEmpty: "还没有已下载的壁纸",
+      mediaPickerEmptyVideo: "还没有已下载的视频。",
       mediaPickerGoLibrary: "去云端片库",
       mediaCurrentBadge: "当前",
       mediaRetryDownload: "重试下载",
@@ -365,32 +402,39 @@
       mediaInUse: "当前使用",
       mediaManage: "管理",
       mediaCancelDownload: "取消下载",
-      mediaRestoreDefault: "恢复 Aerial 默认壁纸",
-      mediaRestoreTitle: "恢复 Aerial 默认壁纸？",
-      mediaRestoreText: "使用这段视频的位置将恢复 Aerial 默认壁纸，视频文件不会被删除。",
-      mediaRestoreDone: "已恢复 Aerial 默认壁纸",
+      mediaRestoreDefault: "恢复儿童模式默认壁纸",
+      mediaRestoreTitle: "恢复儿童模式默认壁纸？",
+      mediaRestoreText: "清除后使用儿童模式默认壁纸；家长模式的 Aerial 壁纸不变。",
+      mediaRestoreDone: "已恢复儿童模式默认壁纸",
       mediaDeleteLocal: "删除本地文件",
       mediaDeleteUpload: "删除上传",
-      mediaDeleteTitle: "删除这段视频？",
-      mediaDeleteText: "会从电视删除本文件；如果正在使用，将回到 Aerial 默认壁纸。",
-      mediaDeleted: "视频已删除",
-      mediaSelected: "视频设置已更新",
+      mediaDeleteTitle: "删除这个壁纸？",
+      mediaDeleteText: "删除本地副本；使用它的位置会恢复儿童模式默认壁纸。云端片库的条目不会被删除。",
+      mediaDeleted: "壁纸已删除",
+      mediaSelected: "壁纸设置已更新",
       mediaDownloadStarted: "已开始下载",
       mediaDownloading: "正在下载…",
       mediaCancelled: "已取消下载",
-      mediaNotFound: "视频不存在或已不可用",
-      mediaNotReady: "视频尚未下载完成",
-      mediaBusy: "另一个视频正在下载，请稍后",
-      mediaRoleInvalid: "视频不支持所选角色",
-      mediaLibraryFull: "已下载 8 段，请先删除一段再下载",
+      mediaNotFound: "壁纸不存在或已不可用",
+      mediaNotReady: "壁纸尚未下载完成",
+      mediaBusy: "另一个壁纸正在下载，请稍后",
+      mediaRoleInvalid: "壁纸不支持所选角色",
+      mediaLibraryFull: "已下载 8 个，请先删除一个再下载",
       mediaNoSpace: "电视存储空间不足",
       mediaDeleteFailed: "删除失败，请重试",
       mediaDownloadFailed: "下载失败，请检查电视网络后重试",
       mediaLocalHint: "仅保存在电视，不上传云端",
-      mediaLocalEmpty: "还没有上传视频",
-      mediaUploadHint: "16:9 MP4（H.264）· 单段 ≤15 秒 / ≤4 MB · 最多 6 段 / 共 24 MB",
-      mediaLimit: "官方片库最多下载 8 段（按段数限制）；本地上传最多 6 段。满了请先删除一段已下载的视频，再下载新的，避免电视存储紧张。",
-      mediaSingleTimingNote: "单次计时使用自律模式的视频",
+      mediaLocalEmpty: "还没有上传壁纸",
+      mediaUploadHint: "JPG/PNG/WebP ≤12 MB；或 16:9 MP4/MOV ≤15 秒 / ≤4 MB（需电视支持）· 最多 6 个 / 共 24 MB",
+      mediaLimit: "官方片库最多下载 8 个（图片和视频合计）；本地上传最多 6 个。满了请先删一个，避免电视存储紧张。",
+      mediaTimingLead: "单次计时",
+      mediaSingleTimingNote: "跟随儿童模式壁纸",
+      mediaReadonly: "只读",
+      mediaImageTooLarge: "图片超过 12 MB，请压缩后再试。",
+      mediaImageBadFormat: "只支持 JPG/PNG/WebP 图片。",
+      mediaImageInvalid: "图片无法读取或格式不受支持。",
+      mediaBadFormat: "文件格式不受支持。",
+      mediaTooLarge: "文件超过大小限制。",
       remoteQrAlt: "远程管理绑定二维码",
       featureUnavailable: "当前版本未启用网页家长中心",
       openFailed: "家长中心暂时不可用"
@@ -477,7 +521,8 @@
       sourceEntries: "Source entries",
       sourceHint: "Only changes the TV home entries; it is not a lock",
       quizChallenge: "Quiz challenge",
-      quizHint: "Correct answers end this child-mode session early",
+      quizEntryVisible: "Show quiz entry on lock screen",
+      quizEntryHint: "When on, the quiz icon appears first on the lock screen. Turning it off does not affect entering the quiz from entertainment apps.",
       quizManage: "Quiz management",
       quizManageHint: "Manage questions and quiz settings on the quiz page",
       quizPageQrTitle: "Scan to open the quiz page",
@@ -503,9 +548,6 @@
       sensitivePinDefault: "Change the initial parent PIN on the TV first",
       sensitivePinExpired: "Verification expired; enter the PIN again",
       sensitivePinRequired: "Verify the parent PIN first",
-      confirmQuizOffTitle: "Turn off the quiz challenge?",
-      confirmQuizOffBody: "An unstarted challenge will be deleted, and your child can no longer earn time by answering.",
-      confirmQuizOffAction: "Turn off",
       confirmAutoUpdateOffTitle: "Turn off auto-update?",
       confirmAutoUpdateOffBody: "The TV will stop fetching new versions automatically; updates must be installed manually.",
       confirmAutoUpdateOffAction: "Turn off",
@@ -536,6 +578,38 @@
       passwordSyncPending: "Syncing to the cloud",
       autoUpdate: "Auto update",
       autoUpdateHint: "Update automatically when a new version is available",
+      softwareUpdate: "Software update",
+      softwareUpdateHint: "View the TV version and update when one is available",
+      updateCurrent: "Current version",
+      updateNotChecked: "Not checked yet",
+      updateChecking: "Checking for updates…",
+      updateLatest: "You're on the latest version",
+      updateFound: "New version {version} is available",
+      updateCheckFailed: "Check failed; make sure the TV is online",
+      updateCheckAction: "Check for updates",
+      updateInstallAction: "Download and install",
+      updateDownloading: "Downloading {percent}%",
+      updateWaiting: "Waiting for the system to confirm…",
+      updateOpened: "The system installer is open; confirm on the TV",
+      updateNeedsPermission: "Allow app installs on the TV, then retry",
+      updateNeedsStoragePermission: "Allow storage access on the TV, then retry",
+      updateFailedDownload: "Download failed; try again later",
+      updateFailedBlocked: "The system refused the install; update manually on the TV",
+      updateFailedNotOfficial: "The package does not match this app; download it from the official site",
+      updateFailedNotNewer: "The package is not newer than this version; try again later",
+      updateConfirmTitle: "Update this TV?",
+      updateConfirmText: "The TV will download and install the new version. It may restart and interrupt what is playing.",
+      updateConfirmAction: "Update",
+      updateAutoReady: "The new version is downloaded and will install automatically; you can also install it now",
+      updateAutoDownloading: "Auto update is downloading the new version",
+      updateAutoFailedDownload: "Auto update could not download; update manually",
+      updateAutoFailedInstall: "The automatic install did not finish; update manually",
+      updateAutoUnsupported: "This TV needs manual confirmation, so automatic install is unavailable",
+      updateAutoPermission: "The TV does not allow app installs yet; auto update is paused",
+      updateNotes: "What's new",
+      updateClose: "Close",
+      updateUnavailable: "This copy cannot install updates; download it from the official site",
+      updateBusy: "An update is already in progress; wait a moment",
       remoteManagement: "Remote management",
       notBound: "Not bound",
       bound: "Bound",
@@ -560,10 +634,6 @@
       childEnableLead: "Child mode guards this TV using your time rules. Set a parent password first.",
       childSetupPinTitle: "Set the parent password",
       childSetupPinLead: "Child mode needs a 6-digit parent password the first time. It stays on the TV; remember it.",
-      autoConsentTitle: "Turn on auto update",
-      autoConsentText: "When child mode is first enabled, allowing auto update helps deliver guard fixes. You can still use child mode without it.",
-      autoConsentAccept: "Allow and continue",
-      autoConsentCancel: "Not now",
       newPin: "New 6-digit parent password",
       confirmPin: "Enter the password again",
       currentPin: "Current parent PIN",
@@ -651,12 +721,12 @@
       personalizeHint: "Cloud library, local uploads and the default wallpaper",
       introVideoTitle: "Quiz start video",
       introVideoHint: "Stored on this TV only; never uploaded",
-      introVideoLimit: "16:9 MP4 (H.264) · ≤15 s / ≤4 MB each · up to 6 uploaded videos / 24 MB",
+      introVideoLimit: "16:9 MP4/MOV · H.264/H.265, etc. (TV decoder required) · ≤15 s / ≤4 MB each · up to 6 uploaded videos / 24 MB",
       introVideoBuiltin: "Built-in intro",
       introVideoActive: "In use",
       introVideoSetActive: "Use as quiz intro",
       introVideoRestore: "Restore built-in intro",
-      introVideoUpload: "Upload video",
+      introVideoUpload: "Upload video or image",
       introVideoUploading: "Uploading…",
       introVideoEmpty: "No uploaded videos yet",
       introVideoDelete: "Delete",
@@ -668,40 +738,49 @@
       introVideoUploaded: "Video uploaded. Tap \"Use as quiz intro\" to use it.",
       introVideoTooLarge: "The video is over 4 MB; compress it and try again",
       introVideoBadDuration: "The video is over 15 seconds; shorten it and try again",
-      introVideoBadFormat: "Only 16:9 H.264 MP4 videos are supported",
+      introVideoBadFormat: "Only JPG/PNG/WebP images, or 16:9 MP4/MOV videos with a codec this TV can decode",
       introVideoInvalid: "The video cannot be read or is unsupported",
-      introVideoFull: "The uploaded-video library is full (up to 6 videos / 24 MB); delete one first",
+      introVideoFull: "The upload library is full (up to 6 items / 24 MB); delete one first",
       introVideoNoSpace: "The TV is low on storage",
       introVideoMeta: "{size} MB · {seconds} s · {width}×{height}",
       introVideoListTitle: "Video library",
       introVideoUploadHint: "You can select several videos at once. After uploading, tap Use as the intro.",
       introVideoUploadProgress: "Uploading {index}/{total}: {name} · {percent}%",
-      introVideoBatchDone: "Uploaded {added} video(s)",
-      introVideoBatchFailed: "{failed} video(s) not uploaded: {reason}",
-      introVideoBatchFull: "The library holds {max} videos; only {n} were uploaded this time",
+      introVideoBatchDone: "Uploaded {added} wallpaper(s)",
+      introVideoBatchFailed: "{failed} item(s) not uploaded: {reason}",
+      introVideoBatchFull: "The library holds {max} items; only {n} were uploaded this time",
       introVideoUse: "Use as intro",
-      introVideoHevc: "This is an H.265/HEVC video; the TV supports H.264 only. Convert it to H.264 and retry.",
+      introVideoHevc: "This TV cannot decode H.265/HEVC; convert it to H.264 and retry.",
+      introVideoUnsupportedCodec: "This TV cannot decode this video codec; convert it to H.264 and retry.",
       mediaPageTitle: "Child-mode wallpapers",
-      mediaCurrentTitle: "Modules",
+      mediaCurrentTitle: "Current selection",
       mediaModulesNote: "Independent of each other",
       mediaRoleQuiz: "Quiz intro wallpaper",
       mediaRoleLock: "Child-mode wallpaper",
       mediaRoleBoth: "Both",
-      mediaRoleQuizHint: "Plays when a quiz starts",
-      mediaRoleLockHint: "Loops muted on the self-discipline lock screen",
+      mediaRoleQuizHint: "Shown when a quiz starts",
+      mediaRoleLockHint: "Shown on the child-mode lock screen and self-discipline desktop; videos loop muted",
       mediaRoleLabel: "Use for",
-      mediaSourceDefault: "Aerial default wallpaper",
+      mediaSourceDefault: "Default child-mode wallpaper",
       mediaSourceOfficial: "Cloud library",
       mediaSourceLocal: "Local upload",
+      mediaKindVideo: "Video",
+      mediaKindImage: "Image",
+      mediaKindTabsLabel: "Wallpaper type",
+      mediaSourceTabsLabel: "Wallpaper source",
+      mediaMetaImage: "{size} MB · {width}×{height}",
+      mediaDefaultBadge: "Default",
+      mediaImageRoleNote: "Images can only be used as the child-mode wallpaper, not the quiz intro.",
+      mediaIsolationNote: "Until you choose, the default child-mode wallpaper is used. Parent mode always keeps Aerial's wallpaper.",
       mediaChoose: "Choose",
       mediaChange: "Change",
       mediaCustomized: "Customized",
       mediaTabCloud: "Cloud library",
       mediaTabLocal: "Local upload",
-      mediaOfficialHint: "↓ download · ✓ downloaded; up to 8 videos — delete one before downloading more.",
-      mediaEmpty: "No videos in the library yet",
+      mediaOfficialHint: "↓ download · ✓ downloaded; up to 8 items — delete one before downloading more.",
+      mediaEmpty: "No wallpapers in the library yet",
       mediaCatalogOff: "The cloud library is not configured in this build",
-      mediaCatalogUnavailable: "The cloud library is unavailable. Local uploads and Aerial's default wallpaper still work.",
+      mediaCatalogUnavailable: "The cloud library is unavailable. Local uploads and the default child-mode wallpaper still work.",
       mediaRefresh: "Refresh library",
       mediaRefreshing: "Refreshing…",
       mediaLoading: "Reading the TV library…",
@@ -713,15 +792,17 @@
       mediaStateFailed: "Download failed",
       mediaStateUpdate: "Update available",
       mediaMeta: "{duration} · {size} MB · {width}×{height}",
-      mediaPreviewHint: "Only the cover is shown here; the video plays on the TV after download.",
-      mediaDownloadHint: "Download it to use as the quiz intro wallpaper or a child-mode wallpaper.",
-      mediaDownload: "Download this video",
-      mediaDownloadedHint: "Downloaded. Choose it under Modules above.",
-      mediaLocalReadyHint: "Uploaded. Choose it under Modules above.",
-      mediaDownloadDone: "Downloaded. Choose it under Modules.",
+      mediaPreviewHint: "Only the cover is shown here; videos play on the TV after download, images become still wallpapers.",
+      mediaDownloadHint: "Download it, then use it as the quiz intro or a child-mode wallpaper.",
+      mediaDownload: "Download this wallpaper",
+      mediaDownloadedHint: "Downloaded. Choose it under Current selection above.",
+      mediaLocalReadyHint: "Uploaded. Choose it under Current selection above.",
+      mediaDownloadDone: "Downloaded. Choose it under Current selection.",
       mediaPickerTitle: "Choose {module}",
       mediaPickerHint: "This only changes this module.",
-      mediaPickerEmpty: "No downloaded videos yet",
+      mediaPickerHintQuiz: "Only affects the quiz intro; only videos are shown.",
+      mediaPickerEmpty: "No downloaded wallpapers yet",
+      mediaPickerEmptyVideo: "No downloaded videos yet.",
       mediaPickerGoLibrary: "Open cloud library",
       mediaCurrentBadge: "Current",
       mediaRetryDownload: "Retry download",
@@ -735,32 +816,39 @@
       mediaInUse: "In use",
       mediaManage: "Manage",
       mediaCancelDownload: "Cancel download",
-      mediaRestoreDefault: "Restore Aerial default wallpaper",
-      mediaRestoreTitle: "Restore the Aerial default wallpaper?",
-      mediaRestoreText: "Every role using this video returns to Aerial's default wallpaper. The video file is kept.",
-      mediaRestoreDone: "Aerial default wallpaper restored",
+      mediaRestoreDefault: "Restore the default child-mode wallpaper",
+      mediaRestoreTitle: "Restore the default child-mode wallpaper?",
+      mediaRestoreText: "Clearing it restores the default child-mode wallpaper; parent mode's Aerial wallpaper is unchanged.",
+      mediaRestoreDone: "Default child-mode wallpaper restored",
       mediaDeleteLocal: "Delete local file",
       mediaDeleteUpload: "Delete upload",
-      mediaDeleteTitle: "Delete this video?",
-      mediaDeleteText: "The file is removed from the TV. If it is in use, the Aerial default wallpaper returns.",
-      mediaDeleted: "Video deleted",
-      mediaSelected: "Video settings updated",
+      mediaDeleteTitle: "Delete this wallpaper?",
+      mediaDeleteText: "The local copy will be deleted; any role using it returns to the default child-mode wallpaper. The cloud catalogue entry is not removed.",
+      mediaDeleted: "Wallpaper deleted",
+      mediaSelected: "Wallpaper settings updated",
       mediaDownloadStarted: "Download started",
       mediaDownloading: "Downloading…",
       mediaCancelled: "Download cancelled",
-      mediaNotFound: "The video is missing or no longer available",
-      mediaNotReady: "The video has not finished downloading",
-      mediaBusy: "Another video is downloading; try again shortly",
-      mediaRoleInvalid: "This video cannot be used for the selected role",
-      mediaLibraryFull: "8 videos downloaded; delete one before downloading another",
+      mediaNotFound: "The wallpaper is missing or no longer available",
+      mediaNotReady: "The wallpaper has not finished downloading",
+      mediaBusy: "Another wallpaper is downloading; try again shortly",
+      mediaRoleInvalid: "This wallpaper cannot be used for the selected role",
+      mediaLibraryFull: "8 items downloaded; delete one before downloading another",
       mediaNoSpace: "The TV is low on storage",
       mediaDeleteFailed: "Delete failed; try again",
       mediaDownloadFailed: "Download failed; check the TV network and retry",
       mediaLocalHint: "Stored on the TV only; never uploaded",
-      mediaLocalEmpty: "No videos uploaded yet",
-      mediaUploadHint: "16:9 MP4 (H.264) · ≤15 s / ≤4 MB each · up to 6 videos / 24 MB",
-      mediaLimit: "Cloud library: up to 8 downloads (by item count) · Local uploads: up to 6. When full, delete a downloaded video before adding another to avoid filling the TV.",
-      mediaSingleTimingNote: "Single-session timers use the self-discipline video",
+      mediaLocalEmpty: "No uploaded wallpapers yet",
+      mediaUploadHint: "JPG/PNG/WebP ≤12 MB; or 16:9 MP4/MOV ≤15 s / ≤4 MB (TV decoder required) · up to 6 items / 24 MB",
+      mediaLimit: "Cloud library: up to 8 downloads (images and videos combined) · Local: up to 6. Delete one when full to avoid filling the TV.",
+      mediaTimingLead: "Single-session timer",
+      mediaSingleTimingNote: "follows the child-mode wallpaper",
+      mediaReadonly: "Read-only",
+      mediaImageTooLarge: "The image is over 12 MB; compress it and try again.",
+      mediaImageBadFormat: "Only JPG/PNG/WebP images are supported.",
+      mediaImageInvalid: "The image cannot be read or is unsupported.",
+      mediaBadFormat: "Unsupported file format.",
+      mediaTooLarge: "The file is too large.",
       remoteQrAlt: "Remote management binding QR code",
       featureUnavailable: "This build does not enable the web parent center",
       openFailed: "The parent center is unavailable right now"
@@ -847,7 +935,8 @@
       sourceEntries: "Пункты источников",
       sourceHint: "Меняет только пункты на главном экране, это не блокировка",
       quizChallenge: "Тесты",
-      quizHint: "Правильные ответы досрочно завершают детский режим",
+      quizEntryVisible: "Показывать вход в тесты на экране блокировки",
+      quizEntryHint: "Если включено, значок тестов показывается первым на экране блокировки. Выключение не мешает входить в тесты из приложений развлечений.",
       quizManage: "Управление тестами",
       quizManageHint: "Вопросы и настройки тестов — на странице тестов",
       quizPageQrTitle: "Сканируйте, чтобы открыть страницу тестов",
@@ -873,9 +962,6 @@
       sensitivePinDefault: "Сначала измените начальный пароль родителя на телевизоре",
       sensitivePinExpired: "Подтверждение истекло; введите пароль ещё раз",
       sensitivePinRequired: "Сначала подтвердите пароль родителя",
-      confirmQuizOffTitle: "Отключить викторину?",
-      confirmQuizOffBody: "Не начатая викторина будет удалена, и ребёнок больше не сможет зарабатывать время ответами.",
-      confirmQuizOffAction: "Отключить",
       confirmAutoUpdateOffTitle: "Отключить автообновление?",
       confirmAutoUpdateOffBody: "Телевизор перестанет автоматически получать новые версии; обновления нужно устанавливать вручную.",
       confirmAutoUpdateOffAction: "Отключить",
@@ -906,6 +992,38 @@
       passwordSyncPending: "Синхронизация с облаком",
       autoUpdate: "Автообновление",
       autoUpdateHint: "Обновлять автоматически при выходе новой версии",
+      softwareUpdate: "Обновление ПО",
+      softwareUpdateHint: "Версия телевизора и обновление при наличии новой",
+      updateCurrent: "Текущая версия",
+      updateNotChecked: "Ещё не проверялось",
+      updateChecking: "Проверка обновлений…",
+      updateLatest: "Установлена последняя версия",
+      updateFound: "Доступна новая версия {version}",
+      updateCheckFailed: "Не удалось проверить; убедитесь, что ТВ в сети",
+      updateCheckAction: "Проверить обновления",
+      updateInstallAction: "Скачать и установить",
+      updateDownloading: "Загрузка {percent}%",
+      updateWaiting: "Ожидание подтверждения системы…",
+      updateOpened: "Открыт системный установщик; подтвердите на ТВ",
+      updateNeedsPermission: "Разрешите установку приложений на ТВ и повторите",
+      updateNeedsStoragePermission: "Разрешите доступ к памяти на ТВ и повторите",
+      updateFailedDownload: "Ошибка загрузки; повторите позже",
+      updateFailedBlocked: "Система отклонила установку; обновите вручную на ТВ",
+      updateFailedNotOfficial: "Пакет не соответствует приложению; скачайте с официального сайта",
+      updateFailedNotNewer: "Пакет не новее текущей версии; повторите позже",
+      updateConfirmTitle: "Обновить телевизор?",
+      updateConfirmText: "ТВ скачает и установит новую версию. Во время установки он может перезагрузиться, а просмотр прервётся.",
+      updateConfirmAction: "Обновить",
+      updateAutoReady: "Новая версия загружена и установится автоматически; можно установить сейчас",
+      updateAutoDownloading: "Автообновление скачивает новую версию",
+      updateAutoFailedDownload: "Автообновление не смогло скачать; обновите вручную",
+      updateAutoFailedInstall: "Автоустановка не завершилась; обновите вручную",
+      updateAutoUnsupported: "На этом ТВ нужно подтверждение вручную; автоустановка недоступна",
+      updateAutoPermission: "ТВ пока не разрешает установку приложений; автообновление приостановлено",
+      updateNotes: "Что нового",
+      updateClose: "Закрыть",
+      updateUnavailable: "Эта копия не может устанавливать обновления; скачайте с официального сайта",
+      updateBusy: "Обновление уже выполняется; подождите",
       remoteManagement: "Удалённое управление",
       notBound: "Не привязано",
       bound: "Привязано",
@@ -930,10 +1048,6 @@
       childEnableLead: "Детский режим охраняет телевизор по вашим правилам времени. Сначала задайте пароль родителя.",
       childSetupPinTitle: "Задайте пароль родителя",
       childSetupPinLead: "Для первого включения нужен 6-значный пароль. Он хранится только на ТВ; запомните его.",
-      autoConsentTitle: "Включить автообновление",
-      autoConsentText: "При первом включении детского режима автообновление помогает получать исправления. Детский режим работает и без него.",
-      autoConsentAccept: "Разрешить и продолжить",
-      autoConsentCancel: "Не сейчас",
       newPin: "Новый 6-значный пароль",
       confirmPin: "Повторите пароль",
       currentPin: "Текущий пароль родителя",
@@ -1021,12 +1135,12 @@
       personalizeHint: "Облачная видеотека, локальная загрузка и обои по умолчанию",
       introVideoTitle: "Видео начала теста",
       introVideoHint: "Хранится только на этом ТВ; не загружается в облако",
-      introVideoLimit: "MP4 16:9 (H.264) · ≤15 с / ≤4 МБ · до 6 загруженных видео / 24 МБ",
+      introVideoLimit: "MP4/MOV 16:9 · H.264/H.265 и др. (нужен декодер ТВ) · ≤15 с / ≤4 МБ · до 6 загруженных видео / 24 МБ",
       introVideoBuiltin: "Встроенное вступление",
       introVideoActive: "Используется",
       introVideoSetActive: "Сделать вступлением теста",
       introVideoRestore: "Вернуть встроенное вступление",
-      introVideoUpload: "Загрузить видео",
+      introVideoUpload: "Загрузить видео или изображение",
       introVideoUploading: "Загрузка…",
       introVideoEmpty: "Загруженных видео пока нет",
       introVideoDelete: "Удалить",
@@ -1038,43 +1152,52 @@
       introVideoUploaded: "Видео загружено. Нажмите «Сделать вступлением теста».",
       introVideoTooLarge: "Видео больше 4 МБ; сожмите его и повторите",
       introVideoBadDuration: "Видео длиннее 15 секунд; сократите его",
-      introVideoBadFormat: "Поддерживаются только MP4 16:9 с кодеком H.264",
+      introVideoBadFormat: "Поддерживаются только изображения JPG/PNG/WebP или видео MP4/MOV 16:9 с кодеком, который декодирует этот ТВ",
       introVideoInvalid: "Видео не читается или формат не поддерживается",
-      introVideoFull: "Видеотека загруженных видео заполнена (до 6 видео / 24 МБ); сначала удалите одно",
+      introVideoFull: "Библиотека загрузок заполнена (до 6 элементов / 24 МБ); сначала удалите один",
       introVideoNoSpace: "На ТВ недостаточно места",
       introVideoMeta: "{size} МБ · {seconds} с · {width}×{height}",
       introVideoListTitle: "Видеотека",
       introVideoUploadHint: "Можно выбрать несколько видео сразу. После загрузки нажмите «Использовать».",
       introVideoUploadProgress: "Загрузка {index}/{total}: {name} · {percent}%",
-      introVideoBatchDone: "Загружено видео: {added}",
-      introVideoBatchFailed: "Не загружено видео: {failed}. Причина: {reason}",
-      introVideoBatchFull: "В видеотеке помещается {max} видео; в этот раз загружено {n}",
+      introVideoBatchDone: "Загружено обоев: {added}",
+      introVideoBatchFailed: "Не загружено элементов: {failed}. Причина: {reason}",
+      introVideoBatchFull: "В библиотеке помещается {max} элементов; в этот раз загружено {n}",
       introVideoUse: "Использовать",
-      introVideoHevc: "Это видео H.265/HEVC; ТВ поддерживает только H.264. Преобразуйте его в H.264 и повторите.",
+      introVideoHevc: "Этот ТВ не может декодировать H.265/HEVC; преобразуйте видео в H.264 и повторите.",
+      introVideoUnsupportedCodec: "Этот ТВ не может декодировать этот видеокодек; преобразуйте видео в H.264 и повторите.",
       mediaPageTitle: "Обои детского режима",
-      mediaCurrentTitle: "Модули",
+      mediaCurrentTitle: "Текущий выбор",
       mediaModulesNote: "Не влияют друг на друга",
       mediaRoleQuiz: "Обои теста",
       mediaRoleLock: "Обои детского режима",
       mediaRoleBoth: "Оба",
-      mediaRoleQuizHint: "Играет при запуске теста",
-      mediaRoleLockHint: "Без звука повторяется на экране блокировки режима самодисциплины",
+      mediaRoleQuizHint: "Показывается при запуске теста",
+      mediaRoleLockHint: "Показывается на экране блокировки детского режима и на рабочем столе самодисциплины; видео повторяется без звука",
       mediaRoleLabel: "Где использовать",
-      mediaSourceDefault: "Обои Aerial по умолчанию",
-      mediaSourceOfficial: "Облачная видеотека",
+      mediaSourceDefault: "Обои детского режима по умолчанию",
+      mediaSourceOfficial: "Облачная библиотека",
       mediaSourceLocal: "Локальная загрузка",
+      mediaKindVideo: "Видео",
+      mediaKindImage: "Изображение",
+      mediaKindTabsLabel: "Тип обоев",
+      mediaSourceTabsLabel: "Источник обоев",
+      mediaMetaImage: "{size} МБ · {width}×{height}",
+      mediaDefaultBadge: "По умолчанию",
+      mediaImageRoleNote: "Изображения можно использовать только как обои детского режима, но не как вступление теста.",
+      mediaIsolationNote: "Пока ничего не выбрано, используются обои детского режима по умолчанию. В родительском режиме всегда остаются обои Aerial.",
       mediaChoose: "Выбрать",
       mediaChange: "Заменить",
       mediaCustomized: "Настроено",
       mediaTabCloud: "Облако",
       mediaTabLocal: "Локальные",
-      mediaOfficialHint: "↓ — скачать · ✓ — загружено; до 8 видео — сначала удалите одно, чтобы скачать новое.",
-      mediaEmpty: "В видеотеке пока нет видео",
-      mediaCatalogOff: "Облачная видеотека не настроена в этой сборке",
-      mediaCatalogUnavailable: "Облачная видеотека недоступна. Локальные видео и обои Aerial по умолчанию по-прежнему работают.",
-      mediaRefresh: "Обновить видеотеку",
+      mediaOfficialHint: "↓ — скачать · ✓ — загружено; до 8 элементов — сначала удалите один, чтобы скачать новый.",
+      mediaEmpty: "В библиотеке пока нет обоев",
+      mediaCatalogOff: "Облачная библиотека не настроена в этой сборке",
+      mediaCatalogUnavailable: "Облачная библиотека недоступна. Локальная загрузка и обои детского режима по умолчанию по-прежнему работают.",
+      mediaRefresh: "Обновить библиотеку",
       mediaRefreshing: "Обновление…",
-      mediaLoading: "Чтение видеотеки ТВ…",
+      mediaLoading: "Чтение библиотеки ТВ…",
       mediaStateNotDownloaded: "Не загружено",
       mediaStateDownloading: "Загрузка {percent}%",
       mediaStateVerifying: "Проверка…",
@@ -1083,16 +1206,18 @@
       mediaStateFailed: "Ошибка загрузки",
       mediaStateUpdate: "Есть обновление",
       mediaMeta: "{duration} · {size} МБ · {width}×{height}",
-      mediaPreviewHint: "Здесь показана только обложка; видео воспроизводится на телевизоре после загрузки.",
-      mediaDownloadHint: "Скачайте видео, чтобы использовать его как обои теста или обои детского режима.",
-      mediaDownload: "Скачать это видео",
-      mediaDownloadedHint: "Загружено. Выберите в разделе «Модули» выше.",
-      mediaLocalReadyHint: "Загружено с телефона. Выберите в разделе «Модули» выше.",
-      mediaDownloadDone: "Загружено. Выберите в разделе «Модули».",
+      mediaPreviewHint: "Здесь показана только обложка; видео воспроизводится на телевизоре после загрузки, изображения становятся статичными обоями.",
+      mediaDownloadHint: "Скачайте, чтобы использовать как вступление теста или обои детского режима.",
+      mediaDownload: "Скачать эти обои",
+      mediaDownloadedHint: "Загружено. Выберите в разделе «Текущий выбор» выше.",
+      mediaLocalReadyHint: "Загружено с телефона. Выберите в разделе «Текущий выбор» выше.",
+      mediaDownloadDone: "Загружено. Выберите в разделе «Текущий выбор».",
       mediaPickerTitle: "Выберите {module}",
       mediaPickerHint: "Изменяется только этот модуль.",
-      mediaPickerEmpty: "Загруженных видео пока нет",
-      mediaPickerGoLibrary: "Открыть облачную видеотеку",
+      mediaPickerHintQuiz: "Влияет только на вступление теста; здесь показаны только видео.",
+      mediaPickerEmpty: "Загруженных обоев пока нет",
+      mediaPickerEmptyVideo: "Пока нет загруженных видео.",
+      mediaPickerGoLibrary: "Открыть облачную библиотеку",
       mediaCurrentBadge: "Текущий",
       mediaRetryDownload: "Повторить загрузку",
       mediaUpdateLocal: "Обновить локальную копию",
@@ -1105,32 +1230,39 @@
       mediaInUse: "Используется",
       mediaManage: "Управление",
       mediaCancelDownload: "Отменить загрузку",
-      mediaRestoreDefault: "Вернуть обои Aerial по умолчанию",
-      mediaRestoreTitle: "Вернуть обои Aerial по умолчанию?",
-      mediaRestoreText: "Все роли, использующие это видео, вернутся к обоям Aerial по умолчанию. Видеофайл сохраняется.",
-      mediaRestoreDone: "Обои Aerial по умолчанию восстановлены",
+      mediaRestoreDefault: "Вернуть обои детского режима по умолчанию",
+      mediaRestoreTitle: "Вернуть обои детского режима по умолчанию?",
+      mediaRestoreText: "После очистки используются обои детского режима по умолчанию; обои Aerial в родительском режиме не меняются.",
+      mediaRestoreDone: "Обои детского режима по умолчанию восстановлены",
       mediaDeleteLocal: "Удалить локальный файл",
-      mediaDeleteUpload: "Удалить загруженное видео",
-      mediaDeleteTitle: "Удалить это видео?",
-      mediaDeleteText: "Файл будет удалён с ТВ. Если он используется, вернутся обои Aerial по умолчанию.",
-      mediaDeleted: "Видео удалено",
-      mediaSelected: "Настройки видео обновлены",
+      mediaDeleteUpload: "Удалить загруженное",
+      mediaDeleteTitle: "Удалить эти обои?",
+      mediaDeleteText: "Локальная копия будет удалена; роли, использующие её, вернутся к обоям детского режима по умолчанию. Запись в облачной библиотеке не удаляется.",
+      mediaDeleted: "Обои удалены",
+      mediaSelected: "Настройки обоев обновлены",
       mediaDownloadStarted: "Загрузка началась",
       mediaDownloading: "Загрузка…",
       mediaCancelled: "Загрузка отменена",
-      mediaNotFound: "Видео не найдено или больше недоступно",
-      mediaNotReady: "Видео ещё не загружено",
-      mediaBusy: "Загружается другое видео; повторите позже",
-      mediaRoleInvalid: "Видео нельзя использовать для выбранной роли",
-      mediaLibraryFull: "Загружено 8 видео; сначала удалите одно, чтобы скачать новое",
+      mediaNotFound: "Обои не найдены или больше недоступны",
+      mediaNotReady: "Обои ещё не загружены",
+      mediaBusy: "Загружаются другие обои; повторите позже",
+      mediaRoleInvalid: "Обои нельзя использовать для выбранной роли",
+      mediaLibraryFull: "Загружено 8 элементов; сначала удалите один, чтобы скачать новый",
       mediaNoSpace: "На ТВ недостаточно места",
       mediaDeleteFailed: "Не удалось удалить; повторите",
       mediaDownloadFailed: "Ошибка загрузки; проверьте сеть ТВ и повторите",
       mediaLocalHint: "Хранится только на ТВ; не загружается в облако",
-      mediaLocalEmpty: "Загруженных видео пока нет",
-      mediaUploadHint: "MP4 16:9 (H.264) · ≤15 с / ≤4 МБ · до 6 видео / 24 МБ",
-      mediaLimit: "Облачная видеотека: до 8 загрузок (по количеству) · Локально: до 6. Если места нет, сначала удалите скачанное видео, чтобы не переполнить ТВ.",
-      mediaSingleTimingNote: "Разовый таймер использует видео режима самодисциплины",
+      mediaLocalEmpty: "Загруженных обоев пока нет",
+      mediaUploadHint: "JPG/PNG/WebP ≤12 МБ; или MP4/MOV 16:9 ≤15 с / ≤4 МБ (нужен декодер ТВ) · до 6 элементов / 24 МБ",
+      mediaLimit: "Облачная библиотека: до 8 загрузок (изображения и видео вместе) · Локально: до 6. Если места нет, сначала удалите один элемент.",
+      mediaTimingLead: "Разовый таймер",
+      mediaSingleTimingNote: "использует обои детского режима",
+      mediaReadonly: "Только чтение",
+      mediaImageTooLarge: "Изображение больше 12 МБ; сожмите его и повторите.",
+      mediaImageBadFormat: "Поддерживаются только изображения JPG/PNG/WebP.",
+      mediaImageInvalid: "Изображение не читается или формат не поддерживается.",
+      mediaBadFormat: "Формат файла не поддерживается.",
+      mediaTooLarge: "Файл слишком большой.",
       remoteQrAlt: "QR-код привязки удалённого управления",
       featureUnavailable: "В этой сборке веб-центр родителей не включён",
       openFailed: "Центр родителей сейчас недоступен"
@@ -1217,7 +1349,8 @@
       sourceEntries: "Пункти джерел",
       sourceHint: "Змінює лише пункти на головному екрані, це не блокування",
       quizChallenge: "Тести",
-      quizHint: "Правильні відповіді достроково завершують дитячий режим",
+      quizEntryVisible: "Показувати вхід у тести на екрані блокування",
+      quizEntryHint: "Якщо ввімкнено, значок тестів показується першим на екрані блокування. Вимкнення не заважає входити в тести із застосунків розваг.",
       quizManage: "Керування тестами",
       quizManageHint: "Питання й налаштування тестів — на сторінці тестів",
       quizPageQrTitle: "Скануйте, щоб відкрити сторінку тестів",
@@ -1243,9 +1376,6 @@
       sensitivePinDefault: "Спочатку змініть початковий пароль батьків на телевізорі",
       sensitivePinExpired: "Підтвердження минуло; введіть пароль ще раз",
       sensitivePinRequired: "Спочатку підтвердьте пароль батьків",
-      confirmQuizOffTitle: "Вимкнути вікторину?",
-      confirmQuizOffBody: "Непочату вікторину буде видалено, і дитина більше не зможе заробляти час відповідями.",
-      confirmQuizOffAction: "Вимкнути",
       confirmAutoUpdateOffTitle: "Вимкнути автооновлення?",
       confirmAutoUpdateOffBody: "Телевізор перестане автоматично отримувати нові версії; оновлення доведеться встановлювати вручну.",
       confirmAutoUpdateOffAction: "Вимкнути",
@@ -1276,6 +1406,38 @@
       passwordSyncPending: "Синхронізація з хмарою",
       autoUpdate: "Автооновлення",
       autoUpdateHint: "Оновлювати автоматично, коли є нова версія",
+      softwareUpdate: "Оновлення ПЗ",
+      softwareUpdateHint: "Версія телевізора та оновлення, коли є нова",
+      updateCurrent: "Поточна версія",
+      updateNotChecked: "Ще не перевірено",
+      updateChecking: "Перевірка оновлень…",
+      updateLatest: "Установлено останню версію",
+      updateFound: "Доступна нова версія {version}",
+      updateCheckFailed: "Не вдалося перевірити; переконайтеся, що ТБ у мережі",
+      updateCheckAction: "Перевірити оновлення",
+      updateInstallAction: "Завантажити й установити",
+      updateDownloading: "Завантаження {percent}%",
+      updateWaiting: "Очікування підтвердження системи…",
+      updateOpened: "Відкрито системний інсталятор; підтвердьте на ТБ",
+      updateNeedsPermission: "Дозвольте встановлення програм на ТБ і повторіть",
+      updateNeedsStoragePermission: "Дозвольте доступ до пам’яті на ТБ і повторіть",
+      updateFailedDownload: "Помилка завантаження; повторіть пізніше",
+      updateFailedBlocked: "Система відхилила встановлення; оновіть вручну на ТБ",
+      updateFailedNotOfficial: "Пакет не відповідає програмі; завантажте з офіційного сайту",
+      updateFailedNotNewer: "Пакет не новіший за поточну версію; повторіть пізніше",
+      updateConfirmTitle: "Оновити телевізор?",
+      updateConfirmText: "ТБ завантажить і встановить нову версію. Під час встановлення він може перезавантажитися, а перегляд перерветься.",
+      updateConfirmAction: "Оновити",
+      updateAutoReady: "Нову версію завантажено, її буде встановлено автоматично; можна встановити зараз",
+      updateAutoDownloading: "Автооновлення завантажує нову версію",
+      updateAutoFailedDownload: "Автооновлення не змогло завантажити; оновіть вручну",
+      updateAutoFailedInstall: "Автовстановлення не завершилося; оновіть вручну",
+      updateAutoUnsupported: "На цьому ТБ потрібне ручне підтвердження; автовстановлення недоступне",
+      updateAutoPermission: "ТБ ще не дозволяє встановлення програм; автооновлення призупинено",
+      updateNotes: "Що нового",
+      updateClose: "Закрити",
+      updateUnavailable: "Ця копія не може встановлювати оновлення; завантажте з офіційного сайту",
+      updateBusy: "Оновлення вже виконується; зачекайте",
       remoteManagement: "Віддалене керування",
       notBound: "Не прив’язано",
       bound: "Прив’язано",
@@ -1300,10 +1462,6 @@
       childEnableLead: "Дитячий режим охороняє телевізор за вашими правилами часу. Спершу задайте пароль батьків.",
       childSetupPinTitle: "Задайте пароль батьків",
       childSetupPinLead: "Для першого ввімкнення потрібен 6-значний пароль. Він зберігається лише на ТБ; запам’ятайте його.",
-      autoConsentTitle: "Увімкнути автооновлення",
-      autoConsentText: "Під час першого ввімкнення дитячого режиму автооновлення допомагає отримувати виправлення. Дитячий режим працює й без нього.",
-      autoConsentAccept: "Дозволити й продовжити",
-      autoConsentCancel: "Не зараз",
       newPin: "Новий 6-значний пароль",
       confirmPin: "Повторіть пароль",
       currentPin: "Поточний пароль батьків",
@@ -1391,12 +1549,12 @@
       personalizeHint: "Хмарна відеотека, локальне завантаження та типові шпалери",
       introVideoTitle: "Відео початку тесту",
       introVideoHint: "Зберігається лише на цьому ТБ; не завантажується в хмару",
-      introVideoLimit: "MP4 16:9 (H.264) · ≤15 с / ≤4 МБ · до 6 завантажених відео / 24 МБ",
+      introVideoLimit: "MP4/MOV 16:9 · H.264/H.265 та ін. (потрібен декодер ТБ) · ≤15 с / ≤4 МБ · до 6 завантажених відео / 24 МБ",
       introVideoBuiltin: "Вбудований вступ",
       introVideoActive: "Використовується",
       introVideoSetActive: "Зробити вступом тесту",
       introVideoRestore: "Повернути вбудований вступ",
-      introVideoUpload: "Завантажити відео",
+      introVideoUpload: "Завантажити відео або зображення",
       introVideoUploading: "Завантаження…",
       introVideoEmpty: "Завантажених відео ще немає",
       introVideoDelete: "Видалити",
@@ -1408,43 +1566,52 @@
       introVideoUploaded: "Відео завантажено. Натисніть «Зробити вступом тесту».",
       introVideoTooLarge: "Відео більше 4 МБ; стисніть його й повторіть",
       introVideoBadDuration: "Відео довше 15 секунд; скоротіть його",
-      introVideoBadFormat: "Підтримуються лише MP4 16:9 з кодеком H.264",
+      introVideoBadFormat: "Підтримуються лише зображення JPG/PNG/WebP або відео MP4/MOV 16:9 з кодеком, який декодує цей ТБ",
       introVideoInvalid: "Відео не читається або формат не підтримується",
-      introVideoFull: "Бібліотека завантажених відео заповнена (до 6 відео / 24 МБ); спершу видаліть одне",
+      introVideoFull: "Бібліотека завантажень заповнена (до 6 елементів / 24 МБ); спершу видаліть один",
       introVideoNoSpace: "На ТБ недостатньо місця",
       introVideoMeta: "{size} МБ · {seconds} с · {width}×{height}",
       introVideoListTitle: "Відеотека",
       introVideoUploadHint: "Можна вибрати кілька відео одразу. Після завантаження натисніть «Використати».",
       introVideoUploadProgress: "Завантаження {index}/{total}: {name} · {percent}%",
-      introVideoBatchDone: "Завантажено відео: {added}",
-      introVideoBatchFailed: "Не завантажено відео: {failed}. Причина: {reason}",
-      introVideoBatchFull: "У відеотеці вміщується {max} відео; цього разу завантажено {n}",
+      introVideoBatchDone: "Завантажено шпалер: {added}",
+      introVideoBatchFailed: "Не завантажено елементів: {failed}. Причина: {reason}",
+      introVideoBatchFull: "У бібліотеці вміщується {max} елементів; цього разу завантажено {n}",
       introVideoUse: "Використати",
-      introVideoHevc: "Це відео H.265/HEVC; ТБ підтримує лише H.264. Перетворіть його на H.264 і повторіть.",
+      introVideoHevc: "Цей ТБ не може декодувати H.265/HEVC; перетворіть відео на H.264 і повторіть.",
+      introVideoUnsupportedCodec: "Цей ТБ не може декодувати цей відеокодек; перетворіть відео на H.264 і повторіть.",
       mediaPageTitle: "Шпалери дитячого режиму",
-      mediaCurrentTitle: "Модулі",
+      mediaCurrentTitle: "Поточний вибір",
       mediaModulesNote: "Не впливають одне на одного",
       mediaRoleQuiz: "Шпалери тесту",
       mediaRoleLock: "Шпалери дитячого режиму",
       mediaRoleBoth: "Обидва",
-      mediaRoleQuizHint: "Відтворюється на початку тесту",
-      mediaRoleLockHint: "Без звуку повторюється на екрані блокування режиму самодисципліни",
+      mediaRoleQuizHint: "Показується на початку тесту",
+      mediaRoleLockHint: "Показується на екрані блокування дитячого режиму та на робочому столі самодисципліни; відео повторюється без звуку",
       mediaRoleLabel: "Де використовувати",
-      mediaSourceDefault: "Типові шпалери Aerial",
-      mediaSourceOfficial: "Хмарна відеотека",
+      mediaSourceDefault: "Типові шпалери дитячого режиму",
+      mediaSourceOfficial: "Хмарна бібліотека",
       mediaSourceLocal: "Локальне завантаження",
+      mediaKindVideo: "Відео",
+      mediaKindImage: "Зображення",
+      mediaKindTabsLabel: "Тип шпалер",
+      mediaSourceTabsLabel: "Джерело шпалер",
+      mediaMetaImage: "{size} МБ · {width}×{height}",
+      mediaDefaultBadge: "Типове",
+      mediaImageRoleNote: "Зображення можна використовувати лише як шпалери дитячого режиму, але не як вступ тесту.",
+      mediaIsolationNote: "Доки нічого не вибрано, використовуються типові шпалери дитячого режиму. У батьківському режимі завжди залишаються шпалери Aerial.",
       mediaChoose: "Вибрати",
       mediaChange: "Замінити",
       mediaCustomized: "Налаштовано",
       mediaTabCloud: "Хмара",
       mediaTabLocal: "Локальні",
-      mediaOfficialHint: "↓ — завантажити · ✓ — завантажено; до 8 відео — спершу видаліть одне, щоб завантажити нове.",
-      mediaEmpty: "У відеотеці ще немає відео",
-      mediaCatalogOff: "Хмарна відеотека не налаштована в цій збірці",
-      mediaCatalogUnavailable: "Хмарна відеотека недоступна. Локальні відео та типові шпалери Aerial працюють далі.",
-      mediaRefresh: "Оновити відеотеку",
+      mediaOfficialHint: "↓ — завантажити · ✓ — завантажено; до 8 елементів — спершу видаліть один, щоб завантажити новий.",
+      mediaEmpty: "У бібліотеці ще немає шпалер",
+      mediaCatalogOff: "Хмарна бібліотека не налаштована в цій збірці",
+      mediaCatalogUnavailable: "Хмарна бібліотека недоступна. Локальне завантаження й типові шпалери дитячого режиму працюють далі.",
+      mediaRefresh: "Оновити бібліотеку",
       mediaRefreshing: "Оновлення…",
-      mediaLoading: "Читання відеотеки ТБ…",
+      mediaLoading: "Читання бібліотеки ТБ…",
       mediaStateNotDownloaded: "Не завантажено",
       mediaStateDownloading: "Завантаження {percent}%",
       mediaStateVerifying: "Перевірка…",
@@ -1453,16 +1620,18 @@
       mediaStateFailed: "Помилка завантаження",
       mediaStateUpdate: "Є оновлення",
       mediaMeta: "{duration} · {size} МБ · {width}×{height}",
-      mediaPreviewHint: "Тут показано лише обкладинку; відео відтворюється на телевізорі після завантаження.",
-      mediaDownloadHint: "Завантажте відео, щоб використовувати його як шпалери тесту або шпалери дитячого режиму.",
-      mediaDownload: "Завантажити це відео",
-      mediaDownloadedHint: "Завантажено. Виберіть у розділі «Модулі» вище.",
-      mediaLocalReadyHint: "Завантажено з телефона. Виберіть у розділі «Модулі» вище.",
-      mediaDownloadDone: "Завантажено. Виберіть у розділі «Модулі».",
+      mediaPreviewHint: "Тут показано лише обкладинку; відео відтворюється на телевізорі після завантаження, зображення стають статичними шпалерами.",
+      mediaDownloadHint: "Завантажте, щоб використовувати як вступ тесту або шпалери дитячого режиму.",
+      mediaDownload: "Завантажити ці шпалери",
+      mediaDownloadedHint: "Завантажено. Виберіть у розділі «Поточний вибір» вище.",
+      mediaLocalReadyHint: "Завантажено з телефона. Виберіть у розділі «Поточний вибір» вище.",
+      mediaDownloadDone: "Завантажено. Виберіть у розділі «Поточний вибір».",
       mediaPickerTitle: "Виберіть {module}",
       mediaPickerHint: "Змінюється лише цей модуль.",
-      mediaPickerEmpty: "Завантажених відео ще немає",
-      mediaPickerGoLibrary: "Відкрити хмарну відеотеку",
+      mediaPickerHintQuiz: "Впливає лише на вступ тесту; тут показано лише відео.",
+      mediaPickerEmpty: "Завантажених шпалер ще немає",
+      mediaPickerEmptyVideo: "Ще немає завантажених відео.",
+      mediaPickerGoLibrary: "Відкрити хмарну бібліотеку",
       mediaCurrentBadge: "Поточний",
       mediaRetryDownload: "Повторити завантаження",
       mediaUpdateLocal: "Оновити локальну копію",
@@ -1475,32 +1644,39 @@
       mediaInUse: "Використовується",
       mediaManage: "Керування",
       mediaCancelDownload: "Скасувати завантаження",
-      mediaRestoreDefault: "Повернути типові шпалери Aerial",
-      mediaRestoreTitle: "Повернути типові шпалери Aerial?",
-      mediaRestoreText: "Усі ролі, що використовують це відео, повернуться до типових шпалер Aerial. Відеофайл зберігається.",
-      mediaRestoreDone: "Типові шпалери Aerial відновлено",
+      mediaRestoreDefault: "Повернути типові шпалери дитячого режиму",
+      mediaRestoreTitle: "Повернути типові шпалери дитячого режиму?",
+      mediaRestoreText: "Після очищення використовуються типові шпалери дитячого режиму; шпалери Aerial у батьківському режимі не змінюються.",
+      mediaRestoreDone: "Типові шпалери дитячого режиму відновлено",
       mediaDeleteLocal: "Видалити локальний файл",
-      mediaDeleteUpload: "Видалити завантажене відео",
-      mediaDeleteTitle: "Видалити це відео?",
-      mediaDeleteText: "Файл буде видалено з ТБ. Якщо він використовується, повернуться типові шпалери Aerial.",
-      mediaDeleted: "Відео видалено",
-      mediaSelected: "Налаштування відео оновлено",
+      mediaDeleteUpload: "Видалити завантажене",
+      mediaDeleteTitle: "Видалити ці шпалери?",
+      mediaDeleteText: "Локальну копію буде видалено; ролі, що її використовують, повернуться до типових шпалер дитячого режиму. Запис у хмарній бібліотеці не видаляється.",
+      mediaDeleted: "Шпалери видалено",
+      mediaSelected: "Налаштування шпалер оновлено",
       mediaDownloadStarted: "Завантаження почалося",
       mediaDownloading: "Завантаження…",
       mediaCancelled: "Завантаження скасовано",
-      mediaNotFound: "Відео відсутнє або більше недоступне",
-      mediaNotReady: "Відео ще не завантажено",
-      mediaBusy: "Завантажується інше відео; повторіть пізніше",
-      mediaRoleInvalid: "Відео не можна використати для вибраної ролі",
-      mediaLibraryFull: "Завантажено 8 відео; спершу видаліть одне, щоб завантажити нове",
+      mediaNotFound: "Шпалери відсутні або більше недоступні",
+      mediaNotReady: "Шпалери ще не завантажено",
+      mediaBusy: "Завантажуються інші шпалери; повторіть пізніше",
+      mediaRoleInvalid: "Шпалери не можна використати для вибраної ролі",
+      mediaLibraryFull: "Завантажено 8 елементів; спершу видаліть один, щоб завантажити новий",
       mediaNoSpace: "На ТБ недостатньо місця",
       mediaDeleteFailed: "Не вдалося видалити; повторіть",
       mediaDownloadFailed: "Помилка завантаження; перевірте мережу ТБ і повторіть",
       mediaLocalHint: "Зберігається лише на ТБ; не завантажується в хмару",
-      mediaLocalEmpty: "Завантажених відео ще немає",
-      mediaUploadHint: "MP4 16:9 (H.264) · ≤15 с / ≤4 МБ · до 6 відео / 24 МБ",
-      mediaLimit: "Хмарна відеотека: до 8 завантажень (за кількістю) · Локально: до 6. Якщо місця немає, спершу видаліть завантажене відео, щоб не переповнити ТБ.",
-      mediaSingleTimingNote: "Разовий таймер використовує відео режиму самодисципліни",
+      mediaLocalEmpty: "Завантажених шпалер ще немає",
+      mediaUploadHint: "JPG/PNG/WebP ≤12 МБ; або MP4/MOV 16:9 ≤15 с / ≤4 МБ (потрібен декодер ТБ) · до 6 елементів / 24 МБ",
+      mediaLimit: "Хмарна бібліотека: до 8 завантажень (зображення й відео разом) · Локально: до 6. Якщо місця немає, спершу видаліть один елемент.",
+      mediaTimingLead: "Разовий таймер",
+      mediaSingleTimingNote: "використовує шпалери дитячого режиму",
+      mediaReadonly: "Лише читання",
+      mediaImageTooLarge: "Зображення більше 12 МБ; стисніть його й повторіть.",
+      mediaImageBadFormat: "Підтримуються лише зображення JPG/PNG/WebP.",
+      mediaImageInvalid: "Зображення не читається або формат не підтримується.",
+      mediaBadFormat: "Формат файлу не підтримується.",
+      mediaTooLarge: "Файл завеликий.",
       remoteQrAlt: "QR-код прив’язки віддаленого керування",
       featureUnavailable: "У цій збірці веб-центр батьків не ввімкнено",
       openFailed: "Центр батьків зараз недоступний"
@@ -1587,7 +1763,8 @@
       sourceEntries: "Дереккөз жазбалары",
       sourceHint: "Тек басты экрандағы жазбаларды өзгертеді, бұл құлып емес",
       quizChallenge: "Тесттер",
-      quizHint: "Дұрыс жауаптар бала режимін мерзімінен бұрын аяқтайды",
+      quizEntryVisible: "Құлып экранында тест кірісін көрсету",
+      quizEntryHint: "Қосулы болса, тест белгішесі құлып экранында бірінші көрсетіледі. Өшіру ойын-сауық қолданбаларынан тестке кіруге әсер етпейді.",
       quizManage: "Тесттерді басқару",
       quizManageHint: "Сұрақтар мен тест баптаулары тест бетінде",
       quizPageQrTitle: "Тест бетін ашу үшін сканерлеңіз",
@@ -1613,9 +1790,6 @@
       sensitivePinDefault: "Алдымен теледидарда бастапқы ата-ана құпиясөзін өзгертіңіз",
       sensitivePinExpired: "Растау мерзімі бітті; құпиясөзді қайта енгізіңіз",
       sensitivePinRequired: "Алдымен ата-ана құпиясөзін растаңыз",
-      confirmQuizOffTitle: "Викторинаны өшіру керек пе?",
-      confirmQuizOffBody: "Басталмаған викторина жойылады және бала жауап беру арқылы уақыт жинай алмайды.",
-      confirmQuizOffAction: "Өшіру",
       confirmAutoUpdateOffTitle: "Автоматты жаңартуды өшіру керек пе?",
       confirmAutoUpdateOffBody: "Теледидар жаңа нұсқаларды автоматты түрде алмайды; жаңартуды қолмен орнату қажет.",
       confirmAutoUpdateOffAction: "Өшіру",
@@ -1646,6 +1820,38 @@
       passwordSyncPending: "Бұлтпен синхрондалуда",
       autoUpdate: "Автоматты жаңарту",
       autoUpdateHint: "Жаңа нұсқа шыққанда автоматты түрде жаңарту",
+      softwareUpdate: "Бағдарламалық жаңарту",
+      softwareUpdateHint: "Теледидар нұсқасын көру және жаңа нұсқа болса жаңарту",
+      updateCurrent: "Ағымдағы нұсқа",
+      updateNotChecked: "Әзірге тексерілмеген",
+      updateChecking: "Жаңартулар тексерілуде…",
+      updateLatest: "Соңғы нұсқа орнатылған",
+      updateFound: "Жаңа нұсқа қолжетімді: {version}",
+      updateCheckFailed: "Тексеру сәтсіз; теледидардың желіде екенін растаңыз",
+      updateCheckAction: "Жаңартуды тексеру",
+      updateInstallAction: "Жүктеп, орнату",
+      updateDownloading: "Жүктелуде {percent}%",
+      updateWaiting: "Жүйенің растауы күтілуде…",
+      updateOpened: "Жүйелік орнатушы ашылды; теледидарда растаңыз",
+      updateNeedsPermission: "Теледидарда қолданба орнатуға рұқсат беріп, қайталаңыз",
+      updateNeedsStoragePermission: "Теледидарда жадыға рұқсат беріп, қайталаңыз",
+      updateFailedDownload: "Жүктеу сәтсіз; кейінірек қайталаңыз",
+      updateFailedBlocked: "Жүйе орнатудан бас тартты; теледидарда қолмен жаңартыңыз",
+      updateFailedNotOfficial: "Бума қолданбаға сәйкес емес; ресми сайттан жүктеңіз",
+      updateFailedNotNewer: "Бума ағымдағы нұсқадан жаңа емес; кейінірек қайталаңыз",
+      updateConfirmTitle: "Теледидарды жаңарту керек пе?",
+      updateConfirmText: "Теледидар жаңа нұсқаны жүктеп орнатады. Орнату кезінде ол қайта іске қосылып, қазіргі көрініс үзілуі мүмкін.",
+      updateConfirmAction: "Жаңарту",
+      updateAutoReady: "Жаңа нұсқа жүктелді, автоматты түрде орнатылады; қазір де орнатуға болады",
+      updateAutoDownloading: "Автоматты жаңарту жаңа нұсқаны жүктеуде",
+      updateAutoFailedDownload: "Автоматты жаңарту жүктей алмады; қолмен жаңартыңыз",
+      updateAutoFailedInstall: "Автоматты орнату аяқталмады; қолмен жаңартыңыз",
+      updateAutoUnsupported: "Бұл теледидарда қолмен растау қажет; автоматты орнату қолжетімсіз",
+      updateAutoPermission: "Теледидар әзірге қолданба орнатуға рұқсат бермейді; автоматты жаңарту тоқтатылды",
+      updateNotes: "Не жаңарды",
+      updateClose: "Жабу",
+      updateUnavailable: "Бұл көшірме жаңартуларды орната алмайды; ресми сайттан жүктеңіз",
+      updateBusy: "Жаңарту жүріп жатыр; күте тұрыңыз",
       remoteManagement: "Қашықтан басқару",
       notBound: "Байланбаған",
       bound: "Байланған",
@@ -1670,10 +1876,6 @@
       childEnableLead: "Балалар режимі теледидарды сіздің уақыт ережелеріңізбен қорғайды. Алдымен ата-ана құпиясөзін орнатыңыз.",
       childSetupPinTitle: "Ата-ана құпиясөзін орнату",
       childSetupPinLead: "Алғаш қосу үшін 6 таңбалы құпиясөз керек. Ол тек ТВ-де сақталады; оны есте сақтаңыз.",
-      autoConsentTitle: "Автоматты жаңартуды қосу",
-      autoConsentText: "Балалар режимін алғаш қосқанда автоматты жаңарту қорғаныс түзетулерін алуға көмектеседі. Онсыз да балалар режимін қолдануға болады.",
-      autoConsentAccept: "Рұқсат етіп, жалғастыру",
-      autoConsentCancel: "Қазір емес",
       newPin: "Жаңа 6 таңбалы құпиясөз",
       confirmPin: "Құпиясөзді қайталаңыз",
       currentPin: "Ағымдағы ата-ана құпиясөзі",
@@ -1761,12 +1963,12 @@
       personalizeHint: "Бұлттық бейнекітапша, жергілікті жүктеу және әдепкі тұсқағаз",
       introVideoTitle: "Тест басталу бейнесі",
       introVideoHint: "Тек осы ТВ-де сақталады; бұлтқа жүктелмейді",
-      introVideoLimit: "16:9 MP4 (H.264) · ≤15 с / ≤4 МБ · жүктелген 6 бейнеге / 24 МБ-қа дейін",
+      introVideoLimit: "16:9 MP4/MOV · H.264/H.265 және т.б. (ТВ декодері қажет) · ≤15 с / ≤4 МБ · жүктелген 6 бейнеге / 24 МБ-қа дейін",
       introVideoBuiltin: "Кірістірілген кіріспе",
       introVideoActive: "Қолданылуда",
       introVideoSetActive: "Тест кіріспесі ретінде қою",
       introVideoRestore: "Кірістірілген кіріспені қайтару",
-      introVideoUpload: "Бейне жүктеу",
+      introVideoUpload: "Бейне немесе сурет жүктеу",
       introVideoUploading: "Жүктелуде…",
       introVideoEmpty: "Әзірге жүктелген бейне жоқ",
       introVideoDelete: "Жою",
@@ -1778,43 +1980,52 @@
       introVideoUploaded: "Бейне жүктелді. Пайдалану үшін «Тест кіріспесі ретінде қою» түймесін басыңыз.",
       introVideoTooLarge: "Бейне 4 МБ-тан үлкен; оны сығымдап, қайталаңыз",
       introVideoBadDuration: "Бейне 15 секундтан ұзын; оны қысқартыңыз",
-      introVideoBadFormat: "Тек 16:9, H.264 кодекті MP4 бейнелері қолданылады",
+      introVideoBadFormat: "Тек JPG/PNG/WebP суреттері немесе 16:9 MP4/MOV бейнелері қолданылады; бұл ТВ бейне кодын декодтай алуы керек",
       introVideoInvalid: "Бейне оқылмайды немесе пішімі қолданылмайды",
-      introVideoFull: "Жүктелген бейнелер кітапшасы толды (6 бейнеге / 24 МБ-қа дейін); алдымен біреуін жойыңыз",
+      introVideoFull: "Жүктеу кітапханасы толды (6 элементке / 24 МБ-қа дейін); алдымен біреуін жойыңыз",
       introVideoNoSpace: "ТВ-де орын жеткіліксіз",
       introVideoMeta: "{size} МБ · {seconds} с · {width}×{height}",
       introVideoListTitle: "Бейнекітапша",
       introVideoUploadHint: "Бірнеше бейнені бірден таңдауға болады. Жүктегеннен кейін «Қолдану» түймесін басыңыз.",
       introVideoUploadProgress: "Жүктелуде {index}/{total}: {name} · {percent}%",
-      introVideoBatchDone: "{added} бейне жүктелді",
-      introVideoBatchFailed: "{failed} бейне жүктелмеді: {reason}",
-      introVideoBatchFull: "Бейнекітапшаға {max} бейне сыяды; бұл жолы {n} жүктелді",
+      introVideoBatchDone: "{added} тұсқағаз жүктелді",
+      introVideoBatchFailed: "{failed} элемент жүктелмеді: {reason}",
+      introVideoBatchFull: "Кітапханаға {max} элемент сыяды; бұл жолы {n} жүктелді",
       introVideoUse: "Қолдану",
-      introVideoHevc: "Бұл H.265/HEVC бейне; ТВ тек H.264 қолдайды. Оны H.264 етіп түрлендіріп, қайталаңыз.",
+      introVideoHevc: "Бұл ТВ H.265/HEVC декодтай алмайды; бейнені H.264 етіп түрлендіріп, қайталаңыз.",
+      introVideoUnsupportedCodec: "Бұл ТВ бұл бейне кодын декодтай алмайды; бейнені H.264 етіп түрлендіріп, қайталаңыз.",
       mediaPageTitle: "Бала режимінің тұсқағаздары",
-      mediaCurrentTitle: "Модульдер",
+      mediaCurrentTitle: "Ағымдағы таңдау",
       mediaModulesNote: "Бір-біріне әсер етпейді",
       mediaRoleQuiz: "Тест кіріспесі тұсқағазы",
       mediaRoleLock: "Бала режимінің тұсқағазы",
       mediaRoleBoth: "Екеуі де",
-      mediaRoleQuizHint: "Тест басталғанда ойнайды",
-      mediaRoleLockHint: "Өзіндік тәртіп режимінің құлып экранында дыбыссыз қайталанады",
+      mediaRoleQuizHint: "Тест басталғанда көрсетіледі",
+      mediaRoleLockHint: "Бала режимінің құлып экранында және өзіндік тәртіп жұмыс үстелінде көрсетіледі; бейне дыбыссыз қайталанады",
       mediaRoleLabel: "Қайда қолдану",
-      mediaSourceDefault: "Aerial әдепкі тұсқағазы",
-      mediaSourceOfficial: "Бұлттық бейнекітапша",
+      mediaSourceDefault: "Бала режимінің әдепкі тұсқағазы",
+      mediaSourceOfficial: "Бұлттық кітапхана",
       mediaSourceLocal: "Жергілікті жүктеу",
+      mediaKindVideo: "Бейне",
+      mediaKindImage: "Сурет",
+      mediaKindTabsLabel: "Тұсқағаз түрі",
+      mediaSourceTabsLabel: "Тұсқағаз көзі",
+      mediaMetaImage: "{size} МБ · {width}×{height}",
+      mediaDefaultBadge: "Әдепкі",
+      mediaImageRoleNote: "Суретті тек бала режимінің тұсқағазы ретінде қолдануға болады, тест кіріспесі ретінде емес.",
+      mediaIsolationNote: "Таңдалмағанша бала режимінің әдепкі тұсқағазы қолданылады. Ата-ана режимінде әрқашан Aerial тұсқағазы қалады.",
       mediaChoose: "Таңдау",
       mediaChange: "Ауыстыру",
       mediaCustomized: "Бапталған",
       mediaTabCloud: "Бұлт",
       mediaTabLocal: "Жергілікті",
-      mediaOfficialHint: "↓ — жүктеу · ✓ — жүктелді; 8 бейнеге дейін — жаңасын жүктеу үшін алдымен біреуін жойыңыз.",
-      mediaEmpty: "Бейнекітапшада әзірге бейне жоқ",
-      mediaCatalogOff: "Бұл жинақта бұлттық бейнекітапша бапталмаған",
-      mediaCatalogUnavailable: "Бұлттық бейнекітапша қолжетімсіз. Жергілікті бейнелер мен Aerial әдепкі тұсқағазы жұмысын жалғастырады.",
-      mediaRefresh: "Бейнекітапшаны жаңарту",
+      mediaOfficialHint: "↓ — жүктеу · ✓ — жүктелді; 8 элементке дейін — жаңасын жүктеу үшін алдымен біреуін жойыңыз.",
+      mediaEmpty: "Кітапханада әзірге тұсқағаз жоқ",
+      mediaCatalogOff: "Бұл жинақта бұлттық кітапхана бапталмаған",
+      mediaCatalogUnavailable: "Бұлттық кітапхана қолжетімсіз. Жергілікті жүктеу мен бала режимінің әдепкі тұсқағазы жұмысын жалғастырады.",
+      mediaRefresh: "Кітапхананы жаңарту",
       mediaRefreshing: "Жаңартылуда…",
-      mediaLoading: "ТВ бейнекітапшасы оқылуда…",
+      mediaLoading: "ТВ кітапханасы оқылуда…",
       mediaStateNotDownloaded: "Жүктелмеген",
       mediaStateDownloading: "Жүктелуде {percent}%",
       mediaStateVerifying: "Тексерілуде…",
@@ -1823,16 +2034,18 @@
       mediaStateFailed: "Жүктеу қатесі",
       mediaStateUpdate: "Жаңа нұсқа бар",
       mediaMeta: "{duration} · {size} МБ · {width}×{height}",
-      mediaPreviewHint: "Мұнда тек мұқаба көрсетіледі; бейне жүктелгеннен кейін теледидарда ойнатылады.",
-      mediaDownloadHint: "Бейнені тест тұсқағазы немесе бала режимінің тұсқағазы ретінде қолдану үшін жүктеңіз.",
-      mediaDownload: "Осы бейнені жүктеу",
-      mediaDownloadedHint: "Жүктелді. Жоғарыдағы «Модульдер» бөлімінде таңдаңыз.",
-      mediaLocalReadyHint: "Телефоннан жүктелді. Жоғарыдағы «Модульдер» бөлімінде таңдаңыз.",
-      mediaDownloadDone: "Жүктелді. «Модульдер» бөлімінде таңдаңыз.",
+      mediaPreviewHint: "Мұнда тек мұқаба көрсетіледі; бейне жүктелгеннен кейін теледидарда ойнатылады, суреттер статикалық тұсқағазға айналады.",
+      mediaDownloadHint: "Тест кіріспесі немесе бала режимінің тұсқағазы ретінде қолдану үшін жүктеңіз.",
+      mediaDownload: "Осы тұсқағазды жүктеу",
+      mediaDownloadedHint: "Жүктелді. Жоғарыдағы «Ағымдағы таңдау» бөлімінде таңдаңыз.",
+      mediaLocalReadyHint: "Телефоннан жүктелді. Жоғарыдағы «Ағымдағы таңдау» бөлімінде таңдаңыз.",
+      mediaDownloadDone: "Жүктелді. «Ағымдағы таңдау» бөлімінде таңдаңыз.",
       mediaPickerTitle: "{module} таңдаңыз",
       mediaPickerHint: "Тек осы модуль өзгереді.",
-      mediaPickerEmpty: "Әзірге жүктелген бейне жоқ",
-      mediaPickerGoLibrary: "Бұлттық бейнекітапшаны ашу",
+      mediaPickerHintQuiz: "Тек тест кіріспесіне әсер етеді; мұнда тек бейнелер көрсетіледі.",
+      mediaPickerEmpty: "Әзірге жүктелген тұсқағаз жоқ",
+      mediaPickerEmptyVideo: "Әзірге жүктелген бейне жоқ.",
+      mediaPickerGoLibrary: "Бұлттық кітапхананы ашу",
       mediaCurrentBadge: "Ағымдағы",
       mediaRetryDownload: "Жүктеуді қайталау",
       mediaUpdateLocal: "Жергілікті көшірмені жаңарту",
@@ -1845,32 +2058,39 @@
       mediaInUse: "Қолданылуда",
       mediaManage: "Басқару",
       mediaCancelDownload: "Жүктеуді тоқтату",
-      mediaRestoreDefault: "Aerial әдепкі тұсқағазын қайтару",
-      mediaRestoreTitle: "Aerial әдепкі тұсқағазын қайтару керек пе?",
-      mediaRestoreText: "Бұл бейнені қолданатын рөлдер Aerial әдепкі тұсқағазына оралады. Бейне файлы сақталады.",
-      mediaRestoreDone: "Aerial әдепкі тұсқағазы қайтарылды",
+      mediaRestoreDefault: "Бала режимінің әдепкі тұсқағазын қайтару",
+      mediaRestoreTitle: "Бала режимінің әдепкі тұсқағазын қайтару керек пе?",
+      mediaRestoreText: "Тазартқаннан кейін бала режимінің әдепкі тұсқағазы қолданылады; ата-ана режиміндегі Aerial тұсқағазы өзгермейді.",
+      mediaRestoreDone: "Бала режимінің әдепкі тұсқағазы қайтарылды",
       mediaDeleteLocal: "Жергілікті файлды жою",
       mediaDeleteUpload: "Жүктелгенді жою",
-      mediaDeleteTitle: "Осы бейнені жою керек пе?",
-      mediaDeleteText: "Файл ТВ-ден жойылады. Егер қолданылып жатса, Aerial әдепкі тұсқағазы қайтарылады.",
-      mediaDeleted: "Бейне жойылды",
-      mediaSelected: "Бейне параметрлері жаңартылды",
+      mediaDeleteTitle: "Осы тұсқағазды жою керек пе?",
+      mediaDeleteText: "Жергілікті көшірме жойылады; оны қолданатын рөлдер бала режимінің әдепкі тұсқағазына оралады. Бұлттық кітапхана жазбасы жойылмайды.",
+      mediaDeleted: "Тұсқағаз жойылды",
+      mediaSelected: "Тұсқағаз параметрлері жаңартылды",
       mediaDownloadStarted: "Жүктеу басталды",
       mediaDownloading: "Жүктелуде…",
       mediaCancelled: "Жүктеу тоқтатылды",
-      mediaNotFound: "Бейне табылмайды немесе енді қолжетімсіз",
-      mediaNotReady: "Бейне әлі жүктелмеген",
-      mediaBusy: "Басқа бейне жүктелуде; кейінірек қайталаңыз",
-      mediaRoleInvalid: "Бейнені таңдалған рөлге қолдану мүмкін емес",
-      mediaLibraryFull: "8 бейне жүктелді; тағысын жүктеу үшін алдымен біреуін жойыңыз",
+      mediaNotFound: "Тұсқағаз табылмайды немесе енді қолжетімсіз",
+      mediaNotReady: "Тұсқағаз әлі жүктелмеген",
+      mediaBusy: "Басқа тұсқағаз жүктелуде; кейінірек қайталаңыз",
+      mediaRoleInvalid: "Тұсқағазды таңдалған рөлге қолдану мүмкін емес",
+      mediaLibraryFull: "8 элемент жүктелді; тағысын жүктеу үшін алдымен біреуін жойыңыз",
       mediaNoSpace: "ТВ-де орын жеткіліксіз",
       mediaDeleteFailed: "Жою сәтсіз; қайталаңыз",
       mediaDownloadFailed: "Жүктеу сәтсіз; ТВ желісін тексеріп, қайталаңыз",
       mediaLocalHint: "Тек ТВ-де сақталады; бұлтқа жүктелмейді",
-      mediaLocalEmpty: "Әзірге жүктелген бейне жоқ",
-      mediaUploadHint: "16:9 MP4 (H.264) · ≤15 с / ≤4 МБ · 6 бейнеге / 24 МБ-қа дейін",
-      mediaLimit: "Бұлттық бейнекітапша: 8 жүктеуге дейін (саны бойынша) · Жергілікті: 6-ға дейін. Орын болмаса, ТВ-ні толтырмау үшін алдымен жүктелген бейнені жойыңыз.",
-      mediaSingleTimingNote: "Бір реттік таймер өзіндік тәртіп режимінің бейнесін қолданады",
+      mediaLocalEmpty: "Әзірге жүктелген тұсқағаз жоқ",
+      mediaUploadHint: "JPG/PNG/WebP ≤12 МБ; немесе 16:9 MP4/MOV ≤15 с / ≤4 МБ (ТВ декодері қажет) · 6 элементке / 24 МБ-қа дейін",
+      mediaLimit: "Бұлттық кітапхана: 8 жүктеуге дейін (сурет пен бейне бірге) · Жергілікті: 6-ға дейін. Орын болмаса, алдымен бір элементті жойыңыз.",
+      mediaTimingLead: "Бір реттік таймер",
+      mediaSingleTimingNote: "бала режимінің тұсқағазын қолданады",
+      mediaReadonly: "Тек оқу",
+      mediaImageTooLarge: "Сурет 12 МБ-тан үлкен; оны сығымдап, қайталаңыз.",
+      mediaImageBadFormat: "Тек JPG/PNG/WebP суреттері қолданылады.",
+      mediaImageInvalid: "Сурет оқылмайды немесе пішімі қолданылмайды.",
+      mediaBadFormat: "Файл пішімі қолданылмайды.",
+      mediaTooLarge: "Файл тым үлкен.",
       remoteQrAlt: "Қашықтан басқаруды байлау QR коды",
       featureUnavailable: "Бұл жинақта веб-ата-ана орталығы қосылмаған",
       openFailed: "Ата-ана орталығы қазір қолжетімсіз"
@@ -2143,7 +2363,7 @@
     SAVED: "saved",
     SAVED_NEXT_SESSION: "savedNextSession",
     APP_SCOPE_SAVED: "savedAppScope",
-    QUIZ_SAVED: "savedQuiz",
+    QUIZ_ENTRY_SAVED: "savedQuiz",
     SOURCE_SAVED: "savedSource",
     PIN_SAVED: "savedPassword",
     PIN_SAVED_SYNC_PENDING: "savedPasswordPending",
@@ -2215,6 +2435,9 @@
     HANDOFF_NO_RULES: "rulesInvalid",
     HANDOFF_FAILED: "unknownError",
     SESSION_NOT_ACTIVE: "sessionIdle",
+    UPDATE_BUSY: "updateBusy",
+    UPDATE_NONE: "updateNotChecked",
+    UPDATE_UNSUPPORTED: "updateUnavailable",
     CONFIRM_REQUIRED: "unknownError",
     MODE_NOT_NONE: "stateChanged",
     NOT_READY: "gateNotReadyLead",
@@ -2233,6 +2456,7 @@
     INTRO_VIDEO_BAD_FORMAT: "introVideoBadFormat",
     INTRO_VIDEO_BAD_CODEC: "introVideoBadFormat",
     INTRO_VIDEO_HEVC: "introVideoHevc",
+    INTRO_VIDEO_UNSUPPORTED_CODEC: "introVideoUnsupportedCodec",
     INTRO_VIDEO_BAD_RATIO: "introVideoBadFormat",
     INTRO_VIDEO_BAD_FPS: "introVideoBadFormat",
     INTRO_VIDEO_BAD_RESOLUTION: "introVideoBadFormat",
@@ -2240,6 +2464,10 @@
     INTRO_VIDEO_LIBRARY_FULL: "introVideoFull",
     INTRO_VIDEO_NO_SPACE: "introVideoNoSpace",
     INTRO_VIDEO_NOT_FOUND: "introVideoInvalid",
+    INTRO_IMAGE_TOO_LARGE: "mediaImageTooLarge",
+    INTRO_IMAGE_BAD_FORMAT: "mediaImageBadFormat",
+    INTRO_IMAGE_BAD_RATIO: "mediaImageInvalid",
+    INTRO_IMAGE_INVALID: "mediaImageInvalid",
     LENGTH_REQUIRED: "introVideoInvalid",
     MEDIA_NOT_FOUND: "mediaNotFound",
     MEDIA_NOT_READY: "mediaNotReady",
@@ -2250,8 +2478,8 @@
     MEDIA_NO_SPACE: "mediaNoSpace",
     MEDIA_DELETE_FAILED: "mediaDeleteFailed",
     MEDIA_DOWNLOAD_FAILED: "mediaDownloadFailed",
-    MEDIA_BAD_FORMAT: "introVideoBadFormat",
-    MEDIA_TOO_LARGE: "introVideoTooLarge",
+    MEDIA_BAD_FORMAT: "mediaBadFormat",
+    MEDIA_TOO_LARGE: "mediaTooLarge",
     CATALOG_UNAVAILABLE: "mediaCatalogUnavailable"
   };
 
@@ -2283,7 +2511,8 @@
   let mediaPickerScrollPending = false;
   let mediaDownloadWatch = null;
   let mediaPosterEpoch = 0;
-  let mediaTab = "cloud";
+  let mediaKind = "video";
+  let mediaSource = "cloud";
   const mediaPosterUrls = new Map();
   const mediaPosterWaiters = new Map();
   const mediaPosterLoading = new Set();
@@ -2295,6 +2524,8 @@
   let pendingPairCode = "";
   let appPromptSeenMemory = false;
   let rootMode = "more";
+  let leaseRecovering = false;
+  let leaseRecoverySerial = 0;
   let controlBusy = null;
   let controlNotice = null;
   let controlNoticeError = false;
@@ -2599,12 +2830,10 @@
         render();
         return;
       } catch (error) {
+        // A stored editor token cannot survive a TV process restart. Fall through to a
+        // fresh gate/acquire instead of a dead-end "editor lost" card.
         stopHeartbeat();
         storeEditor("");
-        if (error && error.status === 401) {
-          await showGate("editorLost");
-          return;
-        }
       }
     }
     await openGate();
@@ -2632,6 +2861,8 @@
 
   async function close() {
     stopHeartbeat();
+    leaseRecoverySerial += 1;
+    leaseRecovering = false;
     stopMediaPoll();
     mediaSheetId = null;
     revokeMediaPosters();
@@ -2845,7 +3076,7 @@
     const actions = el("div", "parent-actions");
     actions.appendChild(button(t("gateQuizLoginButton"), "parent-btn primary", () => {
       close().then(() => {
-        if (host && host.openQuizLogin) host.openQuizLogin();
+        if (host && host.openQuizLogin) host.openQuizLogin(rootMode);
       });
     }));
     content.appendChild(actions);
@@ -2868,22 +3099,6 @@
     const actions = el("div", "parent-actions");
     actions.appendChild(button(t("retry"), "parent-btn primary", retry));
     content.appendChild(actions);
-  }
-
-  async function showGate(messageKey) {
-    stopHeartbeat();
-    storeEditor("");
-    entryToken = null;
-    gate = null;
-    try {
-      const data = await host.request("/api/parent/gate");
-      gate = data && data.gate ? data.gate : null;
-    } catch (_) { /* fall through to the message */ }
-    if (messageKey) {
-      renderGateError(t(messageKey), () => openGate());
-    } else {
-      await openGate();
-    }
   }
 
   function appPromptSeen() {
@@ -3332,23 +3547,40 @@
     }
   }
 
+  function isLeaseError(error) {
+    const code = error && (error.code || error.message);
+    return code === "QUIZ_TAKEN_OVER" || code === "LEASE_TAKEN_OVER" ||
+      code === "EDITOR_REQUIRED" || code === "LEASE_EXPIRED" ||
+      Boolean(error && error.status === 401);
+  }
+
+  /**
+   * The TV keeps the editor lease and its quiz-token binding in memory, so a TV process
+   * restart clears them while this phone still holds a valid quiz login. Re-acquire once
+   * instead of showing a dead-end takeover error: a real takeover ends at the quiz login
+   * gate or at the explicit two-tab takeover gate.
+   */
   function handleLeaseError(error) {
     if (!error) return;
     // The TV invalidates every proof when the lease dies; forget them even if the request
     // that reported the failure never reached it.
     clearSensitiveMemory();
-    if (error.code === "QUIZ_TAKEN_OVER" || error.code === "LEASE_TAKEN_OVER") {
-      stopHeartbeat();
-      storeEditor("");
-      renderGateError(errorText(error), () => openGate(), t("gateBlockedTitle"));
-      return;
-    }
-    if (error.code === "EDITOR_REQUIRED" || error.code === "LEASE_EXPIRED" ||
-        error.status === 401) {
-      stopHeartbeat();
-      storeEditor("");
-      renderGateError(t("editorLost"), () => openGate(), t("gateBlockedTitle"));
-    }
+    if (!rootOpen || !isLeaseError(error)) return;
+    stopHeartbeat();
+    storeEditor("");
+    if (leaseRecovering) return;
+    leaseRecovering = true;
+    const serial = ++leaseRecoverySerial;
+    renderLoading();
+    openGate()
+      .catch(() => {
+        if (rootOpen && serial === leaseRecoverySerial) {
+          renderGateError(t("network"), () => openGate(), t("gateBlockedTitle"));
+        }
+      })
+      .finally(() => {
+        if (serial === leaseRecoverySerial) leaseRecovering = false;
+      });
   }
 
   // ---------------------------------------------------------------------- rendering
@@ -3447,13 +3679,6 @@
       },
       !(snap.capabilities && snap.capabilities.canChangePin)
     ));
-    local.appendChild(switchRow(
-      t("autoUpdate"),
-      t("autoUpdateHint"),
-      snap.autoUpdate,
-      false,
-      (input) => saveAutoUpdateSwitch(input)
-    ));
     local.appendChild(row(
       t("personalize"),
       t("personalizeHint"),
@@ -3487,6 +3712,19 @@
         if (host && host.openParentAppDownload) host.openParentAppDownload();
       }
     ));
+    other.appendChild(switchRow(
+      t("autoUpdate"),
+      t("autoUpdateHint"),
+      snap.autoUpdate,
+      false,
+      (input) => saveAutoUpdateSwitch(input)
+    ));
+    other.appendChild(row(
+      t("softwareUpdate"),
+      updateSubtitle(),
+      snap.update && snap.update.current ? "v" + snap.update.current : null,
+      openUpdateSheet
+    ));
     other.appendChild(row(
       t("privacyInfo"),
       t("privacyHint"),
@@ -3501,6 +3739,11 @@
     footer.appendChild(button(t("logoutAccount"), "parent-logout-btn", () => {
       close().then(() => {
         if (host && host.logout) host.logout();
+        // The phone shell's real login screen is the native pairing/QR view. On
+        // the TV there is no ParentShell, so this only affects the phone app.
+        if (window.ParentShell && typeof window.ParentShell.logout === "function") {
+          try { window.ParentShell.logout(); } catch (_) { /* keep the TV gate */ }
+        }
       });
     }));
     content.appendChild(footer);
@@ -3514,6 +3757,230 @@
     const roles = media.roles || {};
     const count = (roles.quiz ? 1 : 0) + (roles.lock ? 1 : 0);
     return count > 0 ? t("mediaCustomized") : t("mediaSourceDefault");
+  }
+
+  function updateSubtitle() {
+    const update = snap.update || {};
+    return update.available
+      ? t("updateFound", { version: "v" + update.available })
+      : t("softwareUpdateHint");
+  }
+
+  function updateFailureText(reason) {
+    if (reason === "blocked") return t("updateFailedBlocked");
+    if (reason === "notOfficial") return t("updateFailedNotOfficial");
+    if (reason === "notNewer") return t("updateFailedNotNewer");
+    return t("updateFailedDownload");
+  }
+
+  /**
+   * Software update: the same manual download/install Control Center uses, with the phone
+   * showing the TV's progress. The sheet stays open and polls the snapshot; the TV's
+   * Updates.install state is the single source of truth, so closing this page never stops it.
+   */
+  function openUpdateSheet() {
+    let timer = 0;
+    let closed = false;
+    let primaryAction = null;
+    openSheet((sheet, close) => {
+      sheet.appendChild(el("h2", null, t("softwareUpdate")));
+
+      const hero = el("div", "parent-update-hero");
+      hero.appendChild(el("span", "parent-update-caption", t("updateCurrent")));
+      const version = el("strong", "parent-update-version", "");
+      hero.appendChild(version);
+      sheet.appendChild(hero);
+
+      const status = el("p", "parent-update-status", "");
+      sheet.appendChild(status);
+
+      const progress = el("div", "parent-update-progress");
+      const track = el("div", "parent-progress-track");
+      const fill = el("div", "parent-progress-fill");
+      track.appendChild(fill);
+      const progressText = el("p", "parent-progress-text", "");
+      progress.appendChild(track);
+      progress.appendChild(progressText);
+      sheet.appendChild(progress);
+
+      const autoHint = el("p", "parent-update-auto", "");
+      sheet.appendChild(autoHint);
+
+      const notes = el("div", "parent-update-notes");
+      sheet.appendChild(notes);
+
+      const actions = el("div", "parent-actions");
+      const primary = button("", "parent-btn primary", () => {
+        if (!primary.disabled && primaryAction) primaryAction();
+      });
+      actions.appendChild(primary);
+      actions.appendChild(button(t("updateClose"), "parent-btn ghost", close));
+      sheet.appendChild(actions);
+
+      let notesSignature = null;
+
+      function paintNotes(update) {
+        const list = Array.isArray(update.notes) ? update.notes : [];
+        const changes = list[0] && Array.isArray(list[0].changes) ? list[0].changes : [];
+        const signature = changes.join("\n");
+        if (signature === notesSignature) return;
+        notesSignature = signature;
+        clear(notes);
+        notes.hidden = changes.length === 0;
+        if (!changes.length) return;
+        notes.appendChild(el("p", "parent-update-notes-title", t("updateNotes")));
+        const items = el("ul", "parent-update-notes-list");
+        for (const change of changes.slice(0, 6)) items.appendChild(el("li", null, change));
+        notes.appendChild(items);
+      }
+
+      function paint() {
+        const update = snap.update || {};
+        const state = update.installState || "idle";
+        const busy = state === "downloading" || state === "waiting" || state === "opened";
+        const available = update.available || "";
+        version.textContent = update.current ? "v" + update.current : "—";
+
+        status.className = "parent-update-status";
+        if (state === "downloading") {
+          status.textContent = t("updateDownloading", {
+            percent: Math.round((Number(update.installFraction) || 0) * 100),
+          });
+        } else if (state === "waiting") {
+          status.textContent = t("updateWaiting");
+        } else if (state === "opened") {
+          status.textContent = t("updateOpened");
+        } else if (state === "needsPermission") {
+          status.textContent = t("updateNeedsPermission");
+          status.classList.add("is-warning");
+        } else if (state === "needsStoragePermission") {
+          status.textContent = t("updateNeedsStoragePermission");
+          status.classList.add("is-warning");
+        } else if (state === "failed") {
+          status.textContent = updateFailureText(update.installFailure);
+          status.classList.add("is-warning");
+        } else if (available) {
+          status.textContent = t("updateFound", { version: "v" + available });
+          status.classList.add("is-ready");
+        } else if (update.checking) {
+          status.textContent = t("updateChecking");
+        } else if (update.checkFailed) {
+          status.textContent = t("updateCheckFailed");
+          status.classList.add("is-warning");
+        } else if (update.lastCheckedAt) {
+          status.textContent = t("updateLatest");
+          status.classList.add("is-ready");
+        } else {
+          status.textContent = t("updateNotChecked");
+        }
+
+        progress.hidden = state !== "downloading";
+        if (state === "downloading") {
+          const percent = Math.max(0, Math.min(100, Math.round((Number(update.installFraction) || 0) * 100)));
+          fill.style.width = percent + "%";
+          progressText.textContent = t("updateDownloading", { percent: percent });
+        }
+
+        let autoText = "";
+        if (update.auto && !update.manualSupported) autoText = t("updateUnavailable");
+        else if (update.auto && update.autoBusy) autoText = t("updateAutoDownloading");
+        else if (update.auto && update.autoReady) autoText = t("updateAutoReady");
+        else if (update.auto && update.autoFailure === "download") autoText = t("updateAutoFailedDownload");
+        else if (update.auto && update.autoFailure === "install") autoText = t("updateAutoFailedInstall");
+        else if (update.auto && available && update.installPermissionMissing) autoText = t("updateAutoPermission");
+        else if (update.auto && available && !update.autoSupported) autoText = t("updateAutoUnsupported");
+        autoHint.hidden = !autoText;
+        autoHint.textContent = autoText;
+
+        paintNotes(update);
+
+        primary.hidden = false;
+        primary.disabled = false;
+        primaryAction = null;
+        if (busy) {
+          primary.hidden = true;
+        } else if (state === "needsPermission" || state === "needsStoragePermission" || state === "failed") {
+          primary.textContent = t("retry");
+          primaryAction = requestInstall;
+        } else if (!update.manualSupported) {
+          primary.hidden = true;
+        } else if (available) {
+          primary.textContent = t("updateInstallAction");
+          primaryAction = requestInstall;
+        } else if (update.checking) {
+          primary.textContent = t("updateChecking");
+          primary.disabled = true;
+        } else {
+          primary.textContent = t("updateCheckAction");
+          primaryAction = requestCheck;
+        }
+      }
+
+      async function requestCheck() {
+        primary.disabled = true;
+        try {
+          const data = await host.request("/api/parent/update/check", {
+            method: "POST",
+            body: {},
+            editorToken: editorToken,
+            quizAuth: true,
+          });
+          if (data && data.snapshot) adoptSnapshot(data.snapshot, false);
+        } catch (error) {
+          if (isLeaseError(error)) {
+            handleLeaseError(error);
+            return;
+          }
+          status.textContent = errorText(error);
+          status.className = "parent-update-status is-warning";
+          primary.disabled = false;
+          return;
+        }
+        paint();
+      }
+
+      function requestInstall() {
+        confirmSheet(
+          t("updateConfirmTitle"),
+          t("updateConfirmText"),
+          t("updateConfirmAction"),
+          async () => {
+            try {
+              const data = await host.request("/api/parent/update/install", {
+                method: "POST",
+                body: {},
+                editorToken: editorToken,
+                quizAuth: true,
+              });
+              if (data && data.snapshot) adoptSnapshot(data.snapshot, false);
+            } catch (error) {
+              if (isLeaseError(error)) {
+                handleLeaseError(error);
+                return;
+              }
+              setNotice(errorText(error), true);
+            }
+            openUpdateSheet();
+          },
+          t("cancel")
+        );
+      }
+
+      paint();
+      timer = setInterval(async () => {
+        if (document.hidden) return;
+        try {
+          await refreshSnapshot();
+          if (!closed) paint();
+        } catch (error) {
+          handleLeaseError(error);
+        }
+      }, 2000);
+    }, () => {
+      closed = true;
+      if (timer) clearInterval(timer);
+      render();
+    });
   }
 
   /** Back navigation inside the open page. Returns false when there is nowhere left to go. */
@@ -3704,38 +4171,18 @@
   function renderQuizChallenge() {
     const card = el("div", "parent-card");
     card.appendChild(switchRow(
-      t("quizChallenge"),
-      t("quizHint"),
-      snap.quizEnabled,
-      !(snap.capabilities && snap.capabilities.canToggleQuiz),
-      (input) => saveQuizSwitch(input)
+      t("quizEntryVisible"),
+      t("quizEntryHint"),
+      snap.quizEntryVisible,
+      !(snap.capabilities && snap.capabilities.canToggleQuizEntry),
+      (input) => saveSimple("/api/parent/quiz-entry", {
+        visible: input.checked
+      }, "quizEntryVisible", input.checked, {
+        sensitiveScope: "RULES_EDIT",
+        leadKey: "sensitivePinLeadRules",
+      })
     ));
     return card;
-  }
-
-  /**
-   * Turning the challenge off deletes an unstarted challenge, so it always asks first. The
-   * switch is restored until the parent confirms, and a failed save re-renders from snap.
-   */
-  function saveQuizSwitch(input) {
-    if (input.checked) {
-      saveSimple("/api/parent/quiz", { enabled: true }, "quizEnabled", true, {
-        sensitiveScope: "RULES_EDIT",
-        leadKey: "sensitivePinLeadRules",
-      });
-      return;
-    }
-    input.checked = true;
-    confirmSheet(
-      t("confirmQuizOffTitle"),
-      t("confirmQuizOffBody"),
-      t("confirmQuizOffAction"),
-      () => saveSimple("/api/parent/quiz", { enabled: false }, "quizEnabled", false, {
-        sensitiveScope: "RULES_EDIT",
-        leadKey: "sensitivePinLeadRules",
-      }),
-      t("cancel")
-    );
   }
 
   /** Turning auto-update off is a deliberate downgrade of the household's update path. */
@@ -3778,7 +4225,8 @@
     mediaPickerRole = "quiz";
     mediaPickerChoice = "";
     mediaDownloadWatch = null;
-    mediaTab = "cloud";
+    mediaKind = "video";
+    mediaSource = "cloud";
     clearNotices();
     render();
     window.scrollTo({ top: 0 });
@@ -3859,22 +4307,38 @@
     const scrollTop = root.scrollTop;
     clear(root);
     const shell = el("div", "parent-shell");
-    shell.appendChild(barNode(t("mediaPageTitle"), statusLine(gate), () => {
+    const bar = barNode(t("mediaPageTitle"), mediaStatusText(), () => {
       subpage = null;
       render();
-    }));
+    });
+    const barState = bar.querySelector(".parent-bar-state");
+    if (barState) barState.classList.add("is-media");
+    shell.appendChild(bar);
     const content = el("div", "parent-subpage");
     content.appendChild(noticeArea());
 
     const media = snap.media || {};
     const catalog = media.catalog || {};
     const items = Array.isArray(media.items) ? media.items : [];
-    const officialItems = items.filter((item) => item.source === "official");
-    const localItems = items.filter((item) => item.source === "local");
-    const readyOfficial = officialItems.filter(mediaIsPlayable).length;
     const limits = media.limits || {};
     const canEdit = mediaCanEdit();
     const maxLocal = Math.max(1, Number(limits.maxLocalItems) || 6);
+    const kindItems = items.filter((item) => mediaKindOf(item) === mediaKind);
+    const officialItems = kindItems.filter((item) => item.source === "official");
+    const localItems = kindItems.filter((item) => item.source === "local");
+    const readyOfficial = officialItems.filter(mediaIsPlayable).length;
+    const localTotal = items.filter((item) => item.source === "local").length;
+
+    // The header refresh works from either source: it pulls a new cloud snapshot, which is
+    // also what tells the local list that a download finished on the TV.
+    const headerRefreshBusy = Boolean(personalizeRefreshing || catalog.refreshing);
+    const headerRefresh = button(headerRefreshBusy ? "…" : "↻",
+      "parent-media-refresh-icon parent-media-bar-refresh", () => refreshMediaLibrary());
+    headerRefresh.setAttribute("aria-label",
+      headerRefreshBusy ? t("mediaRefreshing") : t("mediaRefresh"));
+    headerRefresh.title = headerRefreshBusy ? t("mediaRefreshing") : t("mediaRefresh");
+    headerRefresh.disabled = headerRefreshBusy || !editorToken;
+    bar.appendChild(headerRefresh);
 
     const modulesHead = el("div", "parent-media-head");
     modulesHead.appendChild(el("p", "parent-section-label", t("mediaCurrentTitle")));
@@ -3884,106 +4348,133 @@
     current.appendChild(mediaModuleRow("quiz"));
     current.appendChild(mediaModuleRow("lock"));
     content.appendChild(current);
+    const timing = el("p", "parent-media-timing-note");
+    timing.appendChild(el("span", "parent-media-note-icon", "◷"));
+    const timingText = el("span", "parent-media-timing-text");
+    timingText.appendChild(el("strong", "", t("mediaTimingLead")));
+    timingText.appendChild(document.createTextNode(" " + t("mediaSingleTimingNote")));
+    timing.appendChild(timingText);
+    timing.appendChild(el("span", "parent-media-readonly", t("mediaReadonly")));
+    content.appendChild(timing);
+    content.appendChild(el("p", "parent-hint parent-media-isolation-note",
+      t("mediaIsolationNote")));
 
-    const tabs = el("div", "parent-media-tabs");
-    tabs.id = "mediaTabs";
-    tabs.setAttribute("role", "tablist");
-    tabs.addEventListener("keydown", (event) => {
+    // Level one: what the wallpaper is. Level two, below, only filters where it comes from.
+    const kindTabs = el("div", "parent-media-tabs");
+    kindTabs.id = "mediaKindTabs";
+    kindTabs.setAttribute("role", "tablist");
+    kindTabs.setAttribute("aria-label", t("mediaKindTabsLabel"));
+    kindTabs.addEventListener("keydown", (event) => {
       if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
       event.preventDefault();
-      selectMediaTab(mediaTab === "cloud" ? "local" : "cloud", true);
+      selectMediaKind(mediaKind === "video" ? "image" : "video");
     });
-    const cloudCount = officialItems.length ? readyOfficial + "/" + officialItems.length : "";
-    tabs.appendChild(mediaTabButton("cloud", t("mediaTabCloud"), cloudCount, "mediaCloudPanel"));
-    tabs.appendChild(mediaTabButton("local", t("mediaTabLocal"),
-      localItems.length + "/" + maxLocal, "mediaLocalPanel"));
-    content.appendChild(tabs);
+    kindTabs.appendChild(mediaKindTabButton("video", mediaKindCount(items, "video")));
+    kindTabs.appendChild(mediaKindTabButton("image", mediaKindCount(items, "image")));
+    content.appendChild(kindTabs);
 
-    const cloudPanel = el("div", "parent-media-panel");
-    cloudPanel.id = "mediaCloudPanel";
-    cloudPanel.setAttribute("role", "tabpanel");
-    cloudPanel.setAttribute("aria-labelledby", "mediaCloudTab");
-    cloudPanel.hidden = mediaTab !== "cloud";
-    const refreshBusy = Boolean(personalizeRefreshing || catalog.refreshing);
-    const toolbar = el("div", "parent-media-toolbar");
-    toolbar.appendChild(el("p", "parent-hint parent-media-library-hint",
-      t("mediaOfficialHint")));
-    const refresh = button(refreshBusy ? "…" : "↻", "parent-media-refresh-icon",
-      () => refreshMediaLibrary());
-    refresh.setAttribute("aria-label", refreshBusy ? t("mediaRefreshing") : t("mediaRefresh"));
-    refresh.title = refreshBusy ? t("mediaRefreshing") : t("mediaRefresh");
-    refresh.disabled = refreshBusy || !editorToken;
-    toolbar.appendChild(refresh);
-    cloudPanel.appendChild(toolbar);
+    const library = el("div", "parent-media-panel");
+    const sourceRow = el("div", "parent-media-source-row");
+    const sourceTabs = el("div", "parent-media-source-tabs");
+    sourceTabs.setAttribute("role", "tablist");
+    sourceTabs.setAttribute("aria-label", t("mediaSourceTabsLabel"));
+    sourceTabs.addEventListener("keydown", (event) => {
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      event.preventDefault();
+      selectMediaSource(mediaSource === "cloud" ? "local" : "cloud");
+    });
+    sourceTabs.appendChild(sourceTabButton(
+      "cloud",
+      t("mediaSourceOfficial"),
+      officialItems.length ? readyOfficial + "/" + officialItems.length : "0"
+    ));
+    sourceTabs.appendChild(sourceTabButton(
+      "local",
+      t("mediaSourceLocal"),
+      localItems.length + "/" + maxLocal
+    ));
+    sourceRow.appendChild(sourceTabs);
+    if (mediaSource === "cloud") {
+      const refreshBusy = Boolean(personalizeRefreshing || catalog.refreshing);
+      const refresh = button(refreshBusy ? "…" : "↻", "parent-media-refresh-icon",
+        () => refreshMediaLibrary());
+      refresh.setAttribute("aria-label", refreshBusy ? t("mediaRefreshing") : t("mediaRefresh"));
+      refresh.title = refreshBusy ? t("mediaRefreshing") : t("mediaRefresh");
+      refresh.disabled = refreshBusy || !editorToken;
+      sourceRow.appendChild(refresh);
+    }
+    library.appendChild(sourceRow);
+
     if (personalizeLoading) {
-      cloudPanel.appendChild(el("div", "parent-empty", t("mediaLoading")));
-    } else {
+      library.appendChild(el("div", "parent-empty", t("mediaLoading")));
+    } else if (mediaSource === "cloud") {
+      library.appendChild(el("p", "parent-hint parent-media-library-hint",
+        t("mediaOfficialHint")));
       if (catalog.state === "ERROR" && officialItems.length) {
-        cloudPanel.appendChild(el("div", "parent-media-notice", t("mediaCatalogUnavailable")));
+        library.appendChild(el("div", "parent-media-notice", t("mediaCatalogUnavailable")));
       }
       if (!officialItems.length) {
-        cloudPanel.appendChild(el("div", "parent-empty",
+        library.appendChild(el("div", "parent-empty",
           catalog.configured === false ? t("mediaCatalogOff") : t("mediaEmpty")));
       } else {
         const grid = el("div", "parent-media-grid");
         officialItems.forEach((item) => grid.appendChild(mediaCard(item)));
-        cloudPanel.appendChild(grid);
+        library.appendChild(grid);
+      }
+    } else {
+      const uploadZone = el("div", "parent-media-upload-zone");
+      const uploadWrap = el("div", "parent-upload parent-media-upload");
+      const input = el("input");
+      input.type = "file";
+      input.accept = "image/jpeg,image/png,image/webp,video/mp4,video/quicktime," +
+        ".jpg,.jpeg,.png,.webp,.mp4,.mov";
+      input.multiple = true;
+      input.className = "parent-upload-file";
+      input.setAttribute("aria-label", t("introVideoUpload"));
+      const upload = button(
+        uploadState ? t("introVideoUploading") : "＋ " + t("introVideoUpload"),
+        "parent-btn parent-media-upload-btn",
+        () => input.click()
+      );
+      upload.disabled = !canEdit || Boolean(uploadState) || localTotal >= maxLocal;
+      input.addEventListener("change", () => {
+        const files = input.files ? Array.prototype.slice.call(input.files) : [];
+        input.value = "";
+        if (files.length) uploadMediaFiles(files);
+      });
+      uploadWrap.appendChild(upload);
+      uploadWrap.appendChild(input);
+      uploadZone.appendChild(uploadWrap);
+      uploadZone.appendChild(el("p", "parent-hint parent-media-upload-hint",
+        t("mediaUploadHint")));
+      uploadZone.appendChild(el("p", "parent-hint parent-media-local-hint",
+        t("mediaLocalHint")));
+      library.appendChild(uploadZone);
+      if (uploadState) {
+        const progress = el("div", "parent-upload-progress parent-media-upload-progress");
+        const track = el("div", "parent-progress-track");
+        track.setAttribute("role", "progressbar");
+        track.setAttribute("aria-valuemin", "0");
+        track.setAttribute("aria-valuemax", "100");
+        track.id = "parentUploadProgressBar";
+        const fill = el("div", "parent-progress-fill");
+        fill.id = "parentUploadProgressFill";
+        track.appendChild(fill);
+        const label = el("div", "parent-progress-text");
+        label.id = "parentUploadProgressText";
+        progress.appendChild(track);
+        progress.appendChild(label);
+        library.appendChild(progress);
+      }
+      if (!localItems.length) {
+        library.appendChild(el("div", "parent-empty", t("mediaLocalEmpty")));
+      } else {
+        const localGrid = el("div", "parent-media-grid");
+        localItems.forEach((item) => localGrid.appendChild(mediaCard(item)));
+        library.appendChild(localGrid);
       }
     }
-    content.appendChild(cloudPanel);
-
-    const localPanel = el("div", "parent-media-panel");
-    localPanel.id = "mediaLocalPanel";
-    localPanel.setAttribute("role", "tabpanel");
-    localPanel.setAttribute("aria-labelledby", "mediaLocalTab");
-    localPanel.hidden = mediaTab !== "local";
-    localPanel.appendChild(el("p", "parent-hint parent-media-local-hint", t("mediaLocalHint")));
-    const uploadWrap = el("div", "parent-upload parent-media-upload");
-    const input = el("input");
-    input.type = "file";
-    input.accept = "video/mp4,.mp4";
-    input.multiple = true;
-    input.className = "parent-upload-file";
-    input.setAttribute("aria-label", t("introVideoUpload"));
-    const upload = button(
-      uploadState ? t("introVideoUploading") : t("introVideoUpload"),
-      "parent-btn primary",
-      () => input.click()
-    );
-    upload.disabled = !canEdit || Boolean(uploadState) || localItems.length >= maxLocal;
-    input.addEventListener("change", () => {
-      const files = input.files ? Array.prototype.slice.call(input.files) : [];
-      input.value = "";
-      if (files.length) uploadIntroVideos(files);
-    });
-    uploadWrap.appendChild(upload);
-    uploadWrap.appendChild(input);
-    localPanel.appendChild(uploadWrap);
-    if (uploadState) {
-      const progress = el("div", "parent-upload-progress parent-media-upload-progress");
-      const track = el("div", "parent-progress-track");
-      track.setAttribute("role", "progressbar");
-      track.setAttribute("aria-valuemin", "0");
-      track.setAttribute("aria-valuemax", "100");
-      track.id = "parentUploadProgressBar";
-      const fill = el("div", "parent-progress-fill");
-      fill.id = "parentUploadProgressFill";
-      track.appendChild(fill);
-      const label = el("div", "parent-progress-text");
-      label.id = "parentUploadProgressText";
-      progress.appendChild(track);
-      progress.appendChild(label);
-      localPanel.appendChild(progress);
-    }
-    localPanel.appendChild(el("p", "parent-hint", t("mediaUploadHint")));
-    if (!localItems.length) {
-      localPanel.appendChild(el("div", "parent-empty", t("mediaLocalEmpty")));
-    } else {
-      const localGrid = el("div", "parent-media-grid");
-      localItems.forEach((item) => localGrid.appendChild(mediaCard(item)));
-      localPanel.appendChild(localGrid);
-    }
-    content.appendChild(localPanel);
+    content.appendChild(library);
 
     content.appendChild(el("p", "parent-fineprint", t("mediaLimit")));
     shell.appendChild(content);
@@ -3994,44 +4485,61 @@
     if (uploadState) updateUploadProgressDom();
   }
 
-  /** One segment of the cloud/local switch; the count replaces the old section headings. */
-  function mediaTabButton(tab, label, count, controls) {
-    const node = button("", "parent-media-tab" + (mediaTab === tab ? " is-active" : ""),
-      () => selectMediaTab(tab, false));
-    node.id = tab === "cloud" ? "mediaCloudTab" : "mediaLocalTab";
-    node.dataset.tab = tab;
+  /** Global library counts in the page bar; the per-kind counts sit on the type tabs. */
+  function mediaStatusText() {
+    const media = snap && snap.media;
+    if (!media) return statusLine(gate);
+    const items = Array.isArray(media.items) ? media.items : [];
+    const official = items.filter((item) => item.source === "official");
+    const ready = official.filter(mediaIsPlayable).length;
+    const local = items.filter((item) => item.source === "local").length;
+    const maxLocal = Math.max(1, Number((media.limits || {}).maxLocalItems) || 6);
+    return statusLine(gate) + " · " + t("mediaSourceOfficial") + " " + ready + "/" +
+      official.length + " · " + t("mediaSourceLocal") + " " + local + "/" + maxLocal;
+  }
+
+  /** One segment of the video/image switch: the first-level choice of what to use. */
+  function mediaKindTabButton(kind, count) {
+    const node = button("", "parent-media-tab" + (mediaKind === kind ? " is-active" : ""),
+      () => selectMediaKind(kind));
+    node.id = kind === "video" ? "mediaVideoKindTab" : "mediaImageKindTab";
+    node.dataset.kind = kind;
     node.setAttribute("role", "tab");
-    node.setAttribute("aria-selected", mediaTab === tab ? "true" : "false");
-    node.setAttribute("aria-controls", controls);
-    node.tabIndex = mediaTab === tab ? 0 : -1;
-    node.appendChild(el("span", "parent-media-tab-label", label));
-    if (count) node.appendChild(el("span", "parent-media-tab-count", count));
+    node.setAttribute("aria-selected", mediaKind === kind ? "true" : "false");
+    node.tabIndex = mediaKind === kind ? 0 : -1;
+    node.appendChild(el("span", "parent-media-tab-label", mediaKindText(kind)));
+    node.appendChild(el("span", "parent-media-tab-count", String(count)));
     return node;
   }
 
-  /** Tabs only swap the two library panels; the module rows above stay in place. */
-  function selectMediaTab(tab, focusTab) {
-    if (tab !== "cloud" && tab !== "local") return;
-    mediaTab = tab;
-    const root = $(ROOT_ID);
-    const tabs = root ? root.querySelector(".parent-media-tabs") : null;
-    if (!root || !tabs) return;
-    Array.prototype.forEach.call(tabs.querySelectorAll(".parent-media-tab"), (node) => {
-      const active = node.dataset.tab === tab;
-      node.classList.toggle("is-active", active);
-      node.setAttribute("aria-selected", active ? "true" : "false");
-      node.tabIndex = active ? 0 : -1;
-    });
-    ["cloud", "local"].forEach((key) => {
-      const panel = $(key === "cloud" ? "mediaCloudPanel" : "mediaLocalPanel");
-      if (panel) panel.hidden = key !== tab;
-    });
-    if (focusTab) {
-      const active = tabs.querySelector(".parent-media-tab.is-active");
-      if (active) active.focus({ preventScroll: true });
-    }
-    // Switching from far down the cloud grid should show the chosen tab from its start.
-    if (root.scrollTop > 0) tabs.scrollIntoView({ block: "start" });
+  /** One segment of the second-level cloud/local filter inside the chosen kind. */
+  function sourceTabButton(source, label, count) {
+    const node = button("", "parent-media-source-tab" + (mediaSource === source ? " is-active" : ""),
+      () => selectMediaSource(source));
+    node.id = source === "cloud" ? "mediaCloudSourceTab" : "mediaLocalSourceTab";
+    node.dataset.source = source;
+    node.setAttribute("role", "tab");
+    node.setAttribute("aria-selected", mediaSource === source ? "true" : "false");
+    node.tabIndex = mediaSource === source ? 0 : -1;
+    node.appendChild(el("span", "parent-media-source-label", label));
+    node.appendChild(el("span", "parent-media-source-count", count));
+    return node;
+  }
+
+  function selectMediaKind(kind) {
+    if ((kind !== "video" && kind !== "image") || kind === mediaKind) return;
+    mediaKind = kind;
+    render();
+    const tab = $(kind === "video" ? "mediaVideoKindTab" : "mediaImageKindTab");
+    if (tab) tab.focus({ preventScroll: true });
+  }
+
+  function selectMediaSource(source) {
+    if ((source !== "cloud" && source !== "local") || source === mediaSource) return;
+    mediaSource = source;
+    render();
+    const tab = $(source === "cloud" ? "mediaCloudSourceTab" : "mediaLocalSourceTab");
+    if (tab) tab.focus({ preventScroll: true });
   }
 
   function mediaCanEdit() {
@@ -4041,6 +4549,23 @@
   function mediaItem(id) {
     const items = (snap && snap.media && snap.media.items) || [];
     return items.find((item) => item.id === id) || null;
+  }
+
+  /** An old snapshot has no kind; every pre-V34 item was a video. */
+  function mediaKindOf(item) {
+    return item && item.kind === "image" ? "image" : "video";
+  }
+
+  function mediaKindText(kind) {
+    return kind === "image" ? t("mediaKindImage") : t("mediaKindVideo");
+  }
+
+  function mediaKindCount(items, kind) {
+    return items.filter((item) => mediaKindOf(item) === kind).length;
+  }
+
+  function mediaKindLabel(item) {
+    return mediaKindText(mediaKindOf(item));
   }
 
   function mediaName(item) {
@@ -4059,12 +4584,23 @@
   }
 
   function mediaMeta(item) {
-    return t("mediaMeta", {
-      duration: mediaDuration(item.durationMs),
+    const values = {
       size: ((Number(item.sizeBytes) || 0) / (1024 * 1024)).toFixed(1),
       width: Number(item.width) || "—",
       height: Number(item.height) || "—"
-    });
+    };
+    if (mediaKindOf(item) === "image") return t("mediaMetaImage", values);
+    values.duration = mediaDuration(item.durationMs);
+    return t("mediaMeta", values);
+  }
+
+  /** The picker stage names the type, source and the one number that matters for that type. */
+  function mediaStageMeta(item) {
+    if (!item) return t("mediaKindImage") + " · " + t("mediaSourceDefault");
+    const detail = mediaKindOf(item) === "image"
+      ? (Number(item.width) || "—") + "×" + (Number(item.height) || "—")
+      : mediaDuration(item.durationMs);
+    return mediaKindLabel(item) + " · " + mediaSourceText(item) + " · " + detail;
   }
 
   /** The single corner mark on a poster: downloaded state plus its screen-reader label. */
@@ -4159,7 +4695,12 @@
   function mediaDefaultThumb(className) {
     const holder = el("div", className || "parent-media-default-thumb");
     holder.classList.add("parent-media-default-thumb");
-    holder.appendChild(el("span", "parent-media-default-mark", "Aerial"));
+    const img = el("img", "parent-media-default-img");
+    img.src = "parent-kids-default.jpg";
+    img.alt = "";
+    img.decoding = "async";
+    holder.appendChild(img);
+    holder.appendChild(el("span", "parent-media-default-mark", t("mediaDefaultBadge")));
     return holder;
   }
 
@@ -4173,10 +4714,13 @@
     const main = el("div", "parent-row-main");
     main.appendChild(el("span", "parent-row-title", mediaModuleTitle(role)));
     main.appendChild(el("span", "parent-row-sub", item
-      ? mediaSourceText(item) + " · " + mediaName(item)
-      : t("mediaSourceDefault")));
+      ? mediaKindLabel(item) + " · " + mediaSourceText(item) + " · " + mediaName(item)
+      : t("mediaKindImage") + " · " + t("mediaSourceDefault")));
     node.appendChild(main);
-    node.appendChild(el("span", "chevron", "›"));
+    const action = el("span", "parent-media-module-action");
+    action.appendChild(el("span", "parent-media-module-action-label", t("mediaChange")));
+    action.appendChild(el("span", "chevron", "›"));
+    node.appendChild(action);
     node.addEventListener("click", () => openMediaPicker(role));
     return node;
   }
@@ -4270,6 +4814,7 @@
     card.type = "button";
     const cover = mediaCover(item, "parent-media-cover");
     cover.appendChild(el("div", "parent-media-card-shade"));
+    cover.appendChild(el("span", "parent-media-kind-badge", mediaKindLabel(item)));
     cover.appendChild(el("span", "parent-media-card-title", mediaName(item)));
     const marker = mediaCardMarker(item);
     const mark = el("span", "parent-media-card-marker " + marker.tone, marker.glyph);
@@ -4283,7 +4828,7 @@
       cover.appendChild(track);
     }
     card.appendChild(cover);
-    const label = mediaName(item) + " · " + marker.label;
+    const label = mediaName(item) + " · " + mediaKindLabel(item) + " · " + marker.label;
     card.title = label;
     card.setAttribute("aria-label", label);
     card.addEventListener("click", () => handleMediaCard(item));
@@ -4453,7 +4998,7 @@
     const scroll = el("div", "parent-media-sheet-scroll");
     const cover = mediaCover(item, "parent-media-sheet-cover");
     const caption = el("div", "parent-media-cover-caption");
-    caption.appendChild(el("span", null, mediaDuration(item.durationMs)));
+    caption.appendChild(el("span", null, mediaKindLabel(item)));
     caption.appendChild(el("span", null, mediaSourceText(item)));
     cover.appendChild(caption);
     scroll.appendChild(cover);
@@ -4473,6 +5018,9 @@
     if (!mediaIsBusy(item)) {
       scroll.appendChild(el("p", "parent-hint parent-media-preview-hint",
         mediaPreviewHint(item, state)));
+    }
+    if (mediaKindOf(item) === "image") {
+      scroll.appendChild(el("p", "parent-hint", t("mediaImageRoleNote")));
     }
     if (state === "FAILED") {
       const code = item.download && item.download.error;
@@ -4515,7 +5063,11 @@
     const cover = option.item
       ? mediaCover(option.item, "parent-media-option-cover")
       : mediaDefaultThumb("parent-media-option-cover");
-    if (option.id === currentId) {
+    if (option.item) {
+      cover.appendChild(el("span", "parent-media-kind-badge parent-media-option-kind",
+        mediaKindLabel(option.item)));
+    }
+    if (option.id && option.id === currentId) {
       cover.appendChild(el("span", "parent-media-option-current", t("mediaCurrentBadge")));
     }
     if (selected) {
@@ -4553,7 +5105,8 @@
     const scroll = el("div", "parent-media-sheet-scroll");
     scroll.appendChild(el("h2", null,
       t("mediaPickerTitle", { module: mediaModuleTitle(mediaPickerRole) })));
-    scroll.appendChild(el("p", "parent-hint parent-media-picker-note", t("mediaPickerHint")));
+    scroll.appendChild(el("p", "parent-hint parent-media-picker-note",
+      mediaPickerRole === "quiz" ? t("mediaPickerHintQuiz") : t("mediaPickerHint")));
 
     const stage = el("div", "parent-media-stage");
     if (selected.item) {
@@ -4565,11 +5118,13 @@
     const stageCaption = el("div", "parent-media-stage-caption");
     stageCaption.appendChild(el("strong", null,
       selected.item ? mediaName(selected.item) : t("mediaSourceDefault")));
-    stageCaption.appendChild(el("span", null, selected.item
-      ? mediaSourceText(selected.item) + " · " + mediaDuration(selected.item.durationMs)
-      : "Aerial"));
+    stageCaption.appendChild(el("span", null, mediaStageMeta(selected.item)));
     stage.appendChild(stageCaption);
     scroll.appendChild(stage);
+
+    if (selected.item && mediaPickerRole === "lock" && mediaKindOf(selected.item) === "image") {
+      scroll.appendChild(el("p", "parent-hint", t("mediaImageRoleNote")));
+    }
 
     const strip = el("div", "parent-media-strip");
     options.forEach((option) => strip.appendChild(mediaPickerOption(option, stored)));
@@ -4577,12 +5132,14 @@
 
     if (options.length === 1) {
       const empty = el("div", "parent-media-picker-empty");
-      empty.appendChild(el("p", null, t("mediaPickerEmpty")));
+      empty.appendChild(el("p", null,
+        mediaPickerRole === "quiz" ? t("mediaPickerEmptyVideo") : t("mediaPickerEmpty")));
       empty.appendChild(button(t("mediaPickerGoLibrary"), "parent-media-link", () => {
         close();
-        mediaTab = "cloud";
+        mediaSource = "cloud";
+        mediaKind = mediaPickerRole === "quiz" ? "video" : "image";
         render();
-        const target = $("mediaTabs");
+        const target = $("mediaKindTabs");
         if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
       }));
       scroll.appendChild(empty);
@@ -4879,7 +5436,7 @@
     return JSON.parse(JSON.stringify(value));
   }
 
-  async function uploadIntroVideos(files) {
+  async function uploadMediaFiles(files) {
     if (!editorToken || uploadState || !files || !files.length) return;
     if (typeof host.upload !== "function") {
       setNotice(t("featureUnavailable"), true);
@@ -4900,8 +5457,11 @@
     }
     const chosen = files.slice(0, room);
     const skipped = files.length - chosen.length;
-    const limit = Number(limits.maxFileBytes) || 4 * 1024 * 1024;
-    mediaTab = "local";
+    const videoLimit = Number(limits.maxFileBytes) || 4 * 1024 * 1024;
+    const imageLimit = Number(limits.maxUploadBytes) || 12 * 1024 * 1024;
+    const firstImage = /\.(jpe?g|png|webp)$/i.test(chosen[0].name || "");
+    mediaSource = "local";
+    mediaKind = firstImage ? "image" : "video";
     uploadState = {
       index: 0,
       total: chosen.length,
@@ -4914,22 +5474,33 @@
     render();
     for (let i = 0; i < chosen.length; i++) {
       const file = chosen[i];
+      const name = file.name || "wallpaper";
+      const isImage = /\.(jpe?g|png|webp)$/i.test(name);
+      const isVideo = /\.(mp4|mov)$/i.test(name);
       uploadState.index = i + 1;
-      uploadState.name = file.name || "video.mp4";
+      uploadState.name = name;
       uploadState.loaded = 0;
       uploadState.totalBytes = Number(file.size) || 0;
       updateUploadProgressDom();
-      if (!/\.mp4$/i.test(file.name || "")) {
-        uploadState.errors.push(t("introVideoBadFormat"));
+      if (!isImage && !isVideo) {
+        uploadState.errors.push(t("mediaBadFormat"));
         continue;
       }
-      if (!file.size || file.size > limit) {
+      if (!file.size) {
+        uploadState.errors.push(t("mediaBadFormat"));
+        continue;
+      }
+      if (isImage && file.size > imageLimit) {
+        uploadState.errors.push(t("mediaImageTooLarge"));
+        continue;
+      }
+      if (isVideo && file.size > videoLimit) {
         uploadState.errors.push(t("introVideoTooLarge"));
         continue;
       }
       try {
         const response = await host.upload(
-          "/api/parent/intro-video?name=" + encodeURIComponent(file.name),
+          "/api/parent/intro-video?name=" + encodeURIComponent(name),
           file,
           editorToken,
           (loaded, total) => {
@@ -4948,7 +5519,7 @@
       } catch (error) {
         if (uploadState) uploadState.errors.push(errorText(error));
       }
-      // Show each finished film in the library while the rest of the batch keeps uploading.
+      // Show each finished wallpaper in the library while the rest of the batch keeps uploading.
       if (subpage === "personalize") render();
     }
     const added = uploadState.added;
@@ -5160,40 +5731,7 @@
 
   async function startEnableChildMode() {
     clearNotices();
-    if (snap.autoUpdateOffer) {
-      autoConsentSheet();
-      return;
-    }
     await enableChildMode(null);
-  }
-
-  function autoConsentSheet() {
-    openSheet((sheet, close) => {
-      sheet.appendChild(el("h2", null, t("autoConsentTitle")));
-      sheet.appendChild(el("p", null, t("autoConsentText")));
-      const actions = el("div", "parent-actions");
-      actions.appendChild(button(t("autoConsentCancel"), "parent-btn ghost", close));
-      const accept = button(t("autoConsentAccept"), "parent-btn primary", async () => {
-        accept.disabled = true;
-        try {
-          await host.request("/api/parent/auto-update", {
-            method: "POST",
-            body: { enabled: true },
-            editorToken: editorToken,
-            quizAuth: true,
-          });
-          snap.autoUpdate = true;
-          snap.autoUpdateOffer = false;
-          close();
-          await enableChildMode(null);
-        } catch (error) {
-          setNotice(errorText(error), true);
-          accept.disabled = false;
-        }
-      });
-      actions.appendChild(accept);
-      sheet.appendChild(actions);
-    });
   }
 
   async function enableChildMode(pin) {

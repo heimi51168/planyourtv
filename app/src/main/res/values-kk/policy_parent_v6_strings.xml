@@ -79,9 +79,8 @@
     <string name="policy_v6_activation_confirm_end_session">Ағымдағы сеанс және демалыс кері санағы бірден аяқталады.</string>
     <string name="policy_v6_activation_confirm_cancel">Болдырмау</string>
     <string name="policy_v6_activation_confirm_switch">Ауыстыру</string>
-    <string name="policy_v6_quiz_challenge">Викторина</string>
-    <string name="policy_v6_quiz_hint">Қолмен режимде дұрыс жауаптар теледидар уақытын ашады. Өшірілсе, құлыптау экранында викторинаға кіру көрсетілмейді.</string>
-    <string name="policy_v6_quiz_busy">Викторина раунды жүріп жатыр. Ол аяқталғансоң өзгертіңіз.</string>
+    <string name="policy_v6_quiz_challenge">Құлып экранында тест кірісін көрсету</string>
+    <string name="policy_v6_quiz_hint">Қосулы болса, тест белгішесі құлып экранында бірінші көрсетіледі. Өшіру ойын-сауық қолданбаларынан тестке кіруге әсер етпейді.</string>
     <string name="policy_v6_quiz_setup">Сұрақтар банкі</string>
     <string name="policy_v6_quiz_setup_sub">Ата-ана орталығын телефоннан ашыңыз</string>
     <string name="policy_v6_quiz_setup_status">Сканерлеңіз</string>

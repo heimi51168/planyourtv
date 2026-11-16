@@ -35,7 +35,7 @@ import com.planyourtv.policy.LocalTimeWindow
 internal fun V6LocalPane(
     rules: LocalRules,
     activation: Activation,
-    quizEnabled: Boolean,
+    quizEntryVisible: Boolean,
     sourceEntriesVisible: Boolean,
     sessionActive: Boolean,
     readOnly: Boolean,
@@ -50,7 +50,7 @@ internal fun V6LocalPane(
     onActivateValue: (String) -> Unit,
     onAdjust: (String, Int) -> Unit,
     onSelectActivation: (Activation) -> Unit,
-    onToggleQuiz: () -> Unit,
+    onToggleQuizEntry: () -> Unit,
     onToggleSourceEntries: () -> Unit,
     onRemoveWindow: (Boolean, Int) -> Unit,
     onOpenApps: () -> Unit,
@@ -259,14 +259,14 @@ internal fun V6LocalPane(
             RuleHint(stringResource(v6ActivationHint(activation)))
             if (activation == Activation.MANUAL) {
                 // Only manual timing offers the quiz, so the switch sits directly under the
-                // timing mode. It is the same stored switch as the phone page, which gives a
-                // parent a way back after turning it off there.
+                // timing mode. It only shows/hides the dedicated lock-screen entry; the quiz
+                // itself stays available from entertainment apps.
                 PolicySwitchRow(
                     title = stringResource(R.string.policy_v6_quiz_challenge),
                     status = stringResource(R.string.policy_v6_quiz_hint),
-                    on = quizEnabled,
+                    on = quizEntryVisible,
                     focusRequester = focusFor("quiz"),
-                    onClick = { if (!readOnly) onToggleQuiz() },
+                    onClick = { if (!readOnly) onToggleQuizEntry() },
                     onUp = upFor("quiz"),
                     onDown = downFor("quiz"),
                     onLeft = onFocusRail,

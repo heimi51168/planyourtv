@@ -34,13 +34,17 @@ internal class UpdateCheck(
     private class InvalidVersionResponse : IOException()
     private val retry = Runnable { check(source = "retry") }
     private var active = false
-    private var checking = false
-    private var failures = 0
+    @Volatile private var checking = false
+    @Volatile private var failures = 0
     private var retryAt: Long? = null
     private var attemptedAt: Long? = null
     private var attemptedElapsed = 0L
     private var result = "not checked in this process"
     @Volatile var diagnostics = "not checked in this process"; private set
+
+    /** Read by the web snapshot; the last failure stands until a later check succeeds. */
+    val checkingNow: Boolean get() = checking
+    val failed: Boolean get() = failures > 0
 
     @MainThread
     fun setActive(value: Boolean) {

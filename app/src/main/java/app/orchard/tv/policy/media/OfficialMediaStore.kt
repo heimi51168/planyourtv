@@ -55,24 +55,24 @@ object OfficialMediaStore {
             .sortedByDescending { it.downloadedAtMs }
 
     private fun readDir(id: String, dir: File): OfficialMediaLocal? {
-        val video = File(dir, "video.mp4")
         val infoFile = File(dir, "info.json")
-        if (!video.isFile || video.length() <= 0L || !infoFile.isFile) return null
+        if (!infoFile.isFile) return null
         val info = runCatching { JSONObject(infoFile.readText()) }.getOrNull() ?: return null
         if (info.optString("id") != id) return null
+        val kind = PolicyMediaKind.fromWireOrDefault(info.optString("kind", ""))
+        val file = when (kind) {
+            PolicyMediaKind.IMAGE -> File(dir, "image.jpg")
+            PolicyMediaKind.VIDEO -> File(dir, "video.mp4")
+        }
+        if (!file.isFile || file.length() <= 0L) return null
         val sha = info.optString("sha256", "")
         if (!shaPattern.matches(sha)) return null
         val bytes = info.optLong("bytes", -1L)
-        if (bytes <= 0L || video.length() != bytes) return null
-        val duration = info.optLong("durationMs", 0L)
+        if (bytes <= 0L || file.length() != bytes) return null
         val width = info.optInt("width", 0)
         val height = info.optInt("height", 0)
-        if (duration !in 1..PolicyVideoValidation.MAX_DURATION_MS) return null
-        if (width !in 1..PolicyVideoValidation.MAX_WIDTH ||
-            height !in 1..PolicyVideoValidation.MAX_HEIGHT
-        ) {
-            return null
-        }
+        if (width <= 0 || height <= 0) return null
+        if (kotlin.math.abs(width.toDouble() / height - 16.0 / 9.0) > 0.03) return null
         val name = info.optString("name", "").ifBlank { id }
         val nameEn = info.optString("nameEn", "").ifBlank { name }
         val roles = LinkedHashSet<PolicyVideoRole>()
@@ -81,15 +81,46 @@ object OfficialMediaStore {
                 PolicyVideoRole.fromWire(array.optString(index))?.let(roles::add)
             }
         }
-        val posterFile = File(dir, "poster.jpg").takeIf { it.isFile && it.length() > 0L }
-        val poster = posterFile?.let {
-            PolicyVideoPoster(
-                url = "",
-                sha256 = info.optString("posterSha256", ""),
-                bytes = it.length(),
-                atMs = info.optLong("posterAtMs", PolicyVideoValidation.POSTER_AT_MS),
-            )
-        } ?: PolicyVideoPoster("", "", 0L, PolicyVideoValidation.POSTER_AT_MS)
+        val duration: Long
+        val fps: Int
+        val hasAudio: Boolean
+        val posterFile: File?
+        val poster: PolicyVideoPoster
+        when (kind) {
+            PolicyMediaKind.IMAGE -> {
+                if (width > PolicyImageValidation.WIDTH || height > PolicyImageValidation.HEIGHT ||
+                    bytes > PolicyImageValidation.MAX_STORED_BYTES
+                ) {
+                    return null
+                }
+                duration = 0L
+                fps = 0
+                hasAudio = false
+                posterFile = file
+                poster = PolicyVideoPoster("", sha, bytes, 0L)
+            }
+            PolicyMediaKind.VIDEO -> {
+                val videoDuration = info.optLong("durationMs", 0L)
+                if (videoDuration !in 1..PolicyVideoValidation.MAX_DURATION_MS) return null
+                if (width > PolicyVideoValidation.MAX_WIDTH ||
+                    height > PolicyVideoValidation.MAX_HEIGHT
+                ) {
+                    return null
+                }
+                duration = videoDuration
+                fps = info.optInt("fps", 0)
+                hasAudio = info.optBoolean("hasAudio", false)
+                posterFile = File(dir, "poster.jpg").takeIf { it.isFile && it.length() > 0L }
+                poster = posterFile?.let {
+                    PolicyVideoPoster(
+                        url = "",
+                        sha256 = info.optString("posterSha256", ""),
+                        bytes = it.length(),
+                        atMs = info.optLong("posterAtMs", PolicyVideoValidation.POSTER_AT_MS),
+                    )
+                } ?: PolicyVideoPoster("", "", 0L, PolicyVideoValidation.POSTER_AT_MS)
+            }
+        }
         return OfficialMediaLocal(
             id = id,
             item = OfficialMediaItem(
@@ -100,14 +131,15 @@ object OfficialMediaStore {
                 durationMs = duration,
                 width = width,
                 height = height,
-                fps = info.optInt("fps", 0),
+                fps = fps,
                 bytes = bytes,
                 sha256 = sha,
-                hasAudio = info.optBoolean("hasAudio", false),
+                hasAudio = hasAudio,
                 url = "",
                 poster = poster,
+                kind = kind,
             ),
-            file = video,
+            file = file,
             poster = posterFile,
             downloadedAtMs = info.optLong("downloadedAt", dir.lastModified()),
         )

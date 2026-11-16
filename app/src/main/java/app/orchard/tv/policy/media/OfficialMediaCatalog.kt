@@ -37,6 +37,7 @@ data class OfficialMediaItem(
     val hasAudio: Boolean,
     val url: String,
     val poster: PolicyVideoPoster,
+    val kind: PolicyMediaKind = PolicyMediaKind.VIDEO,
 )
 
 data class OfficialMediaCatalogData(
@@ -66,6 +67,7 @@ object OfficialMediaCatalog {
     private const val TAG = "PolicyMediaCatalog"
     private const val MAX_MANIFEST_BYTES = 64 * 1024
     private const val MAX_ITEMS = 12
+    private const val MAX_COMBINED_ITEMS = 24
     private const val MAX_NAME_LENGTH = 80
     private const val REFRESH_MS = 10 * 60 * 1000L
     private const val CONNECT_TIMEOUT_MS = 10_000
@@ -298,14 +300,29 @@ object OfficialMediaCatalog {
             ?: return ParseResult(error = "CATALOG_INVALID")
         val updatedAt = root.requiredString("updatedAt")?.let(::parseIso) ?: 0L
         val videos = root.optJSONArray("videos") ?: return ParseResult(error = "CATALOG_INVALID")
-        if (videos.length() > MAX_ITEMS) return ParseResult(error = "CATALOG_INVALID")
+        val images = root.optJSONArray("images")
+        if (videos.length() > MAX_ITEMS || (images?.length() ?: 0) > MAX_ITEMS) {
+            return ParseResult(error = "CATALOG_INVALID")
+        }
+        if (videos.length() + (images?.length() ?: 0) > MAX_COMBINED_ITEMS) {
+            return ParseResult(error = "CATALOG_INVALID")
+        }
 
         val seen = HashSet<String>()
-        val items = ArrayList<OfficialMediaItem>(videos.length())
+        val items = ArrayList<OfficialMediaItem>(videos.length() + (images?.length() ?: 0))
         for (index in 0 until videos.length()) {
-            val item = parseItem(videos.optJSONObject(index), base) ?: return ParseResult(error = "CATALOG_INVALID")
+            val item = parseItem(videos.optJSONObject(index), base, PolicyMediaKind.VIDEO)
+                ?: return ParseResult(error = "CATALOG_INVALID")
             if (!seen.add(item.id)) return ParseResult(error = "CATALOG_INVALID")
             items += item
+        }
+        if (images != null) {
+            for (index in 0 until images.length()) {
+                val item = parseItem(images.optJSONObject(index), base, PolicyMediaKind.IMAGE)
+                    ?: return ParseResult(error = "CATALOG_INVALID")
+                if (!seen.add(item.id)) return ParseResult(error = "CATALOG_INVALID")
+                items += item
+            }
         }
         val etag = previous?.etag
         return ParseResult(
@@ -321,7 +338,11 @@ object OfficialMediaCatalog {
         )
     }
 
-    private fun parseItem(root: JSONObject?, base: URI): OfficialMediaItem? {
+    private fun parseItem(
+        root: JSONObject?,
+        base: URI,
+        kind: PolicyMediaKind,
+    ): OfficialMediaItem? {
         if (root == null) return null
         val id = root.requiredString("id")?.takeIf { idPattern.matches(it) } ?: return null
         val name = root.requiredString("name")?.trim()?.takeIf { validName(it) } ?: return null
@@ -334,6 +355,36 @@ object OfficialMediaCatalog {
             val role = PolicyVideoRole.fromWire(value) ?: return null
             if (!roles.add(role)) return null
         }
+        val url = root.requiredString("url")?.let { officialUrl(it, base) } ?: return null
+        val sha = root.requiredString("sha256")?.takeIf { shaPattern.matches(it) } ?: return null
+        if (kind == PolicyMediaKind.IMAGE) {
+            // A still picture is only ever the child wallpaper; it has no playback semantics.
+            if (roles.size != 1 || roles.first() != PolicyVideoRole.LOCK_WALLPAPER) return null
+            val width = root.requiredInt("width")
+                ?.takeIf { it in 1..PolicyImageValidation.WIDTH } ?: return null
+            val height = root.requiredInt("height")
+                ?.takeIf { it in 1..PolicyImageValidation.HEIGHT } ?: return null
+            if (kotlin.math.abs(width.toDouble() / height - 16.0 / 9.0) > 0.03) return null
+            val bytes = root.requiredLong("bytes")
+                ?.takeIf { it in 1..PolicyImageValidation.MAX_STORED_BYTES } ?: return null
+            return OfficialMediaItem(
+                id = id,
+                name = name,
+                nameEn = nameEn,
+                roles = roles,
+                durationMs = 0L,
+                width = width,
+                height = height,
+                fps = 0,
+                bytes = bytes,
+                sha256 = sha,
+                hasAudio = false,
+                url = url,
+                // The image is its own cover; no separate poster object is fetched.
+                poster = PolicyVideoPoster(url, sha, bytes, 0L),
+                kind = PolicyMediaKind.IMAGE,
+            )
+        }
         val duration = root.requiredLong("durationMs")?.takeIf { it in 1..PolicyVideoValidation.MAX_DURATION_MS }
             ?: return null
         val width = root.requiredInt("width")?.takeIf { it in 1..PolicyVideoValidation.MAX_WIDTH }
@@ -344,9 +395,7 @@ object OfficialMediaCatalog {
         val fps = root.requiredInt("fps")?.takeIf { it in 1..PolicyVideoValidation.MAX_FPS } ?: 0
         val bytes = root.requiredLong("bytes")
             ?.takeIf { it in 1..PolicyVideoValidation.MAX_OFFICIAL_FILE_BYTES } ?: return null
-        val sha = root.requiredString("sha256")?.takeIf { shaPattern.matches(it) } ?: return null
         val hasAudio = root.requiredBoolean("hasAudio") ?: return null
-        val url = root.requiredString("url")?.let { officialUrl(it, base) } ?: return null
         val posterObject = root.optJSONObject("poster") ?: return null
         val posterUrl = posterObject.requiredString("url")?.let { officialUrl(it, base) } ?: return null
         val posterSha = posterObject.requiredString("sha256")?.takeIf { shaPattern.matches(it) } ?: return null
@@ -367,6 +416,7 @@ object OfficialMediaCatalog {
             hasAudio = hasAudio,
             url = url,
             poster = PolicyVideoPoster(posterUrl, posterSha, posterBytes, atMs),
+            kind = PolicyMediaKind.VIDEO,
         )
     }
 
@@ -438,7 +488,7 @@ object OfficialMediaCatalog {
         .put(
             "videos",
             JSONArray().apply {
-                catalog.items.forEach { item ->
+                catalog.items.filter { it.kind == PolicyMediaKind.VIDEO }.forEach { item ->
                     put(
                         JSONObject()
                             .put("id", item.id)
@@ -461,6 +511,25 @@ object OfficialMediaCatalog {
                                     .put("bytes", item.poster.bytes)
                                     .put("atMs", item.poster.atMs),
                             ),
+                    )
+                }
+            },
+        )
+        .put(
+            "images",
+            JSONArray().apply {
+                catalog.items.filter { it.kind == PolicyMediaKind.IMAGE }.forEach { item ->
+                    put(
+                        JSONObject()
+                            .put("id", item.id)
+                            .put("name", item.name)
+                            .put("nameEn", item.nameEn)
+                            .put("roles", JSONArray(item.roles.map { it.wire }))
+                            .put("width", item.width)
+                            .put("height", item.height)
+                            .put("bytes", item.bytes)
+                            .put("sha256", item.sha256)
+                            .put("url", item.url),
                     )
                 }
             },

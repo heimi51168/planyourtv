@@ -564,6 +564,23 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             .toList()
     }
 
+    /**
+     * Tiles for the configured entertainment apps on the lock desktop. They are quiz triggers,
+     * not launch shortcuts: the lock screen never starts these apps itself. Only Home's visible
+     * arrangement is used (folder contents included, hidden apps excluded): an icon the child
+     * cannot open after the session starts would be a dead end, and these are the faces Home has
+     * already warmed. The order is Home's own.
+     */
+    fun timedApps(packages: Set<String>): List<AppEntry> {
+        if (packages.isEmpty()) return emptyList()
+        return (apps + folderApps.values.flatten())
+            .asSequence()
+            .filter { it.packageName in packages }
+            .distinctBy { it.packageName }
+            .map { e -> AppNames.of(e.key)?.let { e.copy(label = it) } ?: e }
+            .toList()
+    }
+
     /** The folders on Home, in order, for "Move to Folder". */
     fun folders() = store.folders()
 

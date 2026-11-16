@@ -109,6 +109,87 @@ class OfficialMediaCatalogTest {
     }
 
     @Test
+    fun imagesAndVideosMergeIntoOneCatalogue() {
+        val raw = JSONObject(manifest())
+            .put("images", JSONArray().put(image()))
+            .toString()
+        val catalog = OfficialMediaCatalog.parse(raw, manifestUrl).catalog
+        assertNotNull(catalog)
+        assertEquals(2, catalog!!.items.size)
+        val image = catalog.items.single { it.kind == PolicyMediaKind.IMAGE }
+        assertEquals("official:meadow", image.id)
+        assertEquals(setOf(PolicyVideoRole.LOCK_WALLPAPER), image.roles)
+        assertEquals(0L, image.durationMs)
+        assertEquals(0, image.fps)
+        assertEquals(false, image.hasAudio)
+        assertEquals("$host/media/policy-videos/images/meadow.jpg", image.url)
+        // A picture is its own cover; no second object is fetched on TV.
+        assertEquals(image.url, image.poster.url)
+        assertEquals(image.sha256, image.poster.sha256)
+        assertEquals(image.bytes, image.poster.bytes)
+        assertEquals(0L, image.poster.atMs)
+    }
+
+    @Test
+    fun oldManifestWithoutImagesStillParses() {
+        val catalog = OfficialMediaCatalog.parse(manifest(), manifestUrl).catalog
+        assertNotNull(catalog)
+        assertEquals(listOf(PolicyMediaKind.VIDEO), catalog!!.items.map { it.kind })
+    }
+
+    @Test
+    fun imageRulesAreStricterThanVideoRules() {
+        assertImageRejected(image().put("roles", JSONArray().put("quiz")))
+        assertImageRejected(image().put("roles", JSONArray().put("quiz").put("lock")))
+        assertImageRejected(image().put("width", 1_600).put("height", 1_200))
+        assertImageRejected(image().put("bytes", PolicyImageValidation.MAX_STORED_BYTES + 1))
+        assertImageRejected(image().put("bytes", 0))
+        assertImageRejected(image().put("sha256", "A".repeat(64)))
+        assertImageRejected(image().put("url", "$host/media/policy-videos/images/meadow.jpg?x=1"))
+        assertImageRejected(image().put("url", "https://cdn.example.com/media/policy-videos/images/meadow.jpg"))
+    }
+
+    @Test
+    fun duplicateIdsAcrossGroupsAreRejected() {
+        val raw = JSONObject(manifest())
+            .put("images", JSONArray().put(image().put("id", "official:hero")))
+            .toString()
+        assertRejected(raw)
+    }
+
+    @Test
+    fun bothGroupsAreCappedAtTwelveAndTwentyFourCombined() {
+        val videos = JSONArray()
+        repeat(12) { index -> videos.put(item().put("id", "official:film-$index")) }
+        val images = JSONArray()
+        repeat(12) { index -> images.put(image().put("id", "official:picture-$index")) }
+        val parsed = OfficialMediaCatalog.parse(
+            JSONObject(manifest(videos)).put("images", images).toString(),
+            manifestUrl,
+        )
+        assertNotNull(parsed.catalog)
+        assertEquals(24, parsed.catalog!!.items.size)
+        val extra = JSONArray()
+        repeat(13) { index -> extra.put(image().put("id", "official:picture-$index")) }
+        assertRejected(JSONObject(manifest(videos)).put("images", extra).toString())
+        val tooManyCombined = JSONArray()
+        repeat(13) { index -> tooManyCombined.put(image().put("id", "official:picture-$index")) }
+        assertRejected(JSONObject(manifest(videos)).put("images", tooManyCombined).toString())
+    }
+
+    @Test
+    fun imageFieldsThatVideoNeedsAreIgnored() {
+        // The producer writes only image fields; a stale duration/poster must not change the model.
+        val image = image().put("durationMs", 9_999L).put("poster", poster())
+        val raw = JSONObject(manifest()).put("images", JSONArray().put(image)).toString()
+        val catalog = OfficialMediaCatalog.parse(raw, manifestUrl).catalog
+        assertNotNull(catalog)
+        val parsed = catalog!!.items.single { it.kind == PolicyMediaKind.IMAGE }
+        assertEquals(0L, parsed.durationMs)
+        assertEquals("$host/media/policy-videos/images/meadow.jpg", parsed.poster.url)
+    }
+
+    @Test
     fun roleWireConversionTreatsBothAsARequestOnlyPair() {
         assertEquals(setOf(PolicyVideoRole.QUIZ_INTRO), PolicyVideoRole.fromRequest("quiz"))
         assertEquals(setOf(PolicyVideoRole.LOCK_WALLPAPER), PolicyVideoRole.fromRequest("lock"))
@@ -119,6 +200,12 @@ class OfficialMediaCatalogTest {
     }
 
     private fun assertRejected(item: JSONObject) = assertRejected(manifest(JSONArray().put(item)))
+
+    private fun assertImageRejected(item: JSONObject) = assertRejected(
+        JSONObject(manifest())
+            .put("images", JSONArray().put(item))
+            .toString(),
+    )
 
     private fun assertRejected(raw: String) {
         val parsed = OfficialMediaCatalog.parse(raw, manifestUrl)
@@ -132,6 +219,17 @@ class OfficialMediaCatalogTest {
         .put("updatedAt", "2026-11-14T00:00:00Z")
         .put("videos", videos)
         .toString()
+
+    private fun image(): JSONObject = JSONObject()
+        .put("id", "official:meadow")
+        .put("name", "春日草地")
+        .put("nameEn", "Spring meadow")
+        .put("roles", JSONArray().put("lock"))
+        .put("width", 1_920)
+        .put("height", 1_080)
+        .put("bytes", 900_000L)
+        .put("sha256", "c".repeat(64))
+        .put("url", "$host/media/policy-videos/images/meadow.jpg")
 
     private fun item(): JSONObject = JSONObject()
         .put("id", "official:hero")

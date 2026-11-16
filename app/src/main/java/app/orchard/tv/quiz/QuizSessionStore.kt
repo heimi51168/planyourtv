@@ -29,6 +29,9 @@ object QuizSessionStore {
     // still recover it after the main slot is cleared for the child.
     private const val KEY_SESSION_UNREADABLE = "quiz.sessionUnreadable.v1"
     private const val KEY_ENABLED = "quiz.enabled"
+    // Display-only: whether the lock desktop shows the dedicated quiz entry.
+    // The quiz feature itself is always on in local mode.
+    private const val KEY_LOCK_ENTRY = "quiz.lockEntry"
     private const val KEY_PROVIDER_KEY = "quiz.providerKey"
     private const val KEY_PROVIDER_META = "quiz.providerMeta"
     private const val KEY_CHALLENGE_CONFIG = "quiz.challengeConfig"
@@ -151,13 +154,24 @@ object QuizSessionStore {
     }
 
     /**
-     * The first version defaults the entry on. The parent page can turn it off;
-     * when off, the lock screen does not show the quiz row at all.
+     * Legacy feature switch, kept for cloud records that still carry it. Local
+     * mode ignores it: the quiz is always available there.
      */
     fun enabled(): Boolean = TvStore.getBoolean(KEY_ENABLED, true)
 
     fun setEnabled(enabled: Boolean) {
         TvStore.putBoolean(KEY_ENABLED, enabled)
+        TvStore.sync()
+    }
+
+    /**
+     * Whether the lock desktop shows the dedicated quiz entry. Off by default;
+     * turning it off never touches the quiz feature or an existing challenge.
+     */
+    fun lockEntryVisible(): Boolean = TvStore.getBoolean(KEY_LOCK_ENTRY, false)
+
+    fun setLockEntryVisible(visible: Boolean) {
+        TvStore.putBoolean(KEY_LOCK_ENTRY, visible)
         TvStore.sync()
     }
 

@@ -112,9 +112,9 @@ object ParentCenterActions {
             .put("rulesRevision", LocalPolicyRuntime.rulesEpoch)
             .put("modeRevision", modeRevision())
             .put("autoUpdate", Updates.auto)
-            .put("autoUpdateOffer", !Updates.auto && !Updates.autoChoiceMade())
+            .put("update", updateJson(context))
             .put("sourceEntriesVisible", SourceEntrySettings.isVisible())
-            .put("quizEnabled", QuizSettings.isEnabled())
+            .put("quizEntryVisible", QuizSettings.isLockEntryVisible())
             .put("introVideo", QuizIntroVideo.snapshot(context))
             // The main page only needs the current roles. Opening "Videos & wallpapers"
             // triggers GET /api/parent/media, which is the one place that refreshes the
@@ -137,7 +137,7 @@ object ParentCenterActions {
                     // authorization the web page itself depends on.
                     .put("canToggleChildMode", false)
                     .put("canChangePin", ui.mode == PolicyMode.LOCAL && !readOnlyLocal)
-                    .put("canToggleQuiz", ui.mode == PolicyMode.LOCAL && !readOnlyLocal)
+                    .put("canToggleQuizEntry", ui.mode == PolicyMode.LOCAL && !readOnlyLocal)
                     .put("canToggleSources", ui.mode == PolicyMode.LOCAL && !readOnlyLocal)
                     .put("canEditIntroVideos", ui.mode == PolicyMode.LOCAL && !readOnlyLocal)
                     .put("canEndSession", localSessionActive)
@@ -173,6 +173,55 @@ object ParentCenterActions {
             )
         }
         return result
+    }
+
+    /**
+     * The TV's software update, as the web "More" page shows it. The update code owns the flow;
+     * this projection only tells the page what state to render and which manual fallback exists.
+     */
+    private fun updateJson(context: Context): JSONObject {
+        val app = context.applicationContext
+        val install = Updates.install
+        val state = when (install) {
+            Updates.Install.Idle -> "idle"
+            is Updates.Install.Downloading -> "downloading"
+            Updates.Install.Waiting -> "waiting"
+            Updates.Install.Opened -> "opened"
+            Updates.Install.NeedsPermission -> "needsPermission"
+            Updates.Install.NeedsStoragePermission -> "needsStoragePermission"
+            is Updates.Install.Failed -> "failed"
+        }
+        val failure = (install as? Updates.Install.Failed)?.reason?.let {
+            when (it) {
+                Updates.Failure.Download -> "download"
+                Updates.Failure.Blocked -> "blocked"
+                Updates.Failure.NotOfficial -> "notOfficial"
+                Updates.Failure.NotNewer -> "notNewer"
+            }
+        }
+        val notes = JSONArray()
+        Updates.notes.take(5).forEach { release ->
+            val changes = JSONArray()
+            release.changes.take(8).forEach(changes::put)
+            notes.put(JSONObject().put("version", release.version).put("changes", changes))
+        }
+        return JSONObject()
+            .put("current", Updates.current)
+            .put("available", Updates.available ?: JSONObject.NULL)
+            .put("checking", Updates.checking)
+            .put("checkFailed", Updates.checkFailed)
+            .put("lastCheckedAt", Updates.lastCheckedAt())
+            .put("installState", state)
+            .put("installFraction", (install as? Updates.Install.Downloading)?.fraction ?: 0.0)
+            .put("installFailure", failure ?: JSONObject.NULL)
+            .put("auto", Updates.auto)
+            .put("autoReady", Updates.autoReady ?: JSONObject.NULL)
+            .put("autoBusy", Updates.autoBusy)
+            .put("autoFailure", Updates.autoFailure ?: JSONObject.NULL)
+            .put("autoSupported", Updates.silentInstallSupported(app))
+            .put("installPermissionMissing", Updates.installPermissionMissing(app))
+            .put("manualSupported", Updates.canInstall(app))
+            .put("notes", notes)
     }
 
     private fun ruleSetJson(set: com.planyourtv.policy.LocalRuleSet): JSONObject = JSONObject()
@@ -442,6 +491,25 @@ object ParentCenterActions {
         return ok("AUTO_UPDATE_SAVED")
     }
 
+    /** A deliberate "check now" from the "More" page. */
+    fun requestUpdateCheck(): Outcome {
+        if (appContext == null) return error("NOT_READY")
+        if (!Updates.requestCheck()) return error("UPDATE_BUSY")
+        return ok("UPDATE_CHECKING")
+    }
+
+    /**
+     * The manual fallback after a failed or unavailable silent update. The download and the
+     * installer continue on the TV; the phone page polls the snapshot for progress.
+     */
+    fun installUpdate(): Outcome {
+        val context = appContext ?: return error("NOT_READY")
+        if (!Updates.canInstall(context)) return error("UPDATE_UNSUPPORTED")
+        if (Updates.available == null) return error("UPDATE_NONE")
+        if (!Updates.requestInstall(context)) return error("UPDATE_BUSY")
+        return ok("UPDATE_STARTED")
+    }
+
     fun setSourceEntries(body: JSONObject): Outcome {
         val ui = PolicyModeCoordinator.state.value
         if (ui.mode == PolicyMode.NONE) return error("NOT_READY")
@@ -453,26 +521,26 @@ object ParentCenterActions {
         return ok("SOURCE_SAVED")
     }
 
-    fun setQuiz(body: JSONObject): Outcome {
+    /**
+     * Display-only: shows or hides the dedicated quiz tile on the lock desktop.
+     * It never enables, disables or deletes a challenge.
+     */
+    fun setQuizEntry(body: JSONObject): Outcome {
         val ui = PolicyModeCoordinator.state.value
         if (ui.mode == PolicyMode.NONE) return error("NOT_READY")
         if (PolicyProduct.cloudEnabled && PolicyRuntime.state.value.bound) {
             return error("READ_ONLY")
         }
-        val enabled = body.optBoolean("enabled", false)
-        if (QuizSettings.isEnabled() == enabled) return ok("QUIZ_SAVED")
-        val result = runBlocking {
+        val visible = body.optBoolean("visible", false)
+        if (QuizSettings.isLockEntryVisible() == visible) return ok("QUIZ_ENTRY_SAVED")
+        runBlocking {
             withTimeoutOrNull(10_000L) {
                 kotlinx.coroutines.withContext(Dispatchers.IO) {
-                    QuizSettings.setEnabled(enabled)
+                    QuizSettings.setLockEntryVisible(visible)
                 }
             }
         } ?: return error("TIMEOUT")
-        return when (result) {
-            QuizSettings.SetResult.Changed -> ok("QUIZ_SAVED")
-            QuizSettings.SetResult.SessionRunning -> error("QUIZ_SESSION_RUNNING")
-            QuizSettings.SetResult.StorageError -> error("SAVE_FAILED")
-        }
+        return ok("QUIZ_ENTRY_SAVED")
     }
 
     // ----------------------------------------------------------------- intro videos

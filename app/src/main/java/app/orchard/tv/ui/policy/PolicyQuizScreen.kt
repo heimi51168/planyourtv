@@ -85,6 +85,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.orchard.tv.R
+import app.orchard.tv.apps.AppEntry
 import app.orchard.tv.quiz.CloudQuizPreparer
 import app.orchard.tv.quiz.QuizChallenge
 import app.orchard.tv.quiz.QuizConfigDocumentSync
@@ -144,7 +145,14 @@ private val QuizLoss = Palette.Green
  * screen except through the encrypted session record.
  */
 @Composable
-fun PolicyQuizScreen(onClose: () -> Unit) {
+fun PolicyQuizScreen(
+    /**
+     * The entertainment app that opened this quiz, or null for the dedicated quiz tile.
+     * Only a successful start opens it; every other outcome returns to the desktop.
+     */
+    target: AppEntry?,
+    onClose: () -> Unit,
+) {
     val state by QuizRuntime.state.collectAsState()
     var loaded by remember { mutableStateOf(false) }
     var confirmExit by remember { mutableStateOf(false) }
@@ -234,7 +242,11 @@ fun PolicyQuizScreen(onClose: () -> Unit) {
                 state.sessionState == "starting" ||
                 state.sessionState == "start_failed" -> QuizReviewScreen(
                 session = state.session ?: return@Box,
+                startTarget = target?.packageName,
                 onComplete = ::closeCleanly,
+                // A gateway entry starts the target from the host, above the lock screen;
+                // this composition is usually gone by the time the settle returns.
+                onStarted = { if (target == null) closeCleanly() },
                 // Keep the round when the screen is dismissed after a failed
                 // settlement: the child can re-enter the quiz and retry, and
                 // Back must not trap them on the report.
@@ -2083,7 +2095,11 @@ private fun Modifier.quizScrollBar(scroll: ScrollState, focused: Boolean): Modif
 @Composable
 private fun QuizReviewScreen(
     session: QuizSession,
+    /** The app that opened this round; confirmed for the host only if the session starts. */
+    startTarget: String?,
     onComplete: () -> Unit,
+    /** The earned session is active; the host opens the target app on its own. */
+    onStarted: () -> Unit,
     onDismiss: () -> Unit,
     onExit: () -> Unit,
 ) {
@@ -2139,6 +2155,10 @@ private fun QuizReviewScreen(
     var localError by remember { mutableStateOf<String?>(null) }
     var serverError by remember { mutableStateOf<String?>(null) }
     val ready = !busy && !starting && !failed
+    val unlocked = run.earnedMinutes > 0 || run.earnedSeconds > 0
+    // The reward film hands an unlocked round to its session on its own. The button below
+    // already starts early; this only saves the extra press once the film has finished.
+    var filmEnded by remember(session.id) { mutableStateOf(false) }
     val errorCode = run.startErrorCode ?: localError
     val gradeTitle = stringResource(
         when {
@@ -2167,14 +2187,14 @@ private fun QuizReviewScreen(
                     // Settle by the round's own source: binding may have changed
                     // while this local or cloud round was still running.
                     if (QuizChallenge.isCloudSession(session)) {
-                        QuizChallenge.completeReviewHosted()
+                        QuizChallenge.completeReviewHosted(targetPackage = startTarget)
                     } else {
-                        QuizChallenge.completeReview()
+                        QuizChallenge.completeReview(targetPackage = startTarget)
                     }
                 }
                 busy = false
                 when (outcome) {
-                    QuizChallenge.ReviewOutcome.Started,
+                    QuizChallenge.ReviewOutcome.Started -> onStarted()
                     QuizChallenge.ReviewOutcome.Cleared -> onComplete()
                     is QuizChallenge.ReviewOutcome.Failed -> localError = outcome.code
                     is QuizChallenge.ReviewOutcome.Rejected -> serverError = outcome.message
@@ -2205,6 +2225,15 @@ private fun QuizReviewScreen(
             finishReview()
         }
     }
+    // An unlocked report advances by itself once the reward film ends; the button below still
+    // offers an early start. The short hold keeps the film's last frame readable. A failed
+    // attempt must not loop: the child retries with the button, which shows the reason.
+    LaunchedEffect(session.id, unlocked, filmEnded, ready) {
+        if (!unlocked || !filmEnded || !ready) return@LaunchedEffect
+        if (localError != null || serverError != null) return@LaunchedEffect
+        delay(800)
+        finishReview()
+    }
     LaunchedEffect(ready, failed, busy, starting) {
         if (ready || failed) {
             withFrameNanos { }
@@ -2234,7 +2263,7 @@ private fun QuizReviewScreen(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            QuizResultVideo(180.dp)
+            QuizResultVideo(180.dp, onEnded = { filmEnded = true })
             Spacer(Modifier.width(26.dp))
             Column(modifier = Modifier.weight(1f)) {
                 BasicText(
@@ -2419,8 +2448,7 @@ private fun QuizReviewScreen(
             label = when {
                 failed -> stringResource(R.string.policy_quiz_exit_confirm)
                 busy || starting -> stringResource(R.string.policy_quiz_review_starting)
-                run.earnedMinutes > 0 || run.earnedSeconds > 0 ->
-                    stringResource(R.string.policy_quiz_review_start)
+                unlocked -> stringResource(R.string.policy_quiz_review_start)
                 else -> stringResource(R.string.policy_quiz_review_return)
             },
             onClick = {

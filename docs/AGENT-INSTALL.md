@@ -8,7 +8,7 @@
 - 官方下载：https://planyourtv.me/download/
 - 手机家长端（可选，Android 7.0+）：https://planyourtv.me/download/planyourtv-parent.apk
 - 支持系统：Android TV 5.0+（API 21+）；Android 4.x 不支持；不需要 root
-- 版本：以 https://planyourtv.me/download/version.txt 为准；官方下载地址始终提供最新社区版本，不要使用任何文档里写死的版本号
+- 版本：以 GitHub Release 的 https://github.com/heimi51168/planyourtv/releases/latest/download/version.txt 为准；官网 https://planyourtv.me/download/version.txt 可能因部署延迟落后，两者不一致时不要安装官网旧包。不要使用任何文档里写死的版本号
 - 上游与致谢：基于 Aerial（MIT）；感谢 pengchujin 与 Aerial 贡献者。详见项目 README、LICENSE 和 NOTICE。
 
 ## 0. 必须遵守的规则
@@ -163,17 +163,26 @@ adb shell cmd package query-activities --brief -a android.intent.action.MAIN -c 
 
 用户明确要求清理时，只卸载同时满足以下条件的包：在 `pm list packages -3` 的第三方列表中、出现在 HOME 查询结果里（或属于上面的已知包名），且不是 PlanYourTV 自身 `com.planyourtv.tv`。升级时 PlanYourTV 自己也会出现在这些列表里，绝不能卸载它。先告诉用户卸载会删除该桌面的数据；用户确认后运行 `adb shell pm uninstall <包名>`，再用 `adb shell pm path <包名>` 确认没有输出。`cmd` 不可用时，至少逐个检查上面的已知包名。用户没有明确要求时，保留这些桌面，继续安装。
 
-官方下载地址始终指向最新社区版本。先读取最新版本号（输出形如 `vX.Y.ZZZ`，不要用任何文档里写死的版本号判断）。如果命令失败、输出为空或不是 `v` 开头，立即停止，不要继续使用本机残留的旧 APK：
+先读取 GitHub Release 和官网的最新版本号（输出形如 `vX.Y.ZZZ`，不要用任何文档里写死的版本号判断）。以 GitHub Release 为最新版本基准；如果官网版本落后，说明官网尚未部署，必须改用 GitHub Release 资产。任一命令失败、输出为空或不是 `v` 开头时停止，不要继续使用本机残留的旧 APK：
 
 ```bash
+curl -fsSL https://github.com/heimi51168/planyourtv/releases/latest/download/version.txt
 curl -fsSL https://planyourtv.me/download/version.txt
 ```
 
-推荐从官方地址下载。下载前先删除上次可能残留的同名文件，避免下载失败时误装旧包（macOS/Linux 用 `rm -f`，Windows PowerShell 用 `Remove-Item -Force -ErrorAction SilentlyContinue`）：
+两个版本一致时，推荐从官方地址下载。下载前先删除上次可能残留的同名文件，避免下载失败时误装旧包（macOS/Linux 用 `rm -f`，Windows PowerShell 用 `Remove-Item -Force -ErrorAction SilentlyContinue`）：
 
 ```bash
 rm -f planyourtv-standard.apk
 curl -fL -o planyourtv-standard.apk https://planyourtv.me/download/planyourtv-standard.apk
+adb install -r -i com.planyourtv.tv planyourtv-standard.apk
+```
+
+官网版本落后时，改用 GitHub Release 资产，不要安装官网旧包：
+
+```bash
+rm -f planyourtv-standard.apk
+curl -fL -o planyourtv-standard.apk https://github.com/heimi51168/planyourtv/releases/latest/download/planyourtv-standard.apk
 adb install -r -i com.planyourtv.tv planyourtv-standard.apk
 ```
 
@@ -188,6 +197,14 @@ adb install -r -i com.planyourtv.tv planyourtv-standard.apk
 ```bash
 rm -f planyourtv-guard.apk
 curl -fL -o planyourtv-guard.apk https://planyourtv.me/download/planyourtv-guard.apk
+adb install -r -i com.planyourtv.tv planyourtv-guard.apk
+```
+
+官网版本落后时，改用 GitHub Release 的 guard 包：
+
+```bash
+rm -f planyourtv-guard.apk
+curl -fL -o planyourtv-guard.apk https://github.com/heimi51168/planyourtv/releases/latest/download/planyourtv-guard.apk
 adb install -r -i com.planyourtv.tv planyourtv-guard.apk
 ```
 
@@ -304,7 +321,7 @@ Windows 上把 `grep` 换成 `findstr`。
 
 - `resolve-activity` 返回的桌面是 `com.planyourtv.tv/...`，或用户实际选择的其他桌面（如果是 guard 版本，可能仍显示原桌面，需要 Home Guard 接管）。
 - `mCurrentFocus` 在按主页键后包含 `com.planyourtv.tv`，或用户已确认看到 PlanYourTV 桌面。
-- `versionName` 与 https://planyourtv.me/download/version.txt 一致（去掉开头的 `v`，guard 版本再去掉结尾的 `-guard`）。
+- `versionName` 与 GitHub Release 的 https://github.com/heimi51168/planyourtv/releases/latest/download/version.txt 一致（官网可能延迟；去掉开头的 `v`，guard 版本再去掉结尾的 `-guard`）。
 - `enabled_accessibility_services` 包含 Home Guard（如果启用了）。
 
 没有这些输出，不要说「安装成功」。

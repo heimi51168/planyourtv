@@ -80,9 +80,8 @@
     <string name="policy_v6_activation_confirm_end_session">The current timing session and rest countdown will end immediately.</string>
     <string name="policy_v6_activation_confirm_cancel">Cancel</string>
     <string name="policy_v6_activation_confirm_switch">Switch</string>
-    <string name="policy_v6_quiz_challenge">Quiz challenge</string>
-    <string name="policy_v6_quiz_hint">In Manual mode, correct answers unlock TV time. When off, the lock screen hides the quiz entry.</string>
-    <string name="policy_v6_quiz_busy">A quiz round is running. Change this after it ends.</string>
+    <string name="policy_v6_quiz_challenge">Show quiz entry</string>
+    <string name="policy_v6_quiz_hint">When on, the quiz icon appears first on the lock screen. Turning it off does not affect entering the quiz from entertainment apps.</string>
     <string name="policy_v6_quiz_setup">Question bank</string>
     <string name="policy_v6_quiz_setup_sub">Open the parent center with your phone</string>
     <string name="policy_v6_quiz_setup_status">Scan</string>

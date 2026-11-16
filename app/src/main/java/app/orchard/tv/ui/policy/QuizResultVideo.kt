@@ -50,7 +50,12 @@ private const val RESULT_VIDEO_VOLUME = 0.5f
  * where a SurfaceView could punch through the Compose clipping.
  */
 @Composable
-internal fun QuizResultVideo(size: Dp, modifier: Modifier = Modifier) {
+internal fun QuizResultVideo(
+    size: Dp,
+    modifier: Modifier = Modifier,
+    /** Called once when the reward film reaches its last frame and playback stops. */
+    onEnded: () -> Unit = {},
+) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val reduced = LocalReducedMotion.current
@@ -59,6 +64,7 @@ internal fun QuizResultVideo(size: Dp, modifier: Modifier = Modifier) {
     var firstFrame by remember { mutableStateOf(false) }
     var failed by remember { mutableStateOf(false) }
     val playerNow by rememberUpdatedState(player)
+    val onEndedNow by rememberUpdatedState(onEnded)
     val videoAlpha by animateFloatAsState(
         targetValue = if (firstFrame) 1f else 0f,
         animationSpec = tween(220, easing = Motion.EaseOut),
@@ -96,6 +102,10 @@ internal fun QuizResultVideo(size: Dp, modifier: Modifier = Modifier) {
             addListener(object : Player.Listener {
                 override fun onRenderedFirstFrame() {
                     firstFrame = true
+                }
+
+                override fun onPlaybackStateChanged(playbackState: Int) {
+                    if (playbackState == Player.STATE_ENDED) onEndedNow()
                 }
 
                 override fun onPlayerError(error: PlaybackException) {

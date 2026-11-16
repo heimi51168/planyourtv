@@ -45,7 +45,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -95,8 +97,10 @@ import app.orchard.tv.apps.AppEntry
 import app.orchard.tv.policy.PolicyHomeReady
 import app.orchard.tv.policy.LockStudyLaunch
 import app.orchard.tv.policy.PolicyModeCoordinator
+import app.orchard.tv.policy.media.PolicyMediaKind
 import app.orchard.tv.policy.media.PolicyVideoLibrary
 import app.orchard.tv.policy.media.PolicyVideoSource
+import app.orchard.tv.quiz.QuizLaunchTarget
 import app.orchard.tv.quiz.QuizRuntime
 import app.orchard.tv.ui.components.Pressable
 import app.orchard.tv.settings.AerialSettings
@@ -257,13 +261,42 @@ fun PolicyHomeGate(
     var preparing by remember { mutableStateOf(false) }
     var wasGate by remember { mutableStateOf(!homeVisible) }
     var lastDesired by remember { mutableStateOf(desired) }
-    // The child wallpaper belongs to the active child session, not to Home in general. Study
-    // mode, parent override, policy-off Home and the parent center keep the owner's wallpaper.
-    val childSession = state.loaded &&
-        state.guardState == GuardStatus.ENFORCING &&
-        state.sessionState == SessionState.ACTIVE
-    val childWallpaper = if (childSession) rememberPolicyChildWallpaperState() else null
-    val childActive = childSession && childWallpaper?.configured == true
+    // A quiz opened from an entertainment app confirms that app inside the settlement, not in
+    // the lock screen: the earned session disposes the lock screen before the review coroutine
+    // can call back, so the one-shot launch must live above it. Wait for the policy session,
+    // resolve the app again against the live scope and the current Home list, then open it once.
+    val quizTargetPackage by QuizLaunchTarget.confirmed.collectAsState()
+    val stateNow by rememberUpdatedState(state)
+    val launchNow by rememberUpdatedState(onLaunch)
+    LaunchedEffect(quizTargetPackage) {
+        val target = quizTargetPackage ?: return@LaunchedEffect
+        val ready = withTimeoutOrNull(5_000L) {
+            snapshotFlow {
+                stateNow.sessionState == SessionState.ACTIVE &&
+                    stateNow.guardState == GuardStatus.ENFORCING &&
+                    vm.loaded
+            }.first { it }
+        } != null
+        // The app may have been uninstalled or removed from the timed scope while the round
+        // ran; only an app the child can actually open now is launched.
+        val app = if (ready) {
+            vm.timedApps(stateNow.allowedPackages)
+                .firstOrNull { it.packageName == target }
+        } else {
+            null
+        }
+        QuizLaunchTarget.consume(target)
+        if (app == null) return@LaunchedEffect
+        PolicyFlowTrace.event("quiz.launch.target", "package" to app.packageName)
+        launchNow(app, null)
+    }
+    // The child wallpaper owns every surface while child mode is enforced: the lock screen
+    // before a session starts and the active session's Home. Study mode, parent override,
+    // policy-off Home and the parent center keep the owner's wallpaper. The default picture is
+    // not a configured role but still fills these surfaces: a fresh install must look different
+    // from parent mode before anything is chosen.
+    val childActive = state.loaded && state.guardState == GuardStatus.ENFORCING
+    val childWallpaper = if (childActive) rememberPolicyChildWallpaperState() else null
     val childLoading = childActive && childWallpaper?.loading == true
     val childFilmCover = remember { Animatable(0f) }
     LaunchedEffect(childWallpaper?.source) { childFilmCover.snapTo(0f) }
@@ -318,7 +351,13 @@ fun PolicyHomeGate(
             state.guardState == GuardStatus.PARENT_OVERRIDE && !state.bound && !state.bindingDeferred ->
             PolicyBindingScreen(state)
         state.guardState == GuardStatus.ENFORCING && state.sessionState != SessionState.ACTIVE ->
-            PolicyLockScreen(state, vm, onLaunch, onOpen)
+            PolicyLockScreen(
+                state = state,
+                vm = vm,
+                onLaunch = onLaunch,
+                onOpen = onOpen,
+                childWallpaper = childWallpaper,
+            )
         // Study mode also lands here. The executor publishes the study list as the APPS scope,
         // so HomeViewModel hands Home only those tiles; a dedicated launcher would duplicate the
         // grid and break the desktop's look, focus and navigation. Control Center carries the
@@ -378,6 +417,7 @@ private fun PolicyLockScreen(
     vm: HomeViewModel,
     onLaunch: (AppEntry, Rect?) -> Unit,
     onOpen: (Intent) -> Unit,
+    childWallpaper: PolicyChildWallpaper?,
 ) {
     // Read in the draw phase below: a remote AUTO/MANUAL switch during the TV's idle standby
     // needs one more frame after the injected BACK that wakes the panel (PolicyPanelRefresh).
@@ -401,12 +441,18 @@ private fun PolicyLockScreen(
     var verifying by remember { mutableStateOf(false) }
     var recoveryMode by remember { mutableStateOf(false) }
     var quizMode by remember { mutableStateOf(false) }
+    // The entertainment app that opened this quiz. A successful round launches it after the
+    // earned session starts; the dedicated quiz tile leaves this null.
+    var quizTarget by remember { mutableStateOf<AppEntry?>(null) }
     // The main-menu footer follows the focused button. Null means the default action owns focus.
     var focusedAction by remember { mutableStateOf<LockAction?>(null) }
     // The study apps are real icons rather than an action card. Their focus is kept apart from
     // [focusedAction] so the footer can name the app and the idle key handler knows the dock owns
     // focus even while no fixed action is selected.
     var focusedStudyPackage by remember { mutableStateOf<String?>(null) }
+    // Entertainment icons are the quiz entry, not launch shortcuts. They keep their own focus
+    // marker so the footer explains the quiz without naming the app as an action.
+    var focusedGatewayPackage by remember { mutableStateOf<String?>(null) }
     // The top-right guard badge opens a small parent panel. One state drives BACK, the overlay
     // flags and the panel itself, so no flow can leave it open behind another sheet.
     var guardPanelOpen by remember { mutableStateOf(false) }
@@ -446,9 +492,11 @@ private fun PolicyLockScreen(
     // existing panel over the same wallpaper, so their keypad and wheel do not compete with the
     // dock for focus.
     val desktopMenu = v10 && !pinMode && !durationMode
-    // Either a fixed action or a study icon can own the dock's focus. The root sheet must stay
-    // unfocusable in both cases, or the idle next-key handler would intercept D-pad movement.
-    val dockFocusActive = focusedAction != null || focusedStudyPackage != null
+    // A fixed action, a quiz-trigger app or a study icon can own the dock's focus. The root sheet
+    // must stay unfocusable in all cases, or the idle next-key handler would intercept D-pad
+    // movement.
+    val dockFocusActive = focusedAction != null || focusedStudyPackage != null ||
+        focusedGatewayPackage != null
     // Redemption is a manual grant, not a separate unlock mode. The legacy cloud engine does
     // not publish the V10 window or MANUAL_WAITING, so treat a bound REDEEM policy as manual
     // here and let the existing manual entries use their normal cloud path.
@@ -484,6 +532,7 @@ private fun PolicyLockScreen(
     val tracePending = manualWaiting &&
         state.sessionState == SessionState.PENDING && !restingNow
     val traceQuizVisible = quizState.enabled && quizState.entry != "blocked"
+    val traceQuizTile = quizState.lockEntryVisible
     val traceQuizAvailable = (traceManualAvailable || tracePending) && traceQuizVisible
     LaunchedEffect(
         state.sessionState,
@@ -494,6 +543,7 @@ private fun PolicyLockScreen(
         traceManualAvailable,
         tracePending,
         traceQuizVisible,
+        traceQuizTile,
         traceQuizAvailable,
         state.studyModeAvailable,
         state.userName.isNotBlank(),
@@ -504,6 +554,7 @@ private fun PolicyLockScreen(
             "study" to studyEntryVisible,
             "studyAvailable" to state.studyModeAvailable,
             "quizVisible" to traceQuizVisible,
+            "quizTile" to traceQuizTile,
             "quizAvailable" to traceQuizAvailable,
             "manualAvailable" to traceManualAvailable,
             "pending" to tracePending,
@@ -533,6 +584,7 @@ private fun PolicyLockScreen(
             // or prompt subflow. Those are full-screen overlays above this screen, so the
             // guard change alone does not dismiss them.
             quizMode = false
+            quizTarget = null
             recoveryMode = false
             promptMessage = null
         }
@@ -624,6 +676,7 @@ private fun PolicyLockScreen(
     fun actionFocused(action: LockAction, focused: Boolean) {
         if (focused) {
             focusedStudyPackage = null
+            focusedGatewayPackage = null
             focusedAction = action
         } else if (focusedAction == action) {
             focusedAction = null
@@ -633,8 +686,16 @@ private fun PolicyLockScreen(
 
     fun studyAppFocused(app: AppEntry) {
         focusedAction = null
+        focusedGatewayPackage = null
         focusedStudyPackage = app.packageName
         PolicyFlowTrace.event("focus.study.app", "package" to app.packageName)
+    }
+
+    fun gatewayAppFocused(app: AppEntry) {
+        focusedAction = null
+        focusedStudyPackage = null
+        focusedGatewayPackage = app.packageName
+        PolicyFlowTrace.event("focus.quiz.app", "package" to app.packageName)
     }
 
     fun startManual(minutes: Int) {
@@ -765,6 +826,28 @@ private fun PolicyLockScreen(
         onLaunch(app, bounds)
     }
 
+    /**
+     * An entertainment icon in the dock is the quiz entry, not a launch shortcut: it opens the
+     * same challenge the fixed card used to, and the app itself is never started from the lock
+     * screen. Everything after the challenge is unchanged.
+     */
+    fun openGatewayApp(app: AppEntry) {
+        actionMessage = null
+        if (app.packageName !in state.allowedPackages) return
+        // A new round owns the launch; drop a stale confirmation whose launch never happened.
+        QuizLaunchTarget.clear()
+        focusedAction = null
+        focusedStudyPackage = null
+        focusedGatewayPackage = null
+        PolicyFlowTrace.event(
+            "quiz.entry.app",
+            "package" to app.packageName,
+            "session" to state.sessionState,
+        )
+        quizTarget = app
+        quizMode = true
+    }
+
     // A remote switch must not inject BACK into a flow that BACK would dismiss; PolicyPanelRefresh
     // wakes the panel with BACK only when the lock screen's normal sheet is showing.
     SideEffect {
@@ -782,6 +865,7 @@ private fun PolicyLockScreen(
         if (pinMode || durationMode || quizMode || recoveryMode || promptMessage != null) {
             focusedAction = null
             focusedStudyPackage = null
+            focusedGatewayPackage = null
             guardPanelOpen = false
         }
     }
@@ -793,7 +877,13 @@ private fun PolicyLockScreen(
         return
     }
     if (quizMode) {
-        PolicyQuizScreen(onClose = { quizMode = false })
+        PolicyQuizScreen(
+            target = quizTarget,
+            onClose = {
+                quizMode = false
+                quizTarget = null
+            },
+        )
         return
     }
     // Replace the sheet instead of drawing over it: the buttons underneath must not keep
@@ -915,8 +1005,10 @@ private fun PolicyLockScreen(
         Modifier
             .fillMaxSize()
             // A window-wide opaque fill would hide the policy film's SurfaceView, which is
-            // behind the window; the backdrop draws the default-picture fallback instead.
-            .background(if (v10 && lockSource != null) Color.Transparent else Color.Black)
+            // behind the window; a picture keeps the opaque root and is drawn by the backdrop.
+            .background(
+                if (v10 && lockSource?.kind == PolicyMediaKind.VIDEO) Color.Transparent else Color.Black,
+            )
             // Draw one more frame when a remote switch needed the panel woken; the frame itself
             // is unchanged apart from the badge the state already switched.
             .drawWithContent {
@@ -967,7 +1059,7 @@ private fun PolicyLockScreen(
         contentAlignment = Alignment.Center,
     ) {
         if (v10) {
-            val film = lockSource
+            val film = lockSource?.takeIf { it.kind == PolicyMediaKind.VIDEO }
             if (film != null) PolicyLockFilm(source = film, cover = lockFilmCover)
         }
         if (desktopMenu) {
@@ -975,7 +1067,10 @@ private fun PolicyLockScreen(
                 state.restRemainingSeconds > 0
             val manualAvailable = manualWaiting && !resting && manualWindowOpen &&
                 (state.lockReason == LockReason.MANUAL_WAITING || redeemManual)
-            val quizEntryVisible = quizState.enabled && quizState.entry != "blocked"
+            // The quiz feature is always available in local mode; this is not the display
+            // switch. Entertainment apps stay quiz triggers whether or not the dedicated tile
+            // is shown.
+            val quizFeatureVisible = quizState.enabled && quizState.entry != "blocked"
             val quizLabel = when {
                 quizState.sessionState == "running" -> stringResource(
                     R.string.policy_quiz_resume,
@@ -987,8 +1082,11 @@ private fun PolicyLockScreen(
             }
             val pendingManual = manualWaiting &&
                 state.sessionState == SessionState.PENDING && !resting
-            val quizAvailable = (manualAvailable || pendingManual) && quizEntryVisible
+            val quizAvailable = (manualAvailable || pendingManual) && quizFeatureVisible
             val autoMode = state.activation == Activation.AUTO
+            // Display-only switch: when on, the dedicated quiz tile leads the dock. It never
+            // falls back into the list when off, and it never affects the app triggers.
+            val showQuizTile = !autoMode && quizState.lockEntryVisible && quizFeatureVisible
             val autoWaiting = v10 && autoMode && !state.noTimedApps
             val pendingStart = state.sessionState == SessionState.PENDING && !resting
             val startEnabled = if (pendingStart) true else autoReady && !resting
@@ -1008,20 +1106,38 @@ private fun PolicyLockScreen(
                 vm.hiddenApps,
                 vm.folderApps,
             ) { vm.studyApps(state.studyPackages) }
+            // The configured entertainment apps are the quiz entry now. Only Home's visible
+            // icons are used, so every trigger can also be opened after the session starts.
+            val timedApps = remember(
+                state.allowedPackages,
+                state.studyPackages,
+                vm.loaded,
+                vm.apps,
+                vm.folderApps,
+            ) {
+                vm.timedApps(state.allowedPackages)
+                    .filterNot { it.packageName in state.studyPackages }
+            }
+            val gatewayApps = if (!autoMode && quizFeatureVisible && !state.noTimedApps) {
+                timedApps
+            } else {
+                emptyList()
+            }
+            val gatewayEnabled = quizAvailable
+            if (showQuizTile) {
+                slots += LockDockSlot(
+                    id = LockDockId.QUIZ,
+                    art = if (quizAvailable) {
+                        R.drawable.policy_lock_dock_quiz
+                    } else {
+                        R.drawable.policy_lock_dock_quiz_off
+                    },
+                    label = quizLabel,
+                    hint = lockFooterText(LockAction.QUIZ, state, quizState),
+                    enabled = quizAvailable,
+                )
+            }
             if (!state.noTimedApps) {
-                if (!autoMode && quizEntryVisible) {
-                    slots += LockDockSlot(
-                        id = LockDockId.QUIZ,
-                        art = if (quizAvailable) {
-                            R.drawable.policy_lock_dock_quiz
-                        } else {
-                            R.drawable.policy_lock_dock_quiz_off
-                        },
-                        label = quizLabel,
-                        hint = lockFooterText(LockAction.QUIZ, state, quizState),
-                        enabled = quizAvailable,
-                    )
-                }
                 when {
                     pendingStart -> slots += LockDockSlot(
                         id = LockDockId.START,
@@ -1041,17 +1157,9 @@ private fun PolicyLockScreen(
                         hint = lockFooterText(LockAction.AUTO_START, state, quizState),
                         enabled = startEnabled,
                     )
-                    !autoMode -> slots += LockDockSlot(
-                        id = LockDockId.START,
-                        art = if (manualAvailable) {
-                            R.drawable.policy_lock_dock_manual
-                        } else {
-                            R.drawable.policy_lock_dock_manual_off
-                        },
-                        label = stringResource(R.string.policy_manual_confirm),
-                        hint = lockFooterText(LockAction.MANUAL, state, quizState),
-                        enabled = manualAvailable,
-                    )
+                    // Manual mode has no one-off timer card. A parent grant (quiz reward or the
+                    // phone control page) still shows the pending START card above, because that
+                    // session has already been approved and only needs the child's confirmation.
                 }
             }
             // Parent temporary unlock lives behind the top-right badge now, not in the dock.
@@ -1065,28 +1173,40 @@ private fun PolicyLockScreen(
                 LockAction.STUDY, LockAction.PARENT_UNLOCK -> null
                 null -> null
             }
-            // The row's identity covers fixed actions and study apps alike, so focus is cleared
+            // The row's identity covers fixed actions and app icons alike, so focus is cleared
             // when an unavailable action disappears or the parent removes the focused app.
             val dockSignature = slots.joinToString { "${it.id}:${it.enabled}" } +
+                "|q:" + gatewayEnabled +
+                "|" + gatewayApps.joinToString { it.packageName } +
                 "|" + studyApps.joinToString { it.packageName }
             // A slot that becomes unavailable loses focus; AppTile disables its own focusable
             // node, so the sheet takes focus back and the next key re-enters the dock.
-            LaunchedEffect(focusedDock, focusedStudyPackage, dockSignature) {
+            LaunchedEffect(
+                focusedDock,
+                focusedGatewayPackage,
+                focusedStudyPackage,
+                dockSignature,
+            ) {
                 val focusedSlot = slots.firstOrNull { it.id == focusedDock }
                 val actionLost = focusedDock != null &&
                     (focusedSlot == null || !focusedSlot.enabled)
+                val gatewayLost = focusedGatewayPackage != null &&
+                    (!gatewayEnabled || gatewayApps.none {
+                        it.packageName == focusedGatewayPackage
+                    })
                 val appLost = focusedStudyPackage != null &&
                     studyApps.none { it.packageName == focusedStudyPackage }
-                if (actionLost || appLost) {
+                if (actionLost || gatewayLost || appLost) {
                     focusedAction = null
+                    focusedGatewayPackage = null
                     focusedStudyPackage = null
                     withFrameNanos { }
                     runCatching { idleFocus.requestFocus() }
                 }
             }
-            // A pending start owns focus on the V10 desktop too. START is not always the dock's
-            // first enabled tile (quiz can come before it), and when it is, AppTile is already
-            // attached to [firstActionFocus], so ask that requester instead.
+            // A pending start owns focus on the V10 desktop too. AppTile is already attached to
+            // [firstActionFocus] when START is the first enabled tile; ask the dedicated
+            // requester otherwise.
             LaunchedEffect(pendingStartVisible, dockSignature) {
                 if (!pendingStartVisible) return@LaunchedEffect
                 withFrameNanos { }
@@ -1096,10 +1216,16 @@ private fun PolicyLockScreen(
                 }
             }
             val selectedSlot = slots.firstOrNull { it.id == focusedDock && it.enabled }
+            val focusedGatewayApp = gatewayApps.firstOrNull {
+                it.packageName == focusedGatewayPackage
+            }
             val focusedStudyApp = studyApps.firstOrNull {
                 it.packageName == focusedStudyPackage
             }
             val dockHint = when {
+                // An entertainment icon opens the quiz; its footer explains the challenge.
+                focusedGatewayApp != null ->
+                    lockFooterText(LockAction.QUIZ, state, quizState)
                 // A study icon names itself; the list is not timed.
                 focusedStudyApp != null -> stringResource(
                     R.string.policy_lock_study_app_footer,
@@ -1114,7 +1240,7 @@ private fun PolicyLockScreen(
             // One set of numbers places the dock, the grid below it, its plate and the hint. They
             // come from Aerial's one-row shelf, so the same peek, plate and column settings move
             // both the desktop and this screen.
-            val dockTileCount = slots.size + studyApps.size
+            val dockTileCount = slots.size + gatewayApps.size + studyApps.size
             val dockMetrics = lockDockMetrics(AerialSettings.homeColumns, dockTileCount)
             val dockState = rememberLockDockState()
             val dockCollapsePx = with(LocalDensity.current) { dockMetrics.collapse.toPx() }
@@ -1134,6 +1260,8 @@ private fun PolicyLockScreen(
                 scroll = { dockState.scroll.value },
                 collapse = dockCollapsePx,
                 policyDefault = true,
+                policyImage = childWallpaper?.image,
+                policyFrosted = childWallpaper?.frosted,
             )
             LockDesktopIdentity(
                 state = state,
@@ -1155,6 +1283,8 @@ private fun PolicyLockScreen(
             )
             LockDesktopDock(
                 slots = slots,
+                gatewayApps = gatewayApps,
+                gatewayEnabled = gatewayEnabled,
                 studyApps = studyApps,
                 onFocused = { id ->
                     val action = when (id) {
@@ -1168,6 +1298,7 @@ private fun PolicyLockScreen(
                     when (id) {
                         LockDockId.QUIZ -> {
                             focusedAction = null
+                            quizTarget = null
                             quizMode = true
                         }
                         LockDockId.START -> when {
@@ -1206,6 +1337,8 @@ private fun PolicyLockScreen(
                         }
                     }
                 },
+                onGatewayAppFocused = ::gatewayAppFocused,
+                onGatewayAppSelected = ::openGatewayApp,
                 onStudyAppFocused = ::studyAppFocused,
                 onStudyAppSelected = ::openStudyApp,
                 firstFocus = firstActionFocus,
@@ -1269,6 +1402,8 @@ private fun PolicyLockScreen(
             LockDesktopBackdrop(
                 cover = { lockFilmCover.value },
                 policyDefault = true,
+                policyImage = childWallpaper?.image,
+                policyFrosted = childWallpaper?.frosted,
             )
             Box(
                 Modifier
@@ -1452,7 +1587,12 @@ private fun PolicyLockScreen(
                         val manualAvailable = manualWaiting && !resting && manualWindowOpen &&
                             (state.lockReason == LockReason.MANUAL_WAITING || redeemManual)
                         val manualFrozen = manualWaiting && !resting && !manualAvailable
-                        val quizEntryVisible = quizState.enabled && quizState.entry != "blocked"
+                        val quizFeatureVisible = quizState.enabled &&
+                            quizState.entry != "blocked"
+                        // The legacy sheet has no app icons, so its fixed quiz action is the
+                        // only entry and follows the display switch.
+                        val quizActionVisible = quizFeatureVisible &&
+                            quizState.lockEntryVisible
                         val quizLabel = when {
                             quizState.sessionState == "running" -> stringResource(
                                 R.string.policy_quiz_resume,
@@ -1477,7 +1617,7 @@ private fun PolicyLockScreen(
                         val pendingManual = manualWaiting &&
                             state.sessionState == SessionState.PENDING && !resting
                         val quizAvailable = (manualAvailable || pendingManual) &&
-                            quizEntryVisible
+                            quizActionVisible
                         // Whether a start action is shown below. Study Mode is an entry,
                         // not the OK target.
                         val primaryAction = when {
@@ -1540,7 +1680,7 @@ private fun PolicyLockScreen(
                                 manualWaiting -> {
                                     // The quiz is a parent-controlled manual unlock too,
                                     // so keep its entry visible and frozen during rest.
-                                    if (quizEntryVisible) {
+                                    if (quizActionVisible) {
                                         FrozenAction(label = quizLabel)
                                         Spacer(Modifier.height(10.dp))
                                     }
@@ -1564,7 +1704,10 @@ private fun PolicyLockScreen(
                                 if (quizAvailable) {
                                     LockActionButton(
                                         label = quizLabel,
-                                        onClick = { quizMode = true },
+                                        onClick = {
+                                            quizTarget = null
+                                            quizMode = true
+                                        },
                                         width = 320.dp,
                                         onFocused = { actionFocused(LockAction.QUIZ, it) },
                                     )
@@ -1615,7 +1758,7 @@ private fun PolicyLockScreen(
                                 // Keep both parent-controlled entries visible but dimmed, so
                                 // the child sees that they return when the next window opens.
                                 // The left column already carries the next-window guidance.
-                                if (quizEntryVisible) {
+                                if (quizActionVisible) {
                                     FrozenAction(label = quizLabel)
                                     Spacer(Modifier.height(10.dp))
                                 }
@@ -1640,6 +1783,7 @@ private fun PolicyLockScreen(
                                             // bank. Unbound: it shows the local QR. Either way
                                             // the question pool lives in the same cache, so the
                                             // entry itself is unconditional.
+                                            quizTarget = null
                                             quizMode = true
                                         },
                                         width = 320.dp,

@@ -152,70 +152,116 @@ object OfficialMediaDownloader {
     ) {
         val downloadDir = OfficialMediaStore.downloadDir(context)
         val suffix = item.id.removePrefix("official:")
-        val videoPart = File(downloadDir, "$suffix.mp4.part")
+        val isImage = item.kind == PolicyMediaKind.IMAGE
+        val mediaPart = File(downloadDir, if (isImage) "$suffix.image.jpg.part" else "$suffix.mp4.part")
         val posterPart = File(downloadDir, "$suffix.jpg.part")
         val staging = File(downloadDir, "$suffix.stage")
-        videoPart.delete()
+        mediaPart.delete()
         posterPart.delete()
         staging.deleteRecursively()
 
         try {
-            val digest = downloadObject(context, item.url, item.bytes, videoPart, item.id, expectVideo = true)
+            val digest = downloadObject(
+                context = context,
+                url = item.url,
+                expectedBytes = item.bytes,
+                target = mediaPart,
+                id = item.id,
+                kind = item.kind,
+                reportProgress = true,
+            )
             if (digest != item.sha256) throw DownloadFailure("MEDIA_CHECKSUM_MISMATCH")
-            if (videoPart.length() != item.bytes) throw DownloadFailure("MEDIA_CHECKSUM_MISMATCH")
+            if (mediaPart.length() != item.bytes) throw DownloadFailure("MEDIA_CHECKSUM_MISMATCH")
             states[item.id] = Progress(STATE_VERIFYING, item.bytes, item.bytes, null)
 
-            val info = when (val checked = PolicyVideoValidation.validate(videoPart)) {
-                is PolicyVideoValidation.Result.Rejected ->
-                    throw DownloadFailure("MEDIA_BAD_FORMAT")
-                is PolicyVideoValidation.Result.Ok -> checked.info
-            }
-            if (!matchesManifest(info, item)) throw DownloadFailure("MEDIA_BAD_FORMAT")
-
-            val posterDigest = downloadObject(
-                context,
-                item.poster.url,
-                item.poster.bytes,
-                posterPart,
-                item.id,
-                expectVideo = false,
-            )
-            if (posterDigest != item.poster.sha256 ||
-                posterPart.length() != item.poster.bytes ||
-                !PolicyVideoValidation.isJpeg(posterPart)
-            ) {
-                throw DownloadFailure("MEDIA_CHECKSUM_MISMATCH")
-            }
-
             check(staging.mkdirs()) { "could not create staging directory" }
-            val stagedVideo = File(staging, "video.mp4")
-            val stagedPoster = File(staging, "poster.jpg")
-            if (!videoPart.renameTo(stagedVideo)) {
-                videoPart.copyTo(stagedVideo, overwrite = true)
-                videoPart.delete()
+            if (isImage) {
+                // The stored bytes are exactly what the manifest published; a re-encode would
+                // change the SHA-256, so this only inspects the JPEG.
+                val checked = when (val result = PolicyImageValidation.inspectStored(mediaPart)) {
+                    is PolicyImageValidation.Result.Rejected ->
+                        throw DownloadFailure("MEDIA_BAD_FORMAT")
+                    is PolicyImageValidation.Result.Ok -> result
+                }
+                if (checked.width != item.width || checked.height != item.height ||
+                    checked.bytes != item.bytes
+                ) {
+                    throw DownloadFailure("MEDIA_BAD_FORMAT")
+                }
+                val stagedImage = File(staging, "image.jpg")
+                if (!mediaPart.renameTo(stagedImage)) {
+                    mediaPart.copyTo(stagedImage, overwrite = true)
+                    mediaPart.delete()
+                }
+                File(staging, "info.json").writeText(
+                    JSONObject()
+                        .put("kind", PolicyMediaKind.IMAGE.wire)
+                        .put("id", item.id)
+                        .put("name", item.name)
+                        .put("nameEn", item.nameEn)
+                        .put("roles", JSONArray(item.roles.map { it.wire }))
+                        .put("sha256", item.sha256)
+                        .put("bytes", item.bytes)
+                        .put("width", checked.width)
+                        .put("height", checked.height)
+                        .put("downloadedAt", System.currentTimeMillis())
+                        .toString(),
+                )
+            } else {
+                // Official media stays H.264-only; local uploads use validateLocalUpload.
+                val info = when (val checked = PolicyVideoValidation.validateOfficialDownload(mediaPart)) {
+                    is PolicyVideoValidation.Result.Rejected ->
+                        throw DownloadFailure("MEDIA_BAD_FORMAT")
+                    is PolicyVideoValidation.Result.Ok -> checked.info
+                }
+                if (!matchesManifest(info, item)) throw DownloadFailure("MEDIA_BAD_FORMAT")
+
+                val posterDigest = downloadObject(
+                    context = context,
+                    url = item.poster.url,
+                    expectedBytes = item.poster.bytes,
+                    target = posterPart,
+                    id = item.id,
+                    kind = PolicyMediaKind.IMAGE,
+                    reportProgress = false,
+                )
+                if (posterDigest != item.poster.sha256 ||
+                    posterPart.length() != item.poster.bytes ||
+                    !PolicyVideoValidation.isJpeg(posterPart)
+                ) {
+                    throw DownloadFailure("MEDIA_CHECKSUM_MISMATCH")
+                }
+
+                val stagedVideo = File(staging, "video.mp4")
+                val stagedPoster = File(staging, "poster.jpg")
+                if (!mediaPart.renameTo(stagedVideo)) {
+                    mediaPart.copyTo(stagedVideo, overwrite = true)
+                    mediaPart.delete()
+                }
+                if (!posterPart.renameTo(stagedPoster)) {
+                    posterPart.copyTo(stagedPoster, overwrite = true)
+                    posterPart.delete()
+                }
+                File(staging, "info.json").writeText(
+                    JSONObject()
+                        .put("kind", PolicyMediaKind.VIDEO.wire)
+                        .put("id", item.id)
+                        .put("name", item.name)
+                        .put("nameEn", item.nameEn)
+                        .put("roles", JSONArray(item.roles.map { it.wire }))
+                        .put("sha256", item.sha256)
+                        .put("bytes", item.bytes)
+                        .put("durationMs", info.durationMs)
+                        .put("width", info.width)
+                        .put("height", info.height)
+                        .put("fps", info.fps)
+                        .put("hasAudio", info.hasAudio)
+                        .put("posterSha256", item.poster.sha256)
+                        .put("posterAtMs", item.poster.atMs)
+                        .put("downloadedAt", System.currentTimeMillis())
+                        .toString(),
+                )
             }
-            if (!posterPart.renameTo(stagedPoster)) {
-                posterPart.copyTo(stagedPoster, overwrite = true)
-                posterPart.delete()
-            }
-            File(staging, "info.json").writeText(
-                JSONObject()
-                    .put("id", item.id)
-                    .put("name", item.name)
-                    .put("nameEn", item.nameEn)
-                    .put("roles", JSONArray(item.roles.map { it.wire }))
-                    .put("sha256", item.sha256)
-                    .put("bytes", item.bytes)
-                    .put("durationMs", info.durationMs)
-                    .put("width", info.width)
-                    .put("height", info.height)
-                    .put("fps", info.fps)
-                    .put("hasAudio", info.hasAudio)
-                    .put("posterSha256", item.poster.sha256)
-                    .put("posterAtMs", item.poster.atMs)
-                    .put("downloadedAt", System.currentTimeMillis())
-                    .toString(),
-            )
             install(staging, context, item.id)
 
             assignRoles(context, item.id, roles)
@@ -233,7 +279,8 @@ object OfficialMediaDownloader {
         expectedBytes: Long,
         target: File,
         id: String,
-        expectVideo: Boolean,
+        kind: PolicyMediaKind,
+        reportProgress: Boolean,
     ): String {
         val connection = try {
             val opened = URL(url).openConnection() as HttpURLConnection
@@ -242,7 +289,10 @@ object OfficialMediaDownloader {
             opened.connectTimeout = CONNECT_TIMEOUT_MS
             opened.readTimeout = READ_TIMEOUT_MS
             opened.setRequestProperty("Accept-Encoding", "identity")
-            opened.setRequestProperty("Accept", if (expectVideo) "video/mp4" else "image/jpeg")
+            opened.setRequestProperty(
+                "Accept",
+                if (kind == PolicyMediaKind.VIDEO) "video/mp4" else "image/jpeg",
+            )
             opened
         } catch (error: Exception) {
             throw DownloadFailure("NETWORK")
@@ -279,7 +329,7 @@ object OfficialMediaDownloader {
                             windowAt = now
                             windowFrom = done
                         }
-                        if (expectVideo && done - shown >= PROGRESS_STEP) {
+                        if (reportProgress && done - shown >= PROGRESS_STEP) {
                             shown = done
                             states[id] = Progress(STATE_DOWNLOADING, done, expectedBytes, null)
                         }
@@ -287,9 +337,6 @@ object OfficialMediaDownloader {
                 }
             }
             if (done != expectedBytes) throw DownloadFailure("MEDIA_CHECKSUM_MISMATCH")
-            if (expectVideo) {
-                states[id] = Progress(STATE_VERIFYING, expectedBytes, expectedBytes, null)
-            }
             return digest.digest().joinToString("") { "%02x".format(it) }
         } finally {
             activeConnection = null
@@ -332,7 +379,9 @@ object OfficialMediaDownloader {
     }
 
     private fun hasFreeSpace(context: Context, item: OfficialMediaItem): Boolean {
-        val need = item.bytes + item.poster.bytes + KEEP_FREE_BYTES
+        // An image has no separate poster; its own bytes are the whole download.
+        val posterBytes = if (item.kind == PolicyMediaKind.VIDEO) item.poster.bytes else 0L
+        val need = item.bytes + posterBytes + KEEP_FREE_BYTES
         return OfficialMediaStore.officialDir(context).usableSpace >= need
     }
 
@@ -348,6 +397,7 @@ object OfficialMediaDownloader {
         val suffix = id.removePrefix("official:")
         val downloadDir = OfficialMediaStore.downloadDir(context)
         File(downloadDir, "$suffix.mp4.part").delete()
+        File(downloadDir, "$suffix.image.jpg.part").delete()
         File(downloadDir, "$suffix.jpg.part").delete()
         File(downloadDir, "$suffix.stage").deleteRecursively()
     }

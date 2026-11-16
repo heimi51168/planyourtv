@@ -2,6 +2,7 @@ package app.orchard.tv.policy.web
 
 import android.content.Context
 import android.util.Log
+import app.orchard.tv.BuildConfig
 import app.orchard.tv.policy.media.PolicyVideoLibrary
 import app.orchard.tv.quiz.QuizIntroVideo
 import com.planyourtv.policy.LocalPin
@@ -52,7 +53,9 @@ object ParentWebAdmin {
 
     fun handle(context: Context, session: IHTTPSession, path: String): Response? {
         if (!ParentWebCenter.ENABLED) return null
-        if (!path.startsWith("/api/parent/") && path != "/parent.js" && path != "/parent.css") {
+        if (!path.startsWith("/api/parent/") && path != "/parent.js" && path != "/parent.css" &&
+            path != "/parent-kids-default.jpg"
+        ) {
             return null
         }
         return try {
@@ -66,6 +69,14 @@ object ParentWebAdmin {
                     asset(context, "web/parent.js", "application/javascript; charset=utf-8")
                 session.method == Method.GET && path == "/parent.css" ->
                     asset(context, "web/parent.css", "text/css; charset=utf-8")
+                // A bundled JPEG must be served as bytes; reading it through the text asset
+                // helper would corrupt it.
+                session.method == Method.GET && path == "/parent-kids-default.jpg" ->
+                    bytes(
+                        Response.Status.OK,
+                        "image/jpeg",
+                        context.assets.open("web/parent-kids-default.jpg").use { it.readBytes() },
+                    )
                 session.method == Method.GET && path == "/api/parent/bootstrap" -> bootstrap()
                 session.method == Method.GET && path == "/api/parent/gate" -> gate()
                 // V29 removes the old entry flows. Cached pages get a clear terminal answer
@@ -138,21 +149,32 @@ object ParentWebAdmin {
                     }
                 session.method == Method.POST && path == "/api/parent/auto-update" ->
                     write(context, session) { ParentCenterActions.setAutoUpdate(it) }
-                // Rules, source visibility and the quiz switch are only reachable from the
-                // PIN-gated Time & Apps page; the server repeats that check because hiding
-                // the UI entry is not an authorization boundary.
+                // The version row in "More" shows the TV build and lets a parent start the
+                // same download/install the TV update page uses. No extra PIN: both actions
+                // are reversible until the system installer's own confirmation.
+                session.method == Method.POST && path == "/api/parent/update/check" ->
+                    write(context, session) { ParentCenterActions.requestUpdateCheck() }
+                session.method == Method.POST && path == "/api/parent/update/install" ->
+                    write(context, session) { ParentCenterActions.installUpdate() }
+                // Rules, source visibility and the quiz-entry display switch are only reachable
+                // from the PIN-gated Time & Apps page; the server repeats that check because
+                // hiding the UI entry is not an authorization boundary.
                 session.method == Method.POST && path == "/api/parent/source-entries" ->
                     write(
                         context,
                         session,
                         sensitiveScope = ParentSensitiveAuth.Scope.RULES_EDIT,
                     ) { ParentCenterActions.setSourceEntries(it) }
-                session.method == Method.POST && path == "/api/parent/quiz" ->
+                session.method == Method.POST && path == "/api/parent/quiz-entry" ->
                     write(
                         context,
                         session,
                         sensitiveScope = ParentSensitiveAuth.Scope.RULES_EDIT,
-                    ) { ParentCenterActions.setQuiz(it) }
+                    ) { ParentCenterActions.setQuizEntry(it) }
+                // The old switch deleted an unstarted challenge; a cached page must not
+                // reach that behavior through a deprecated route.
+                session.method == Method.POST && path == "/api/parent/quiz" ->
+                    jsonError(Response.Status.GONE, "QUIZ_SWITCH_REMOVED")
                 session.method == Method.POST && path == "/api/parent/end-session" ->
                     write(context, session) { ParentCenterActions.endSession(it) }
                 else -> error(Response.Status.NOT_FOUND, "NOT_FOUND")
@@ -441,10 +463,11 @@ object ParentWebAdmin {
     }
 
     /**
-     * A raw MP4 body, streamed straight into the local library instead of being buffered as
-     * JSON. The declared length is checked before any bytes are allocated or read; the editor
-     * lease is checked before the body is consumed, so an unauthorized client never gets to
-     * fill the TV's storage.
+     * A raw video or picture body, streamed straight into the local library instead of being
+     * buffered as JSON. The declared length is checked before any bytes are allocated or read;
+     * the editor lease is checked before the body is consumed, so an unauthorized client never
+     * gets to fill the TV's storage. Pictures may be up to 12 MiB on the wire and are normalised
+     * to one 4 MiB JPEG before publishing; videos stay capped at 4 MiB.
      */
     private fun uploadIntroVideo(context: Context, session: IHTTPSession): Response {
         if (!requirePostHeader(session)) return jsonError(Response.Status.FORBIDDEN, "REQUEST_HEADER")
@@ -455,24 +478,28 @@ object ParentWebAdmin {
         val declared = session.headers["content-length"]?.toLongOrNull()
             ?: return jsonError(Response.Status.LENGTH_REQUIRED, "LENGTH_REQUIRED")
         if (declared <= 0L) return jsonError(Response.Status.BAD_REQUEST, "INTRO_VIDEO_INVALID")
-        if (declared > QuizIntroVideo.MAX_FILE_BYTES) {
-            return jsonError(Response.Status.PAYLOAD_TOO_LARGE, "INTRO_VIDEO_TOO_LARGE")
+        if (declared > QuizIntroVideo.MAX_UPLOAD_BYTES) {
+            return jsonError(Response.Status.PAYLOAD_TOO_LARGE, "INTRO_IMAGE_TOO_LARGE")
         }
         val name = session.parameters["name"]?.firstOrNull().orEmpty()
         return when (val result = QuizIntroVideo.receive(context, session.inputStream, declared, name)) {
             is QuizIntroVideo.ReceiveResult.Ok -> {
-                Log.i(TAG, "intro video stored: ${result.entry.sizeBytes} bytes, ${result.entry.durationMs} ms")
+                Log.i(
+                    TAG,
+                    "local media stored: ${result.entry.kind.wire}, ${result.entry.sizeBytes} bytes",
+                )
                 json(
                     Response.Status.OK,
                     JSONObject()
                         .put("ok", true)
                         .put("uploadedId", result.entry.id)
+                        .put("kind", result.entry.kind.wire)
                         .put("snapshot", ParentCenterActions.snapshot(context)),
                 )
             }
             is QuizIntroVideo.ReceiveResult.Rejected -> {
                 // The code is enough to diagnose a failed upload from logcat; never log the name.
-                Log.i(TAG, "intro video rejected: ${result.code}")
+                Log.i(TAG, "local media rejected: ${result.code}")
                 introVideoError(result.code)
             }
         }
@@ -480,11 +507,12 @@ object ParentWebAdmin {
 
     private fun introVideoError(code: String): Response {
         val status = when (code) {
-            "INTRO_VIDEO_TOO_LARGE" -> Response.Status.PAYLOAD_TOO_LARGE
+            "INTRO_VIDEO_TOO_LARGE", "INTRO_IMAGE_TOO_LARGE" -> Response.Status.PAYLOAD_TOO_LARGE
             "INTRO_VIDEO_LIBRARY_FULL" -> Response.Status.CONFLICT
             "INTRO_VIDEO_NO_SPACE" -> Response.Status.SERVICE_UNAVAILABLE
             "INTRO_VIDEO_BAD_FORMAT", "INTRO_VIDEO_BAD_CODEC", "INTRO_VIDEO_HEVC",
-            "INTRO_VIDEO_BAD_RATIO", "INTRO_VIDEO_BAD_FPS", "INTRO_VIDEO_BAD_RESOLUTION" ->
+            "INTRO_VIDEO_UNSUPPORTED_CODEC", "INTRO_VIDEO_BAD_RATIO", "INTRO_VIDEO_BAD_FPS",
+            "INTRO_VIDEO_BAD_RESOLUTION", "INTRO_IMAGE_BAD_FORMAT", "INTRO_IMAGE_BAD_RATIO" ->
                 Response.Status.UNSUPPORTED_MEDIA_TYPE
             else -> Response.Status.BAD_REQUEST
         }
@@ -732,9 +760,28 @@ object ParentWebAdmin {
         response.addHeader("Referrer-Policy", "no-referrer")
         response.addHeader(
             "Content-Security-Policy",
-            "default-src 'self'; img-src 'self' data: blob:; script-src 'self'; " +
-                "style-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'",
+            "default-src 'self'; img-src 'self' data: blob:" + mediaImageOrigin() + "; " +
+                "script-src 'self'; style-src 'self'; connect-src 'self'; " +
+                "base-uri 'none'; frame-ancestors 'none'",
         )
         return response
+    }
+
+    /**
+     * Covers before a download are loaded straight from the compile-time media host; the
+     * catalogue parser already rejects every other host. The page itself stays same-origin.
+     */
+    private fun mediaImageOrigin(): String {
+        val raw = BuildConfig.TV_MEDIA_CATALOG_URL.trim()
+        if (raw.isEmpty()) return ""
+        val uri = runCatching { java.net.URI(raw) }.getOrNull() ?: return ""
+        val host = uri.host ?: return ""
+        if (uri.scheme != "https" || (uri.port != -1 && uri.port != 443) || uri.rawUserInfo != null ||
+            uri.rawQuery != null || uri.rawFragment != null ||
+            !host.matches(Regex("[A-Za-z0-9.-]+"))
+        ) {
+            return ""
+        }
+        return " https://" + host
     }
 }

@@ -180,21 +180,20 @@ internal object BotActions {
     }
 
     private fun quizEnabled(on: Boolean): Outcome {
-        // The quiz admin page is local-mode only; keep the chat surface identical.
+        // v1.97.001: the quiz feature is always on in local mode; the switch we
+        // own here is only the lock desktop's dedicated quiz tile. Toggling the
+        // feature itself no longer exists, so map the chat commands to the tile.
         if (PolicyModeCoordinator.mode != PolicyMode.LOCAL) {
             return Outcome("答题功能属于本地儿童模式，当前模式不可用")
         }
-        // QuizSettings owns the guards the web page also goes through: refusing
-        // to disable during a live round, settling/cleaning stored sessions and
-        // refreshing the lock-screen entry.
-        return when (QuizSettings.setEnabled(on)) {
-            QuizSettings.SetResult.Changed ->
-                Outcome(if (on) "✅ 答题已开启" else "✅ 答题已关闭（时间用完将直接锁定）")
-            QuizSettings.SetResult.SessionRunning ->
-                Outcome("孩子正在答题，不能现在关闭答题功能")
-            QuizSettings.SetResult.StorageError ->
-                Outcome("电视存储异常，未能保存，请稍后再试")
-        }
+        QuizSettings.setLockEntryVisible(on)
+        return Outcome(
+            if (on) {
+                "✅ 锁屏答题入口已显示（v1.97 起答题功能常开，此开关只控制入口显示）"
+            } else {
+                "✅ 锁屏答题入口已隐藏（娱乐应用仍可触发答题）"
+            },
+        )
     }
 
     // --- settings ------------------------------------------------------------

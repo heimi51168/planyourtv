@@ -64,7 +64,7 @@ object QuizLocalConfigDocument {
     private fun executionIssues(document: QuizConfigDocument): List<QuizDocIssue> {
         val issues = mutableListOf<QuizDocIssue>()
         if (document.rules.questionCount !in QUIZ_MIN_LOCAL_PULL_COUNT..QUIZ_MAX_PULL_COUNT) {
-            issues += QuizDocIssue("rules.questionCount", "LOCAL_MIN_QUESTIONS_5")
+            issues += QuizDocIssue("rules.questionCount", "LOCAL_MIN_QUESTIONS")
         }
         issues += QuizDeviceCapabilities.issues(document, cloudRound = false)
         return issues
@@ -101,7 +101,10 @@ object QuizLocalConfigDocument {
             origin = if (migrated) QuizDocOrigin.LOCAL_MIGRATED else QuizDocOrigin.LOCAL,
             updatedAt = isoTime(nowMs),
             updatedBy = if (migrated) QuizDocUpdatedBy.MIGRATION else QuizDocUpdatedBy.TV_LOCAL_EDIT,
-            enabled = QuizSessionStore.enabled(),
+            // Local documents are always executable now. Older documents that
+            // still carry enabled=false are ignored by the runtime rather than
+            // migrated, so a new document never starts disabled.
+            enabled = true,
             rules = QuizRules(
                 questionCount = config.pullCount,
                 timeLimitSec = config.defaultTimeLimitSec,

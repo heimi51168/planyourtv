@@ -2,6 +2,7 @@ package app.orchard.tv.policy.media
 
 import android.graphics.Bitmap
 import android.media.MediaCodecInfo
+import android.media.MediaCodecList
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaMetadataRetriever
@@ -10,13 +11,20 @@ import app.orchard.tv.wallpaper.Images
 import java.io.File
 import java.io.OutputStream
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 /**
- * One decode contract for both local uploads and official downloads.
+ * The decode contract for policy videos.
  *
- * Android 5.0 is the compatibility floor: H.264 video, AAC-LC audio (or no
- * audio track), 16:9, at most 1080p30 and 15 seconds. The TV never transcodes,
- * so a film outside this set is rejected before it can become visible.
+ * Official cloud media deliberately stays H.264 + AAC-LC (or no audio track),
+ * 16:9, at most 1080p30 and 15 seconds: that is the format every Android 5.0
+ * TV in the compatibility floor can play. Local uploads follow Aerial's owner
+ * video acceptance (MP4/MOV, any codec) but are checked against this TV's
+ * decoders, because the policy library plays them in the same process. A local
+ * upload is accepted only when a regular decoder exists for its actual codec,
+ * size and frame rate; the TV never transcodes. HEVC without a decoder is
+ * rejected with `INTRO_VIDEO_HEVC`, other codecs with
+ * `INTRO_VIDEO_UNSUPPORTED_CODEC`.
  *
  * Rejection codes stay in the `INTRO_VIDEO_*` namespace because the old
  * parent page already maps them. Callers that need a library-level error wrap
@@ -39,6 +47,9 @@ object PolicyVideoValidation {
     private const val ASPECT_TOLERANCE = 0.03
     private const val TAG = "PolicyVideoValidation"
 
+    /** Official media stays H.264; local uploads accept any video codec this TV can decode. */
+    private val OFFICIAL_VIDEO_MIMES = setOf("video/avc")
+
     data class Info(
         val durationMs: Long,
         val width: Int,
@@ -52,7 +63,13 @@ object PolicyVideoValidation {
         data class Rejected(val code: String) : Result()
     }
 
-    fun validate(file: File): Result {
+    /** Local uploads may use any codec this TV can decode at the actual size and rate. */
+    fun validateLocalUpload(file: File): Result = validate(file, localUpload = true)
+
+    /** Official cloud media stays H.264-only so Android 5.0 TVs remain supported. */
+    fun validateOfficialDownload(file: File): Result = validate(file, localUpload = false)
+
+    private fun validate(file: File, localUpload: Boolean): Result {
         val retriever = MediaMetadataRetriever()
         try {
             retriever.setDataSource(file.absolutePath)
@@ -96,31 +113,61 @@ object PolicyVideoValidation {
                     when {
                         mime.startsWith("video/") -> {
                             videoTracks += 1
-                            if (mime == "video/hevc" || mime == "video/h265") {
-                                return Result.Rejected("INTRO_VIDEO_HEVC")
-                            }
-                            if (mime != "video/avc") {
+                            if (!localUpload && mime !in OFFICIAL_VIDEO_MIMES) {
                                 return Result.Rejected("INTRO_VIDEO_BAD_CODEC")
                             }
-                            val trackFps = runCatching {
-                                format.getInteger(MediaFormat.KEY_FRAME_RATE)
-                            }.getOrNull()
+                            val trackFps = frameRateOf(format)
                             if (trackFps != null) {
                                 if (trackFps > MAX_FPS) return Result.Rejected("INTRO_VIDEO_BAD_FPS")
                                 fps = trackFps
                             }
+                            if (localUpload && mime != "video/avc") {
+                                val trackWidth = runCatching {
+                                    format.getInteger(MediaFormat.KEY_WIDTH)
+                                }.getOrDefault(width)
+                                val trackHeight = runCatching {
+                                    format.getInteger(MediaFormat.KEY_HEIGHT)
+                                }.getOrDefault(height)
+                                val hevcProfile = if (isHevc(mime)) {
+                                    runCatching {
+                                        format.getInteger(MediaFormat.KEY_PROFILE)
+                                    }.getOrNull()
+                                } else {
+                                    null
+                                }
+                                if (!hasDecoder(
+                                        mime = mime,
+                                        width = trackWidth,
+                                        height = trackHeight,
+                                        fps = (trackFps ?: MAX_FPS).takeIf { it > 0 } ?: MAX_FPS,
+                                        hevcProfile = hevcProfile,
+                                    )) {
+                                    return Result.Rejected(
+                                        if (isHevc(mime)) {
+                                            "INTRO_VIDEO_HEVC"
+                                        } else {
+                                            "INTRO_VIDEO_UNSUPPORTED_CODEC"
+                                        },
+                                    )
+                                }
+                            }
                         }
                         mime.startsWith("audio/") -> {
-                            if (mime != "audio/mp4a-latm") {
-                                return Result.Rejected("INTRO_VIDEO_BAD_CODEC")
-                            }
-                            val profile = runCatching {
-                                format.getInteger(MediaFormat.KEY_AAC_PROFILE)
-                            }.getOrNull()
-                            if (profile != null &&
-                                profile != MediaCodecInfo.CodecProfileLevel.AACObjectLC
-                            ) {
-                                return Result.Rejected("INTRO_VIDEO_BAD_CODEC")
+                            // Aerial accepts any owner-video audio track. ExoPlayer selects a
+                            // supported one and the lock wallpaper disables audio entirely;
+                            // official media keeps AAC-LC for the Android 5.0 floor.
+                            if (!localUpload) {
+                                if (mime != "audio/mp4a-latm") {
+                                    return Result.Rejected("INTRO_VIDEO_BAD_CODEC")
+                                }
+                                val profile = runCatching {
+                                    format.getInteger(MediaFormat.KEY_AAC_PROFILE)
+                                }.getOrNull()
+                                if (profile != null &&
+                                    profile != MediaCodecInfo.CodecProfileLevel.AACObjectLC
+                                ) {
+                                    return Result.Rejected("INTRO_VIDEO_BAD_CODEC")
+                                }
                             }
                             hasAudio = true
                         }
@@ -136,6 +183,47 @@ object PolicyVideoValidation {
             return Result.Rejected("INTRO_VIDEO_INVALID")
         } finally {
             runCatching { retriever.release() }
+        }
+    }
+
+    private fun isHevc(mime: String): Boolean = mime == "video/hevc" || mime == "video/h265"
+
+    private fun frameRateOf(format: MediaFormat): Int? =
+        runCatching { format.getInteger(MediaFormat.KEY_FRAME_RATE) }.getOrNull()
+            ?: runCatching { format.getFloat(MediaFormat.KEY_FRAME_RATE).roundToInt() }.getOrNull()
+
+    /**
+     * Whether a regular (non-encoder) codec on this TV can decode [mime] at the
+     * source size and frame rate. HEVC Main10 is rejected where the decoder
+     * only advertises Main; other profiles are left to the codec itself.
+     */
+    private fun hasDecoder(
+        mime: String,
+        width: Int,
+        height: Int,
+        fps: Int,
+        hevcProfile: Int?,
+    ): Boolean {
+        if (width <= 0 || height <= 0) return false
+        return MediaCodecList(MediaCodecList.REGULAR_CODECS).codecInfos.any { codec ->
+            if (codec.isEncoder) return@any false
+            val type = codec.supportedTypes.firstOrNull { it.equals(mime, ignoreCase = true) }
+                ?: return@any false
+            runCatching {
+                val capabilities = codec.getCapabilitiesForType(type)
+                val video = capabilities.videoCapabilities ?: return@runCatching false
+                val profiles = capabilities.profileLevels
+                if (hevcProfile != null && hevcProfile > 0 && profiles != null &&
+                    profiles.isNotEmpty() && profiles.none { it.profile == hevcProfile }
+                ) {
+                    return@runCatching false
+                }
+                if (fps > 0) {
+                    video.areSizeAndRateSupported(width, height, fps.toDouble())
+                } else {
+                    video.isSizeSupported(width, height)
+                }
+            }.getOrDefault(false)
         }
     }
 
