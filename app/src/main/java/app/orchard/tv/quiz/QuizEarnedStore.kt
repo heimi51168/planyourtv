@@ -44,6 +44,20 @@ object QuizEarnedStore {
     }
 
     /**
+     * The same allowance in seconds, as a Long that stays safe under arithmetic.
+     *
+     * Callers that mix the Int [remainingToday] into second-space maths overflow: an unlimited
+     * day is Int.MAX_VALUE minutes, and `Int.MAX_VALUE * 60L` reinterpreted as Int is -60, so a
+     * reward got clamped to negative seconds and the settled session record was then rejected
+     * as out of range (reproduced on device: every round ended "quarantined", no time granted).
+     */
+    fun remainingTodaySeconds(nowMs: Long = System.currentTimeMillis()): Long {
+        val cap = capMinutes()
+        if (cap == 0) return MAX_CAP_MINUTES * 60L * 1000L
+        return (cap - earnedToday(nowMs)).coerceAtLeast(0).toLong() * 60L
+    }
+
+    /**
      * Adds granted minutes, clamped to the remaining allowance. Returns the
      * amount actually recorded so the caller can stay honest in its audit.
      */

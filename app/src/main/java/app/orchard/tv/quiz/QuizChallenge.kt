@@ -606,7 +606,7 @@ object QuizChallenge {
                 }
                 else -> 0
             }
-            else -> settled.coerceAtMost((QuizEarnedStore.remainingToday(nowMs) * 60L).toInt())
+            else -> settled.coerceAtMost(QuizEarnedStore.remainingTodaySeconds(nowMs).toInt())
         }
         // Old UI and the policy engine still read minutes; v6 seconds are kept
         // separately so a sub-minute payout is never truncated before settlement.

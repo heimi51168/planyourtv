@@ -2,6 +2,7 @@ package app.orchard.tv.bot
 
 import app.orchard.tv.quiz.QuizEarnedStore
 import com.planyourtv.policy.TvStore
+import com.planyourtv.policy.quiz.QUIZ_MAX_EARNED_MINUTES
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -50,6 +51,21 @@ class QuizEarnedStoreTest {
     fun unlimitedCapMeansUnlimitedRemaining() {
         QuizEarnedStore.recordEarned(500, ms(14))
         assertEquals(Int.MAX_VALUE, QuizEarnedStore.remainingToday(ms(14)))
+    }
+
+    @Test
+    fun secondSpaceAllowanceNeverOverflowsWhenUnlimited() {
+        // The regression this pins: an unlimited day used to surface as
+        // Int.MAX_VALUE minutes, and callers multiplying into seconds overflowed
+        // back to a negative clamp. The Long seconds view must stay positive and
+        // far above any real round.
+        val seconds = QuizEarnedStore.remainingTodaySeconds(ms(14))
+        assertTrue(seconds > QUIZ_MAX_EARNED_MINUTES * 60L)
+        assertTrue(seconds > 0)
+        // A capped day converts cleanly.
+        QuizEarnedStore.setCapMinutes(40)
+        QuizEarnedStore.recordEarned(10, ms(14))
+        assertEquals(30 * 60L, QuizEarnedStore.remainingTodaySeconds(ms(14)))
     }
 
     @Test
