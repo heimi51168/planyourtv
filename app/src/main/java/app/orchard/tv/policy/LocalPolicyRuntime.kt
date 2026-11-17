@@ -1315,6 +1315,27 @@ object LocalPolicyRuntime {
     }
 
     /**
+     * The quiz reward's own grant. Same admission as a manual start except the daily quota:
+     * the child earned these minutes by answering, so refusing them with DAILY_LIMIT once the
+     * day's quota is spent breaks the product's one sanctioned escape hatch (and the settle
+     * screen then strands the child on the empty-bank QR page). The reward runs on its own
+     * budget — maxEarnedMinutes caps the round and the optional earned-minutes ledger caps the
+     * day — while its usage still counts into the day's totals like any other session.
+     */
+    @Synchronized
+    fun startQuizRewardSession(durationSeconds: Long): SessionStartResult {
+        if (studyMode) return SessionStartResult.Rejected(RejectReason.BUSY)
+        return startEntertainment(
+            origin = SessionOrigin.LOCAL,
+            durationSeconds = durationSeconds,
+            expectedEpoch = null,
+            requestedScope = null,
+            expiresAtEpochMs = null,
+            exemptDailyQuota = true,
+        )
+    }
+
+    /**
      * Hosted control plane: arm one manual entertainment segment. This deliberately does not
      * start the timer: both the MQTT command and the REST grant feed the same pending object,
      * and only the child's lock-screen confirmation (or an equivalent local action) starts it.
@@ -1694,6 +1715,7 @@ object LocalPolicyRuntime {
         expectedEpoch: Long?,
         requestedScope: Set<String>?,
         expiresAtEpochMs: Long?,
+        exemptDailyQuota: Boolean = false,
     ): SessionStartResult = when (
         val admission = admitStart(
             origin = origin,
@@ -1702,6 +1724,7 @@ object LocalPolicyRuntime {
             requestedScope = requestedScope,
             expiresAtEpochMs = expiresAtEpochMs,
             confirmingPending = false,
+            exemptDailyQuota = exemptDailyQuota,
         )
     ) {
         is StartAdmission.Refused -> SessionStartResult.Rejected(admission.reason)
@@ -1723,6 +1746,7 @@ object LocalPolicyRuntime {
         requestedScope: Set<String>?,
         expiresAtEpochMs: Long?,
         confirmingPending: Boolean,
+        exemptDailyQuota: Boolean = false,
     ): StartAdmission {
         if (!initialized || !active) return StartAdmission.Refused(RejectReason.GUARD_DISABLED)
         if (durationSeconds <= 0) {
@@ -1770,7 +1794,11 @@ object LocalPolicyRuntime {
         // The web page no longer exposes a per-session cap; a quiz reward is already capped by
         // its own maxEarnedMinutes, and a parent-chosen duration still obeys the daily quota.
         // Remote hosted grants keep their own server-side budget.
-        val budgetSeconds = if (origin == SessionOrigin.LOCAL) {
+        // Quiz rewards are the exception the comment already promised: rejecting them with
+        // DAILY_LIMIT once the day's quota is spent leaves a child who just earned time with
+        // nothing (reproduced on device, 2026-11-16). The reward starts on its own budget and
+        // its usage still counts into the day's ledger like any other session.
+        val budgetSeconds = if (origin == SessionOrigin.LOCAL && !exemptDailyQuota) {
             val dailyRemaining = (configured.autoDailyLimitMinutes * 60L - usedSeconds)
                 .coerceAtLeast(0L)
             if (dailyRemaining <= 0L) return StartAdmission.Refused(RejectReason.DAILY_LIMIT)
