@@ -275,6 +275,8 @@ class HomeGuardService : AccessibilityService() {
         private fun answerForeground(window: Pair<String, String>, at: Long) {
             if (screenOff || SystemClock.uptimeMillis() < allowStockUntil) return
             if (at <= foregroundTakenAt) return
+            // A volume / Control Center panel must not trigger a usage-stats take-over.
+            if (SystemClock.uptimeMillis() < volumeQuietUntil) return
             if (stockHomes.isEmpty()) refreshStockHomes()
             // Its home screen only, as for window changes: PatchWall's children's mode, opened
             // from its tile, is in the same package and stays.
@@ -1554,6 +1556,9 @@ class HomeGuardService : AccessibilityService() {
         keySeen = true
         if (!GuardSetup.isUserUnlocked(this)) return false
         if (event.keyCode in VOLUME_KEYS) {
+            // Every volume key event (down, repeat or up) keeps the quiet window alive,
+            // so the volume panel cannot arrive after it and still trigger a take-over.
+            volumeQuietUntil = SystemClock.uptimeMillis() + VOLUME_QUIET_MS
             return if (filteringForCecOnly || (isDefaultHome() && defaultHomeNeedsHomeFilter)) {
                 false
             } else {
@@ -1944,6 +1949,10 @@ class HomeGuardService : AccessibilityService() {
                 handler.removeCallbacks(cecHomeHold)
             }
         }
+        // A volume / Control Center panel's window change must not bring Aerial back
+        // and push the playing app away (see VOLUME_QUIET_MS). Foreground tracking
+        // above still runs, so the guard keeps an accurate picture of what is in front.
+        if (SystemClock.uptimeMillis() < volumeQuietUntil) return
         if (!GuardSetup.isUserUnlocked(this)) return
         // XGIMI (Android 9): with no default Home set, Home from Aerial puts the Home chooser in front,
         // and frontAfterHome reaches it only FRONT_AFTER_HOME_MS later (issue #44). Its own start then
@@ -1995,7 +2004,7 @@ class HomeGuardService : AccessibilityService() {
         // Our own activity hosts the lock screen and the parent center. Sending it "home" from a
         // window event of its own dialogs restarts the window under the parent (the floating
         // parent center bounces); the app can only be the locked foreground by showing the lock.
-        if (PolicyModeCoordinator.isLockScreen() && pkg != packageName &&
+        if (PolicyModeCoordinator.isLockScreen() && isActivity(pkg, cls) && pkg != packageName &&
             pkg !in stockHomes && isLockedForeground(pkg) && !LockStudyLaunch.allowsForeground(pkg)
         ) {
             Log.i(TAG, "policy: $pkg is in front while locked; bringing Aerial back")
@@ -2004,7 +2013,7 @@ class HomeGuardService : AccessibilityService() {
         }
         // APPS mode: ordinary apps, stock homes and maker Settings are all subject to the
         // allowlist; system overlays without a launcher entry stay fail-open.
-        if (PolicyModeCoordinator.isEnabled() &&
+        if (PolicyModeCoordinator.isEnabled() && isActivity(pkg, cls) &&
             pkg != packageName &&
             (isApp(pkg) || pkg in stockHomes || SystemProbe.isSettingsApp(this, pkg)) &&
             PolicyModeCoordinator.shouldBlock(this, pkg)
@@ -2609,6 +2618,18 @@ class HomeGuardService : AccessibilityService() {
         private const val KEY_VOLUME_LIFT_UNSEEN = "guard_volume_lift_unseen"
         private const val VOLUME_UNMOVED_MS = 300L
         private const val VOLUME_LIFT_WAIT_MS = 1_000L
+        /**
+         * Pressing a volume key brings up a system volume / Control Center window. On
+         * some firmwares (Xiaomi PatchWall among them) that window's
+         * TYPE_WINDOW_STATE_CHANGED is reported under a package the take-over branches
+         * read as an app or the stock home, so the guard brought Aerial back and pushed
+         * the playing app away on every volume press. Ignore window- and usage-stats-
+         * driven take-overs briefly after any volume key. The Home key path in onKeyEvent
+         * is not affected, so Home still returns to Aerial.
+         */
+        private const val VOLUME_QUIET_MS = 1_000L
+        @Volatile
+        private var volumeQuietUntil = 0L
         @Volatile
         private var volumeLiftUnseen: Boolean? = null
 
