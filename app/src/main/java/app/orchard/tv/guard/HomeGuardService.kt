@@ -275,6 +275,8 @@ class HomeGuardService : AccessibilityService() {
         private fun answerForeground(window: Pair<String, String>, at: Long) {
             if (screenOff || SystemClock.uptimeMillis() < allowStockUntil) return
             if (at <= foregroundTakenAt) return
+            // A volume / Control Center panel must not trigger a usage-stats take-over.
+            if (SystemClock.uptimeMillis() < volumeQuietUntil) return
             if (stockHomes.isEmpty()) refreshStockHomes()
             // Its home screen only, as for window changes: PatchWall's children's mode, opened
             // from its tile, is in the same package and stays.
@@ -826,6 +828,9 @@ class HomeGuardService : AccessibilityService() {
     private val stockHomeLook: Runnable = object : Runnable {
         override fun run() {
             if (!stockHomeMayCome()) return
+            // A volume / Control Center panel from the launcher's own package can reach usage stats
+            // as a move to the front; see VOLUME_QUIET_MS.
+            if (volumeQuiet()) return
             val front = usageFront(STOCK_HOME_FRONT_MS)
             if (front != null && !front.closed && front.at >= stockHomeLookFrom - STOCK_HOME_FRONT_MS) {
                 if (stockHomes[front.pkg]?.contains(front.cls) == true) {
@@ -1203,6 +1208,10 @@ class HomeGuardService : AccessibilityService() {
      */
     private fun takeOverIfStockHomeInFront(reason: String, woke: Boolean, coveredSilently: Boolean = false) {
         if (!GuardSetup.isUserUnlocked(this)) return
+        // A volume / Control Center panel takes over a moment after the press (SETTLE_MS), so the
+        // window-change guard alone is not enough here: the take-over runs on its own timer and
+        // would still pull Aerial over the playing app. See VOLUME_QUIET_MS.
+        if (volumeQuiet()) return
         // No window seen since bound: ask usage stats what moved to the front last. Revived after
         // the firmware killed Aerial in the background, an unknown front was taken for the stock
         // launcher and Aerial was pulled over the video the viewer was watching (Toshiba
@@ -1554,6 +1563,9 @@ class HomeGuardService : AccessibilityService() {
         keySeen = true
         if (!GuardSetup.isUserUnlocked(this)) return false
         if (event.keyCode in VOLUME_KEYS) {
+            // Every volume key event (down, repeat or up) keeps the quiet window alive,
+            // so the volume panel cannot arrive after it and still trigger a take-over.
+            volumeQuietUntil = SystemClock.uptimeMillis() + VOLUME_QUIET_MS
             return if (filteringForCecOnly || (isDefaultHome() && defaultHomeNeedsHomeFilter)) {
                 false
             } else {
@@ -1796,6 +1808,8 @@ class HomeGuardService : AccessibilityService() {
         // so nothing else shows one. Without it the volume moved unseen (MiTV4-ANSM0, Android 6,
         // issue #1498: "no volume window any more, only blind steps").
         SystemProbe.adjustVolume(this, volumeStepDirection, fromKey = true, showUi = true)
+        // The bar this step shows is the panel the window changes below come from.
+        volumeQuietUntil = SystemClock.uptimeMillis() + VOLUME_QUIET_MS
         // Its own step is no change the firmware made: the next press must not look moved first.
         volumeSeen = volumeNow()
     }
@@ -1827,6 +1841,8 @@ class HomeGuardService : AccessibilityService() {
                 return
             }
             SystemProbe.adjustVolume(this@HomeGuardService, volumeRepeatDirection, fromKey = true, showUi = volumeRepeatShowsUi)
+            // Steps that show the bar raise the panel again, so the quiet window has to cover them.
+            if (volumeRepeatShowsUi) volumeQuietUntil = SystemClock.uptimeMillis() + VOLUME_QUIET_MS
             handler.postDelayed(this, ViewConfiguration.getKeyRepeatDelay().toLong())
         }
     }
@@ -1944,6 +1960,10 @@ class HomeGuardService : AccessibilityService() {
                 handler.removeCallbacks(cecHomeHold)
             }
         }
+        // A volume / Control Center panel's window change must not bring Aerial back
+        // and push the playing app away (see VOLUME_QUIET_MS). Foreground tracking
+        // above still runs, so the guard keeps an accurate picture of what is in front.
+        if (SystemClock.uptimeMillis() < volumeQuietUntil) return
         if (!GuardSetup.isUserUnlocked(this)) return
         // XGIMI (Android 9): with no default Home set, Home from Aerial puts the Home chooser in front,
         // and frontAfterHome reaches it only FRONT_AFTER_HOME_MS later (issue #44). Its own start then
@@ -1995,7 +2015,7 @@ class HomeGuardService : AccessibilityService() {
         // Our own activity hosts the lock screen and the parent center. Sending it "home" from a
         // window event of its own dialogs restarts the window under the parent (the floating
         // parent center bounces); the app can only be the locked foreground by showing the lock.
-        if (PolicyModeCoordinator.isLockScreen() && pkg != packageName &&
+        if (PolicyModeCoordinator.isLockScreen() && isActivity(pkg, cls) && pkg != packageName &&
             pkg !in stockHomes && isLockedForeground(pkg) && !LockStudyLaunch.allowsForeground(pkg)
         ) {
             Log.i(TAG, "policy: $pkg is in front while locked; bringing Aerial back")
@@ -2004,7 +2024,7 @@ class HomeGuardService : AccessibilityService() {
         }
         // APPS mode: ordinary apps, stock homes and maker Settings are all subject to the
         // allowlist; system overlays without a launcher entry stay fail-open.
-        if (PolicyModeCoordinator.isEnabled() &&
+        if (PolicyModeCoordinator.isEnabled() && isActivity(pkg, cls) &&
             pkg != packageName &&
             (isApp(pkg) || pkg in stockHomes || SystemProbe.isSettingsApp(this, pkg)) &&
             PolicyModeCoordinator.shouldBlock(this, pkg)
@@ -2300,6 +2320,9 @@ class HomeGuardService : AccessibilityService() {
         // Whether Aerial is in front, from Aerial itself: the window changes of the two starts can
         // arrive in either order, and Aerial's came last with PatchWall on top (MiTV-MFTR0).
         if (aerialResumed || SystemClock.uptimeMillis() < allowStockUntil) return@Runnable
+        // The stock launcher's window change that armed this recheck may have been a volume panel
+        // drawn over Aerial; see VOLUME_QUIET_MS.
+        if (volumeQuiet()) return@Runnable
         val since = SystemClock.uptimeMillis() - broughtBackAt
         if (since < 1_000) return@Runnable
         // Unless the viewer has opened an app since.
@@ -2609,6 +2632,22 @@ class HomeGuardService : AccessibilityService() {
         private const val KEY_VOLUME_LIFT_UNSEEN = "guard_volume_lift_unseen"
         private const val VOLUME_UNMOVED_MS = 300L
         private const val VOLUME_LIFT_WAIT_MS = 1_000L
+        /**
+         * Pressing a volume key brings up a system volume / Control Center window. On
+         * some firmwares (Xiaomi PatchWall among them) that window's
+         * TYPE_WINDOW_STATE_CHANGED is reported under a package the take-over branches
+         * read as an app or the stock home, so the guard brought Aerial back and pushed
+         * the playing app away on every volume press. Ignore window- and usage-stats-
+         * driven take-overs briefly after any volume key. The Home key path in onKeyEvent
+         * is not affected, so Home still returns to Aerial.
+         */
+        private const val VOLUME_QUIET_MS = 1_000L
+        @Volatile
+        private var volumeQuietUntil = 0L
+
+        /** Whether a volume press is recent enough that a panel it raised may still be in front. */
+        private fun volumeQuiet(): Boolean = SystemClock.uptimeMillis() < volumeQuietUntil
+
         @Volatile
         private var volumeLiftUnseen: Boolean? = null
 
