@@ -245,6 +245,8 @@ object ParentCenterActions {
             JSONArray(rules.effectiveAllowedPackages - ALL_VALID_APP_SENTINEL),
         )
         .put("studyPackages", JSONArray(rules.effectiveStudyPackages))
+        .put("exemptWeekdayWindows", windowsJson(rules.exemptWeekdayWindows))
+        .put("exemptWeekendWindows", windowsJson(rules.exemptWeekendWindows))
 
     private fun windowsJson(windows: List<LocalTimeWindow>): JSONArray {
         val array = JSONArray()
@@ -690,8 +692,10 @@ object ParentCenterActions {
     }
 
     private fun parseRules(json: JSONObject): LocalRules? {
-        val weekday = parseWindows(json.optJSONArray("weekdayWindows")) ?: return null
-        val weekend = parseWindows(json.optJSONArray("weekendWindows")) ?: return null
+        val weekday = parseWindows(json.optJSONArray("weekdayWindows"), LocalRules.MAX_WINDOWS_PER_DAY)
+            ?: return null
+        val weekend = parseWindows(json.optJSONArray("weekendWindows"), LocalRules.MAX_WINDOWS_PER_DAY)
+            ?: return null
         // V29 has exactly one window per day class. Reject a stale page trying to save a
         // second one instead of silently dropping it.
         if (weekday.size != 1 || weekend.size != 1) return null
@@ -717,6 +721,23 @@ object ParentCenterActions {
             val value = studyArray.optString(i, "").trim()
             if (value.isNotEmpty()) study.add(value)
         }
+        // Exemption windows: absent on a stale cached page means "keep none" is wrong (the
+        // parent did not touch the section); the server cannot tell "stale" from "cleared".
+        // Choose explicit empty array = cleared, absent = not edited → keep current.
+        val currentExemptWeekday = LocalPolicyRuntime.currentRules?.exemptWeekdayWindows.orEmpty()
+        val currentExemptWeekend = LocalPolicyRuntime.currentRules?.exemptWeekendWindows.orEmpty()
+        val exemptWeekday = if (json.has("exemptWeekdayWindows")) {
+            parseWindows(json.optJSONArray("exemptWeekdayWindows"), LocalRules.MAX_EXEMPT_WINDOWS_PER_DAY)
+                ?: return null
+        } else {
+            currentExemptWeekday
+        }
+        val exemptWeekend = if (json.has("exemptWeekendWindows")) {
+            parseWindows(json.optJSONArray("exemptWeekendWindows"), LocalRules.MAX_EXEMPT_WINDOWS_PER_DAY)
+                ?: return null
+        } else {
+            currentExemptWeekend
+        }
         return LocalRules(
             weekdayWindows = weekday,
             weekendWindows = weekend,
@@ -726,12 +747,14 @@ object ParentCenterActions {
             sessionScreenOffBufferMinutes = buffer,
             allowedPackages = allowed,
             studyPackages = study,
+            exemptWeekdayWindows = exemptWeekday,
+            exemptWeekendWindows = exemptWeekend,
         ).normalized()
     }
 
-    private fun parseWindows(array: JSONArray?): List<LocalTimeWindow>? {
+    private fun parseWindows(array: JSONArray?, max: Int): List<LocalTimeWindow>? {
         if (array == null) return null
-        if (array.length() > LocalRules.MAX_WINDOWS_PER_DAY) return null
+        if (array.length() > max) return null
         val windows = ArrayList<LocalTimeWindow>(array.length())
         for (i in 0 until array.length()) {
             val item = array.optJSONObject(i) ?: return null

@@ -72,6 +72,7 @@ internal object PolicyKeys {
     // A parent override must not survive a restart as an unlock; the current window is blocked
     // on the next start instead of letting automatic mode begin again behind the lock screen.
     const val LOCAL_PARENT_OVERRIDE = "local_parent_override_v1"
+    const val LOCAL_SCHEDULE_EXEMPT = "local_schedule_exempt_v1"
     const val LOCAL_PIN_SALT = "local_pin_salt"
     const val LOCAL_PIN_HASH = "local_pin_hash"
     const val LOCAL_PIN_FAILED = "local_pin_failed"

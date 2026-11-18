@@ -56,6 +56,7 @@ internal object BotActions {
         BotCommand.Levels -> Outcome(levelsText())
         BotCommand.Apps -> Outcome(appsText())
         BotCommand.Diag -> Outcome(diagText())
+        BotCommand.Exempt -> Outcome(exemptText())
         BotCommand.DailyReport -> Outcome(BotDailyReport.reportText())
         BotCommand.Bank -> Outcome(bankText())
         BotCommand.Audit -> Outcome(auditText())
@@ -295,6 +296,13 @@ internal object BotActions {
                     if (cap == 0) "不限" else "$cap 分钟/天（今日已得 ${QuizEarnedStore.earnedToday()} 分钟）"
                     ),
             )
+            val exW = rules.exemptWeekdayWindows
+            val exE = rules.exemptWeekendWindows
+            if (exW.isNotEmpty() || exE.isNotEmpty()) {
+                append("\n豁免时段（不限）：")
+                append("工作日 " + (if (exW.isEmpty()) "无" else exW.joinToString("、") { "${minuteOfDay(it.startMinute)}-${minuteOfDay(it.endMinute)}" }))
+                append(" · 周末 " + (if (exE.isEmpty()) "无" else exE.joinToString("、") { "${minuteOfDay(it.startMinute)}-${minuteOfDay(it.endMinute)}" }))
+            }
         }
     }
 
@@ -370,6 +378,24 @@ internal object BotActions {
         return report.lineSequence().take(25).joinToString("\n")
     }
 
+    private fun exemptText(): String {
+        val rules = LocalPolicyRuntime.currentRules ?: return "儿童模式未开启，没有豁免时段。"
+        val state = PolicyModeCoordinator.state.value
+        val weekday = rules.exemptWeekdayWindows
+        val weekend = rules.exemptWeekendWindows
+        if (weekday.isEmpty() && weekend.isEmpty()) {
+            return "未设置豁免时段。在手机设置页的「时间规则」中添加。"
+        }
+        return buildString {
+            if (state.exemptActive) append("🧓 当前处于豁免时段（不限时间不限App）\n\n")
+            append("工作日豁免：")
+            append(if (weekday.isEmpty()) "无" else weekday.joinToString("、") { "${minuteOfDay(it.startMinute)}-${minuteOfDay(it.endMinute)}" })
+            append("\n周末豁免：")
+            append(if (weekend.isEmpty()) "无" else weekend.joinToString("、") { "${minuteOfDay(it.startMinute)}-${minuteOfDay(it.endMinute)}" })
+            append("\n说明：豁免时段内儿童模式暂停，不限时长不扣额度")
+        }
+    }
+
     private fun statusText(): String {
         val state = PolicyModeCoordinator.state.value
         if (!state.loaded) return "电视启动中，请稍后再查。"
@@ -414,7 +440,11 @@ internal object BotActions {
             state.restRemainingSeconds > 0 ->
                 append("\n☕ 强制休息中 · 剩 ${state.restRemainingSeconds / 60 + 1} 分钟")
             state.guardState == GuardStatus.PARENT_OVERRIDE ->
-                append("\n🔓 临时解锁中（家长使用）")
+                if (state.exemptActive) {
+                    append("\n🧓 豁免时段进行中（不限时间不限App）")
+                } else {
+                    append("\n🔓 临时解锁中（家长使用）")
+                }
         }
     }
 
@@ -456,7 +486,7 @@ internal object BotActions {
 
     val HELP_TEXT: String = buildString {
         append("📺 电视遥控命令（无需密码，所有操作有记录并通知每位家长）\n")
-        append("查询：状态 / 今日 / 日报 / 规则 / 应用 / 题库 / 错题 / 关卡 / 诊断 / 审计\n")
+        append("查询：状态 / 今日 / 日报 / 规则 / 豁免 / 应用 / 题库 / 错题 / 关卡 / 诊断 / 审计\n")
         append("控制：加时20（5–120）/ 停止 / 解锁 / 锁定 / 学习进出 / 答题开关\n")
         append("设置：设置答题上限30（0=不限）/ 设置每轮题数10 / 设置每题时限45 / 设置门槛5 / 设置单轮上限15\n")
         append("设置：模式自动 / 模式手动 / 提醒开 / 提醒关\n")

@@ -49,6 +49,10 @@
       tvInputSources: "电视输入源",
       tvInputSourcesHint: "只影响桌面入口，不是强制锁定",
       singleWindowHint: "每天一个时间段",
+      exemptSection: "豁免时段",
+      exemptHint: "豁免时段内不限时间、不限App（老人在家时间）",
+      exemptAdd: "+ 添加豁免时段",
+      noExempt: "未设置豁免时段",
       entryChecking: "正在读取电视状态…",
       entryPair: "未开启 · 需电视配对",
       entryNotReady: "电视尚未就绪",
@@ -463,6 +467,10 @@
       tvInputSources: "TV input sources",
       tvInputSourcesHint: "Only affects the home-screen entries; it is not a hard lock",
       singleWindowHint: "One time window per day",
+      exemptSection: "Exempt windows",
+      exemptHint: "Inside these windows nothing is limited (grandparents' time at home)",
+      exemptAdd: "+ Add exempt window",
+      noExempt: "No exempt windows",
       entryChecking: "Reading the TV state…",
       entryPair: "Off · pair on the TV",
       entryNotReady: "The TV is not ready yet",
@@ -877,6 +885,10 @@
       tvInputSources: "Источники ТВ",
       tvInputSourcesHint: "Влияет только на входы на главном экране, это не жёсткая блокировка",
       singleWindowHint: "Один интервал в день",
+      exemptSection: "Исключающие периоды",
+      exemptHint: "В эти периоды ограничения не действуют (время бабушек и дедушек)",
+      exemptAdd: "+ Добавить период",
+      noExempt: "Периоды не заданы",
       entryChecking: "Чтение состояния телевизора…",
       entryPair: "Выключен · нужно сопряжение на ТВ",
       entryNotReady: "Телевизор ещё не готов",
@@ -1291,6 +1303,10 @@
       tvInputSources: "Джерела ТБ",
       tvInputSourcesHint: "Впливає лише на входи на головному екрані, це не жорстке блокування",
       singleWindowHint: "Один інтервал на день",
+      exemptSection: "Виключні періоди",
+      exemptHint: "У ці періоди обмеження не діють (час бабусь і дідусів)",
+      exemptAdd: "+ Додати період",
+      noExempt: "Періоди не задані",
       entryChecking: "Читання стану телевізора…",
       entryPair: "Вимкнено · потрібне сполучення на ТБ",
       entryNotReady: "Телевізор ще не готовий",
@@ -1705,6 +1721,10 @@
       tvInputSources: "ТВ кірістері",
       tvInputSourcesHint: "Тек басты экрандағы кірістерге әсер етеді, бұл қатаң құлып емес",
       singleWindowHint: "Күніне бір уақыт аралығы",
+      exemptSection: "Шешімсіз кезеңдер",
+      exemptHint: "Бұл кезеңдерде шектеулер жұмыс істемейді (әжелер мен аталар уақыты)",
+      exemptAdd: "+ Кезең қосу",
+      noExempt: "Кезеңдер орнатылмаған",
       entryChecking: "Теледидар күйі оқылуда…",
       entryPair: "Өшірулі · ТВ-де жұптау керек",
       entryNotReady: "Теледидар әзір емес",
@@ -4134,6 +4154,9 @@
     content.appendChild(sectionLabel(t("timeRules")));
     content.appendChild(renderWindows());
 
+    content.appendChild(sectionLabel(t("exemptSection")));
+    content.appendChild(renderExemptWindows());
+
     content.appendChild(sectionLabel(t("limits")));
     content.appendChild(renderLimits());
 
@@ -5306,6 +5329,97 @@
     const next = clone(snap.rules);
     const key = weekday ? "weekdayWindows" : "weekendWindows";
     next[key] = [{ start: start, end: end }];
+    saveRules(next);
+  }
+
+  /**
+   * Exemption windows: wall-clock spans where child mode suspends entirely (grandparents'
+   * time). 0–4 windows per day class; each row edits start/end and can be removed.
+   */
+  const EXEMPT_MAX = 4;
+
+  function renderExemptWindows() {
+    const card = el("div", "parent-card");
+    if (!snap.capabilities || !snap.capabilities.canEditRules) {
+      card.appendChild(el("div", "parent-empty", t("readOnlyCloud")));
+      return card;
+    }
+    card.appendChild(el("div", "parent-hint parent-window-note", t("exemptHint")));
+    ["weekday", "weekend"].forEach((kind) => {
+      card.appendChild(renderExemptGroup(kind === "weekday"));
+    });
+    return card;
+  }
+
+  function renderExemptGroup(weekday) {
+    const group = el("div");
+    group.appendChild(el("div", "parent-row", t(weekday ? "weekday" : "weekend")));
+    const key = weekday ? "exemptWeekdayWindows" : "exemptWeekendWindows";
+    const windows = (snap.rules && snap.rules[key]) || [];
+    if (windows.length === 0) {
+      group.appendChild(el("div", "parent-empty", t("noExempt")));
+    }
+    windows.forEach((w, index) => {
+      group.appendChild(renderExemptRow(weekday, w, index, windows.length));
+    });
+    if (windows.length < EXEMPT_MAX) {
+      const add = button(t("exemptAdd"), "parent-tile-btn", () => {
+        const next = clone(snap.rules);
+        const list = ((next[key] || []).slice());
+        list.push({ start: 9 * 60, end: 16 * 60 });
+        next[key] = list;
+        saveRules(next);
+      });
+      group.appendChild(add);
+    }
+    return group;
+  }
+
+  function renderExemptRow(weekday, window, index, total) {
+    const wrap = el("div", "parent-window");
+    const start = timeField(window.start, t("from"), false);
+    const end = timeField(window.end, t("to"), true);
+    let currentStart = window.start;
+    let currentEnd = window.end;
+    const key = weekday ? "exemptWeekdayWindows" : "exemptWeekendWindows";
+    const commit = (nextStart, nextEnd) => {
+      if (nextStart < 0 || nextEnd <= nextStart || nextEnd > 1440) {
+        setNotice(t("rulesInvalid"), true);
+        start.set(currentStart);
+        end.set(currentEnd);
+        return;
+      }
+      currentStart = nextStart;
+      currentEnd = nextEnd;
+      updateExemptWindow(key, index, nextStart, nextEnd);
+    };
+    start.onchange(() => commit(start.get(), currentEnd));
+    end.onchange(() => commit(currentStart, end.get()));
+    wrap.appendChild(start.node);
+    wrap.appendChild(el("span", "parent-time-sep", "—"));
+    wrap.appendChild(end.node);
+    const remove = button("×", "parent-tile-btn", () => {
+      removeExemptWindow(key, index);
+    });
+    wrap.appendChild(remove);
+    return wrap;
+  }
+
+  function updateExemptWindow(key, index, start, end) {
+    const next = clone(snap.rules);
+    const list = ((next[key] || []).slice());
+    if (index < 0 || index >= list.length) return;
+    list[index] = { start: start, end: end };
+    next[key] = list;
+    saveRules(next);
+  }
+
+  function removeExemptWindow(key, index) {
+    const next = clone(snap.rules);
+    const list = ((next[key] || []).slice());
+    if (index < 0 || index >= list.length) return;
+    list.splice(index, 1);
+    next[key] = list;
     saveRules(next);
   }
 

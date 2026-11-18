@@ -20,7 +20,7 @@ package app.orchard.tv.bot
 internal object BotCommandParser {
     /** Chat commands a novice will type; used verbatim in help and suggestions. */
     val CANONICAL: List<String> = listOf(
-        "状态", "今日", "规则", "应用", "题库", "错题", "关卡", "诊断", "审计", "帮助",
+        "状态", "今日", "规则", "应用", "题库", "错题", "关卡", "诊断", "审计", "豁免", "帮助",
         "加时20", "停止", "解锁", "锁定",
         "学习进", "学习出", "答题开", "答题关",
         "设置答题上限30", "提醒开", "提醒关", "撤销", "解绑",
@@ -38,6 +38,7 @@ internal object BotCommandParser {
         BotCommand.Levels -> "关卡"
         BotCommand.Apps -> "应用"
         BotCommand.Diag -> "诊断"
+        BotCommand.Exempt -> "豁免"
         BotCommand.Bank -> "题库"
         BotCommand.Audit -> "审计"
         BotCommand.Help -> "帮助"
@@ -147,6 +148,7 @@ internal object BotCommandParser {
         "关卡", "答题关卡", "levels" -> BotCommand.Levels
         "应用", "应用列表", "apps" -> BotCommand.Apps
         "诊断", "诊断信息", "diag" -> BotCommand.Diag
+        "豁免", "豁免时段", "豁免规则", "exempt" -> BotCommand.Exempt
         "题库", "题目", "bank" -> BotCommand.Bank
         "审计", "记录", "操作记录", "日志", "audit" -> BotCommand.Audit
         "帮助", "菜单", "指令", "命令", "help" -> BotCommand.Help

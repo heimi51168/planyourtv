@@ -60,9 +60,24 @@ data class LocalRules(
     val schemaVersion: Int = CURRENT_SCHEMA_VERSION,
     val allowedPackages: Set<String> = setOf(ALL_VALID_APP),
     val studyPackages: Set<String> = emptySet(),
+    /**
+     * Exemption windows (豁免时段): wall-clock spans where child mode suspends entirely —
+     * no lock screen, no app blocking, no quota. Intended for another caretaker at home
+     * (grandparents watching during the day); the guard state mirrors a parent temporary
+     * unlock, driven by the clock instead of the PIN. Device-wide, not per activation set.
+     */
+    val exemptWeekdayWindows: List<LocalTimeWindow> = emptyList(),
+    val exemptWeekendWindows: List<LocalTimeWindow> = emptyList(),
 ) {
     fun windowsFor(dayOfWeek: Int): List<LocalTimeWindow> =
         if (dayOfWeek in 1..5) weekdayWindows else weekendWindows
+
+    fun exemptWindowsFor(dayOfWeek: Int): List<LocalTimeWindow> =
+        if (dayOfWeek in 1..5) exemptWeekdayWindows else exemptWeekendWindows
+
+    /** True when the given moment falls into any exemption window. */
+    fun isExemptAt(dayOfWeek: Int, secondOfDay: Int): Boolean =
+        exemptWindowsFor(dayOfWeek).any { secondOfDay >= it.startSecond && secondOfDay < it.endSecond }
 
     val hasAnyWindow: Boolean get() = weekdayWindows.isNotEmpty() || weekendWindows.isNotEmpty()
 
@@ -161,6 +176,24 @@ data class LocalRules(
         if (weekdayWindows.overlaps() || weekendWindows.overlaps()) {
             return LocalRulesError.OVERLAPPING_WINDOWS
         }
+        // Exemption windows follow the same shape rules with their own cap. They may overlap
+        // the allowed windows freely: exemption takes precedence when both apply.
+        if (exemptWeekdayWindows.size > MAX_EXEMPT_WINDOWS_PER_DAY ||
+            exemptWeekendWindows.size > MAX_EXEMPT_WINDOWS_PER_DAY
+        ) {
+            return LocalRulesError.TOO_MANY_WINDOWS
+        }
+        for (window in exemptWeekdayWindows + exemptWeekendWindows) {
+            if (window.startMinute !in 0 until 1440 ||
+                window.endMinute !in 1..1440 ||
+                window.startMinute >= window.endMinute
+            ) {
+                return LocalRulesError.INVALID_WINDOW
+            }
+        }
+        if (exemptWeekdayWindows.overlaps() || exemptWeekendWindows.overlaps()) {
+            return LocalRulesError.OVERLAPPING_WINDOWS
+        }
         // The automatic daily quota and the per-session cap are independent. Manual sessions
         // have no daily quota, so a small automatic quota must not shrink the manual cap.
         // Zero is a valid quota: it locks automatic entertainment for the whole day.
@@ -208,6 +241,7 @@ data class LocalRules(
     companion object {
         const val CURRENT_SCHEMA_VERSION = 2
         const val MAX_WINDOWS_PER_DAY = 2
+        const val MAX_EXEMPT_WINDOWS_PER_DAY = 4
         const val MAX_DAILY_MINUTES = 24 * 60
         const val MAX_REST_MINUTES = 24 * 60
         const val MAX_ALLOWED_PACKAGES = 500

@@ -57,12 +57,17 @@ data class LocalSharedAppScope(
     val allowedPackages: Set<String> = setOf(ALL_VALID_APP),
     val studyPackages: Set<String> = emptySet(),
     val sessionScreenOffBufferMinutes: Int = LocalRules.DEFAULT_SESSION_BUFFER_MINUTES,
+    /** Exemption windows are whose-at-home state, not a timing mode: device-wide, never per set. */
+    val exemptWeekdayWindows: List<LocalTimeWindow> = emptyList(),
+    val exemptWeekendWindows: List<LocalTimeWindow> = emptyList(),
 ) {
     fun materialize(ruleSet: LocalRuleSet): LocalRules = ruleSet.applyTo(
         LocalRules(
             allowedPackages = allowedPackages,
             studyPackages = studyPackages,
             sessionScreenOffBufferMinutes = sessionScreenOffBufferMinutes,
+            exemptWeekdayWindows = exemptWeekdayWindows,
+            exemptWeekendWindows = exemptWeekendWindows,
         ),
     )
 
@@ -71,6 +76,8 @@ data class LocalSharedAppScope(
             allowedPackages = rules.effectiveAllowedPackages,
             studyPackages = rules.effectiveStudyPackages,
             sessionScreenOffBufferMinutes = rules.sessionScreenOffBufferMinutes,
+            exemptWeekdayWindows = rules.exemptWeekdayWindows,
+            exemptWeekendWindows = rules.exemptWeekendWindows,
         )
     }
 }

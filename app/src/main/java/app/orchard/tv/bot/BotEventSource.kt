@@ -57,6 +57,7 @@ internal object BotEventSource {
                 guard = state.guardState,
                 study = state.studyModeActive,
                 lock = state.lockReason,
+                exempt = state.exemptActive,
             )
             val before = seen
             seen = now
@@ -87,6 +88,7 @@ internal object BotEventSource {
         val guard: GuardStatus,
         val study: Boolean,
         val lock: LockReason,
+        val exempt: Boolean,
     )
 
     private fun transitions(before: Snapshot, now: Snapshot, state: com.planyourtv.policy.PolicyUiState): List<String> {
@@ -104,10 +106,16 @@ internal object BotEventSource {
             events.add("☕ 进入强制休息 · 剩 ${state.restRemainingSeconds / 60 + 1} 分钟")
         }
         if (before.guard != GuardStatus.PARENT_OVERRIDE && now.guard == GuardStatus.PARENT_OVERRIDE) {
-            events.add("🔓 电视已临时解锁（家长使用）")
+            // Schedule exemption reads differently from a parent PIN: the grandparents'
+            // window opened on its own, nobody typed anything.
+            events.add(
+                if (now.exempt) "🧓 进入豁免时段（不限时间不限App）" else "🔓 电视已临时解锁（家长使用）",
+            )
         }
         if (before.guard == GuardStatus.PARENT_OVERRIDE && now.guard != GuardStatus.PARENT_OVERRIDE) {
-            events.add("🔒 临时解锁结束，恢复锁定")
+            events.add(
+                if (before.exempt) "🛡 豁免时段结束，儿童模式恢复" else "🔒 临时解锁结束，恢复锁定",
+            )
         }
         if (!before.study && now.study) events.add("📚 进入学习模式")
         if (before.study && !now.study) events.add("📚 退出学习模式")

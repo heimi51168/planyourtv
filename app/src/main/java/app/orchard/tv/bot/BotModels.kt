@@ -51,6 +51,8 @@ sealed interface BotCommand {
     data object Help : BotCommand
     /** The accountability query: who ran what and did the TV accept it. */
     data object Audit : BotCommand
+    /** The exemption-windows query: what they are and whether one is active now. */
+    data object Exempt : BotCommand
     /** Today-so-far / yesterday usage rollup. */
     data object DailyReport : BotCommand
 

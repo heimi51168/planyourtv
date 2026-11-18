@@ -108,6 +108,13 @@ object LocalPolicyRuntime {
     private var usedSeconds = 0L
     private var breakUntil = 0L
     private var parentOverrideUntil = 0L
+
+    /**
+     * The current PARENT_OVERRIDE is schedule-exemption sourced (grandparents' window), not a
+     * parent PIN. Re-derived from the clock on every tick, so screen-off / restart inside the
+     * window re-enters and the window's end always restores the child guard.
+     */
+    private var scheduleExempt = false
     private var guardStatus = GuardStatus.ENFORCING
     private var activation = Activation.MANUAL
     private var source = PolicySource.LOCAL
@@ -463,7 +470,10 @@ object LocalPolicyRuntime {
     fun lockForModeSwitch() {
         guardStatus = GuardStatus.ENFORCING
         parentOverrideUntil = 0L
+        scheduleExempt = false
+        scheduleExempt = false
         LocalPolicyStore.saveParentOverrideActive(false)
+        LocalPolicyStore.saveScheduleExemptActive(false)
         studyMode = false
         // A pending remote grant belongs to the previous guard; the new mode must not inherit
         // an orange button or a half-armed reservation.
@@ -717,6 +727,7 @@ object LocalPolicyRuntime {
         LocalPolicyStore.setPin(newPin)
         guardStatus = GuardStatus.ENFORCING
         parentOverrideUntil = 0L
+        scheduleExempt = false
         LocalPolicyStore.saveParentOverrideActive(false)
         studyMode = false
         pendingRemoteStart = null
@@ -1684,11 +1695,28 @@ object LocalPolicyRuntime {
         }
 
         if (guardStatus == GuardStatus.PARENT_OVERRIDE) {
-            if (parentOverrideUntil > 0 && now >= parentOverrideUntil) {
+            if (scheduleExempt && !isScheduleExemptNow()) {
+                // The grandparents' window ended: hand the TV back to the child guard.
+                scheduleExempt = false
+                LocalPolicyStore.saveScheduleExemptActive(false)
+                endParentOverride()
+            } else if (parentOverrideUntil > 0 && now >= parentOverrideUntil) {
                 endParentOverride()
             } else {
                 publish()
             }
+            return
+        }
+        // Schedule exemption: inside the window child mode suspends entirely. The entry check
+        // runs whenever the guard owns the TV — enforcing with a live segment (the segment is
+        // committed as a parent stop, no rest owed) or study mode — and after every screen-off,
+        // because the override ends there and the flag alone must re-open it.
+        if (isScheduleExemptNow()) {
+            if (!scheduleExempt) {
+                scheduleExempt = true
+                LocalPolicyStore.saveScheduleExemptActive(true)
+            }
+            beginParentOverride(0L)
             return
         }
         if (guardStatus == GuardStatus.STUDY_MODE) {
@@ -1956,6 +1984,13 @@ object LocalPolicyRuntime {
         publish()
     }
 
+    /** True when the current wall-clock moment falls inside an exemption window. */
+    private fun isScheduleExemptNow(): Boolean {
+        val configured = rules?.normalized()?.takeIf { it.isUsable } ?: return false
+        val now = LocalDateTime.now()
+        return configured.isExemptAt(now.dayOfWeek.value, now.toLocalTime().toSecondOfDay())
+    }
+
     /**
      * Parent override: end the child's segment (if any) and unlock for parent use. Time spent
      * here is never child usage; on exit the lock screen is recomputed, never a new session.
@@ -2019,6 +2054,7 @@ object LocalPolicyRuntime {
         if (guardStatus != GuardStatus.PARENT_OVERRIDE) return
         guardStatus = GuardStatus.ENFORCING
         parentOverrideUntil = 0L
+        scheduleExempt = false
         LocalPolicyStore.saveParentOverrideActive(false)
         setAutoReady(false)
         // A pending grant survives the parent takeover; returning must show its confirm gate
@@ -2368,6 +2404,7 @@ object LocalPolicyRuntime {
             policyEpoch = policyEpoch,
             studyModeAvailable = configured?.hasStudyMode == true,
             studyModeActive = studyMode,
+            exemptActive = scheduleExempt,
             studyPackages = configured?.effectiveStudyPackages.orEmpty(),
             autoReady = autoReady && pending == null,
             noTimedApps = configured != null && configured.isUsable && !configured.hasTimedApps(),
@@ -2536,6 +2573,7 @@ object LocalPolicyRuntime {
         usedSeconds = 0L
         breakUntil = 0L
         parentOverrideUntil = 0L
+        scheduleExempt = false
         guardStatus = GuardStatus.ENFORCING
         activation = Activation.MANUAL
         source = PolicySource.LOCAL
@@ -2567,6 +2605,7 @@ object LocalPolicyRuntime {
         if (!initialized) return
         guardStatus = GuardStatus.ENFORCING
         parentOverrideUntil = 0L
+        scheduleExempt = false
         studyMode = false
         startPlan(
             activation = if (activation == Activation.AUTO) {
@@ -2618,6 +2657,7 @@ object LocalPolicyRuntime {
         LocalPolicyStore.clearSession()
         guardStatus = GuardStatus.ENFORCING
         parentOverrideUntil = 0L
+        scheduleExempt = false
         LocalPolicyStore.saveParentOverrideActive(false)
         studyMode = false
         pendingRemoteStart = null

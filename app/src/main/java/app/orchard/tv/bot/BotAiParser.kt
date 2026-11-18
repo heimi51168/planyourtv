@@ -50,7 +50,7 @@ internal object BotAiParser {
     private val SYSTEM_PROMPT = """
         你是电视遥控指令解析器。把家长的自然语言映射为JSON命令。
         只输出一个JSON对象，不要任何其他文字。格式：{"cmd":"...","minutes":N}
-        cmd 只能是以下之一：status,today,rules,apps,bank,wrong,levels,diag,audit,report,help,addtime,stop,unlock,lock,study_enter,study_exit,quiz_on,quiz_off
+        cmd 只能是以下之一：status,today,rules,apps,bank,wrong,levels,diag,audit,report,exempt,help,addtime,stop,unlock,lock,study_enter,study_exit,quiz_on,quiz_off
         addtime 必须带 minutes（5到120的整数）。minutes单位是分钟。
         设置类（答题上限、每轮题数等配置、模式切换、提醒开关）和撤销必须由家长手动输入，永远输出 none。
         无法确定、超出上述范围、或涉及别的事情时，输出 {"cmd":"none"}
@@ -114,6 +114,7 @@ internal object BotAiParser {
             "today" -> BotCommand.Today
             "rules" -> BotCommand.Rules
             "report" -> BotCommand.DailyReport
+            "exempt" -> BotCommand.Exempt
             "apps" -> BotCommand.Apps
             "bank" -> BotCommand.Bank
             "wrong" -> BotCommand.WrongBook

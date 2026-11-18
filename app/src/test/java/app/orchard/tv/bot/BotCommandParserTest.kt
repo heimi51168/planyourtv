@@ -44,6 +44,9 @@ class BotCommandParserTest {
         assertEquals(BotCommand.Levels, exact("关卡"))
         assertEquals(BotCommand.Apps, exact("应用"))
         assertEquals(BotCommand.Diag, exact("诊断"))
+        assertEquals(BotCommand.Exempt, exact("豁免"))
+        assertEquals(BotCommand.Exempt, exact("豁免时段"))
+        assertEquals(BotCommand.Exempt, exact("豁免规则"))
     }
 
     @Test

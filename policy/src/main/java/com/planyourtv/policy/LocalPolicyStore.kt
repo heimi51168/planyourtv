@@ -174,6 +174,20 @@ object LocalPolicyStore {
         TvStore.sync()
     }
 
+    /**
+     * Marks that the current override came from the schedule-exemption window rather than a
+     * parent PIN, so a restart can re-derive the state (keep inside the window, drop outside).
+     */
+    fun scheduleExemptActive(): Boolean =
+        TvStore.isReady && TvStore.getBoolean(PolicyKeys.LOCAL_SCHEDULE_EXEMPT, false)
+
+    fun saveScheduleExemptActive(active: Boolean) {
+        if (!TvStore.isReady) return
+        if (active) TvStore.putBoolean(PolicyKeys.LOCAL_SCHEDULE_EXEMPT, true)
+        else TvStore.remove(PolicyKeys.LOCAL_SCHEDULE_EXEMPT)
+        TvStore.sync()
+    }
+
     fun loadRules(): LocalRules? {
         if (!TvStore.isReady) return null
         val raw = TvStore.getString(PolicyKeys.LOCAL_RULES, null) ?: return null
@@ -295,7 +309,11 @@ object LocalPolicyStore {
                 .put(
                     "sessionScreenOffBufferMinutes",
                     ruleSets.rulesFor(activation).sessionScreenOffBufferMinutes,
-                ),
+                )
+                // Exemption windows are optional on read (older documents have none); always
+                // written so a rollback only loses the feature, not the document.
+                .put("exemptWeekday", ruleSets.shared.exemptWeekdayWindows.toJson())
+                .put("exemptWeekend", ruleSets.shared.exemptWeekendWindows.toJson()),
         )
 
     private fun parseRuleSetsJson(json: JSONObject): LocalRuleSets? {
@@ -318,6 +336,12 @@ object LocalPolicyStore {
                 allowedPackages = allowed,
                 studyPackages = study,
                 sessionScreenOffBufferMinutes = buffer,
+                // Absent in pre-exemption documents: empty is the correct no-exemption default.
+                // Present-but-malformed still corrupts, like every other strict field.
+                exemptWeekdayWindows = apps.optJSONArray("exemptWeekday")?.toWindowsStrict()
+                    ?: emptyList(),
+                exemptWeekendWindows = apps.optJSONArray("exemptWeekend")?.toWindowsStrict()
+                    ?: emptyList(),
             ),
         )
     }

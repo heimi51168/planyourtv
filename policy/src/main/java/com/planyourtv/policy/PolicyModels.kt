@@ -56,6 +56,8 @@ data class PolicyUiState(
      */
     val studyModeAvailable: Boolean = false,
     val studyModeActive: Boolean = false,
+    /** The override is the schedule-exemption window (grandparents' time), not a parent PIN. */
+    val exemptActive: Boolean = false,
     /** The explicit study scope shown by the launcher while study mode is active. */
     val studyPackages: Set<String> = emptySet(),
     /** Automatic quota left and no session: the child may start the next segment. */
