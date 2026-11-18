@@ -60,33 +60,18 @@ internal object BotOverlay {
                 orientation = GradientDrawable.Orientation.TOP_BOTTOM
                 colors = intArrayOf(0xE6101020.toInt(), 0xE6181830.toInt())
                 cornerRadii = floatArrayOf(
-                    0f, 0f, 0f, 0f,           // top-left, top-right: square (flush with screen edge)
-                    20f * density, 20f * density, 20f * density, 20f * density, // bottom: rounded
+                    0f, 0f, 0f, 0f,
+                    20f * density, 20f * density, 20f * density, 20f * density,
                 )
             }
         }
-        val params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            overlayType(),
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
-            android.graphics.PixelFormat.TRANSLUCENT,
-        ).apply {
-            gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-        }
-
-        val added = runCatching { wm.addView(view, params) }.isSuccess
-        if (!added) {
-            TvLog.w(TAG, "banner addView failed")
+        if (!addOverlayView(wm, view, width = WindowManager.LayoutParams.MATCH_PARENT)) {
+            TvLog.w(TAG, "banner: no window type worked")
             return
         }
         bannerView = view
 
         // Slide in from above the screen edge, hold, then slide back out.
-        val screenH = context.resources.displayMetrics.heightPixels
-        view.translationY = -view.layoutParams.height.toFloat() - 200f
         view.measure(0, 0)
         val slideIn = ObjectAnimator.ofFloat(view, "translationY", -view.measuredHeight - 100f, 0f)
         slideIn.duration = 400
@@ -115,27 +100,17 @@ internal object BotOverlay {
             setTextColor(Color.WHITE)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 32f)
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            // Soft dark outline keeps the text readable over bright video.
             setShadowLayer(6f * density, 0f, 0f, 0xB0000000.toInt())
             setPadding((16 * density).toInt(), (10 * density).toInt(), (16 * density).toInt(), (10 * density).toInt())
         }
-        val params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            overlayType(),
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
-            android.graphics.PixelFormat.TRANSLUCENT,
-        ).apply {
-            gravity = Gravity.CENTER_VERTICAL or Gravity.LEFT
-            // Slight vertical jitter so consecutive danmaku don't perfectly overlap.
-            y = ((Math.random() - 0.5) * 120 * density).toInt()
-        }
-
-        val added = runCatching { wm.addView(view, params) }.isSuccess
-        if (!added) {
-            TvLog.w(TAG, "danmaku addView failed")
+        if (!addOverlayView(
+                wm, view,
+                width = WindowManager.LayoutParams.WRAP_CONTENT,
+                gravity = Gravity.CENTER_VERTICAL or Gravity.LEFT,
+                yOffset = ((Math.random() - 0.5) * 120 * density).toInt(),
+            )
+        ) {
+            TvLog.w(TAG, "danmaku: no window type worked")
             return
         }
         danmakuView = view
@@ -157,6 +132,58 @@ internal object BotOverlay {
         scroll.start()
     }
 
+    /**
+     * Tries window types in the same order as PolicyCountdownOverlay: accessibility
+     * overlay first (renders above our own activity — the quiz page), then
+     * application overlay (renders above other apps but may sit under our own
+     * activity on some firmwares), then the legacy system alert.
+     */
+    private fun addOverlayView(
+        wm: WindowManager,
+        view: TextView,
+        width: Int,
+        gravity: Int = Gravity.TOP or Gravity.CENTER_HORIZONTAL,
+        yOffset: Int = 0,
+    ): Boolean {
+        val flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+            WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+        val types = buildList {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                add(WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY)
+            }
+            if (android.provider.Settings.canDrawOverlays(view.context)) {
+                add(
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                        WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                    } else {
+                        @Suppress("DEPRECATION")
+                        WindowManager.LayoutParams.TYPE_SYSTEM_ALERT
+                    },
+                )
+                if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.O) {
+                    @Suppress("DEPRECATION")
+                    add(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT)
+                }
+            }
+        }.distinct()
+
+        for (type in types) {
+            val params = WindowManager.LayoutParams(
+                width,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                type,
+                flags,
+                android.graphics.PixelFormat.TRANSLUCENT,
+            ).apply {
+                this.gravity = gravity
+                y = yOffset
+            }
+            if (runCatching { wm.addView(view, params) }.isSuccess) return true
+        }
+        return false
+    }
+
     private fun removeBanner(wm: WindowManager) {
         bannerView?.let { removeView(wm, it) }
         bannerView = null
@@ -164,11 +191,5 @@ internal object BotOverlay {
 
     private fun removeView(wm: WindowManager, view: TextView) {
         runCatching { wm.removeView(view) }
-    }
-
-    private fun overlayType(): Int = when {
-        android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O ->
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-        else -> WindowManager.LayoutParams.TYPE_SYSTEM_ALERT
     }
 }
