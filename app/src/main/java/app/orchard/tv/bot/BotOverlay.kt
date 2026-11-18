@@ -143,10 +143,18 @@ internal object BotOverlay {
         danmakuView = textView
 
         // Float from just past the right edge to just past the left.
+        // LinearInterpolator: constant speed — the default accelerate/decelerate
+        // easing reads as stutter on a TV's relatively low refresh rate.
+        // Hardware layer keeps the rendering off the main-thread layout path.
+        // 14 s to cross a couch-distance screen: slow enough to read while
+        // the child watches.
+        textView.setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
         val scroll = ObjectAnimator.ofFloat(textView, "translationX", startX, endX)
-        scroll.duration = 8_000
+        scroll.duration = 14_000
+        scroll.interpolator = android.view.animation.LinearInterpolator()
         scroll.addListener(object : AnimatorListenerAdapter() {
             override fun onAnimationEnd(animation: Animator) {
+                textView.setLayerType(android.view.View.LAYER_TYPE_NONE, null)
                 runCatching { wm.removeView(container) }
                 if (danmakuView === textView) danmakuView = null
             }
