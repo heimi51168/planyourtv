@@ -57,6 +57,7 @@ internal object BotRuntime {
     fun start(context: Context) {
         appContext = context.applicationContext
         started = true
+        TvLog.i(TAG, "start: store=${com.planyourtv.policy.TvStore.isReady} enabled=${BotBindingStore.enabled()}")
         if (com.planyourtv.policy.TvStore.isReady) {
             restartChannels()
             return
@@ -87,9 +88,11 @@ internal object BotRuntime {
     fun restartChannels() {
         if (!started) return
         if (!BotBindingStore.enabled()) {
+            TvLog.i(TAG, "restartChannels: feature off, stopping")
             stopChannels()
             return
         }
+        TvLog.i(TAG, "restartChannels: ${BotBindingStore.list().size} binding(s), ${channels.size} live job(s)")
         if (eventJob == null) {
             // Pushes hop to IO per message, so the collectors never block on HTTP.
             eventJob = BotEventSource.start(
