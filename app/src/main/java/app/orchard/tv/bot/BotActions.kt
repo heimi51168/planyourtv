@@ -64,6 +64,24 @@ internal object BotActions {
         BotCommand.Undo ->
             // The channel owns undo (it holds the last-action state); unreachable here.
             Outcome("撤销请发送：撤销")
+        is BotCommand.Banner -> {
+            val ctx = BotRuntime.appContext
+            if (ctx != null) {
+                BotOverlay.showBanner(ctx, command.text)
+                Outcome("✅ 横幅已发送到电视")
+            } else {
+                Outcome("电视尚未就绪，请稍后再试")
+            }
+        }
+        is BotCommand.Danmaku -> {
+            val ctx = BotRuntime.appContext
+            if (ctx != null) {
+                BotOverlay.showDanmaku(ctx, command.text)
+                Outcome("✅ 弹幕已发送到电视")
+            } else {
+                Outcome("电视尚未就绪，请稍后再试")
+            }
+        }
         BotCommand.Unbind ->
             // The channel owns unbinding (farewell + channel stop); unreachable here.
             Outcome("解绑请发送：解绑")
@@ -490,7 +508,7 @@ internal object BotActions {
         append("控制：加时20（5–120）/ 停止 / 解锁 / 锁定 / 学习进出 / 答题开关\n")
         append("设置：设置答题上限30（0=不限）/ 设置每轮题数10 / 设置每题时限45 / 设置门槛5 / 设置单轮上限15\n")
         append("设置：模式自动 / 模式手动 / 提醒开 / 提醒关\n")
-        append("其他：撤销（60秒内撤回上一条）/ 帮助 / 解绑\n")
+        append("其他：撤销（60秒内撤回上一条）/ 横幅 今天很棒！ / 弹幕 加油！ / 帮助 / 解绑\n")
         append("说明：支持「加时二十」等写法；「审计」可查谁操作了什么")
     }
 }

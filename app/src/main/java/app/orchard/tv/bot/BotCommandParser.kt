@@ -57,6 +57,8 @@ internal object BotCommandParser {
         BotCommand.DailyReport -> "日报"
         is BotCommand.Remind -> if (command.on) "提醒开" else "提醒关"
         BotCommand.Undo -> "撤销"
+        is BotCommand.Banner -> "横幅"
+        is BotCommand.Danmaku -> "弹幕"
         BotCommand.Unbind -> "解绑"
     }
 
@@ -64,6 +66,9 @@ internal object BotCommandParser {
         val text = normalize(raw)
         if (text.isEmpty()) return ParseResult.Unknown
 
+        // Display commands carry free-form text; match before the settings parser
+        // because their keyword is also a prefix.
+        displayOf(text, raw)?.let { return it }
         settingOf(text)?.let { return it }
         val addTime = addTimeOf(text)
         if (addTime == ADD_TIME_NEED_ARG) {
@@ -118,6 +123,46 @@ internal object BotCommandParser {
     /** Returns the text after [keyword] when it leads, "" for the bare keyword, null otherwise. */
     private fun prefixNumber(body: String, keyword: String): String? =
         if (body.startsWith(keyword)) body.removePrefix(keyword) else null
+
+    /** 横幅/弹幕 carry free-form text; the raw message preserves punctuation normalize strips. */
+    private fun displayOf(text: String, raw: String): ParseResult? {
+        val trimmed = raw.trim()
+        return when {
+            trimmed.startsWith("横幅") -> {
+                val body = trimmed.removePrefix("横幅").trim()
+                if (body.isEmpty()) {
+                    ParseResult.NeedArg("横幅", "请带上要显示的文字，如：横幅 今天很棒！")
+                } else {
+                    ParseResult.Exact(BotCommand.Banner(body.take(60)))
+                }
+            }
+            trimmed.startsWith("弹幕") -> {
+                val body = trimmed.removePrefix("弹幕").trim()
+                if (body.isEmpty()) {
+                    ParseResult.NeedArg("弹幕", "请带上要显示的文字，如：弹幕 加油！")
+                } else {
+                    ParseResult.Exact(BotCommand.Danmaku(body.take(40)))
+                }
+            }
+            trimmed.startsWith("banner") -> {
+                val body = trimmed.removePrefix("banner").trim()
+                if (body.isEmpty()) {
+                    ParseResult.NeedArg("横幅", "请带上要显示的文字，如：banner Great job!")
+                } else {
+                    ParseResult.Exact(BotCommand.Banner(body.take(60)))
+                }
+            }
+            trimmed.startsWith("danmaku") -> {
+                val body = trimmed.removePrefix("danmaku").trim()
+                if (body.isEmpty()) {
+                    ParseResult.NeedArg("弹幕", "请带上要显示的文字，如：danmaku Go!")
+                } else {
+                    ParseResult.Exact(BotCommand.Danmaku(body.take(40)))
+                }
+            }
+            else -> null
+        }
+    }
 
     /** Minute-style values: bare numbers, 中文数字, optional 分钟/分 tail. */
     private fun settingMinutes(rest: String): Int? {

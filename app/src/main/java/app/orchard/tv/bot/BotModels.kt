@@ -92,6 +92,12 @@ sealed interface BotCommand {
     /** Reverts the sender's last successful undoable control within its TTL. */
     data object Undo : BotCommand
 
+    /** Parent-to-TV display: banner slides in from the top. */
+    data class Banner(val text: String) : BotCommand
+
+    /** Parent-to-TV display: text floats across the screen like video comments. */
+    data class Danmaku(val text: String) : BotCommand
+
     /** Self-service removal of the sender's own binding; the audit keeps the trace. */
     data object Unbind : BotCommand
 }
