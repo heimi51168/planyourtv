@@ -103,6 +103,19 @@ internal object BotOverlay {
             setShadowLayer(6f * density, 0f, 0f, 0xB0000000.toInt())
             setPadding((16 * density).toInt(), (10 * density).toInt(), (16 * density).toInt(), (10 * density).toInt())
         }
+
+        // Pre-measure and park the view past the right edge BEFORE it is ever
+        // drawn, so the first rendered frame is already off-screen. Setting
+        // translationX after addView showed the text at the left edge for a
+        // visible frame before the animation yanked it right.
+        view.measure(
+            android.view.View.MeasureSpec.makeMeasureSpec(0, android.view.View.MeasureSpec.UNSPECIFIED),
+            android.view.View.MeasureSpec.makeMeasureSpec(0, android.view.View.MeasureSpec.UNSPECIFIED),
+        )
+        val screenW = context.resources.displayMetrics.widthPixels
+        val startX = screenW + 50f
+        view.translationX = startX
+
         if (!addOverlayView(
                 wm, view,
                 width = WindowManager.LayoutParams.WRAP_CONTENT,
@@ -116,11 +129,7 @@ internal object BotOverlay {
         danmakuView = view
 
         // Float from just past the right edge to just past the left.
-        view.measure(0, 0)
-        val screenW = context.resources.displayMetrics.widthPixels
-        val startX = screenW + 50f
         val endX = -view.measuredWidth - 50f
-        view.translationX = startX
         val scroll = ObjectAnimator.ofFloat(view, "translationX", startX, endX)
         scroll.duration = 8_000
         scroll.addListener(object : AnimatorListenerAdapter() {
