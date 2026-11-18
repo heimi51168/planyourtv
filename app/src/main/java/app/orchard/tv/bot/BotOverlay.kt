@@ -28,7 +28,7 @@ internal object BotOverlay {
     private const val TAG = "BotOverlay"
     private val mainHandler = Handler(Looper.getMainLooper())
     private var bannerView: TextView? = null
-    private var danmakuView: TextView? = null
+    private var danmakuView: android.view.View? = null
 
     /** Banner: slides in from the top, stays [durationMs], slides out. */
     fun showBanner(context: Context, text: String, durationMs: Long = 10_000L) {
@@ -95,7 +95,7 @@ internal object BotOverlay {
         val wm = context.getSystemService(Context.WINDOW_SERVICE) as? WindowManager ?: return
 
         val density = context.resources.displayMetrics.density
-        val view = TextView(context).apply {
+        val textView = TextView(context).apply {
             setText(text)
             setTextColor(Color.WHITE)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 32f)
@@ -104,21 +104,35 @@ internal object BotOverlay {
             setPadding((16 * density).toInt(), (10 * density).toInt(), (16 * density).toInt(), (10 * density).toInt())
         }
 
-        // Pre-measure and park the view past the right edge BEFORE it is ever
-        // drawn, so the first rendered frame is already off-screen. Setting
-        // translationX after addView showed the text at the left edge for a
-        // visible frame before the animation yanked it right.
-        view.measure(
+        // A WRAP_CONTENT overlay window clips its content to the text width, so
+        // translationX has almost nothing to travel through and the animation
+        // looks instant. A full-width container gives the text the whole screen
+        // to cross inside the window bounds.
+        val container = android.widget.FrameLayout(context).apply {
+            clipChildren = false
+            addView(
+                textView,
+                android.widget.FrameLayout.LayoutParams(
+                    android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
+                    android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
+                ),
+            )
+        }
+
+        // Pre-measure and park the text past the right edge BEFORE the window
+        // is ever drawn, so the first rendered frame is already off-screen.
+        textView.measure(
             android.view.View.MeasureSpec.makeMeasureSpec(0, android.view.View.MeasureSpec.UNSPECIFIED),
             android.view.View.MeasureSpec.makeMeasureSpec(0, android.view.View.MeasureSpec.UNSPECIFIED),
         )
         val screenW = context.resources.displayMetrics.widthPixels
         val startX = screenW + 50f
-        view.translationX = startX
+        val endX = -textView.measuredWidth - 50f
+        textView.translationX = startX
 
         if (!addOverlayView(
-                wm, view,
-                width = WindowManager.LayoutParams.WRAP_CONTENT,
+                wm, container,
+                width = WindowManager.LayoutParams.MATCH_PARENT,
                 gravity = Gravity.CENTER_VERTICAL or Gravity.LEFT,
                 yOffset = ((Math.random() - 0.5) * 120 * density).toInt(),
             )
@@ -126,16 +140,15 @@ internal object BotOverlay {
             TvLog.w(TAG, "danmaku: no window type worked")
             return
         }
-        danmakuView = view
+        danmakuView = textView
 
         // Float from just past the right edge to just past the left.
-        val endX = -view.measuredWidth - 50f
-        val scroll = ObjectAnimator.ofFloat(view, "translationX", startX, endX)
+        val scroll = ObjectAnimator.ofFloat(textView, "translationX", startX, endX)
         scroll.duration = 8_000
         scroll.addListener(object : AnimatorListenerAdapter() {
             override fun onAnimationEnd(animation: Animator) {
-                removeView(wm, view)
-                if (danmakuView === view) danmakuView = null
+                runCatching { wm.removeView(container) }
+                if (danmakuView === textView) danmakuView = null
             }
         })
         scroll.start()
@@ -149,7 +162,7 @@ internal object BotOverlay {
      */
     private fun addOverlayView(
         wm: WindowManager,
-        view: TextView,
+        view: android.view.View,
         width: Int,
         gravity: Int = Gravity.TOP or Gravity.CENTER_HORIZONTAL,
         yOffset: Int = 0,
@@ -198,7 +211,7 @@ internal object BotOverlay {
         bannerView = null
     }
 
-    private fun removeView(wm: WindowManager, view: TextView) {
+    private fun removeView(wm: WindowManager, view: android.view.View) {
         runCatching { wm.removeView(view) }
     }
 }
