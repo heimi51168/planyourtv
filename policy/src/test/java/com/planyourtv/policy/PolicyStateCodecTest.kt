@@ -63,6 +63,12 @@ class PolicyStateCodecTest {
                 userName = "parent",
                 userIconUrl = "https://example.test/icon.png",
             ),
+            routeUsage = RouteUsage(
+                date = "2026-11-16",
+                quizGranted = 1,
+                studyRewardGranted = 2,
+                directGranted = 3,
+            ),
         ),
     )
 
@@ -79,7 +85,46 @@ class PolicyStateCodecTest {
         assertEquals(88, value.ledger.pendingGrant?.recordId)
         assertEquals(PendingGrantSource.GRANT, value.ledger.pendingGrant?.source)
         assertEquals(setOf("com.example.video"), value.ledger.pendingGrant?.requestedScope)
+        assertEquals(
+            RouteUsage(
+                date = "2026-11-16",
+                quizGranted = 1,
+                studyRewardGranted = 2,
+                directGranted = 3,
+            ),
+            value.ledger.routeUsage,
+        )
     }
+
+    @Test
+    fun aRuntimeDocumentWithoutRouteUsageStillLoads() {
+        val root = JSONObject(PolicyStateCodec.encodeRuntime(runtime()))
+        val payload = JSONObject(root.getString("payload"))
+        payload.getJSONObject("ledger").remove("routeUsage")
+        root.put("payload", payload.toString()).put("crc", crc(payload))
+        val decoded = PolicyStateCodec.decodeRuntime(root.toString())
+        assertTrue(decoded is PolicySnapshotDecode.Success)
+        assertNull((decoded as PolicySnapshotDecode.Success).value.ledger.routeUsage)
+    }
+
+    @Test
+    fun malformedRouteUsageFallsBackToNoCountsInsteadOfCorruptingTheSnapshot() {
+        val root = JSONObject(PolicyStateCodec.encodeRuntime(runtime()))
+        val payload = JSONObject(root.getString("payload"))
+        payload.getJSONObject("ledger").put(
+            "routeUsage",
+            JSONObject().put("date", "2026-11-16").put("quiz", -1),
+        )
+        root.put("payload", payload.toString()).put("crc", crc(payload))
+        val decoded = PolicyStateCodec.decodeRuntime(root.toString())
+        assertTrue(decoded is PolicySnapshotDecode.Success)
+        assertNull((decoded as PolicySnapshotDecode.Success).value.ledger.routeUsage)
+    }
+
+    private fun crc(payload: JSONObject): Long =
+        java.util.zip.CRC32().apply {
+            update(payload.toString().toByteArray(Charsets.UTF_8))
+        }.value
 
     @Test
     fun nullAndEmptyRequestedScopeStayDistinct() {

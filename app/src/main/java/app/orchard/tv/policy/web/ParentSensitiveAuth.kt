@@ -15,8 +15,8 @@ import java.util.Locale
  *
  * - only the SHA-256 digest of the token is stored, never the token itself;
  * - it is bound to the editor token digest and to one scope;
- * - RULES_EDIT lives five minutes and allows multiple saves, TAKE_OVER is single-use and
- *   expires after sixty seconds;
+ * - RULES_EDIT lives five minutes and allows multiple saves; TAKE_OVER and USER_CONFIG are
+ *   single-use and expire after sixty seconds;
  * - logout, a new editor lease, or a mode change drops the stored proofs.
  *
  * PIN failures share [QuizAccess]'s sensitive-action limiter with the single timer, so five
@@ -25,7 +25,8 @@ import java.util.Locale
 internal object ParentSensitiveAuth {
     enum class Scope(val ttlMs: Long) {
         RULES_EDIT(5 * 60_000L),
-        TAKE_OVER(60_000L);
+        TAKE_OVER(60_000L),
+        USER_CONFIG(60_000L);
 
         companion object {
             fun parse(value: String?): Scope? = entries.firstOrNull {

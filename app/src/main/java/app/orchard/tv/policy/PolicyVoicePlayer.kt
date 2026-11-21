@@ -140,8 +140,6 @@ object PolicyVoicePlayer {
         PolicyVoiceCue.GUARD_RESUMED -> R.raw.voice_guard_resumed
         PolicyVoiceCue.CLOUD_MODE_RULE -> R.raw.voice_mode_rule
         PolicyVoiceCue.CLOUD_MODE_REDEEM -> R.raw.voice_mode_redeem
-        PolicyVoiceCue.REMOTE_ACTIVATION_AUTO -> rawResource(context, "voice_activation_auto")
-        PolicyVoiceCue.REMOTE_ACTIVATION_MANUAL -> rawResource(context, "voice_activation_manual")
         PolicyVoiceCue.QUIZ_START -> nextClip("quiz_start", startClips)
         PolicyVoiceCue.QUIZ_CORRECT -> nextClip("quiz_correct", correctClips)
         PolicyVoiceCue.QUIZ_WRONG -> nextWrongClip()
@@ -215,6 +213,9 @@ object PolicyVoicePlayer {
     }
 
     private fun requestFocus(context: Context) {
+        // Quiz cues play under the round's own focus hold; a second transient request would
+        // replace it and let background audio return between cues.
+        if (QuizAudioGate.isActive()) return
         val manager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return
         val attributes = AudioAttributes.Builder()
             .setUsage(AudioAttributes.USAGE_MEDIA)

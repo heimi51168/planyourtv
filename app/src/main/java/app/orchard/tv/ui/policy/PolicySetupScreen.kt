@@ -172,7 +172,7 @@ fun PolicySetupScreen(state: PolicyUiState) {
                                 val result = withContext(Dispatchers.Default) {
                                     LocalPolicyRuntime.completeSetup(
                                         firstPin,
-                                        LocalRules.defaultsFor(state.activation),
+                                        LocalRules.DEFAULTS,
                                         recoveryCode,
                                     )
                                 }

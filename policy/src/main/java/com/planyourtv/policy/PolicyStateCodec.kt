@@ -129,6 +129,7 @@ object PolicyStateCodec {
         .put("planDeadlineWall", planDeadlineEpochMs)
         .put("wallDeadlineWall", wallDeadlineEpochMs)
         .put("pausedAtWall", pausedAtEpochMs)
+        .put("pauseReason", pauseReason?.name ?: JSONObject.NULL)
         .put("checkpointWall", checkpointWallMs)
         .put("checkpointElapsed", checkpointElapsedMs)
         .put("checkpointAsleep", checkpointAsleepMs)
@@ -142,6 +143,7 @@ object PolicyStateCodec {
         .put("reportUsage", reportUsage)
         .put("templateVersion", templateVersion)
         .put("restAfter", restAfterSeconds)
+        .put("outsidePlan", outsidePlan)
 
     private fun JSONObject.toSession(): SessionSnapshot? {
         val sessionId = optString("sessionId", "")
@@ -154,6 +156,10 @@ object PolicyStateCodec {
             runCatching { PolicySessionOrigin.valueOf(it) }.getOrNull()
         }
         if (stringOrNull("origin") != null && origin == null) return null
+        val pauseReason = stringOrNull("pauseReason")?.let {
+            runCatching { SessionPauseReason.valueOf(it) }.getOrNull()
+        }
+        if (stringOrNull("pauseReason") != null && pauseReason == null) return null
         val total = optLong("total", 0L)
         val remaining = optLong("remaining", -1L)
         if (total <= 0L || remaining < 0L || remaining > total) return null
@@ -168,6 +174,7 @@ object PolicyStateCodec {
             planDeadlineEpochMs = optLong("planDeadlineWall", 0L),
             wallDeadlineEpochMs = optLong("wallDeadlineWall", 0L),
             pausedAtEpochMs = optLong("pausedAtWall", 0L),
+            pauseReason = pauseReason,
             checkpointWallMs = optLong("checkpointWall", 0L),
             checkpointElapsedMs = optLong("checkpointElapsed", 0L),
             checkpointAsleepMs = optLong("checkpointAsleep", 0L),
@@ -183,12 +190,18 @@ object PolicyStateCodec {
             reportUsage = optBoolean("reportUsage", false),
             templateVersion = optLong("templateVersion", 0L),
             restAfterSeconds = optLong("restAfter", 0L),
+            outsidePlan = optBoolean("outsidePlan", false),
         )
     }
 
     private fun RuntimeLedger.toJson(): JSONObject = JSONObject().apply {
         put("days", JSONObject().also { daysJson ->
             days.forEach { (date, seconds) ->
+                if (date.isNotBlank() && seconds >= 0L) daysJson.put(date, seconds)
+            }
+        })
+        put("studyDays", JSONObject().also { daysJson ->
+            studyDays.forEach { (date, seconds) ->
                 if (date.isNotBlank() && seconds >= 0L) daysJson.put(date, seconds)
             }
         })
@@ -200,10 +213,19 @@ object PolicyStateCodec {
             }
         })
         put("pendingGrant", pendingGrant?.toJson() ?: JSONObject.NULL)
+        put("routeUsage", routeUsage?.toJson() ?: JSONObject.NULL)
     }
 
     private fun JSONObject.toLedger(): RuntimeLedger? {
         val days = optJSONObject("days")?.let { json ->
+            buildMap {
+                json.keys().forEach { date ->
+                    val seconds = json.optLong(date, -1L)
+                    if (date.isNotBlank() && seconds >= 0L) put(date, seconds)
+                }
+            }
+        } ?: emptyMap()
+        val studyDays = optJSONObject("studyDays")?.let { json ->
             buildMap {
                 json.keys().forEach { date ->
                     val seconds = json.optLong(date, -1L)
@@ -224,12 +246,42 @@ object PolicyStateCodec {
         } else {
             optJSONObject("pendingGrant")?.toPendingGrant() ?: return null
         }
+        // Missing or malformed V44 counts mean "no route usage yet"; they must not make an
+        // otherwise valid session/ledger snapshot unreadable after an upgrade.
+        val routeUsage = if (isNull("routeUsage")) {
+            null
+        } else {
+            optJSONObject("routeUsage")?.toRouteUsage()
+        }
         return RuntimeLedger(
             days = days,
+            studyDays = studyDays,
             breakUntilEpochMs = optLong("breakUntil", 0L),
             lastEndedAtEpochMs = optLong("lastEndedAt", 0L),
             settled = settled,
             pendingGrant = pending,
+            routeUsage = routeUsage,
+        )
+    }
+
+    private fun RouteUsage.toJson(): JSONObject = JSONObject()
+        .put("date", date)
+        .put("quiz", quizGranted)
+        .put("studyReward", studyRewardGranted)
+        .put("directFree", directGranted)
+
+    private fun JSONObject.toRouteUsage(): RouteUsage? {
+        val date = optString("date", "")
+        if (date.isBlank()) return null
+        val quiz = optInt("quiz", -1)
+        val study = optInt("studyReward", -1)
+        val direct = optInt("directFree", -1)
+        if (quiz < 0 || study < 0 || direct < 0) return null
+        return RouteUsage(
+            date = date,
+            quizGranted = quiz,
+            studyRewardGranted = study,
+            directGranted = direct,
         )
     }
 

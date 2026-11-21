@@ -24,7 +24,8 @@ class RemotePolicyCodecTest {
             "weekendWindows": [{"startMinute": 540, "endMinute": 1200}],
             "dailyLimitMinutes": 60,
             "sessionLimitMinutes": 20,
-            "restMinutes": 10
+            "restMinutes": 10,
+            "allowedPackages": ["all_valid_app"]
           },
           "updatedAt": "2026-10-30 12:00:00"
         }
@@ -44,6 +45,58 @@ class RemotePolicyCodecTest {
         assertTrue(policy.readyForRule)
         assertEquals(1080, policy.rules.weekdayWindows.single().startMinute)
         assertEquals(1200, policy.rules.weekendWindows.single().endMinute)
+    }
+
+    @Test
+    fun missingWeekendQuotaSharesTheLegacyDailyLimit() {
+        val policy = RemotePolicyCodec.parse(policyJson)!!
+        assertEquals(60, policy.rules.autoDailyLimitMinutes)
+        assertEquals(60, policy.rules.weekendDailyLimitMinutes)
+    }
+
+    @Test
+    fun weekendQuotaRoundTripsSeparately() {
+        val json = withRules(policyJson) { it.put("weekendDailyLimitMinutes", 120) }
+        val policy = RemotePolicyCodec.parse(json)!!
+        assertEquals(60, policy.rules.autoDailyLimitMinutes)
+        assertEquals(120, policy.rules.weekendDailyLimitMinutes)
+        val restored = RemotePolicyCodec.parse(RemotePolicyCodec.toJson(policy))!!
+        assertEquals(120, restored.rules.weekendDailyLimitMinutes)
+    }
+
+    @Test
+    fun missingWeekendRestAndBufferShareTheWeekdayValues() {
+        val json = withRules(policyJson) {
+            it.put("restMinutes", 12)
+            it.put("sessionScreenOffBufferMinutes", 25)
+        }
+        val policy = RemotePolicyCodec.parse(json)!!
+        assertEquals(12, policy.rules.restMinutes)
+        assertEquals(12, policy.rules.weekendRestMinutes)
+        assertEquals(25, policy.rules.sessionScreenOffBufferMinutes)
+        assertEquals(25, policy.rules.weekendSessionScreenOffBufferMinutes)
+    }
+
+    @Test
+    fun weekendRestAndBufferAreProjectionsOfTheSingleValue() {
+        val json = withRules(policyJson) {
+            it.put("restMinutes", 12)
+            it.put("weekendRestMinutes", 30)
+            it.put("sessionScreenOffBufferMinutes", 25)
+            it.put("weekendSessionScreenOffBufferMinutes", 45)
+        }
+        val policy = RemotePolicyCodec.parse(json)!!
+        // Rest and the screen-off grace are single values in schema 3. A backend still sending
+        // weekend fields is projected onto the one stored value, not split into a second rule.
+        assertEquals(12, policy.rules.restMinutes)
+        assertEquals(12, policy.rules.weekendRestMinutes)
+        assertEquals(25, policy.rules.sessionScreenOffBufferMinutes)
+        assertEquals(25, policy.rules.weekendSessionScreenOffBufferMinutes)
+        val restored = RemotePolicyCodec.parse(RemotePolicyCodec.toJson(policy))!!
+        assertEquals(12, restored.rules.restMinutes)
+        assertEquals(12, restored.rules.weekendRestMinutes)
+        assertEquals(25, restored.rules.sessionScreenOffBufferMinutes)
+        assertEquals(25, restored.rules.weekendSessionScreenOffBufferMinutes)
     }
 
     @Test
@@ -73,12 +126,15 @@ class RemotePolicyCodecTest {
     }
 
     @Test
-    fun missingRestUsesTheActivationDefault() {
+    fun missingRestUsesTheManualDefault() {
         val manualJson = withRules(policyJson) { it.remove("restMinutes") }
         assertEquals(0, RemotePolicyCodec.parse(manualJson)!!.rules.restMinutes)
+    }
 
-        val autoJson = JSONObject(manualJson.toString()).put("activation", "AUTO")
-        assertEquals(10, RemotePolicyCodec.parse(autoJson)!!.rules.restMinutes)
+    @Test
+    fun automaticActivationIsRejected() {
+        val autoJson = JSONObject(policyJson.toString()).put("activation", "AUTO")
+        assertNull(RemotePolicyCodec.parse(autoJson))
     }
 
     @Test
@@ -143,10 +199,43 @@ class RemotePolicyCodecTest {
     }
 
     @Test
-    fun missingAllowedPackagesMeansAllApps() {
+    fun missingEntryVisibilityMeansLegacyBackend() {
         val policy = RemotePolicyCodec.parse(policyJson)!!
-        assertEquals(setOf(ALL_VALID_APP), policy.rules.effectiveAllowedPackages)
-        assertFalse(policy.rules.usesAppSelection)
+        assertNull(policy.sourceEntryVisible)
+        assertNull(policy.quizEntryVisible)
+    }
+
+    @Test
+    fun entryVisibilityRoundTripsWhenProjected() {
+        val json = JSONObject(policyJson.toString())
+            .put("sourceEntryVisible", false)
+            .put("quizEntryVisible", true)
+        val policy = RemotePolicyCodec.parse(json)!!
+        assertEquals(false, policy.sourceEntryVisible)
+        assertEquals(true, policy.quizEntryVisible)
+        val restored = RemotePolicyCodec.parse(RemotePolicyCodec.toJson(policy))!!
+        assertFalse(restored.sourceEntryVisible!!)
+        assertTrue(restored.quizEntryVisible!!)
+        assertEquals(policy, restored)
+    }
+
+    @Test
+    fun malformedEntryVisibilityIsTreatedAsLegacyWithoutDroppingTheSnapshot() {
+        // 显示类开关的脏值不整包作废：策略快照保留，该字段按「旧后端未投影」处理，
+        // 由 codec 写 trace（remote.invalidSourceEntryVisible / …QuizEntryVisible）。
+        val json = JSONObject(policyJson.toString())
+            .put("sourceEntryVisible", "no")
+            .put("quizEntryVisible", 1)
+        val policy = RemotePolicyCodec.parse(json)!!
+        assertNull(policy.sourceEntryVisible)
+        assertNull(policy.quizEntryVisible)
+        assertTrue(policy.rulesUsable)
+    }
+
+    @Test
+    fun missingAllowedPackagesIsRejectedInsteadOfWidened() {
+        val json = withRules(policyJson) { it.remove("allowedPackages") }
+        assertNull(RemotePolicyCodec.parse(json))
     }
 
     @Test
@@ -166,11 +255,13 @@ class RemotePolicyCodecTest {
     }
 
     @Test
-    fun schema1EmptyAllowedPackagesNormalizeToAllApps() {
+    fun emptyAllowedPackagesStayExplicitlyEmptyForEverySchema() {
+        // V42 does not migrate old local documents; an empty entertainment scope is a real
+        // "no entertainment apps" choice, not permission to allow everything.
         val json = withRules(policyJson) { it.put("allowedPackages", org.json.JSONArray()) }
         val rules = RemotePolicyCodec.parse(json)!!.rules
-        assertEquals(setOf(ALL_VALID_APP), rules.effectiveAllowedPackages)
-        assertFalse(rules.usesAppSelection)
+        assertTrue(rules.effectiveAllowedPackages.isEmpty())
+        assertTrue(rules.usesAppSelection)
     }
 
     @Test
@@ -189,9 +280,14 @@ class RemotePolicyCodecTest {
     }
 
     @Test
-    fun schema2MustCarryTheAllowedPackagesField() {
-        val json = withRules(policyJson) { it.put("schemaVersion", 2) }
-        assertNull(RemotePolicyCodec.parse(json))
+    fun truncatedRulesWithoutAllowedPackagesAreRejectedForEverySchema() {
+        for (schema in listOf(1, 2, 3)) {
+            val json = withRules(policyJson) {
+                it.put("schemaVersion", schema)
+                it.remove("allowedPackages")
+            }
+            assertNull(RemotePolicyCodec.parse(json))
+        }
     }
 
     @Test
@@ -320,18 +416,15 @@ class RemotePolicyCodecTest {
     }
 
     @Test
-    fun twoRuleSetsAreParsedAndRoundTrip() {
+    fun manualRuleSetIsParsedAndRoundTrips() {
         val policy = RemotePolicyCodec.parse(withRuleSets(policyJson))!!
 
         assertTrue(policy.supportsRuleSets)
         val sets = policy.ruleSets!!
-        assertEquals(60, sets.auto.autoDailyLimitMinutes)
-        assertEquals(5, sets.auto.restMinutes)
-        assertEquals(25, sets.auto.sessionScreenOffBufferMinutes)
         assertEquals(120, sets.manual.autoDailyLimitMinutes)
         assertEquals(0, sets.manual.restMinutes)
         assertEquals(35, sets.manual.sessionScreenOffBufferMinutes)
-        // Shared app scope comes from the rules snapshot, not from either time set.
+        // Shared app scope comes from the rules snapshot, not from the time set.
         assertEquals(policy.rules.effectiveAllowedPackages, sets.shared.allowedPackages)
 
         val restored = RemotePolicyCodec.parse(RemotePolicyCodec.toJson(policy))!!
@@ -339,48 +432,260 @@ class RemotePolicyCodecTest {
     }
 
     @Test
-    fun ruleSetsWithoutTheirOwnBufferFallBackToTheFlatSnapshot() {
+    fun ruleSetWithoutItsOwnBufferFallsBackToTheFlatSnapshot() {
         val json = withRuleSets(policyJson).apply {
-            getJSONObject("autoRules").remove("sessionScreenOffBufferMinutes")
             getJSONObject("manualRules").remove("sessionScreenOffBufferMinutes")
         }.let { withRules(it) { rules -> rules.put("sessionScreenOffBufferMinutes", 40) } }
 
         val sets = RemotePolicyCodec.parse(json)!!.ruleSets!!
-        assertEquals(40, sets.auto.sessionScreenOffBufferMinutes)
         assertEquals(40, sets.manual.sessionScreenOffBufferMinutes)
     }
 
     @Test
     fun outOfRangeRuleSetBufferIsRejected() {
         val json = withRuleSets(policyJson)
-        json.getJSONObject("autoRules").put("sessionScreenOffBufferMinutes", 120)
+        json.getJSONObject("manualRules").put("sessionScreenOffBufferMinutes", 120)
         assertNull(RemotePolicyCodec.parse(json))
     }
 
     @Test
-    fun oneMissingRuleSetIsRejectedInsteadOfGuessed() {
+    fun missingManualRuleSetFallsBackToSingleSetMode() {
         val json = withRuleSets(policyJson).apply { remove("manualRules") }
-        assertNull(RemotePolicyCodec.parse(json))
+        val policy = RemotePolicyCodec.parse(json)!!
+        assertFalse(policy.supportsRuleSets)
+        assertNull(policy.ruleSets)
+    }
+
+    @Test
+    fun autoRulesOnlyFallsBackToSingleSetMode() {
+        val json = withRuleSets(policyJson).apply {
+            remove("manualRules")
+            put(
+                "autoRules",
+                JSONObject()
+                    .put("weekdayWindows", windowArray(1080, 1200))
+                    .put("weekendWindows", windowArray(540, 1200))
+                    .put("dailyLimitMinutes", 60)
+                    .put("sessionLimitMinutes", 20)
+                    .put("restMinutes", 5),
+            )
+        }
+        val policy = RemotePolicyCodec.parse(json)!!
+        assertFalse(policy.supportsRuleSets)
+        assertNull(policy.ruleSets)
     }
 
     @Test
     fun ruleSetMissingAFieldIsRejected() {
         val json = withRuleSets(policyJson)
-        json.getJSONObject("autoRules").remove("restMinutes")
+        json.getJSONObject("manualRules").remove("restMinutes")
         assertNull(RemotePolicyCodec.parse(json))
     }
 
-    private fun withRuleSets(source: JSONObject): JSONObject = JSONObject(source.toString())
-        .put(
-            "autoRules",
-            JSONObject()
-                .put("weekdayWindows", windowArray(1080, 1200))
-                .put("weekendWindows", windowArray(540, 1200))
-                .put("dailyLimitMinutes", 60)
-                .put("sessionLimitMinutes", 20)
-                .put("restMinutes", 5)
-                .put("sessionScreenOffBufferMinutes", 25),
+    @Test
+    fun memberScopedFieldsMaskIsParsedAndRoundTrips() {
+        val json = JSONObject(policyJson.toString()).put(
+            "memberScopedFields",
+            org.json.JSONArray().put("allowedPackages").put("dayGroups"),
         )
+
+        val policy = RemotePolicyCodec.parse(json)!!
+
+        assertEquals(setOf("allowedPackages", "dayGroups"), policy.memberScopedFields)
+        assertEquals(policy, RemotePolicyCodec.parse(RemotePolicyCodec.toJson(policy))!!)
+    }
+
+    @Test
+    fun aMissingMaskIsALegacyBackendAndAnEmptyMaskStaysExplicit() {
+        // Absent = backend predates member projection: the TV must keep every local field.
+        assertNull(RemotePolicyCodec.parse(policyJson)!!.memberScopedFields)
+
+        // An empty array is a real mask (no field projected) and must not be confused with
+        // "legacy backend"; conflating them would widen a child's scope.
+        val emptyMask = JSONObject(policyJson.toString())
+            .put("memberScopedFields", org.json.JSONArray())
+        assertEquals(
+            emptySet<String>(),
+            RemotePolicyCodec.parse(emptyMask)!!.memberScopedFields,
+        )
+    }
+
+    @Test
+    fun malformedMaskInvalidatesTheSnapshotInsteadOfWidening() {
+        val notAnArray = JSONObject(policyJson.toString()).put("memberScopedFields", "dayGroups")
+        assertNull(RemotePolicyCodec.parse(notAnArray))
+
+        val nonString = JSONObject(policyJson.toString())
+            .put("memberScopedFields", org.json.JSONArray().put(1))
+        assertNull(RemotePolicyCodec.parse(nonString))
+
+        val blank = JSONObject(policyJson.toString())
+            .put("memberScopedFields", org.json.JSONArray().put("  "))
+        assertNull(RemotePolicyCodec.parse(blank))
+
+        val explicitNull = JSONObject(policyJson.toString())
+            .put("memberScopedFields", JSONObject.NULL)
+        assertNull(RemotePolicyCodec.parse(explicitNull))
+    }
+
+    @Test
+    fun theMaskIsAlsoReadFromTheManualRuleSet() {
+        val json = withRuleSets(policyJson).apply {
+            getJSONObject("manualRules")
+                .put("memberScopedFields", org.json.JSONArray().put("sessionLimitMinutes"))
+        }
+
+        assertEquals(
+            setOf("sessionLimitMinutes"),
+            RemotePolicyCodec.parse(json)!!.memberScopedFields,
+        )
+    }
+
+    @Test
+    fun unlimitedMemberQuotaArrivesAsJsonNull() {
+        // 2026-11-21 额度口径：后端只对「不限」下发显式 JSON null，0 / 1440 都是字面分钟数。
+        // 收到 null 必须当成「不限」，不能读成被截断或 0 分钟。旧扁平 getter 仍把 null
+        // 投影成 MAX_DAILY_MINUTES（托管交接契约，见 LocalDayGroupsTest）。
+        val json = withRules(policyJson) {
+            it.put("autoDailyLimitMinutes", JSONObject.NULL)
+            it.remove("dailyLimitMinutes")
+            it.put("weekendDailyLimitMinutes", JSONObject.NULL)
+        }
+
+        val rules = RemotePolicyCodec.parse(json)!!.rules
+
+        assertNull(rules.entertainmentDailyLimitFor(1))
+        assertNull(rules.entertainmentDailyLimitFor(6))
+        assertEquals(1440, rules.autoDailyLimitMinutes)
+        val restored = RemotePolicyCodec.parse(
+            RemotePolicyCodec.toJson(RemotePolicyCodec.parse(json)!!),
+        )!!.rules
+        assertNull(restored.entertainmentDailyLimitFor(1))
+        assertNull(restored.entertainmentDailyLimitFor(6))
+    }
+
+    @Test
+    fun literalZeroAndFullDayQuotasAreNotFoldedIntoUnlimited() {
+        // 2026-11-21：0 = 0 分钟（当天禁止娱乐）、1440 = 字面 24 小时，都不能被折叠成 null。
+        // 旧实现把 1440 当「不限」，电视会显示成「不限」，与家长所配不一致。
+        val zero = RemotePolicyCodec.parse(
+            withRules(policyJson) {
+                it.put("autoDailyLimitMinutes", 0)
+                it.remove("dailyLimitMinutes")
+                it.put("weekendDailyLimitMinutes", 0)
+            },
+        )!!.rules
+        assertEquals(0, zero.entertainmentDailyLimitFor(1))
+        assertEquals(0, zero.entertainmentDailyLimitFor(6))
+
+        val fullDay = RemotePolicyCodec.parse(
+            withRules(policyJson) {
+                it.put("autoDailyLimitMinutes", 1440)
+                it.remove("dailyLimitMinutes")
+                it.put("weekendDailyLimitMinutes", 1440)
+            },
+        )!!
+        assertEquals(1440, fullDay.rules.entertainmentDailyLimitFor(1))
+        assertEquals(1440, fullDay.rules.entertainmentDailyLimitFor(6))
+        val restored = RemotePolicyCodec.parse(RemotePolicyCodec.toJson(fullDay))!!.rules
+        assertEquals(1440, restored.entertainmentDailyLimitFor(1))
+        assertEquals(1440, restored.entertainmentDailyLimitFor(6))
+    }
+
+    @Test
+    fun dayGroupsOverrideTheLegacyWeekdayAndWeekendWindows() {
+        val json = withRules(policyJson) {
+            it.put(
+                "dayGroups",
+                org.json.JSONArray()
+                    .put(dayGroup(listOf(1, 2, 3, 4, 5), 600, 660, studyLimit = null, entLimit = 120))
+                    .put(dayGroup(listOf(6, 7), 540, 720, studyLimit = null, entLimit = null)),
+            )
+        }
+
+        val policy = RemotePolicyCodec.parse(json)!!
+        val rules = policy.rules
+
+        assertEquals(2, rules.dayGroups.size)
+        assertEquals(120, rules.entertainmentDailyLimitFor(1))
+        assertNull(rules.entertainmentDailyLimitFor(6))
+        assertEquals(600, rules.entertainmentWindowsFor(1).single().startMinute)
+        assertEquals(720, rules.entertainmentWindowsFor(6).single().endMinute)
+        // The legacy flat arrays from policyJson no longer describe the schedule.
+        assertEquals(120, rules.autoDailyLimitMinutes)
+        assertEquals(1440, rules.weekendDailyLimitMinutes)
+        assertEquals(policy, RemotePolicyCodec.parse(RemotePolicyCodec.toJson(policy))!!)
+    }
+
+    @Test
+    fun anIncompleteDayGroupsScheduleInvalidatesTheSnapshot() {
+        // Every day must belong to exactly one group; leaving Sunday out is truncated data,
+        // not permission to keep the legacy weekday/weekend projection.
+        val missingDay = withRules(policyJson) {
+            it.put(
+                "dayGroups",
+                org.json.JSONArray()
+                    .put(dayGroup(listOf(1, 2, 3, 4, 5, 6), 600, 660, studyLimit = null, entLimit = 120)),
+            )
+        }
+        assertNull(RemotePolicyCodec.parse(missingDay))
+
+        val duplicateDay = withRules(policyJson) {
+            it.put(
+                "dayGroups",
+                org.json.JSONArray()
+                    .put(dayGroup(listOf(1, 2, 3, 4, 5), 600, 660, studyLimit = null, entLimit = 120))
+                    .put(dayGroup(listOf(5, 6, 7), 600, 660, studyLimit = null, entLimit = 120)),
+            )
+        }
+        assertNull(RemotePolicyCodec.parse(duplicateDay))
+
+        val notAnArray = withRules(policyJson) { it.put("dayGroups", "1-5") }
+        assertNull(RemotePolicyCodec.parse(notAnArray))
+    }
+
+    @Test
+    fun negativeRouteCountsSurviveAsUnlimited() {
+        val json = withRules(policyJson) {
+            it.put("quizDailyLimitCount", -1)
+            it.put("studyRewardDailyLimitCount", 0)
+            it.put("directDailyFreeCount", 99)
+        }
+
+        val rules = RemotePolicyCodec.parse(json)!!.rules
+
+        assertEquals(-1, rules.quizDailyLimitCount)
+        assertEquals(0, rules.studyRewardDailyLimitCount)
+        assertEquals(99, rules.directDailyFreeCount)
+    }
+
+    @Test
+    fun anOutOfRangeRouteCountInvalidatesTheSnapshot() {
+        val tooLarge = withRules(policyJson) { it.put("quizDailyLimitCount", 100) }
+        assertNull(RemotePolicyCodec.parse(tooLarge))
+
+        val tooSmall = withRules(policyJson) { it.put("directDailyFreeCount", -2) }
+        assertNull(RemotePolicyCodec.parse(tooSmall))
+    }
+
+    private fun dayGroup(
+        days: List<Int>,
+        entStart: Int,
+        entEnd: Int,
+        studyLimit: Int?,
+        entLimit: Int?,
+    ): JSONObject {
+        val daysArray = org.json.JSONArray()
+        days.forEach(daysArray::put)
+        return JSONObject()
+            .put("days", daysArray)
+            .put("studyWindows", windowArray(0, 1440))
+            .put("studyDailyLimitMinutes", studyLimit ?: JSONObject.NULL)
+            .put("entertainmentWindows", windowArray(entStart, entEnd))
+            .put("entertainmentLimitMinutes", entLimit ?: JSONObject.NULL)
+    }
+
+    private fun withRuleSets(source: JSONObject): JSONObject = JSONObject(source.toString())
         .put(
             "manualRules",
             JSONObject()

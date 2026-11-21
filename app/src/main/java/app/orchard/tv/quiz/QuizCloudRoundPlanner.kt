@@ -2,6 +2,7 @@ package app.orchard.tv.quiz
 
 import android.util.Log
 import androidx.annotation.VisibleForTesting
+import com.planyourtv.policy.PolicyRuntime
 import com.planyourtv.policy.quiz.QuizConfig
 import com.planyourtv.policy.quiz.QuizConfigDocument
 import com.planyourtv.policy.quiz.QuizConfigDocumentValidator
@@ -68,6 +69,8 @@ object QuizCloudRoundPlanner {
     const val LEVEL_STATUS_MISSING = "LEVEL_STATUS_MISSING"
     const val LEVEL_ORIGIN_INVALID = "LEVEL_ORIGIN_INVALID"
     const val MEMBER_UNKNOWN = "MEMBER_UNKNOWN"
+    const val MEMBER_SWITCH_PENDING = "MEMBER_SWITCH_PENDING"
+    const val ADULT_UNSUPPORTED = "ADULT_UNSUPPORTED"
 
     private val DOCUMENT_ID = Regex("^quizcfg:family:([0-9]+):member:([0-9]+)$")
 
@@ -78,6 +81,20 @@ object QuizCloudRoundPlanner {
         }
         val active = QuizConfigDocumentStore.activeCloudDocument()
             ?: return QuizCloudPlanResult.Rejected(CLOUD_ENVELOPE_MISSING)
+        // 果园切换用户后，上一个孩子的 active QCD 不能再执行（题库按孩子不同）：
+        // 等 QuizConfigDocumentSync 把新用户的文档同步并激活后再放行。
+        // 家长 / 孩子只影响文案；memberId 相同时照常执行（家长 QCD 接入后无需再改这里）。
+        val documentMemberId = memberIdOf(active.cloud.document)
+        val activeMemberId = PolicyRuntime.state.value.cloudActiveMemberId
+        if (documentMemberId != null && activeMemberId != null &&
+            activeMemberId != documentMemberId
+        ) {
+            val adult = PolicyRuntime.state.value.cloudMembers
+                .firstOrNull { it.memberId == activeMemberId }?.isChild == false
+            return QuizCloudPlanResult.Rejected(
+                if (adult) ADULT_UNSUPPORTED else MEMBER_SWITCH_PENDING,
+            )
+        }
         return plan(active, nowMs)
     }
 

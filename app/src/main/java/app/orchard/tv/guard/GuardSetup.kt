@@ -1,6 +1,8 @@
 package app.orchard.tv.guard
 
 import android.Manifest
+import android.app.usage.UsageEvents
+import android.app.usage.UsageStatsManager
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
@@ -64,6 +66,12 @@ object GuardSetup {
     /** Test hook: probe another port to watch the toggle without closing a working ADB link. */
     @Volatile var adbProbePort = 5555
 
+    /** When a Dangbei shutdown was announced (elapsed) and in which boot; see [shuttingDown]. */
+    private const val KEY_SHUTDOWN_AT = "shutdown_announced_at"
+    private const val KEY_SHUTDOWN_BOOT_ID = "shutdown_announced_boot_id"
+    private const val SHUTDOWN_HOLD_MS = 2 * 60_000L
+    @Volatile private var shutdownRecheck = false
+
     private const val KEY_OWN_SCREENSAVER = "own_screensaver"
     private const val KEY_HOME_IN_FRONT = "home_in_front"
     private const val KEY_HOME_IN_FRONT_AT = "home_in_front_at"
@@ -80,6 +88,26 @@ object GuardSetup {
     private const val KEY_SCREENSAVER_SWITCHED_OFF = "screensaver_switched_off"
     private const val KEY_SCREENSAVER_ENABLED = "screensaver_enabled"
     private const val KEY_OFF_IN_STANDBY = "guard_off_in_standby"
+
+    /**
+     * The app the viewer opened from PlanYourTV, with enough evidence to tell a process killed
+     * while that app was in front. See [noteLastLeftForApp] and [RevivalGate].
+     */
+    private const val KEY_LAST_LEFT_PKG = "last_left_for_app_pkg"
+    private const val KEY_LAST_LEFT_CLS = "last_left_for_app_cls"
+    private const val KEY_LAST_LEFT_AT = "last_left_for_app_at"
+    private const val KEY_LAST_LEFT_BOOT = "last_left_for_app_boot"
+    private const val KEY_LAST_LEFT_BOOT_ID = "last_left_for_app_boot_id"
+
+    /**
+     * An explicit automatic-revival event. Unlike [lastRevivedAt], this is written by every
+     * recovery path, including the notification listener when the accessibility entry stayed
+     * enabled. The guard gates only on this event, never on a timestamp of its own choosing.
+     */
+    private const val KEY_AUTO_REVIVAL_AT = "auto_revival_at"
+    private const val KEY_AUTO_REVIVAL_BOOT = "auto_revival_boot"
+    private const val KEY_AUTO_REVIVAL_BOOT_ID = "auto_revival_boot_id"
+    private const val KEY_AUTO_REVIVAL_SOURCE = "auto_revival_source"
 
     /**
      * Opt-in, over ADB (ConfigReceiver): Home Guard takes itself out of the accessibility list when
@@ -110,7 +138,7 @@ object GuardSetup {
 
     // Synchronized: BootReceiver calls ensureEnabled off the main thread.
     @Synchronized
-    private fun watchScreenOn(context: Context) {
+    private fun watchScreenOn(context: Context, litNowCounts: Boolean = true) {
         if (screenOnWatch != null) return
         val app = context.applicationContext
         val receiver = object : BroadcastReceiver() {
@@ -119,13 +147,14 @@ object GuardSetup {
                 runCatching { app.unregisterReceiver(this) }
                 screenOnWatch = null
                 Log.i(TAG, "screen on; putting Home Guard back after standby")
+                clearShutdown(app)
                 ensureEnabled(app)
             }
         }
         screenOnWatch = receiver
         app.registerReceiver(receiver, IntentFilter(Intent.ACTION_SCREEN_ON))
         // Lit in between: the broadcast is already gone.
-        if (context.getSystemService<PowerManager>()?.isInteractive == true) receiver.onReceive(app, Intent(Intent.ACTION_SCREEN_ON))
+        if (litNowCounts && context.getSystemService<PowerManager>()?.isInteractive == true) receiver.onReceive(app, Intent(Intent.ACTION_SCREEN_ON))
     }
 
     /** Called by the guard at SCREEN_OFF: takes it out of the list and waits for the screen. */
@@ -142,6 +171,42 @@ object GuardSetup {
                 .split(':').filter { it.isNotBlank() && ComponentName.unflattenFromString(it)?.flattenToString() != me }
             Settings.Secure.putString(resolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, others.joinToString(":"))
         }.onFailure { Log.w(TAG, "could not take Home Guard out", it) }
+    }
+
+    /**
+     * Called by the guard when the firmware announces a shutdown with the screen still on (Dangbei,
+     * issue #1497): out of the list now, back at the next SCREEN_ON or the next start.
+     */
+    fun stepOutForShutdown(service: android.accessibilityservice.AccessibilityService) {
+        Log.i(TAG, "shutdown announced; taking Home Guard out")
+        // On disk at once: the firmware force-stops Aerial 0.4 s later and starts it straight
+        // again as the Home, and that new process put the guard back 0.5 s after, a second before
+        // the screen went off; the crash came with that change (DBF3 Air on 1.98, issue #1497).
+        if (isUserUnlocked(service)) service.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putLong(KEY_SHUTDOWN_AT, SystemClock.elapsedRealtime())
+            .putString(KEY_SHUTDOWN_BOOT_ID, app.orchard.tv.system.BootOpen.BOOT_ID).commit()
+        watchScreenOn(service, litNowCounts = false)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) runCatching { service.disableSelf() }
+    }
+
+    /**
+     * A shutdown was announced in this boot in the last two minutes and the screen has not lit
+     * since: the guard stays out (issue #1497). Dangbei's "shutdown" is a suspend, so the boot id
+     * stays; SCREEN_ON after it clears the note, and a real restart has another boot id.
+     */
+    private fun shuttingDown(context: Context): Boolean {
+        if (!isUserUnlocked(context)) return false
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val at = prefs.getLong(KEY_SHUTDOWN_AT, 0L)
+        if (at == 0L) return false
+        val sameBoot = prefs.getString(KEY_SHUTDOWN_BOOT_ID, null) == app.orchard.tv.system.BootOpen.BOOT_ID
+        return sameBoot && SystemClock.elapsedRealtime() - at in 0 until SHUTDOWN_HOLD_MS
+    }
+
+    private fun clearShutdown(context: Context) {
+        if (!isUserUnlocked(context)) return
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .remove(KEY_SHUTDOWN_AT).remove(KEY_SHUTDOWN_BOOT_ID).apply()
     }
 
     /**
@@ -189,6 +254,77 @@ object GuardSetup {
         val at = prefs.getLong(KEY_HOME_IN_FRONT_AT, -1L)
         if (!thisBoot(prefs, at, KEY_HOME_IN_FRONT_BOOT, KEY_HOME_IN_FRONT_BOOT_ID) || prefs.getBoolean(KEY_HOME_IN_FRONT, false)) return null
         return at
+    }
+
+    /**
+     * The viewer opened [packageName] from PlanYourTV and PlanYourTV really left the front.
+     * Called from MainActivity.onPause, after the external start settled; see RevivalGate.
+     * Written synchronously because LeTV eUI force-stops Aerial three or four seconds later.
+     */
+    fun noteLastLeftForApp(context: Context, packageName: String, activityName: String?) {
+        if (packageName.isBlank() || packageName == context.packageName) return
+        val at = SystemClock.elapsedRealtime()
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putString(KEY_LAST_LEFT_PKG, packageName)
+            .putString(KEY_LAST_LEFT_CLS, activityName)
+            .putLong(KEY_LAST_LEFT_AT, at)
+            .putLong(KEY_LAST_LEFT_BOOT, System.currentTimeMillis() - at)
+            .putString(KEY_LAST_LEFT_BOOT_ID, app.orchard.tv.system.BootOpen.BOOT_ID)
+            .commit()
+    }
+
+    /**
+     * The last app opened from PlanYourTV, if one was recorded. [LastLeftForApp.sameBoot] is
+     * false for a marker left over from an earlier boot; callers must not treat that as evidence.
+     */
+    internal fun lastLeftForApp(context: Context): LastLeftForApp? {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val pkg = prefs.getString(KEY_LAST_LEFT_PKG, null) ?: return null
+        val at = prefs.getLong(KEY_LAST_LEFT_AT, -1L)
+        return LastLeftForApp(
+            packageName = pkg,
+            activityName = prefs.getString(KEY_LAST_LEFT_CLS, null),
+            elapsedAt = at,
+            sameBoot = thisBoot(prefs, at, KEY_LAST_LEFT_BOOT, KEY_LAST_LEFT_BOOT_ID),
+        )
+    }
+
+    /** Aerial is back in front, or Home was pressed: the recorded external app is over. */
+    fun clearLastLeftForApp(context: Context) {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        if (!prefs.contains(KEY_LAST_LEFT_PKG) && !prefs.contains(KEY_LAST_LEFT_AT)) return
+        prefs.edit()
+            .remove(KEY_LAST_LEFT_PKG)
+            .remove(KEY_LAST_LEFT_CLS)
+            .remove(KEY_LAST_LEFT_AT)
+            .remove(KEY_LAST_LEFT_BOOT)
+            .remove(KEY_LAST_LEFT_BOOT_ID)
+            .apply()
+    }
+
+    /**
+     * Records that an automatic recovery path brought this process back, with its source for the
+     * diagnostics. Written at the point the recovery actually changed something, not by ordinary
+     * starts, so a boot or a user opening PlanYourTV cannot satisfy [autoRevivedWithin].
+     */
+    fun noteAutoRevival(context: Context, source: String) {
+        if (context.getSystemService<PowerManager>()?.isInteractive == false) return
+        val at = SystemClock.elapsedRealtime()
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putLong(KEY_AUTO_REVIVAL_AT, at)
+            .putLong(KEY_AUTO_REVIVAL_BOOT, System.currentTimeMillis() - at)
+            .putString(KEY_AUTO_REVIVAL_BOOT_ID, app.orchard.tv.system.BootOpen.BOOT_ID)
+            .putString(KEY_AUTO_REVIVAL_SOURCE, source)
+            .commit()
+        Log.i(TAG, "automatic revival noted ($source)")
+    }
+
+    /** Whether an automatic revival was noted in this boot within [ms]; see noteAutoRevival. */
+    fun autoRevivedWithin(context: Context, ms: Long): Boolean {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val at = prefs.getLong(KEY_AUTO_REVIVAL_AT, -1L)
+        if (!thisBoot(prefs, at, KEY_AUTO_REVIVAL_BOOT, KEY_AUTO_REVIVAL_BOOT_ID)) return false
+        return SystemClock.elapsedRealtime() - at in 0..ms
     }
 
     /**
@@ -269,8 +405,44 @@ object GuardSetup {
         if (SystemClock.elapsedRealtime() < 3 * 60_000L) return false
         if (context.getSystemService<PowerManager>()?.isInteractive != true) return false
         if (!stockHomeSinceHomeLeft(context) || !stockHomeSeenWithin(context, 5_000L)) return false
+        // LeTV eUI shows its launcher before stopping Aerial, so this shortcut also runs while
+        // the viewer is back in the app they opened. Starting here would push that app away
+        // before the guard can see it; let the guard decide instead (see RevivalGate).
+        val marker = lastLeftForApp(context)
+        val front = if (marker != null) frontPackageByUsage(context) else null
+        val allowed = RevivalGate.earlyStartAllowed(
+            marker = marker,
+            front = front,
+            ownPackage = context.packageName,
+            stockHome = front != null && HomeGuardService.isStockHome(front),
+            launchableApp = front != null && isLaunchableApp(context, front),
+        )
+        if (!allowed) {
+            Log.i(TAG, "auto revival with ${front ?: "an unreadable front"} in front; waiting for the guard before starting PlanYourTV")
+            return false
+        }
         return runCatching { context.startActivity(MainActivity.bringBackIntent(context)) }.isSuccess
     }
+
+    /** The app usage stats name in front, or null when the permission is missing or they say nothing. */
+    private fun frontPackageByUsage(context: Context): String? = runCatching {
+        val now = System.currentTimeMillis()
+        val events = context.getSystemService<UsageStatsManager>()?.queryEvents(now - FRONT_LOOKBACK_MS, now) ?: return null
+        val picker = UsageFront.Picker()
+        val event = UsageEvents.Event()
+        while (events.hasNextEvent()) {
+            events.getNextEvent(event)
+            picker.add(event.eventType, event.packageName, event.className, event.timeStamp)
+        }
+        picker.result(now, ACTIVITY_SETTLE_MS)?.takeIf { !it.closed }?.pkg
+    }.getOrNull()
+
+    private fun isLaunchableApp(context: Context, pkg: String): Boolean =
+        context.packageManager.getLeanbackLaunchIntentForPackage(pkg) != null ||
+            context.packageManager.getLaunchIntentForPackage(pkg) != null
+
+    private const val FRONT_LOOKBACK_MS = 6 * 60 * 60 * 1000L
+    private const val ACTIVITY_SETTLE_MS = 1_000L
 
     fun wasHomeInFront(context: Context): Boolean =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_HOME_IN_FRONT, false)
@@ -304,7 +476,7 @@ object GuardSetup {
      * (X43, issue #63) stops Aerial every few seconds to minutes; each time Aerial came back, saw
      * nothing in front it knew, took Home, and pulled the viewer out of the app they were in.
      */
-    fun noteRevival(context: Context) {
+    fun noteRevival(context: Context, source: String = "unknown") {
         // Brought back with the screen off: a standby kill (Xiaomi), not eUI stopping Aerial in use.
         // Counting those, a few standbys in a row made the guard leave PatchWall in front at wake.
         // Not getSystemService(Class): that is Android 6.0, and LeTV and old VIDAA TVs revive on 5.x.
@@ -317,6 +489,9 @@ object GuardSetup {
         revivalNoted = true
         val updatedAt = runCatching { context.packageManager.getPackageInfo(context.packageName, 0).lastUpdateTime }.getOrDefault(0L)
         if (System.currentTimeMillis() - updatedAt in 0..BOOT_START_MS) return
+        // Explicit for the revival gate. The notification listener reaches here even when the
+        // accessibility entry stayed enabled, a path lastRevivedAt never sees.
+        noteAutoRevival(context, source)
         val now = System.currentTimeMillis()
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val recent = recentRevivals(context, now) + now
@@ -386,6 +561,8 @@ object GuardSetup {
             runCatching {
                 Settings.Global.putInt(resolver, Settings.Global.ADB_ENABLED, 1)
                 Log.i(TAG, "ADB debugging had been switched off; turned it back on")
+                // In Aerial's own log too: logcat on Xiaomi rolls over in minutes.
+                DiagLog.i("guard: ADB had been switched off; turned it back on (keep_adb)")
             }.onFailure { Log.w(TAG, "could not turn ADB back on", it) }
             return
         }
@@ -474,7 +651,7 @@ object GuardSetup {
      * setting but never binds the new version. Writing the list without Aerial and then with it
      * makes Android bind it again.
      */
-    fun rebindIfStalled(context: Context) {
+    fun rebindIfStalled(context: Context, autoRevivalSource: String? = null) {
         if (HomeGuardService.isRunning) return
         rescanIfMissing(context)
         if (standingOut(context)) { watchScreenOn(context); return }
@@ -490,6 +667,7 @@ object GuardSetup {
             // while it was not watching (MiTV-MFTR0, Android 11: woken from standby after Aerial's
             // screensaver, PatchWall stayed in front once the guard was back, issue #47).
             lastRevivedAt = SystemClock.elapsedRealtime()
+            if (autoRevivalSource != null) noteAutoRevival(context, autoRevivalSource)
             Settings.Secure.putString(resolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, others.joinToString(":"))
             // Two writes in a row are coalesced and Android sees no change; give it a moment between.
             // Read the list again then, so a service another app added meanwhile is kept (#57).
@@ -768,7 +946,7 @@ object GuardSetup {
         }.onFailure { Log.w(TAG, "could not watch the enabled list", it) }
     }
 
-    fun ensureEnabled(context: Context): Boolean {
+    fun ensureEnabled(context: Context, autoRevivalSource: String? = null): Boolean {
         ensureAdb(context)
         watchEnabledList(context)
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_SECURE_SETTINGS) != PackageManager.PERMISSION_GRANTED) return false
@@ -777,6 +955,17 @@ object GuardSetup {
         RevivalSync.ensure(context)
         ensureListenerBeforeNougat(context)
         if (standingOut(context)) { watchScreenOn(context); return false }
+        if (shuttingDown(context)) {
+            Log.i(TAG, "shutdown announced a moment ago; Home Guard stays out until the screen lights")
+            watchScreenOn(context, litNowCounts = false)
+            // If no shutdown follows, back when the hold is over rather than at the next start.
+            if (!shutdownRecheck) {
+                shutdownRecheck = true
+                val app = context.applicationContext
+                Handler(Looper.getMainLooper()).postDelayed({ shutdownRecheck = false; ensureEnabled(app) }, SHUTDOWN_HOLD_MS + 1_000L)
+            }
+            return false
+        }
         val me = ComponentName(context, HomeGuardService::class.java).flattenToString()
         val resolver = context.contentResolver
         val current = Settings.Secure.getString(resolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES).orEmpty()
@@ -785,6 +974,7 @@ object GuardSetup {
         return runCatching {
             if (!alreadyOn) {
                 lastRevivedAt = SystemClock.elapsedRealtime()
+                if (autoRevivalSource != null) noteAutoRevival(context, autoRevivalSource)
                 Settings.Secure.putString(resolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, (entries + me).joinToString(":"))
                 Log.i(TAG, "Home Guard had been switched off; turned it back on")
             }

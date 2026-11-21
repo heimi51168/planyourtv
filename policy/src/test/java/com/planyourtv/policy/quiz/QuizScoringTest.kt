@@ -137,6 +137,29 @@ class QuizScoringTest {
     }
 
     @Test
+    fun localRoundsSkipTheConfiguredCapButKeepTheDocumentBound() {
+        val items = List(4) { item("hard", id = "hard-$it") }
+        val uncapped = QuizScoring.score(
+            items,
+            List(4) { answer(items[it], correct = true) },
+            config.copy(maxEarnedMinutes = 6),
+            applyCap = false,
+        )
+        assertEquals(20, uncapped.grossMinutes)
+        assertEquals(20, uncapped.earnedMinutes)
+
+        val many = List(40) { item("hard", id = "many-$it") }
+        val bound = QuizScoring.score(
+            many,
+            List(40) { answer(many[it], correct = true) },
+            config,
+            applyCap = false,
+        )
+        assertEquals(200, bound.grossMinutes)
+        assertEquals(QUIZ_MAX_EARNED_MINUTES, bound.cappedMinutes)
+    }
+
+    @Test
     fun timeoutUsesTheWrongAnswerPenalty() {
         val items = listOf(item("hard", "q_hard000"))
         val penalized = config.copy(hardPenaltyMinutes = 3)

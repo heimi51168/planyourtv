@@ -31,7 +31,6 @@
                 <action android:name="app.orchard.tv.policy.DEBUG_LOCAL_END_USER" />
                 <action android:name="app.orchard.tv.policy.DEBUG_LOCAL_RESTORE_USAGE" />
                 <action android:name="app.orchard.tv.policy.DEBUG_LOCAL_EXPIRE_REST" />
-                <action android:name="app.orchard.tv.policy.DEBUG_LOCAL_ACTIVATION" />
                 <action android:name="app.orchard.tv.policy.DEBUG_LOCAL_SETUP_DEFAULT" />
                 <action android:name="app.orchard.tv.policy.DEBUG_LOCAL_CLEAR" />
                 <action android:name="app.orchard.tv.policy.DEBUG_OPEN_PARENT" />

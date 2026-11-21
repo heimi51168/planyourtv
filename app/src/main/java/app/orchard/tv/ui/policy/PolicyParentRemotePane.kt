@@ -34,7 +34,6 @@ import app.orchard.tv.R
 import app.orchard.tv.policy.PolicyModeCoordinator
 import app.orchard.tv.ui.theme.Palette
 import app.orchard.tv.ui.theme.Type
-import com.planyourtv.policy.Activation
 import com.planyourtv.policy.LocalRules
 import com.planyourtv.policy.LocalTimeWindow
 import com.planyourtv.policy.PolicyUiState
@@ -482,28 +481,12 @@ internal fun V6SummaryPane(
             )
             SummaryRow(
                 label = stringResource(R.string.policy_v6_activation),
-                value = stringResource(
-                    if (state.activation == Activation.MANUAL) {
-                        R.string.policy_v6_activation_manual
-                    } else {
-                        R.string.policy_v6_activation_auto
-                    },
-                ),
+                value = stringResource(R.string.policy_v6_activation_manual),
             )
-            val dailyLimit = remote.rules.autoDailyLimitMinutes
             val usedMinutes = (state.dailyUsedSeconds / 60L).toInt().coerceAtLeast(0)
             SummaryRow(
                 label = stringResource(R.string.policy_v6_today_usage),
-                value = if (state.activation == Activation.MANUAL) {
-                    stringResource(R.string.policy_manual_used_today, usedMinutes)
-                } else {
-                    stringResource(R.string.policy_v6_usage_value, usedMinutes, dailyLimit) +
-                        " · " +
-                        stringResource(
-                            R.string.policy_v6_remaining,
-                            (dailyLimit - usedMinutes).coerceAtLeast(0),
-                        )
-                },
+                value = stringResource(R.string.policy_manual_used_today, usedMinutes),
             )
             SummaryRow(
                 label = stringResource(R.string.policy_parent_weekday),
@@ -515,21 +498,9 @@ internal fun V6SummaryPane(
             )
             SummaryRow(
                 // Manual segments take their length from the parent's start command, so the
-                // session cap is not part of that mode's effective policy. Rest still applies.
-                label = stringResource(
-                    if (state.activation == Activation.MANUAL) {
-                        R.string.policy_parent_rest
-                    } else {
-                        R.string.policy_v6_session_rest
-                    },
-                ),
-                value = if (state.activation == Activation.MANUAL) {
-                    stringResource(R.string.policy_parent_minutes, remote.rules.restMinutes)
-                } else {
-                    stringResource(R.string.policy_parent_minutes, remote.rules.sessionLimitMinutes) +
-                        " / " +
-                        stringResource(R.string.policy_parent_minutes, remote.rules.restMinutes)
-                },
+                // session cap is not part of the effective policy. Rest still applies.
+                label = stringResource(R.string.policy_parent_rest),
+                value = stringResource(R.string.policy_parent_minutes, remote.rules.restMinutes),
             )
             SummaryRow(
                 label = stringResource(R.string.policy_parent_screen_off_buffer),

@@ -54,16 +54,29 @@ internal fun PolicyLockFilm(
     modifier: Modifier = Modifier,
     active: Boolean = true,
     soundEnabled: Boolean = false,
+    /** A single wallpaper loops; a carousel item ends so the rotation can move on. */
+    loop: Boolean = true,
+    /** Called with the non-looping item that reached its end; advances the rotation once. */
+    onEnded: ((PolicyVideoSource) -> Unit)? = null,
+    /** Called with the carousel item that cannot be decoded, so the caller can skip it. */
+    onError: ((PolicyVideoSource) -> Unit)? = null,
 ) {
     // A still picture is drawn by the caller's backdrop; it must never reach ExoPlayer.
     if (source.kind != PolicyMediaKind.VIDEO) return
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    var surface by remember(source) { mutableStateOf<SurfaceView?>(null) }
+    // The SurfaceView survives source changes. Re-keying it here reset the reference to null
+    // while the AndroidView factory kept the old view, so every carousel item after the first
+    // prepared its player without any surface and stayed on its poster.
+    var surface by remember { mutableStateOf<SurfaceView?>(null) }
     var failed by remember(source) { mutableStateOf(false) }
     var firstFrame by remember(source) { mutableStateOf(false) }
     var player by remember(source) { mutableStateOf<ExoPlayer?>(null) }
     val playerNow by rememberUpdatedState(player)
+    val onEndedNow by rememberUpdatedState(onEnded)
+    val onErrorNow by rememberUpdatedState(onError)
+    val loopNow by rememberUpdatedState(loop)
+    val activeNow by rememberUpdatedState(active)
 
     LaunchedEffect(source) {
         cover.snapTo(0f)
@@ -103,6 +116,9 @@ internal fun PolicyLockFilm(
     }
     // Switching the parent-center toggle must not restart the wallpaper. Apply the audio track
     // choice to the live player; a muted film also stops requesting audio focus.
+    LaunchedEffect(player, loop) {
+        player?.repeatMode = if (loop) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
+    }
     LaunchedEffect(player, soundEnabled) {
         val exo = player ?: return@LaunchedEffect
         exo.setAudioAttributes(
@@ -122,7 +138,15 @@ internal fun PolicyLockFilm(
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_STOP -> playerNow?.pause()
-                Lifecycle.Event.ON_START -> playerNow?.play()
+                Lifecycle.Event.ON_START -> playerNow?.let { exo ->
+                    // A film that ended while the app was stopped stays ENDED after play();
+                    // report it again so the rotation does not park on its last frame.
+                    if (activeNow && !loopNow && exo.playbackState == Player.STATE_ENDED) {
+                        onEndedNow?.invoke(source)
+                    } else {
+                        exo.play()
+                    }
+                }
                 else -> Unit
             }
         }
@@ -136,7 +160,7 @@ internal fun PolicyLockFilm(
         var active = true
         val exo = ExoPlayer.Builder(context).build().apply {
             setMediaItem(MediaItem.fromUri(source.uri))
-            repeatMode = Player.REPEAT_MODE_ONE
+            repeatMode = if (loop) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
             videoScalingMode = C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING
             videoChangeFrameRateStrategy = C.VIDEO_CHANGE_FRAME_RATE_STRATEGY_OFF
             setAudioAttributes(
@@ -156,7 +180,18 @@ internal fun PolicyLockFilm(
                 }
 
                 override fun onPlayerError(error: PlaybackException) {
-                    if (active) failed = true
+                    if (!active) return
+                    failed = true
+                    // A broken carousel item must not hold the desktop until a timer fires.
+                    if (!loopNow) onErrorNow?.invoke(source)
+                }
+
+                override fun onPlaybackStateChanged(playbackState: Int) {
+                    // A carousel film moves on at its natural end; a single wallpaper keeps
+                    // its old repeat-one loop.
+                    if (active && !loopNow && playbackState == Player.STATE_ENDED) {
+                        onEndedNow?.invoke(source)
+                    }
                 }
             })
             surface?.let { setVideoSurfaceView(it) }

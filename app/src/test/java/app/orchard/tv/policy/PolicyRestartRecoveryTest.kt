@@ -44,9 +44,12 @@ class PolicyRestartRecoveryTest {
     private lateinit var app: Application
 
     private fun rules() = LocalRules(
-        weekdayWindows = listOf(LocalTimeWindow(0, 24 * 60)),
-        weekendWindows = listOf(LocalTimeWindow(0, 24 * 60)),
-        autoDailyLimitMinutes = 60,
+        dayGroups = LocalRules.fromLegacyWeekdayWeekend(
+            weekdayWindows = listOf(LocalTimeWindow(0, 24 * 60)),
+            weekendWindows = listOf(LocalTimeWindow(0, 24 * 60)),
+            weekdayLimitMinutes = 60,
+            weekendLimitMinutes = 60,
+        ),
         sessionLimitMinutes = 20,
         restMinutes = 0,
         allowedPackages = setOf(videoPackage),

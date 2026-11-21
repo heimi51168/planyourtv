@@ -24,9 +24,6 @@ enum class PolicyVoiceCue {
     GUARD_RESUMED,
     CLOUD_MODE_RULE,
     CLOUD_MODE_REDEEM,
-    /** Remote switch between automatic and manual, by SetActivation or the config pull. */
-    REMOTE_ACTIVATION_AUTO,
-    REMOTE_ACTIVATION_MANUAL,
     /** Quiz flow: start, one answer-feedback cue per answered question, and the report. */
     QUIZ_START,
     QUIZ_CORRECT,

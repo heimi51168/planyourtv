@@ -3,6 +3,54 @@
 This changelog covers the community source snapshot. Official hosted builds may ship different
 artifacts with the same upstream Aerial base.
 
+## [2.0.000] - 2026-11-21
+
+Family members, three unlock routes, a built-in parent-fun question bank, a rebuilt parent app,
+mixed wallpaper carousel, BGM upload and an online BGM library, and the move to Aerial 2.0.
+Version code `148000`. The optional parent app is `1.2.3` / `9`.
+
+### Added
+
+- Family members. Each child gets their own avatar, rules, quiz scope, progress and time state; the
+  desktop avatar switches members in one press, and switching also switches the active quiz bank.
+  Cloud-connected builds can carry member-level configuration, while local builds keep everything
+  on the TV.
+- Three unlock routes: quiz, learn-to-earn and direct use. Each has its own on/off switch and daily
+  count; all three share one entertainment daily quota and one common per-session cap. A single
+  available route opens directly, and multiple available routes show the chooser instead of
+  picking for the child. Unavailable routes explain why they are greyed out.
+- Built-in parent-fun question bank. It is a separate level source for everyday life skills and
+  parent-child practice, independent of textbook-sync content, and can be enabled per level like
+  any other source.
+- Kids-wallpaper carousel. Several images and videos can be mixed in one rotation, with separate
+  BGM. BGM can be uploaded from the phone or fetched from the online music library in
+  cloud-connected builds.
+- Parent app 1.2.3. Rebuilt UI, remembered TV list, self-update checks, and the same five-language
+  parent web page.
+
+### Changed
+
+- Manual import is easier to correct: a Clear button empties the input, multiple-choice answers are
+  accepted as `A、C` or `answerIndices`, and failures name the exact item and reason.
+- Adding a family member now requires a 6-digit switch password. The first migrated member is
+  created as "大宝" with the documented default password so existing installations keep working.
+- The web parent page removes the first-entry privacy popup, clarifies the daily-quota label and no
+  longer offers an ambiguous "unlimited" date/window option. New members must have a password.
+- The TV now shows its app registration number on the About page.
+
+### Fixed
+
+- LeTV process-kill handling: the guard now restores the lock desktop when the launcher is
+  reclaimed in the background. The author does not own a LeTV TV; this path was reproduced by
+  simulating a process kill and still needs verification on real LeTV hardware.
+- Quiz audio: starting a quiz stops the intro and takes exclusive background-audio focus; when the
+  answer countdown ends, music and speech stop instead of continuing into feedback or the desktop.
+- Wallpaper carousel: switching a video no longer leaves a black frame or freezes on a still.
+- Unlock routing and timers: temporary parent unlock no longer shows a second PIN prompt; study
+  and reward durations are independent inputs; the focus ring counts down to the reward; the
+  no-accessibility fallback still brings the child back to the lock desktop.
+- General stability and layout fixes across the lock screen, control center and parent page.
+
 ## [1.97.003] - 2026-11-17
 
 Multiple-choice quiz rounds, optional DeepSeek voice reading, unlimited local wallpaper videos,

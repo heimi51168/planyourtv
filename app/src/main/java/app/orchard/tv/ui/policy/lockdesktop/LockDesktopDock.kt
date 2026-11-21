@@ -159,7 +159,7 @@ internal class LockDockState {
 @Composable
 internal fun rememberLockDockState(): LockDockState = remember { LockDockState() }
 
-/** One position in the dock: a fixed action card, a quiz-trigger app, or a study app. */
+/** One position in the dock: a fixed action card, a quiz trigger, a study app or an unlimited app. */
 private sealed interface DockTile {
     val key: String
     val app: AppEntry
@@ -185,6 +185,12 @@ private sealed interface DockTile {
         override val key: String get() = "app:${app.packageName}"
         override val enabled: Boolean get() = true
     }
+
+    /** A parent-configured app with no timer. Selecting it launches it directly. */
+    data class UnlimitedApp(override val app: AppEntry) : DockTile {
+        override val key: String get() = "unlimited:${app.packageName}"
+        override val enabled: Boolean get() = true
+    }
 }
 
 /**
@@ -193,7 +199,8 @@ private sealed interface DockTile {
  * the tiles and forwards the host's focus and click callbacks.
  *
  * The fixed actions come first, then the entertainment apps that open the quiz, then the parent's
- * study apps, [LockDockMetrics.columns] a row. The first row sits where the dock always sat, on its
+ * study apps and finally the unlimited apps, [LockDockMetrics.columns] a row. The first row sits
+ * where the dock always sat, on its
  * glass plate; what does not fit continues in the rows below. With [AerialSettings.peekNextRow] the
  * second row shows its top edge under the plate, and moving down scrolls the grid up exactly as
  * Home does. Focus moves through the rows by AppTile's own focus search; [LockDockState.scroll]
@@ -205,28 +212,39 @@ internal fun LockDesktopDock(
     gatewayApps: List<AppEntry>,
     gatewayEnabled: Boolean,
     studyApps: List<AppEntry>,
+    unlimitedApps: List<AppEntry>,
     onFocused: (LockDockId) -> Unit,
     onSelect: (LockDockId) -> Unit,
     onGatewayAppFocused: (AppEntry) -> Unit,
     onGatewayAppSelected: (AppEntry) -> Unit,
     onStudyAppFocused: (AppEntry) -> Unit,
     onStudyAppSelected: (AppEntry, Rect?) -> Unit,
+    onUnlimitedAppFocused: (AppEntry) -> Unit,
+    onUnlimitedAppSelected: (AppEntry, Rect?) -> Unit,
     firstFocus: FocusRequester,
     startFocus: FocusRequester,
     state: LockDockState,
     resetFocus: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    if (slots.isEmpty() && gatewayApps.isEmpty() && studyApps.isEmpty()) return
+    if (slots.isEmpty() && gatewayApps.isEmpty() && studyApps.isEmpty() &&
+        unlimitedApps.isEmpty()
+    ) {
+        return
+    }
     val context = LocalContext.current
     val columns = AerialSettings.homeColumns
-    val metrics = lockDockMetrics(columns, slots.size + gatewayApps.size + studyApps.size)
+    val metrics = lockDockMetrics(
+        columns,
+        slots.size + gatewayApps.size + studyApps.size + unlimitedApps.size,
+    )
     // Actions and apps share one grid; keying by tile keeps its focus and press state when an
     // action card appears, disappears, or the app lists are edited.
-    val tiles = remember(slots, gatewayApps, gatewayEnabled, studyApps, context) {
+    val tiles = remember(slots, gatewayApps, gatewayEnabled, studyApps, unlimitedApps, context) {
         slots.map { DockTile.Action(it, LockDockArt.entry(context, it)) } +
             gatewayApps.map { DockTile.Gateway(it, gatewayEnabled) } +
-            studyApps.map { DockTile.StudyApp(it) }
+            studyApps.map { DockTile.StudyApp(it) } +
+            unlimitedApps.map { DockTile.UnlimitedApp(it) }
     }
     val requesters = remember(tiles.map { it.key }) {
         tiles.associate { it.key to FocusRequester() }
@@ -296,6 +314,7 @@ internal fun LockDesktopDock(
                             is DockTile.Action -> onFocused(tile.slot.id)
                             is DockTile.Gateway -> onGatewayAppFocused(tile.app)
                             is DockTile.StudyApp -> onStudyAppFocused(tile.app)
+                            is DockTile.UnlimitedApp -> onUnlimitedAppFocused(tile.app)
                         }
                     },
                     onClick = { bounds ->
@@ -303,6 +322,7 @@ internal fun LockDesktopDock(
                             is DockTile.Action -> onSelect(tile.slot.id)
                             is DockTile.Gateway -> onGatewayAppSelected(tile.app)
                             is DockTile.StudyApp -> onStudyAppSelected(tile.app, bounds)
+                            is DockTile.UnlimitedApp -> onUnlimitedAppSelected(tile.app, bounds)
                         }
                     },
                     onLongPress = {},

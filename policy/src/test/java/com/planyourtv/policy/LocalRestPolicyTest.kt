@@ -7,63 +7,47 @@ class LocalRestPolicyTest {
     private val tenMinutes = 10
 
     @Test
-    fun bothModesRestAfterANaturalSessionEnd() {
-        for (activation in Activation.values()) {
-            assertEquals(
-                "$activation must rest after a session limit",
-                600L,
-                LocalRestPolicy.restSeconds(
-                    activation = activation,
-                    configuredRestMinutes = tenMinutes,
-                    endReason = PolicyEndReason.SESSION_LIMIT,
-                ),
-            )
-        }
+    fun aNaturalSessionEndStartsRest() {
+        assertEquals(
+            600L,
+            LocalRestPolicy.restSeconds(
+                configuredRestMinutes = tenMinutes,
+                endReason = PolicyEndReason.SESSION_LIMIT,
+            ),
+        )
     }
 
     @Test
-    fun bothModesRestAfterAChildExitsEarly() {
-        for (activation in Activation.values()) {
-            assertEquals(
-                "$activation must not skip rest by exiting",
-                600L,
-                LocalRestPolicy.restSeconds(
-                    activation = activation,
-                    configuredRestMinutes = tenMinutes,
-                    endReason = PolicyEndReason.USER_EXIT,
-                ),
-            )
-        }
+    fun aChildExitDoesNotSkipRest() {
+        assertEquals(
+            600L,
+            LocalRestPolicy.restSeconds(
+                configuredRestMinutes = tenMinutes,
+                endReason = PolicyEndReason.USER_EXIT,
+            ),
+        )
     }
 
     @Test
-    fun bothModesRestAfterAParentStopsTheSession() {
-        for (activation in Activation.values()) {
-            assertEquals(
-                "$activation must rest after the parent ends the segment",
-                600L,
-                LocalRestPolicy.restSeconds(
-                    activation = activation,
-                    configuredRestMinutes = tenMinutes,
-                    endReason = PolicyEndReason.PARENT_STOP,
-                ),
-            )
-        }
+    fun aParentStopStartsRest() {
+        assertEquals(
+            600L,
+            LocalRestPolicy.restSeconds(
+                configuredRestMinutes = tenMinutes,
+                endReason = PolicyEndReason.PARENT_STOP,
+            ),
+        )
     }
 
     @Test
-    fun bothModesRestAfterTheScreenOffDeadline() {
-        for (activation in Activation.values()) {
-            assertEquals(
-                "$activation must rest after a screen-off timeout",
-                600L,
-                LocalRestPolicy.restSeconds(
-                    activation = activation,
-                    configuredRestMinutes = tenMinutes,
-                    endReason = PolicyEndReason.SCREEN_OFF_TIMEOUT,
-                ),
-            )
-        }
+    fun aScreenOffDeadlineStartsRest() {
+        assertEquals(
+            600L,
+            LocalRestPolicy.restSeconds(
+                configuredRestMinutes = tenMinutes,
+                endReason = PolicyEndReason.SCREEN_OFF_TIMEOUT,
+            ),
+        )
     }
 
     @Test
@@ -71,7 +55,6 @@ class LocalRestPolicyTest {
         assertEquals(
             0L,
             LocalRestPolicy.restSeconds(
-                activation = Activation.AUTO,
                 configuredRestMinutes = tenMinutes,
                 endReason = PolicyEndReason.PARENT_STOP,
                 skipRest = true,
@@ -84,7 +67,6 @@ class LocalRestPolicyTest {
         assertEquals(
             300L,
             LocalRestPolicy.restSeconds(
-                activation = Activation.AUTO,
                 configuredRestMinutes = 20,
                 endReason = PolicyEndReason.SESSION_LIMIT,
                 planRestSeconds = 300L,
@@ -97,7 +79,6 @@ class LocalRestPolicyTest {
         assertEquals(
             0L,
             LocalRestPolicy.restSeconds(
-                activation = Activation.MANUAL,
                 configuredRestMinutes = 0,
                 endReason = PolicyEndReason.USER_EXIT,
             ),
@@ -111,7 +92,6 @@ class LocalRestPolicyTest {
                 "$reason already locks the child",
                 0L,
                 LocalRestPolicy.restSeconds(
-                    activation = Activation.AUTO,
                     configuredRestMinutes = tenMinutes,
                     endReason = reason,
                 ),

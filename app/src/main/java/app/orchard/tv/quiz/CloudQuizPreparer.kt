@@ -282,5 +282,11 @@ fun cloudPlanMessage(code: String): String = when (code) {
 
     QuizCloudRoundPlanner.MEMBER_UNKNOWN -> "答题设置缺少孩子信息，请家长先在 App 里选择孩子"
 
+    QuizCloudRoundPlanner.MEMBER_SWITCH_PENDING ->
+        "正在切换孩子的答题题库，请稍等几秒再试"
+
+    QuizCloudRoundPlanner.ADULT_UNSUPPORTED ->
+        "家长账号暂时没有电视题库，请切换到孩子后再答题"
+
     else -> "答题设置暂时不可用，请让家长在 App 里重新保存一次"
 }

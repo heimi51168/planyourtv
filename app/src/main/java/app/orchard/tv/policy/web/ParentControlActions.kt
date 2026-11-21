@@ -2,6 +2,7 @@ package app.orchard.tv.policy.web
 
 import app.orchard.tv.policy.ManualSessionLimits
 import app.orchard.tv.policy.PolicyModeCoordinator
+import app.orchard.tv.policy.UserConfigPinSettings
 import app.orchard.tv.quiz.QuizAccess
 import com.planyourtv.policy.GuardStatus
 import com.planyourtv.policy.PolicyMode
@@ -135,9 +136,10 @@ object ParentControlActions {
         }
 
         // Temporary exit is the one command that leaves the child guard, so it needs the
-        // short single-use PIN proof. A duplicate requestId returns its cached result above
-        // and does not ask again. Being in PARENT_OVERRIDE is already the desired state and
-        // stays a no-op without a fresh proof.
+        // short single-use PIN proof. That PIN is also the confirmation: V48 removed the extra
+        // dialog so an active timer or quiz round is discarded immediately. A duplicate
+        // requestId returns its cached result above and does not ask again. Being in
+        // PARENT_OVERRIDE is already the desired state and stays a no-op without a fresh proof.
         if (action == Action.TAKE_OVER &&
             PolicyModeCoordinator.state.value.guardState != GuardStatus.PARENT_OVERRIDE
         ) {
@@ -159,7 +161,7 @@ object ParentControlActions {
 
         return when (action) {
             Action.TAKE_OVER ->
-                takeOver(body, editorToken, editorDigest, requestId, sensitiveToken, nowMs)
+                takeOver(editorToken, editorDigest, requestId, sensitiveToken, nowMs)
             Action.ENTER_CHILD_MODE -> enterChildMode(editorDigest, requestId, nowMs)
             Action.STOP_TIMER -> stopTimer(body, editorDigest, requestId, nowMs)
             Action.START_MANUAL -> startManual(body, editorDigest, requestId, nowMs)
@@ -167,7 +169,6 @@ object ParentControlActions {
     }
 
     private fun takeOver(
-        body: JSONObject,
         editorToken: String,
         editorDigest: String,
         requestId: String,
@@ -178,31 +179,12 @@ object ParentControlActions {
         if (ui.guardState == GuardStatus.PARENT_OVERRIDE) {
             return finish(Action.TAKE_OVER, requestId, "NOOP", "TAKE_OVER_NOOP", editorDigest, nowMs)
         }
-        val quizActive = quizRoundActive()
-        val needsConfirm = ui.sessionState == SessionState.ACTIVE || quizActive
-        val supplied = body.optString("confirmToken", "").trim()
-        if (supplied.isNotEmpty()) {
-            val failure = validateConfirm(
-                token = supplied,
-                action = Action.TAKE_OVER,
-                requestId = requestId,
-                editorDigest = editorDigest,
-                nowMs = nowMs,
-            )
-            if (failure != null) return failure
-        } else if (needsConfirm) {
-            return confirmRequired(
-                Action.TAKE_OVER,
-                requestId,
-                editorDigest,
-                if (quizActive) "TAKE_OVER_QUIZ" else "TAKE_OVER_TIMER",
-                nowMs,
-            )
-        }
+        // V48: the sensitive PIN already confirms ending the current timer or quiz round, so
+        // take-over executes in one step. `takeOverFromWeb()` keeps the used time and skips rest.
         val applied = PolicyModeCoordinator.takeOverFromWeb()
         if (applied) clearConfirms(editorDigest)
-        // The proof is single-use. A confirmation challenge returned above deliberately keeps
-        // it, so the parent may close the sheet and try again inside the same 60 seconds.
+        // The proof is single-use and is consumed after the action is applied or found to be a
+        // no-op.
         ParentSensitiveAuth.consume(
             token = sensitiveToken,
             scope = ParentSensitiveAuth.Scope.TAKE_OVER,
@@ -301,18 +283,22 @@ object ParentControlActions {
         requestId: String,
         nowMs: Long,
     ): Outcome {
-        val wait = QuizAccess.sensitiveActionLockedSeconds(nowMs)
-        if (wait > 0L) {
-            return error(
-                Action.START_MANUAL.name,
-                requestId,
-                "PIN_LOCKED",
-                retryAfterSeconds = wait,
-            )
-        }
-        val pin = body.optString("pin", "")
-        if (pin.length != 6 || pin.any { !it.isDigit() }) {
-            return error(Action.START_MANUAL.name, requestId, "WRONG_PIN")
+        val requiresPin = UserConfigPinSettings.isRequired()
+        var pin = ""
+        if (requiresPin) {
+            val wait = QuizAccess.sensitiveActionLockedSeconds(nowMs)
+            if (wait > 0L) {
+                return error(
+                    Action.START_MANUAL.name,
+                    requestId,
+                    "PIN_LOCKED",
+                    retryAfterSeconds = wait,
+                )
+            }
+            pin = body.optString("pin", "")
+            if (pin.length != 6 || pin.any { !it.isDigit() }) {
+                return error(Action.START_MANUAL.name, requestId, "WRONG_PIN")
+            }
         }
         val minutes = body.optInt("minutes", -1)
         if (!ManualSessionLimits.isValid(minutes)) {
@@ -322,9 +308,17 @@ object ParentControlActions {
         if (!before.eligible) {
             return error(Action.START_MANUAL.name, requestId, "START_BLOCKED")
         }
-        return when (val result = PolicyModeCoordinator.startManualFromWeb(pin, minutes)) {
+        return when (
+            val result = PolicyModeCoordinator.startManualFromWeb(
+                pin,
+                minutes,
+                requirePin = requiresPin,
+            )
+        ) {
             PolicyModeCoordinator.WebManualStartResult.Ok -> {
-                QuizAccess.onSensitiveActionResult(success = true)
+                // A pinless start is not a PIN success, so it must not clear another phone's
+                // shared sensitive-action lockout.
+                if (requiresPin) QuizAccess.onSensitiveActionResult(success = true)
                 finish(
                     Action.START_MANUAL,
                     requestId,
@@ -337,21 +331,27 @@ object ParentControlActions {
             PolicyModeCoordinator.WebManualStartResult.InvalidDuration ->
                 error(Action.START_MANUAL.name, requestId, "INVALID_DURATION")
             is PolicyModeCoordinator.WebManualStartResult.PinInvalid -> {
-                if (result.locked) {
-                    QuizAccess.lockSensitiveActionOut()
-                } else {
-                    QuizAccess.onSensitiveActionResult(success = false)
-                }
-                val retry = QuizAccess.sensitiveActionLockedSeconds()
-                if (retry > 0L) {
-                    error(
-                        Action.START_MANUAL.name,
-                        requestId,
-                        "PIN_LOCKED",
-                        retryAfterSeconds = retry,
-                    )
-                } else {
+                if (!requiresPin) {
+                    // Defensive: a pinless call cannot fail PIN validation, but never touch
+                    // the shared limiter if it somehow does.
                     error(Action.START_MANUAL.name, requestId, "WRONG_PIN")
+                } else {
+                    if (result.locked) {
+                        QuizAccess.lockSensitiveActionOut()
+                    } else {
+                        QuizAccess.onSensitiveActionResult(success = false)
+                    }
+                    val retry = QuizAccess.sensitiveActionLockedSeconds()
+                    if (retry > 0L) {
+                        error(
+                            Action.START_MANUAL.name,
+                            requestId,
+                            "PIN_LOCKED",
+                            retryAfterSeconds = retry,
+                        )
+                    } else {
+                        error(Action.START_MANUAL.name, requestId, "WRONG_PIN")
+                    }
                 }
             }
             is PolicyModeCoordinator.WebManualStartResult.Rejected -> {
@@ -377,7 +377,30 @@ object ParentControlActions {
         val quizActive = quizRoundActive()
         val timerActive = ui.sessionState == SessionState.ACTIVE
         val override = ui.guardState == GuardStatus.PARENT_OVERRIDE
-        val takeOverConfirm = timerActive || quizActive
+        val manualStart = JSONObject()
+            .put("eligible", manual.eligible)
+            .put("reason", manual.reason.name)
+            .put("requiresPin", UserConfigPinSettings.isRequired())
+            .put("remainingSeconds", manual.remainingSeconds)
+            .put("restRemainingSeconds", manual.restRemainingSeconds)
+            .put("minMinutes", ManualSessionLimits.MIN_MINUTES)
+            .put("maxMinutes", ManualSessionLimits.MAX_MINUTES)
+            .put("stepMinutes", ManualSessionLimits.STEP_MINUTES)
+            .put("defaultMinutes", ManualSessionLimits.DEFAULT_MINUTES)
+        // V45: the parent timer is plan-exempt and launches every configured entertainment,
+        // unlimited and (when enabled) study-reward app. The sheet explains that scope; these
+        // counts are what the configuration page actually resolved.
+        PolicyModeCoordinator.manualTimerScope()?.let { scope ->
+            manualStart.put(
+                "scope",
+                JSONObject()
+                    .put("entertainmentCount", scope.entertainmentCount)
+                    .put("entertainmentAll", scope.entertainmentAll)
+                    .put("unlimitedCount", scope.unlimitedCount)
+                    .put("studyRewardCount", scope.studyRewardCount)
+                    .put("studyRewardIncluded", scope.studyRewardIncluded),
+            )
+        }
         return JSONObject()
             .put("childModeOn", ui.mode != PolicyMode.NONE)
             .put("guardState", ui.guardState.name)
@@ -391,21 +414,13 @@ object ParentControlActions {
                         "remainingSeconds",
                         if (timerActive) ui.effectiveRemainingSeconds.coerceAtLeast(0L) else 0L,
                     )
-                    .put("restRemainingSeconds", ui.restRemainingSeconds.coerceAtLeast(0L)),
+                    .put("restRemainingSeconds", ui.restRemainingSeconds.coerceAtLeast(0L))
+                    // V45: the configuration page labels a parent-started timer as
+                    // "out-of-plan" instead of the generic countdown.
+                    .put("outsidePlan", timerActive && ui.activeSessionOutsidePlan),
             )
             .put("quiz", JSONObject().put("roundActive", quizActive))
-            .put(
-                "manualStart",
-                JSONObject()
-                    .put("eligible", manual.eligible)
-                    .put("reason", manual.reason.name)
-                    .put("remainingSeconds", manual.remainingSeconds)
-                    .put("restRemainingSeconds", manual.restRemainingSeconds)
-                    .put("minMinutes", ManualSessionLimits.MIN_MINUTES)
-                    .put("maxMinutes", ManualSessionLimits.MAX_MINUTES)
-                    .put("stepMinutes", ManualSessionLimits.STEP_MINUTES)
-                    .put("defaultMinutes", ManualSessionLimits.DEFAULT_MINUTES),
-            )
+            .put("manualStart", manualStart)
             .put(
                 "actions",
                 JSONObject()
@@ -413,7 +428,8 @@ object ParentControlActions {
                         "takeOver",
                         JSONObject()
                             .put("enabled", !override)
-                            .put("requiresConfirm", !override && takeOverConfirm)
+                            // V48: the parent PIN is the confirmation; no second dialog.
+                            .put("requiresConfirm", false)
                             .put("reason", if (override) "ALREADY_OVERRIDE" else "OK"),
                     )
                     .put(

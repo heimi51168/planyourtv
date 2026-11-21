@@ -69,7 +69,6 @@
     <string name="update_dialog_title">家长端更新</string>
     <string name="update_current_version">当前版本</string>
     <string name="update_latest_version">最新版本</string>
-    <string name="update_version_format">v%1$s（%2$d）</string>
     <string name="update_version_name">v%1$s</string>
     <string name="update_unknown_version">—</string>
     <string name="update_close">关闭</string>

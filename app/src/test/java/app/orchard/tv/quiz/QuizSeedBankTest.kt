@@ -4,6 +4,7 @@ import com.planyourtv.policy.TvStore
 import com.planyourtv.policy.quiz.QuizAnswerKind
 import com.planyourtv.policy.quiz.QuizAnswerScope
 import com.planyourtv.policy.quiz.QuizCurriculum
+import com.planyourtv.policy.quiz.QuizPresetBank
 import com.planyourtv.policy.quiz.QuizSessionCodec
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -200,6 +201,46 @@ class QuizSeedBankTest {
         assertEquals(QuizAnswerKind.MULTIPLE, item.answerKind)
         assertEquals(listOf(0, 2), item.answerIndices)
         assertEquals(0, item.answerIndex)
+    }
+
+    @Test
+    fun shippedParentFunAssetImportsAsItsOwnPresetBank() {
+        val context = RuntimeEnvironment.getApplication()
+        val expected = context.assets.open("quiz/parent_fun_bank.json").bufferedReader().use {
+            JSONObject(it.readText()).optInt("count", 0)
+        }
+        assertEquals(150, expected)
+
+        assertEquals(expected, QuizSeedBank.installParentFun(context))
+        assertEquals(0, QuizSeedBank.installParentFun(context))
+
+        // Life rows are public and unscoped, so they are countable as one bank
+        // but can never be drawn by a curriculum course source.
+        val preset = QuizQuestionCache.bankCounts(
+            QuizQuestionCache.LOCAL_SCOPE,
+            nowMs = now,
+            presetBank = QuizPresetBank.PARENT_LIFE,
+        )
+        assertEquals(expected, preset.total)
+        assertEquals(expected, preset.unused)
+        assertEquals(expected, QuizQuestionCache.availableCount(nowMs = now))
+
+        val courseScope = QuizAnswerScope.create(
+            grade = 4,
+            semester = 1,
+            subject = "MATH",
+            textbook = "BUBIAN",
+            scopeType = "MIDTERM",
+            unitNo = null,
+            difficulty = null,
+        )!!
+        assertEquals(0, QuizQuestionCache.availableCount(nowMs = now, answerScope = courseScope))
+
+        val items = QuizQuestionCache.listAllBank(QuizQuestionCache.LOCAL_SCOPE, nowMs = now)
+            .map { it.question }
+        assertEquals(expected, items.size)
+        assertEquals(100, items.count { it.answerKind == QuizAnswerKind.SINGLE })
+        assertEquals(50, items.count { it.answerKind == QuizAnswerKind.MULTIPLE })
     }
 
     @Test

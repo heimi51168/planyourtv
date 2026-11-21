@@ -12,14 +12,37 @@
   const LANGS = ["zh", "en", "ru", "uk", "kk"];
   const ROOT_ID = "parentCenterRoot";
   const SHEET_ID = "parentSheetRoot";
-  const MIN_EDIT_DAILY = 0;
-  const MAX_EDIT_DAILY = 240;
-  const MAX_EDIT_REST = 60;
+  const MAX_EDIT_REST = 1440;
   const MIN_BUFFER = 0;
   const MAX_BUFFER = 60;
-  const STEP_DAILY = 15;
   const STEP_REST = 5;
   const STEP_BUFFER = 5;
+  // Common values only; the steppers still reach every STEP-sized value in between.
+  // 1 minute is an explicit test/short-session stop below the normal 5-minute step.
+  const REST_OPTIONS = [0, 1, 5, 10, 15, 20, 30, 45, 60, 90, 120, 180, 240, 360, 480, 600, 720, 960, 1200, 1440];
+  const BUFFER_OPTIONS = [0, 1, 5, 10, 15, 20, 30, 45, 60];
+  // V44 new writes: X 1–180; Y 1..public cap. X and Y are independent inputs (Y may exceed X).
+  const MIN_STUDY_EARN_MINUTES = 1;
+  const MAX_STUDY_EARN_MINUTES = 180;
+  const STEP_STUDY_EARN_MINUTES = 5;
+  const DEFAULT_STUDY_EARN_STUDY_MINUTES = 10;
+  const DEFAULT_STUDY_EARN_REWARD_MINUTES = 5;
+  // Direct is its own "each viewing" value; the public cap is only its ceiling.
+  const MIN_DIRECT_MINUTES = 1;
+  const MAX_DIRECT_MINUTES = 120;
+  const STEP_DIRECT_MINUTES = 5;
+  const DIRECT_OPTIONS = [1, 5, 10, 15, 20, 25, 30, 40, 45, 60, 90, 120];
+  const MIN_SESSION_CAP_MINUTES = 1;
+  const MAX_SESSION_CAP_MINUTES = 120;
+  const STEP_SESSION_CAP_MINUTES = 5;
+  const SESSION_CAP_OPTIONS = [1, 5, 10, 15, 20, 25, 30, 40, 45, 60, 90, 120];
+  const DEFAULT_SESSION_CAP_MINUTES = 30;
+  const DEFAULT_DIRECT_MINUTES = 20;
+  const MAX_ROUTE_DAILY_COUNT = 10;
+  const DEFAULT_ROUTE_DAILY_COUNT = 3;
+  // V5 makes the three child unlock routes independent and adds the shared public cap and
+  // per-route daily counts. A V3/V4 page cannot express them, so every writer must send V5.
+  const RULES_CONTRACT_VERSION = 5;
   const HEARTBEAT_MS = 3000;
   const RULES_DEBOUNCE_MS = 200;
   const APP_PROMPT_KEY = "ptv.parentAppPromptSeen";
@@ -28,14 +51,124 @@
     zh: {
       parentCenterTitle: "家长中心",
       moreTitle: "更多",
-      timeAndApps: "时间与应用",
-      timeAndAppsSummary: "工作日、周末各 1 个时段 · {apps}",
+      familyGroup: "家庭组",
+      familyMemberCount: "{n} 位成员",
+      familyActiveOnTv: "电视当前",
+      familyAddChild: "添加孩子",
+      familyAddChildDisabled: "当前无法添加成员。",
+      familySingleNote: "点成员可修改称呼和头像；电视同一时间只按当前成员的设置计时。",
+      memberAddAction: "添加",
+      memberNewLabel: "新成员",
+      memberAdded: "成员已添加",
+      memberAddFailed: "添加失败，请重试",
+      familyCloudReadOnly: "已绑定云端，家庭成员请在手机或云端管理。",
+      familyLocalOnly: "资料只保存在本机，不影响今日用量和答题进度。",
+      memberEditTitle: "编辑成员",
+      memberNameLabel: "怎么称呼",
+      memberNamePlaceholder: "例如：大宝",
+      memberAvatarLabel: "头像",
+      memberUploadPhoto: "上传照片",
+      memberChangePhoto: "更换照片",
+      memberRemovePhoto: "删除照片",
+      memberSaveAction: "保存修改",
+      memberSaved: "成员资料已保存",
+      memberDeleteAction: "删除成员",
+      memberDeleteTitle: "删除成员？",
+      memberDeleteText: "将删除「{name}」的资料、设置和头像，无法恢复。电视当前成员和默认成员不能删除。",
+      memberDeleted: "成员已删除",
+      memberDeleteFailed: "删除失败，请重试",
+      memberDeleteLast: "至少需要保留一位成员",
+      familyDeleteActiveHint: "删除前请先把电视切换到其他成员。",
+      familyDeleteDefaultHint: "默认成员保存着本机历史数据，不能删除；可改名或更换头像。",
+      memberNameInvalid: "称呼不能为空，最多 12 个字",
+      memberImageType: "请选择图片文件",
+      memberImageTooLarge: "图片不能超过 25 MB",
+      memberImageInvalid: "图片无法读取，请换一张试试",
+      memberImageSaveFailed: "照片保存失败，请重试",
+      avatarCropTitle: "调整头像",
+      avatarCropHint: "拖动照片选择位置，双指或滑块缩放",
+      avatarCropZoom: "缩放",
+      avatarCropApply: "使用照片",
+      avatarCropProcessing: "正在处理照片…",
+      avatarCropFailed: "这张图片无法用作头像，请换一张试试",
+      memberNotFound: "没有找到这个成员",
+      familyNotReady: "成员资料暂不可用",
+      avatarRabbit: "小兔",
+      avatarFox: "狐狸",
+      avatarBear: "小熊",
+      avatarPanda: "熊猫",
+      memberSourceLocal: "本机",
+      memberSourceCloud: "云端",
+      timeAndApps: "娱乐应用时间计划",
+      timeAndAppsSummary: "{groups} 个日期分组 · {apps}",
+      timeTabManage: "娱乐应用管理",
+      timeTabPlan: "娱乐时间计划",
+      timeTabsLabel: "娱乐应用时间计划分页",
+      day1: "周一",
+      day2: "周二",
+      day3: "周三",
+      day4: "周四",
+      day5: "周五",
+      day6: "周六",
+      day7: "周日",
+      daySeparator: "、",
+      groupWeekdays: "周一–周五",
+      groupWeekend: "周六–周日",
+      addGroup: "添加分组",
+      addGroupTitle: "把某天移入新分组",
+      addGroupHint: "新分组会复制当前分组的时段和额度，之后可单独修改。",
+      deleteGroup: "删除分组",
+      deleteGroupTitle: "删除这个分组？",
+      deleteGroupBody: "组内日期会合并到相邻分组。",
+      dayGroupsSection: "日期分组",
+      publicParams: "公共参数",
+      dayAssignment: "日期分配",
+      dayAssignmentHint: "点某一天，可把它移到当前分组。",
+      segmentHint: "点日期开始新的一段；再点段首可合并到上一段。",
+      segmentSplitHint: "从此开始新一段",
+      segmentMergeHint: "合并到上一段",
+      segmentFirstHint: "第一段起点",
+      segmentNonContiguous: "原分组含不连续日期，已按连续日期展示，规则不变。",
+      presetWholeWeek: "整周",
+      presetEveryDay: "每天",
+      studyShort: "学习",
+      entertainmentShort: "娱乐",
+      mergeSegmentsTitle: "合并分段？",
+      mergeSegmentsBody: "合并后使用左侧分段的设置，其余分段的设置将被清除。",
+      mergeSegmentsAction: "合并",
+      studySchedule: "学习时间",
+      entertainmentSchedule: "娱乐时间",
+      studyLimit: "学习额度",
+      entertainmentLimit: "娱乐额度",
+      unlimited: "不限",
+      unlimitedApps: "不限时应用",
+      unlimitedAppsHint: "不扣学习或娱乐时间，也不受时段限制",
+      unlimitedNone: "未设置不限时应用",
+      unlimitedEmpty: "未设置不限时应用",
+      selectAllApps: "全选",
+      clearAllApps: "取消全选",
+      unlimitedAllWarning: "已将所有可用应用设为不限时，娱乐应用时间计划将不再限制这些应用。",
+      unlimitedManageHint: "点击任意图标直接管理",
+      appIconHint: "点击图标或 + 直接筛选",
+      appPickerManage: "管理应用",
+      studyEarnEmptyHint: "添加孩子不太愿意主动使用的学习应用",
+      moveToUnlimitedConfirm: "加入不限时后将移出学习换娱乐。",
+      moveToUnlimitedAction: "仍然加入",
+      moveToStudyConfirm: "加入学习应用后将移出不限时应用。",
+      studyAppsHint: "受学习时段和学习额度限制",
+      appPickerUnlimited: "不限时应用",
+      appPickerUnlimitedHint: "这些应用不扣学习或娱乐时间",
+      appPickerTakenStudy: "已是学习应用",
+      appPickerTakenUnlimited: "已是不限时应用",
+      restAndBuffer: "公共参数",
+      onlyUnlimitedNoTimer: "当前只有不限时应用，无需开始计时。",
+      rulesDayGroups: "日期分组必须覆盖七天，且时段和额度有效",
+      rulesUnlimitedApps: "不限时应用列表无效，请重新选择",
+      rulesClientOutdated: "页面版本过旧，请刷新后重试",
       localSettings: "本机设置",
       pinSet: "已设置",
       pinUnset: "未设置",
       quizAndAi: "题库与 AI",
-      bankMaintenance: "题库管理",
-      bankMaintenanceHint: "清空课程/AI、自定义题库，或调整答题设置",
       otherOptions: "其他",
       privacyHint: "本机数据与权限说明",
       aiTitle: "AI 出题",
@@ -45,10 +178,9 @@
       viewAction: "查看",
       manageAction: "管理",
       logoutAccount: "退出登录",
-      timePageHint: "应用范围立即生效；时段、额度、休息从下次计时生效",
+      timePageHint: "配置哪些应用需要娱乐时间、如何获得，以及什么时段可用。娱乐应用全周共用、立即生效；公共参数全周共用；日期分组可分别设置学习/娱乐时段与额度，从下次计时生效。",
       tvInputSources: "电视输入源",
       tvInputSourcesHint: "只影响桌面入口，不是强制锁定",
-      singleWindowHint: "每天一个时间段",
       entryChecking: "正在读取电视状态…",
       entryPair: "未开启 · 需电视配对",
       entryNotReady: "电视尚未就绪",
@@ -96,13 +228,49 @@
       todayUsed: "今天已使用 {n} 分钟",
       localRules: "本地规则",
       cloudRules: "云端规则 · 只读",
-      appScope: "应用范围",
+      appScope: "娱乐应用",
       entertainmentApps: "娱乐应用",
       studyApps: "学习应用",
       allApps: "全部应用",
       appsSelected: "已选 {n} 个应用",
       noEntertainment: "未选择（不放行娱乐应用）",
       studyNone: "未设置（没有学习模式）",
+      watchMethods: "娱乐应用启动条件",
+      quizGateSwitchHint: "看电视前先答题，本次时长由答题结果决定",
+      studyEarnSwitchHint: "学习应用按学习时段计时，达到设定时长换取娱乐时间；关闭后学习应用暂停",
+      directStartTitle: "直接启动",
+      directStartSwitchHint: "不答题、不学习，点击娱乐应用直接观看",
+      directDuration: "每次观看",
+      directPauseNote: "三个观看入口相互独立，可同时开启。每次观看仍受当前日期组的娱乐额度、时段和单次使用时间上限限制。",
+      unifiedLimits: "公共参数",
+      sessionCapTitle: "单次使用时间上限",
+      sessionCapHint: "三种方式各自一次会话的天花板；每日总额度在日期分组中设置。",
+      directMaxHint: "每次观看时长，最多 {n} 分钟",
+      quizAutoLength: "按答题结果自动计算，单次最多 {n} 分钟",
+      routeDailyCount: "每日次数",
+      countTimes: "{n} 次",
+      studyRewardMaxHint: "受公共单次上限限制，最多 {n} 分钟；与学习时长独立",
+      allRoutesOffTitle: "关闭全部观看入口？",
+      allRoutesOffBody: "保存后孩子将没有可用的娱乐入口，电视会显示「没有可用的观看入口」。家长临时解锁不受影响。",
+      allRoutesOffConfirm: "仍然保存",
+      routesOffHint: "三个观看入口都已关闭。",
+      capClampedNotice: "已按公共单次上限调整为 {n} 分钟",
+      studyAppsRetained: "已关闭 · {n} 个学习应用已保留，重新开启后恢复",
+      manageStudyApps: "管理学习应用",
+      studyMovedHint: "学习应用已并入上方「学习换娱乐」，不再单独设置。",
+      studyEarnTitle: "学习换娱乐",
+      studyEarnIntro: "开启奖励的学习应用，专注达到设定时长后可获得娱乐时间。学习本身始终受学习时段和额度限制；奖励时还会再次检查娱乐时段和额度。只计时，不监控学习内容。",
+      studyEarnRatio: "每学习 {study} 分钟，兑换 {reward} 分钟",
+      studyEarnStudyMinutes: "学习时长",
+      studyEarnRewardMinutes: "奖励娱乐时长",
+      studyEarnApps: "学习应用（全部参与奖励）",
+      studyEarnNoApps: "还没有学习应用。",
+      studyEarnHint: "所有学习应用都按学习时段和额度计时并参与奖励。离开学习应用会暂停，熄灭屏幕也会暂停。",
+      addStudyApps: "添加学习应用",
+      studyEarnEmptyHint: "添加孩子不太愿意主动使用的学习应用，用奖励促使他们使用。",
+      studyEarnEnabledCount: "已开启 {n} 个",
+      studyEarnDisabled: "未开启",
+      studyEarnInvalid: "学习换娱乐设置不合法",
       sourcesAndQuiz: "来源与答题",
       sourceEntries: "来源入口",
       sourceHint: "只影响桌面入口，不是强制锁定",
@@ -120,10 +288,6 @@
       parentAppPromptLater: "以后再说",
       parentAppDownloadLimit: "今天已达下载上限，明天再试",
       quizQrFailed: "二维码生成失败，请重试",
-      timing: "计时方式",
-      autoMode: "自动",
-      manualMode: "手动",
-      activationHint: "切换会结束当前计时段，不会自动开始",
       unlockFineprint: "临时解锁与电视同步：解锁后在电视锁屏上看到的家长验证同样生效，10 分钟后自动重新锁定。",
       pairHint: "配对码 5 分钟内有效。输入错误 5 次后需要回电视重新生成。",
       passwordHint: "修改家长密码需要输入当前密码；保存后立即生效。",
@@ -131,17 +295,14 @@
       sensitivePinTitle: "验证家长密码",
       sensitivePinLeadRules: "输入家长密码后编辑时间与应用",
       sensitivePinLeadTakeOver: "输入家长密码后临时退出儿童模式",
+      sensitivePinLeadDelete: "输入家长密码后删除成员",
       sensitivePinDefault: "请先在电视上修改初始家长密码",
       sensitivePinExpired: "验证已过期，请重新输入",
       sensitivePinRequired: "请先验证家长密码",
       confirmAutoUpdateOffTitle: "关闭自动升级？",
       confirmAutoUpdateOffBody: "关闭后电视不再自动获取新版本，需要手动安装更新。",
       confirmAutoUpdateOffAction: "关闭",
-      activationInvalid: "计时方式切换未生效，请刷新后重试",
       remoteRefreshFailed: "刷新远程状态失败，请检查电视网络后重试",
-      activationConfirmTitle: "切换计时方式？",
-      activationConfirmText: "切换后当前计时段会结束，不会自动开始新的计时。",
-      activationConfirm: "切换",
       timeRules: "时间规则",
       nextSession: "下次计时生效",
       weekday: "工作日",
@@ -153,10 +314,10 @@
       noWindows: "未设置时段",
       windowsFull: "每天只能设置一个时间段",
       limits: "额度与休息",
-      dailyLimit: "每日额度",
-      sessionLimit: "单次上限",
-      rest: "休息",
-      buffer: "息屏缓冲",
+      dailyLimit: "日额度上限",
+      dailyLimitDay: "{day}每日额度",
+      rest: "休息时间",
+      buffer: "暂停计时上限",
       minutes: "{n} 分钟",
       deviceSecurity: "设备与安全",
       parentPassword: "家长密码",
@@ -244,7 +405,7 @@
       appPickerOnly: "仅选中的应用",
       appPickerEmpty: "没有匹配的应用",
       appPickerHint: "一个都不选 = 不放行任何娱乐应用",
-      appPickerStudyHint: "不选 = 没有学习模式；学习应用不受娱乐额度限制",
+      appPickerStudyHint: "不选 = 没有学习模式；学习应用按学习时段和额度计时，奖励开关在「学习换娱乐」里设置。",
       appPickerDone: "完成",
       appPickerCancel: "取消",
       appPickerLoading: "正在读取应用列表…",
@@ -412,9 +573,70 @@
       mediaDownloadFailed: "下载失败，请检查电视网络后重试",
       mediaLocalEmpty: "还没有上传壁纸",
       mediaSoundTitle: "壁纸声音",
-      mediaSoundHint: "儿童模式播放；家长模式无声",
-      mediaSoundUnavailable: "选择带声音的视频后才能开启",
+      mediaSoundHint: "儿童模式声音总开关：有背景音乐时优先播放音乐、视频静音；家长模式无声",
+      mediaSoundUnavailable: "选择带声音的视频或背景音乐后才能开启",
       mediaSoundSaved: "壁纸声音设置已更新",
+      mediaLockSummary: "{count} 项 · 图片每 {duration} 切换",
+      mediaLockPickerHint: "按点选顺序轮播；图片按设定时间停留，视频播放完自动切换",
+      mediaLockEmptyHint: "未选择时使用默认壁纸；可多选轮播",
+      mediaLockSingleHint: "再选一张即可开始轮播；再次点击可取消",
+      mediaLockInterval: "图片停留",
+      audioTitle: "背景音乐",
+      audioHint: "在所有儿童模式壁纸下循环播放，受「壁纸声音」开关控制；音乐开启时壁纸视频自动静音，答题或家长操作时会暂停",
+      audioNone: "无背景音乐",
+      audioNoneHint: "只播放壁纸视频自带的声音",
+      audioUpload: "上传音频",
+      audioUploading: "正在上传音频…",
+      audioUploaded: "音频已上传",
+      audioSelected: "背景音乐已更新",
+      audioDeleted: "音频已删除",
+      audioDelete: "删除",
+      audioDeleteTitle: "删除这首音频？",
+      audioDeleteText: "删除后不能恢复；使用它的儿童模式会恢复为无背景音乐。",
+      audioMeta: "{size} MB · {duration}",
+      audioBadFormat: "只支持 MP3、M4A/AAC、OGG 音频文件。",
+      audioTooLarge: "音频超过 20 MB，请压缩后再试。",
+      audioBadDuration: "音频时长需在 30 分钟以内。",
+      audioUnsupported: "此电视无法解码该音频编码。",
+      audioNoSpace: "电视存储空间不足。",
+      audioEmpty: "还没有上传音频",
+      audioSourceCloud: "云端曲库",
+      audioSourceLocal: "本地上传",
+      audioSourceTabsLabel: "背景音乐来源",
+      audioCloudEmpty: "云端曲库还没有音乐",
+      audioCatalogOff: "此版本未配置云端曲库",
+      audioCatalogUnavailable: "云端曲库暂时不可用，已下载的音乐仍可播放",
+      audioRefresh: "刷新曲库",
+      audioRefreshing: "正在刷新…",
+      audioDownloadUse: "下载并使用",
+      audioUse: "使用",
+      audioDownload: "下载",
+      audioRetry: "重试",
+      audioUpdate: "更新",
+      audioReady: "已下载",
+      audioNotDownloaded: "未下载",
+      audioStateDownloading: "下载中 {percent}%",
+      audioStateVerifying: "正在校验…",
+      audioStateFailed: "下载失败",
+      audioStateUpdate: "有新版本",
+      audioDownloadStarted: "已开始下载，完成后自动设为背景音乐",
+      audioDownloadDone: "已下载并设为背景音乐",
+      audioDownloaded: "音乐已下载",
+      audioDownloadCancelled: "已取消下载",
+      audioDownloadFailed: "下载失败，请检查电视网络后重试",
+      audioBusy: "另一首音乐正在下载，请稍后再试",
+      audioDeleteDownload: "删除本地副本",
+      audioDeleteDownloadTitle: "删除已下载的音乐？",
+      audioDeleteDownloadText: "只删除电视上的副本，云端曲库里的音乐仍可重新下载；如果正在使用，背景音乐会恢复为无。",
+      audioDownloadDeleted: "本地副本已删除",
+      mediaIntervalSeconds: "{n} 秒",
+      mediaIntervalMinutes: "{n} 分钟",
+      mediaLockLimitHint: "已达壁纸数量上限，请先取消一张",
+      mediaLockInvalid: "轮播设置无效，请重新选择",
+      mediaSave: "保存",
+      mediaSaveCount: "保存（{n} 张）",
+      mediaUseDefault: "使用默认壁纸",
+      mediaPlaylistSaved: "轮播设置已更新",
       mediaOnlyWallpaper: "仅壁纸",
       mediaHasAudio: "有声",
       mediaTimingLead: "单次计时",
@@ -432,14 +654,124 @@
     en: {
       parentCenterTitle: "Parent center",
       moreTitle: "More",
-      timeAndApps: "Time & apps",
-      timeAndAppsSummary: "One window each on workdays and weekends · {apps}",
+      familyGroup: "Family",
+      familyMemberCount: "{n} members",
+      familyActiveOnTv: "On TV now",
+      familyAddChild: "Add child",
+      familyAddChildDisabled: "Adding a member is unavailable right now.",
+      familySingleNote: "Tap a member to change the name and avatar; the TV only runs the current member's settings.",
+      memberAddAction: "Add",
+      memberNewLabel: "New member",
+      memberAdded: "Member added",
+      memberAddFailed: "Could not add the member. Try again.",
+      familyCloudReadOnly: "Bound to the cloud. Manage family members on your phone or in the cloud.",
+      familyLocalOnly: "The profile stays on this TV and does not affect today's usage or quiz progress.",
+      memberEditTitle: "Edit member",
+      memberNameLabel: "Name",
+      memberNamePlaceholder: "For example: Child 1",
+      memberAvatarLabel: "Avatar",
+      memberUploadPhoto: "Upload photo",
+      memberChangePhoto: "Change photo",
+      memberRemovePhoto: "Remove photo",
+      memberSaveAction: "Save changes",
+      memberSaved: "Member profile saved",
+      memberDeleteAction: "Delete member",
+      memberDeleteTitle: "Delete member?",
+      memberDeleteText: "This removes {name}'s profile, settings and photo. It cannot be undone. The TV's current member and the default member cannot be deleted.",
+      memberDeleted: "Member deleted",
+      memberDeleteFailed: "Could not delete the member. Try again.",
+      memberDeleteLast: "At least one member must remain",
+      familyDeleteActiveHint: "Switch the TV to another member before deleting this one.",
+      familyDeleteDefaultHint: "The default member holds this TV's historical data and cannot be deleted; rename it or change its avatar instead.",
+      memberNameInvalid: "Enter a name with at most 12 characters",
+      memberImageType: "Choose an image file",
+      memberImageTooLarge: "The image must be 25 MB or smaller",
+      memberImageInvalid: "This image cannot be read. Try another one.",
+      memberImageSaveFailed: "Could not save the photo. Try again.",
+      avatarCropTitle: "Adjust avatar",
+      avatarCropHint: "Drag the photo to position it; pinch or use the slider to zoom",
+      avatarCropZoom: "Zoom",
+      avatarCropApply: "Use photo",
+      avatarCropProcessing: "Processing photo…",
+      avatarCropFailed: "This photo cannot be used as an avatar. Try another one.",
+      memberNotFound: "Member not found",
+      familyNotReady: "Member profiles are not available yet",
+      avatarRabbit: "Rabbit",
+      avatarFox: "Fox",
+      avatarBear: "Bear",
+      avatarPanda: "Panda",
+      memberSourceLocal: "This TV",
+      memberSourceCloud: "Cloud",
+      timeAndApps: "Entertainment time plan",
+      timeAndAppsSummary: "{groups} day groups · {apps}",
+      timeTabManage: "App management",
+      timeTabPlan: "Time plan",
+      timeTabsLabel: "Entertainment time plan sections",
+      day1: "Mon",
+      day2: "Tue",
+      day3: "Wed",
+      day4: "Thu",
+      day5: "Fri",
+      day6: "Sat",
+      day7: "Sun",
+      daySeparator: ", ",
+      groupWeekdays: "Mon–Fri",
+      groupWeekend: "Sat–Sun",
+      addGroup: "Add group",
+      addGroupTitle: "Move a day into a new group",
+      addGroupHint: "The new group copies this group's windows and quotas; you can edit it separately.",
+      deleteGroup: "Delete group",
+      deleteGroupTitle: "Delete this group?",
+      deleteGroupBody: "Its days move to a neighbouring group.",
+      dayGroupsSection: "Day groups",
+      publicParams: "Common settings",
+      dayAssignment: "Day assignment",
+      dayAssignmentHint: "Tap a day to move it to the selected group.",
+      segmentHint: "Tap a day to start a new segment; tap a segment start to merge it into the previous one.",
+      segmentSplitHint: "Start a new segment here",
+      segmentMergeHint: "Merge into previous segment",
+      segmentFirstHint: "First segment starts here",
+      segmentNonContiguous: "The saved groups contain non-adjacent days; they are shown as adjacent runs. The rules are unchanged.",
+      presetWholeWeek: "Whole week",
+      presetEveryDay: "Every day",
+      studyShort: "Study",
+      entertainmentShort: "Entertainment",
+      mergeSegmentsTitle: "Merge segments?",
+      mergeSegmentsBody: "The merged segment uses the left settings; settings from the other segments will be cleared.",
+      mergeSegmentsAction: "Merge",
+      studySchedule: "Study time",
+      entertainmentSchedule: "Entertainment time",
+      studyLimit: "Study quota",
+      entertainmentLimit: "Entertainment quota",
+      unlimited: "Unlimited",
+      unlimitedApps: "Unlimited apps",
+      unlimitedAppsHint: "Never uses study or entertainment time, and ignores time windows",
+      unlimitedNone: "No unlimited apps set",
+      unlimitedEmpty: "No unlimited apps set",
+      selectAllApps: "Select all",
+      clearAllApps: "Clear all",
+      unlimitedAllWarning: "Every available app is now unlimited; the entertainment time plan will no longer limit them.",
+      unlimitedManageHint: "Tap any icon to manage these apps",
+      appIconHint: "Tap an icon or + to pick apps",
+      appPickerManage: "Manage apps",
+      studyEarnEmptyHint: "Add study apps your child doesn't open on their own",
+      moveToUnlimitedConfirm: "Adding it to unlimited apps removes it from study reward.",
+      moveToUnlimitedAction: "Add anyway",
+      moveToStudyConfirm: "Adding it to study apps removes it from unlimited apps.",
+      studyAppsHint: "Timed by the study windows and quota",
+      appPickerUnlimited: "Unlimited apps",
+      appPickerUnlimitedHint: "These apps never use study or entertainment time",
+      appPickerTakenStudy: "Study app",
+      appPickerTakenUnlimited: "Unlimited app",
+      restAndBuffer: "Common settings",
+      onlyUnlimitedNoTimer: "Only unlimited apps are in scope; no timer is needed.",
+      rulesDayGroups: "Day groups must cover all seven days with valid windows and quotas",
+      rulesUnlimitedApps: "The unlimited app list is invalid; select the apps again",
+      rulesClientOutdated: "This page is out of date. Refresh and try again.",
       localSettings: "This TV",
       pinSet: "Set",
       pinUnset: "Not set",
       quizAndAi: "Question bank & AI",
-      bankMaintenance: "Manage banks",
-      bankMaintenanceHint: "Clear the course/AI or custom banks, or edit quiz settings",
       otherOptions: "Other",
       privacyHint: "On-device data and permissions",
       aiTitle: "AI questions",
@@ -449,10 +781,9 @@
       viewAction: "View",
       manageAction: "Manage",
       logoutAccount: "Log out",
-      timePageHint: "App scope applies now; windows, limits and breaks apply from the next session",
+      timePageHint: "Choose which apps need entertainment time, how the child earns it, and when it is available. Entertainment apps and common settings are shared all week and apply now; each day group sets its own study and entertainment windows and quotas, effective from the next session.",
       tvInputSources: "TV input sources",
       tvInputSourcesHint: "Only affects the home-screen entries; it is not a hard lock",
-      singleWindowHint: "One time window per day",
       entryChecking: "Reading the TV state…",
       entryPair: "Off · pair on the TV",
       entryNotReady: "The TV is not ready yet",
@@ -500,13 +831,49 @@
       todayUsed: "{n} min used today",
       localRules: "Local rules",
       cloudRules: "Cloud rules · read-only",
-      appScope: "App scope",
+      appScope: "Entertainment apps",
       entertainmentApps: "Entertainment apps",
       studyApps: "Study apps",
       allApps: "All apps",
       appsSelected: "{n} apps selected",
       noEntertainment: "None (no entertainment allowed)",
       studyNone: "Not set (no study mode)",
+      watchMethods: "Entertainment start conditions",
+      quizGateSwitchHint: "Answer questions first; the quiz result sets this session's time",
+      studyEarnSwitchHint: "Study apps earn entertainment time at the set ratio; turning this off pauses study apps too",
+      directStartTitle: "Direct start",
+      directStartSwitchHint: "Tap an entertainment app and watch without a quiz or study",
+      directDuration: "Time per session",
+      directPauseNote: "The three routes are independent and can all be on. Each session is still limited by the day group's entertainment quota, window and the single-session time limit.",
+      unifiedLimits: "Common settings",
+      sessionCapTitle: "Single-session time limit",
+      sessionCapHint: "Ceiling for one session of any of the three routes; the daily total is set per day group.",
+      directMaxHint: "Time per session, at most {n} min",
+      quizAutoLength: "Calculated from the quiz result, up to {n} min per session",
+      routeDailyCount: "Daily count",
+      countTimes: "{n} times",
+      studyRewardMaxHint: "Limited only by the public cap, up to {n} min; independent of study time",
+      allRoutesOffTitle: "Turn off every viewing route?",
+      allRoutesOffBody: "After saving, the child has no entertainment route and the TV shows “No available viewing route”. Parent override is unchanged.",
+      allRoutesOffConfirm: "Save anyway",
+      routesOffHint: "All three viewing routes are off.",
+      capClampedNotice: "Adjusted to the public cap: {n} min",
+      studyAppsRetained: "Off · {n} study apps kept; they return when you turn it on",
+      manageStudyApps: "Manage study apps",
+      studyMovedHint: "Study apps are now managed in “Study to earn” above; there is no separate study app setting.",
+      studyEarnTitle: "Study to earn",
+      studyEarnIntro: "Focused time in a reward-enabled study app earns entertainment time. Study time is always limited by the study windows and quota; the reward also rechecks the entertainment window and quota. Only time is tracked; content is not monitored.",
+      studyEarnRatio: "Study {study} min → earn {reward} min",
+      studyEarnStudyMinutes: "Study minutes",
+      studyEarnRewardMinutes: "Reward minutes",
+      studyEarnApps: "Study apps (all earn the reward)",
+      studyEarnNoApps: "No study apps yet.",
+      studyEarnHint: "Every study app is timed by the study windows and quota and earns the reward. Leaving the app pauses the timer; screen off also pauses.",
+      addStudyApps: "Add study apps",
+      studyEarnEmptyHint: "Add study apps your child is less willing to use, and use the reward to encourage them.",
+      studyEarnEnabledCount: "{n} enabled",
+      studyEarnDisabled: "Off",
+      studyEarnInvalid: "Invalid study-to-earn settings",
       sourcesAndQuiz: "Sources and quiz",
       sourceEntries: "Source entries",
       sourceHint: "Only changes the TV home entries; it is not a lock",
@@ -524,10 +891,6 @@
       parentAppPromptLater: "Not now",
       parentAppDownloadLimit: "Daily download limit reached; try again tomorrow",
       quizQrFailed: "Could not create the QR code; try again",
-      timing: "Timing mode",
-      autoMode: "Auto",
-      manualMode: "Manual",
-      activationHint: "Switching ends the current session; nothing starts automatically",
       unlockFineprint: "Unlock is shared with the TV: the same parent verification used on the TV lock screen applies here and relocks after 10 minutes.",
       pairHint: "The pairing code is valid for 5 minutes. After 5 wrong entries, create a new one on the TV.",
       passwordHint: "Changing the parent PIN requires the current PIN; it takes effect immediately.",
@@ -535,17 +898,14 @@
       sensitivePinTitle: "Verify parent PIN",
       sensitivePinLeadRules: "Enter the parent PIN to edit time and apps",
       sensitivePinLeadTakeOver: "Enter the parent PIN to leave child mode temporarily",
+      sensitivePinLeadDelete: "Enter the parent PIN to delete a member",
       sensitivePinDefault: "Change the initial parent PIN on the TV first",
       sensitivePinExpired: "Verification expired; enter the PIN again",
       sensitivePinRequired: "Verify the parent PIN first",
       confirmAutoUpdateOffTitle: "Turn off auto-update?",
       confirmAutoUpdateOffBody: "The TV will stop fetching new versions automatically; updates must be installed manually.",
       confirmAutoUpdateOffAction: "Turn off",
-      activationInvalid: "The timing mode did not change; refresh and try again",
       remoteRefreshFailed: "Could not refresh the remote state; check the TV network and retry",
-      activationConfirmTitle: "Switch timing mode?",
-      activationConfirmText: "The current session ends now and no new session starts automatically.",
-      activationConfirm: "Switch",
       timeRules: "Time rules",
       nextSession: "Applies to the next session",
       weekday: "Weekdays",
@@ -558,9 +918,9 @@
       windowsFull: "One time window per day",
       limits: "Limits and breaks",
       dailyLimit: "Daily limit",
-      sessionLimit: "Session limit",
-      rest: "Break",
-      buffer: "Screen-off buffer",
+      dailyLimitDay: "{day} daily limit",
+      rest: "Rest time",
+      buffer: "Max pause time",
       minutes: "{n} min",
       deviceSecurity: "Device and security",
       parentPassword: "Parent password",
@@ -648,7 +1008,7 @@
       appPickerOnly: "Only selected apps",
       appPickerEmpty: "No matching apps",
       appPickerHint: "Selecting nothing allows no entertainment apps",
-      appPickerStudyHint: "Selecting nothing means no study mode; study apps are not limited by entertainment time",
+      appPickerStudyHint: "Selecting nothing means no study mode. Study apps are timed by the study windows and quota; reward switches are set in Study to earn.",
       appPickerDone: "Done",
       appPickerCancel: "Cancel",
       appPickerLoading: "Reading the app list…",
@@ -816,9 +1176,70 @@
       mediaDownloadFailed: "Download failed; check the TV network and retry",
       mediaLocalEmpty: "No uploaded wallpapers yet",
       mediaSoundTitle: "Wallpaper sound",
-      mediaSoundHint: "Plays in child mode; parent mode stays muted",
-      mediaSoundUnavailable: "Choose a video with sound to enable it",
+      mediaSoundHint: "Master child-mode sound switch: background music takes priority and videos stay muted; parent mode stays silent",
+      mediaSoundUnavailable: "Choose a video with sound or a background track to enable it",
       mediaSoundSaved: "Wallpaper sound updated",
+      mediaLockSummary: "{count} items · images every {duration}",
+      mediaLockPickerHint: "Plays in the order you tap; images hold for the interval, videos play to the end",
+      mediaLockEmptyHint: "Nothing selected uses the default. Select two or more to rotate.",
+      mediaLockSingleHint: "Select one more to start the rotation; tap again to remove.",
+      mediaLockInterval: "Image hold",
+      audioTitle: "Background music",
+      audioHint: "Loops under every child-mode wallpaper and follows the Wallpaper sound switch; wallpaper videos are muted while it plays, and it pauses during a quiz or while a parent is working",
+      audioNone: "No background music",
+      audioNoneHint: "Only sound from wallpaper videos",
+      audioUpload: "Upload audio",
+      audioUploading: "Uploading audio…",
+      audioUploaded: "Audio uploaded",
+      audioSelected: "Background music updated",
+      audioDeleted: "Audio deleted",
+      audioDelete: "Delete",
+      audioDeleteTitle: "Delete this audio?",
+      audioDeleteText: "This cannot be undone; child mode will return to no background music.",
+      audioMeta: "{size} MB · {duration}",
+      audioBadFormat: "Only MP3, M4A/AAC and OGG audio files are supported.",
+      audioTooLarge: "Audio is over 20 MB; compress it and try again.",
+      audioBadDuration: "Audio must be 30 minutes or shorter.",
+      audioUnsupported: "This TV cannot decode that audio codec.",
+      audioNoSpace: "The TV is low on storage.",
+      audioEmpty: "No audio uploaded yet",
+      audioSourceCloud: "Cloud music",
+      audioSourceLocal: "Local upload",
+      audioSourceTabsLabel: "Music source",
+      audioCloudEmpty: "No music in the cloud library yet",
+      audioCatalogOff: "Cloud music is not configured in this build",
+      audioCatalogUnavailable: "Cloud music is unavailable; downloaded tracks still play",
+      audioRefresh: "Refresh music",
+      audioRefreshing: "Refreshing…",
+      audioDownloadUse: "Download and use",
+      audioUse: "Use",
+      audioDownload: "Download",
+      audioRetry: "Retry",
+      audioUpdate: "Update",
+      audioReady: "Downloaded",
+      audioNotDownloaded: "Not downloaded",
+      audioStateDownloading: "Downloading {percent}%",
+      audioStateVerifying: "Verifying…",
+      audioStateFailed: "Download failed",
+      audioStateUpdate: "New version available",
+      audioDownloadStarted: "Download started; it will become the background music when ready",
+      audioDownloadDone: "Downloaded and set as background music",
+      audioDownloaded: "Music downloaded",
+      audioDownloadCancelled: "Download cancelled",
+      audioDownloadFailed: "Download failed; check the TV network and retry",
+      audioBusy: "Another track is downloading; try again shortly",
+      audioDeleteDownload: "Delete local copy",
+      audioDeleteDownloadTitle: "Delete the downloaded music?",
+      audioDeleteDownloadText: "Only the copy on the TV is removed; you can download it again from the cloud library. If it is in use, background music returns to none.",
+      audioDownloadDeleted: "Local copy deleted",
+      mediaIntervalSeconds: "{n} sec",
+      mediaIntervalMinutes: "{n} min",
+      mediaLockLimitHint: "The wallpaper limit is reached; remove one first",
+      mediaLockInvalid: "The rotation settings are invalid; select again",
+      mediaSave: "Save",
+      mediaSaveCount: "Save ({n})",
+      mediaUseDefault: "Use the default",
+      mediaPlaylistSaved: "Wallpaper rotation updated",
       mediaOnlyWallpaper: "Wallpaper only",
       mediaHasAudio: "Sound",
       mediaTimingLead: "Single-session timer",
@@ -836,14 +1257,124 @@
     ru: {
       parentCenterTitle: "Центр родителей",
       moreTitle: "Ещё",
-      timeAndApps: "Время и приложения",
-      timeAndAppsSummary: "По одному окну в будни и выходные · {apps}",
+      familyGroup: "Семья",
+      familyMemberCount: "Участников: {n}",
+      familyActiveOnTv: "Сейчас на ТВ",
+      familyAddChild: "Добавить ребёнка",
+      familyAddChildDisabled: "Сейчас добавить участника нельзя.",
+      familySingleNote: "Нажмите на участника, чтобы изменить имя и аватар; телевизор учитывает настройки только текущего участника.",
+      memberAddAction: "Добавить",
+      memberNewLabel: "Новый участник",
+      memberAdded: "Участник добавлен",
+      memberAddFailed: "Не удалось добавить участника. Повторите попытку.",
+      familyCloudReadOnly: "Привязано к облаку. Управляйте участниками на телефоне или в облаке.",
+      familyLocalOnly: "Профиль хранится на этом телевизоре и не влияет на сегодняшний расход и прогресс викторины.",
+      memberEditTitle: "Изменить участника",
+      memberNameLabel: "Имя",
+      memberNamePlaceholder: "Например: Ребёнок 1",
+      memberAvatarLabel: "Аватар",
+      memberUploadPhoto: "Загрузить фото",
+      memberChangePhoto: "Заменить фото",
+      memberRemovePhoto: "Удалить фото",
+      memberSaveAction: "Сохранить",
+      memberSaved: "Профиль участника сохранён",
+      memberDeleteAction: "Удалить участника",
+      memberDeleteTitle: "Удалить участника?",
+      memberDeleteText: "Будут удалены профиль, настройки и фото «{name}». Это нельзя отменить. Текущего участника и участника по умолчанию удалить нельзя.",
+      memberDeleted: "Участник удалён",
+      memberDeleteFailed: "Не удалось удалить участника. Повторите попытку.",
+      memberDeleteLast: "Должен остаться хотя бы один участник",
+      familyDeleteActiveHint: "Перед удалением переключите ТВ на другого участника.",
+      familyDeleteDefaultHint: "Участник по умолчанию хранит исторические данные этого ТВ и не может быть удалён; измените имя или аватар.",
+      memberNameInvalid: "Введите имя не длиннее 12 символов",
+      memberImageType: "Выберите файл изображения",
+      memberImageTooLarge: "Изображение должно быть не больше 25 МБ",
+      memberImageInvalid: "Не удалось прочитать изображение. Попробуйте другое.",
+      memberImageSaveFailed: "Не удалось сохранить фото. Повторите попытку.",
+      avatarCropTitle: "Настройка аватара",
+      avatarCropHint: "Перетащите фото, чтобы выбрать кадр; масштаб — жестом или ползунком",
+      avatarCropZoom: "Масштаб",
+      avatarCropApply: "Использовать фото",
+      avatarCropProcessing: "Обработка фото…",
+      avatarCropFailed: "Это фото не подходит для аватара. Попробуйте другое.",
+      memberNotFound: "Участник не найден",
+      familyNotReady: "Профили участников пока недоступны",
+      avatarRabbit: "Кролик",
+      avatarFox: "Лиса",
+      avatarBear: "Медведь",
+      avatarPanda: "Панда",
+      memberSourceLocal: "Этот ТВ",
+      memberSourceCloud: "Облако",
+      timeAndApps: "План времени развлечений",
+      timeAndAppsSummary: "{groups} групп дней · {apps}",
+      timeTabManage: "Приложения",
+      timeTabPlan: "План времени",
+      timeTabsLabel: "Разделы плана времени развлечений",
+      day1: "Пн",
+      day2: "Вт",
+      day3: "Ср",
+      day4: "Чт",
+      day5: "Пт",
+      day6: "Сб",
+      day7: "Вс",
+      daySeparator: ", ",
+      groupWeekdays: "Пн–Пт",
+      groupWeekend: "Сб–Вс",
+      addGroup: "Добавить группу",
+      addGroupTitle: "Перенести день в новую группу",
+      addGroupHint: "Новая группа скопирует интервалы и лимиты текущей; затем их можно изменить отдельно.",
+      deleteGroup: "Удалить группу",
+      deleteGroupTitle: "Удалить эту группу?",
+      deleteGroupBody: "Её дни перейдут в соседнюю группу.",
+      dayGroupsSection: "Группы дней",
+      publicParams: "Общие параметры",
+      dayAssignment: "Распределение дней",
+      dayAssignmentHint: "Нажмите день, чтобы перенести его в выбранную группу.",
+      segmentHint: "Нажмите день, чтобы начать новый сегмент; нажмите начало сегмента, чтобы объединить его с предыдущим.",
+      segmentSplitHint: "Начать новый сегмент здесь",
+      segmentMergeHint: "Объединить с предыдущим",
+      segmentFirstHint: "Здесь начинается первый сегмент",
+      segmentNonContiguous: "В сохранённых группах есть несмежные дни; они показаны как отдельные смежные сегменты. Правила не изменены.",
+      presetWholeWeek: "Вся неделя",
+      presetEveryDay: "Каждый день",
+      studyShort: "Учёба",
+      entertainmentShort: "Развлечения",
+      mergeSegmentsTitle: "Объединить сегменты?",
+      mergeSegmentsBody: "Объединённый сегмент получит настройки левого; настройки остальных сегментов будут удалены.",
+      mergeSegmentsAction: "Объединить",
+      studySchedule: "Учебное время",
+      entertainmentSchedule: "Время развлечений",
+      studyLimit: "Учебный лимит",
+      entertainmentLimit: "Лимит развлечений",
+      unlimited: "Без ограничений",
+      unlimitedApps: "Приложения без ограничений",
+      unlimitedAppsHint: "Не расходуют учебное или развлекательное время и не зависят от интервалов",
+      unlimitedNone: "Приложения без ограничений не заданы",
+      unlimitedEmpty: "Приложения без ограничений не заданы",
+      selectAllApps: "Выбрать все",
+      clearAllApps: "Снять выбор",
+      unlimitedAllWarning: "Все доступные приложения стали без ограничений; план времени развлечений больше не будет их ограничивать.",
+      unlimitedManageHint: "Нажмите любой значок, чтобы управлять",
+      appIconHint: "Нажмите значок или +, чтобы выбрать приложения",
+      appPickerManage: "Управление приложениями",
+      studyEarnEmptyHint: "Добавьте учебные приложения, которые ребёнок не открывает сам",
+      moveToUnlimitedConfirm: "После добавления в без ограничений приложение будет убрано из учёбы с наградой.",
+      moveToUnlimitedAction: "Всё равно добавить",
+      moveToStudyConfirm: "После добавления в учебные приложение будет убрано из без ограничений.",
+      studyAppsHint: "Ограничены учебными интервалами и лимитом",
+      appPickerUnlimited: "Приложения без ограничений",
+      appPickerUnlimitedHint: "Эти приложения не расходуют учебное или развлекательное время",
+      appPickerTakenStudy: "Учебное приложение",
+      appPickerTakenUnlimited: "Без ограничений",
+      restAndBuffer: "Общие параметры",
+      onlyUnlimitedNoTimer: "В области только приложения без ограничений; таймер не нужен.",
+      rulesDayGroups: "Группы должны покрывать все семь дней, а интервалы и лимиты должны быть корректны",
+      rulesUnlimitedApps: "Список приложений без ограничений неверен; выберите их снова",
+      rulesClientOutdated: "Страница устарела. Обновите её и повторите.",
       localSettings: "Этот телевизор",
       pinSet: "Задан",
       pinUnset: "Не задан",
       quizAndAi: "Банк вопросов и ИИ",
-      bankMaintenance: "Управление банками",
-      bankMaintenanceHint: "Очистка банка курса/ИИ и своих банков, настройки викторины",
       otherOptions: "Другое",
       privacyHint: "Данные и разрешения на этом телевизоре",
       aiTitle: "ИИ-вопросы",
@@ -853,10 +1384,9 @@
       viewAction: "Открыть",
       manageAction: "Управлять",
       logoutAccount: "Выйти",
-      timePageHint: "Список приложений действует сразу; окна, лимиты и перерывы — со следующего сеанса",
+      timePageHint: "Выберите, какие приложения требуют времени развлечений, как ребёнок его получает и когда оно доступно. Приложения развлечений и общие параметры действуют всю неделю и сразу; каждая группа дней задаёт свои интервалы и лимиты, они применяются со следующего сеанса.",
       tvInputSources: "Источники ТВ",
       tvInputSourcesHint: "Влияет только на входы на главном экране, это не жёсткая блокировка",
-      singleWindowHint: "Один интервал в день",
       entryChecking: "Чтение состояния телевизора…",
       entryPair: "Выключен · нужно сопряжение на ТВ",
       entryNotReady: "Телевизор ещё не готов",
@@ -904,13 +1434,49 @@
       todayUsed: "Сегодня использовано {n} мин",
       localRules: "Локальные правила",
       cloudRules: "Облачные правила · только чтение",
-      appScope: "Приложения",
+      appScope: "Развлечения",
       entertainmentApps: "Развлечения",
       studyApps: "Учебные приложения",
       allApps: "Все приложения",
       appsSelected: "Выбрано приложений: {n}",
       noEntertainment: "Ничего не выбрано (развлечения запрещены)",
       studyNone: "Не задано (учебного режима нет)",
+      watchMethods: "Условия запуска развлечений",
+      quizGateSwitchHint: "Сначала тест: его результат определяет длительность сеанса",
+      studyEarnSwitchHint: "Учебные приложения дают время на развлечения по заданной пропорции; при выключении учёба тоже приостанавливается",
+      directStartTitle: "Прямой запуск",
+      directStartSwitchHint: "Без теста и учёбы: нажмите приложение развлечений и смотрите",
+      directDuration: "Время за сеанс",
+      directPauseNote: "Три способа просмотра независимы и могут быть включены одновременно. Каждая сессия по-прежнему ограничена квотой, интервалом текущей группы дней и лимитом времени одной сессии.",
+      unifiedLimits: "Общие параметры",
+      sessionCapTitle: "Лимит времени одной сессии",
+      sessionCapHint: "Верхний предел одной сессии для любого из трёх способов; дневная квота задаётся в группе дней.",
+      directMaxHint: "Время за один просмотр, не более {n} мин",
+      quizAutoLength: "Рассчитывается по результату теста, до {n} мин за сессию",
+      routeDailyCount: "Раз в день",
+      countTimes: "{n} раз",
+      studyRewardMaxHint: "Ограничено только общим лимитом, не более {n} мин; время учёбы не влияет",
+      allRoutesOffTitle: "Отключить все способы просмотра?",
+      allRoutesOffBody: "После сохранения у ребёнка не останется способа смотреть развлечения, а телевизор покажет «Нет доступного способа просмотра». Родительский доступ не меняется.",
+      allRoutesOffConfirm: "Всё равно сохранить",
+      routesOffHint: "Все три способа просмотра отключены.",
+      capClampedNotice: "Скорректировано по общему лимиту: {n} мин",
+      studyAppsRetained: "Выключено · сохранено учебных приложений: {n}; они вернутся после включения",
+      manageStudyApps: "Управлять учебными приложениями",
+      studyMovedHint: "Учебные приложения теперь в «Учёба в обмен на развлечения» выше; отдельной настройки больше нет.",
+      studyEarnTitle: "Учёба в обмен на развлечения",
+      studyEarnIntro: "Время в учебном приложении с включённой наградой даёт время на развлечения. Учёба всегда ограничена учебными интервалами и лимитом; при награде развлекательные интервал и лимит проверяются ещё раз. Учитывается только время, содержимое не отслеживается.",
+      studyEarnRatio: "Учёба {study} мин → {reward} мин",
+      studyEarnStudyMinutes: "Минуты учёбы",
+      studyEarnRewardMinutes: "Минуты награды",
+      studyEarnApps: "Учебные приложения (все дают награду)",
+      studyEarnNoApps: "Учебных приложений пока нет.",
+      studyEarnHint: "Все учебные приложения считаются по учебным интервалам и лимиту и дают награду. Выход из приложения и выключение экрана ставят таймер на паузу.",
+      addStudyApps: "Добавить учебные приложения",
+      studyEarnEmptyHint: "Добавьте приложения, которыми ребёнок не любит заниматься, и поощряйте его наградой.",
+      studyEarnEnabledCount: "Включено: {n}",
+      studyEarnDisabled: "Выключено",
+      studyEarnInvalid: "Неверные настройки учёбы в обмен на развлечения",
       sourcesAndQuiz: "Источники и тесты",
       sourceEntries: "Пункты источников",
       sourceHint: "Меняет только пункты на главном экране, это не блокировка",
@@ -928,10 +1494,6 @@
       parentAppPromptLater: "Позже",
       parentAppDownloadLimit: "Дневной лимит загрузок исчерпан; повторите завтра",
       quizQrFailed: "Не удалось создать QR-код; повторите",
-      timing: "Режим времени",
-      autoMode: "Авто",
-      manualMode: "Вручную",
-      activationHint: "Переключение завершит текущий сеанс; новый не начнётся автоматически",
       unlockFineprint: "Разблокировка общая с телевизором: та же проверка родителя, что и на экране блокировки ТВ, действует здесь и снова блокируется через 10 минут.",
       pairHint: "Код сопряжения действует 5 минут. После 5 ошибок создайте новый код на ТВ.",
       passwordHint: "Для смены пароля родителя нужен текущий пароль; изменения применяются сразу.",
@@ -939,17 +1501,14 @@
       sensitivePinTitle: "Подтвердите пароль родителя",
       sensitivePinLeadRules: "Введите пароль родителя, чтобы изменить время и приложения",
       sensitivePinLeadTakeOver: "Введите пароль родителя, чтобы временно выйти из детского режима",
+      sensitivePinLeadDelete: "Введите пароль родителя, чтобы удалить участника",
       sensitivePinDefault: "Сначала измените начальный пароль родителя на телевизоре",
       sensitivePinExpired: "Подтверждение истекло; введите пароль ещё раз",
       sensitivePinRequired: "Сначала подтвердите пароль родителя",
       confirmAutoUpdateOffTitle: "Отключить автообновление?",
       confirmAutoUpdateOffBody: "Телевизор перестанет автоматически получать новые версии; обновления нужно устанавливать вручную.",
       confirmAutoUpdateOffAction: "Отключить",
-      activationInvalid: "Режим времени не переключился; обновите и повторите",
       remoteRefreshFailed: "Не удалось обновить удалённое состояние; проверьте сеть ТВ и повторите",
-      activationConfirmTitle: "Переключить режим времени?",
-      activationConfirmText: "Текущий сеанс завершится сейчас, новый автоматически не начнётся.",
-      activationConfirm: "Переключить",
       timeRules: "Правила времени",
       nextSession: "Со следующего сеанса",
       weekday: "Будни",
@@ -962,9 +1521,9 @@
       windowsFull: "Один период в день",
       limits: "Лимиты и перерывы",
       dailyLimit: "Дневной лимит",
-      sessionLimit: "Лимит сеанса",
-      rest: "Перерыв",
-      buffer: "Буфер выключения экрана",
+      dailyLimitDay: "{day} · дневной лимит",
+      rest: "Время перерыва",
+      buffer: "Лимит паузы",
       minutes: "{n} мин",
       deviceSecurity: "Устройство и безопасность",
       parentPassword: "Пароль родителя",
@@ -1052,7 +1611,7 @@
       appPickerOnly: "Только выбранные",
       appPickerEmpty: "Нет подходящих приложений",
       appPickerHint: "Если ничего не выбрать, развлечения запрещены",
-      appPickerStudyHint: "Если ничего не выбрать, учебного режима нет; учебные приложения не ограничены развлекательным временем",
+      appPickerStudyHint: "Если ничего не выбрать, учебного режима нет. Учебные приложения считаются по учебным интервалам и лимиту; награда настраивается в «Учёба в обмен на развлечения».",
       appPickerDone: "Готово",
       appPickerCancel: "Отмена",
       appPickerLoading: "Чтение списка приложений…",
@@ -1220,9 +1779,70 @@
       mediaDownloadFailed: "Ошибка загрузки; проверьте сеть ТВ и повторите",
       mediaLocalEmpty: "Загруженных обоев пока нет",
       mediaSoundTitle: "Звук обоев",
-      mediaSoundHint: "Играет в детском режиме; в родительском — без звука",
-      mediaSoundUnavailable: "Сначала выберите видео со звуком",
+      mediaSoundHint: "Общий звук детского режима: при наличии музыки она звучит вместо видео; в родительском режиме без звука",
+      mediaSoundUnavailable: "Сначала выберите видео со звуком или фоновую музыку",
       mediaSoundSaved: "Настройка звука обоев обновлена",
+      mediaLockSummary: "{count} элем. · изображения каждые {duration}",
+      mediaLockPickerHint: "Порядок — порядок нажатий; изображения держатся заданное время, видео играет до конца",
+      mediaLockEmptyHint: "Без выбора используются стандартные обои. Выберите несколько для смены.",
+      mediaLockSingleHint: "Выберите ещё одни, чтобы включить смену; нажмите ещё раз, чтобы убрать.",
+      mediaLockInterval: "Показ изображения",
+      audioTitle: "Фоновая музыка",
+      audioHint: "Играет под всеми обоями детского режима и подчиняется переключателю «Звук обоев»; пока звучит музыка, видео обоев без звука; пауза во время теста или работы родителя",
+      audioNone: "Без фоновой музыки",
+      audioNoneHint: "Только звук из видеообоев",
+      audioUpload: "Загрузить аудио",
+      audioUploading: "Загрузка аудио…",
+      audioUploaded: "Аудио загружено",
+      audioSelected: "Фоновая музыка обновлена",
+      audioDeleted: "Аудио удалено",
+      audioDelete: "Удалить",
+      audioDeleteTitle: "Удалить это аудио?",
+      audioDeleteText: "Это нельзя отменить; детский режим вернётся к работе без фоновой музыки.",
+      audioMeta: "{size} МБ · {duration}",
+      audioBadFormat: "Поддерживаются только MP3, M4A/AAC и OGG.",
+      audioTooLarge: "Аудио больше 20 МБ; сожмите его и попробуйте снова.",
+      audioBadDuration: "Длительность аудио — не более 30 минут.",
+      audioUnsupported: "Этот телевизор не декодирует такой аудиокодек.",
+      audioNoSpace: "На телевизоре недостаточно места.",
+      audioEmpty: "Аудио ещё не загружено",
+      audioSourceCloud: "Облачная музыка",
+      audioSourceLocal: "Своя загрузка",
+      audioSourceTabsLabel: "Источник музыки",
+      audioCloudEmpty: "В облачной музыке пока нет треков",
+      audioCatalogOff: "В этой сборке облачная музыка не настроена",
+      audioCatalogUnavailable: "Облачная музыка недоступна; скачанные треки продолжают работать",
+      audioRefresh: "Обновить музыку",
+      audioRefreshing: "Обновление…",
+      audioDownloadUse: "Скачать и использовать",
+      audioUse: "Использовать",
+      audioDownload: "Скачать",
+      audioRetry: "Повторить",
+      audioUpdate: "Обновить",
+      audioReady: "Скачано",
+      audioNotDownloaded: "Не скачано",
+      audioStateDownloading: "Загрузка {percent}%",
+      audioStateVerifying: "Проверка…",
+      audioStateFailed: "Ошибка загрузки",
+      audioStateUpdate: "Есть новая версия",
+      audioDownloadStarted: "Загрузка началась; после проверки трек станет фоновой музыкой",
+      audioDownloadDone: "Трек скачан и выбран фоновой музыкой",
+      audioDownloaded: "Трек скачан",
+      audioDownloadCancelled: "Загрузка отменена",
+      audioDownloadFailed: "Ошибка загрузки; проверьте сеть ТВ и повторите",
+      audioBusy: "Другой трек уже скачивается; попробуйте позже",
+      audioDeleteDownload: "Удалить локальную копию",
+      audioDeleteDownloadTitle: "Удалить скачанный трек?",
+      audioDeleteDownloadText: "С телевизора удалится только копия; трек можно снова скачать из облачной музыки. Если он используется, фоновая музыка вернётся к «без музыки».",
+      audioDownloadDeleted: "Локальная копия удалена",
+      mediaIntervalSeconds: "{n} с",
+      mediaIntervalMinutes: "{n} мин",
+      mediaLockLimitHint: "Достигнут лимит обоев; сначала удалите одни из выбранных",
+      mediaLockInvalid: "Неверные настройки смены; выберите заново",
+      mediaSave: "Сохранить",
+      mediaSaveCount: "Сохранить ({n})",
+      mediaUseDefault: "Использовать стандартные",
+      mediaPlaylistSaved: "Смена обоев обновлена",
       mediaOnlyWallpaper: "Только обои",
       mediaHasAudio: "Со звуком",
       mediaTimingLead: "Разовый таймер",
@@ -1240,14 +1860,124 @@
     uk: {
       parentCenterTitle: "Центр батьків",
       moreTitle: "Ще",
-      timeAndApps: "Час і застосунки",
-      timeAndAppsSummary: "По одному вікну в будні та вихідні · {apps}",
+      familyGroup: "Сім’я",
+      familyMemberCount: "Учасників: {n}",
+      familyActiveOnTv: "Зараз на ТБ",
+      familyAddChild: "Додати дитину",
+      familyAddChildDisabled: "Зараз додати учасника неможливо.",
+      familySingleNote: "Натисніть на учасника, щоб змінити ім’я та аватар; телевізор враховує налаштування лише поточного учасника.",
+      memberAddAction: "Додати",
+      memberNewLabel: "Новий учасник",
+      memberAdded: "Учасника додано",
+      memberAddFailed: "Не вдалося додати учасника. Спробуйте ще раз.",
+      familyCloudReadOnly: "Прив’язано до хмари. Керуйте учасниками на телефоні або в хмарі.",
+      familyLocalOnly: "Профіль зберігається на цьому телевізорі й не впливає на сьогоднішні витрати та прогрес вікторини.",
+      memberEditTitle: "Змінити учасника",
+      memberNameLabel: "Ім’я",
+      memberNamePlaceholder: "Наприклад: Дитина 1",
+      memberAvatarLabel: "Аватар",
+      memberUploadPhoto: "Завантажити фото",
+      memberChangePhoto: "Замінити фото",
+      memberRemovePhoto: "Видалити фото",
+      memberSaveAction: "Зберегти",
+      memberSaved: "Профіль учасника збережено",
+      memberDeleteAction: "Видалити учасника",
+      memberDeleteTitle: "Видалити учасника?",
+      memberDeleteText: "Буде видалено профіль, налаштування й фото «{name}». Це неможливо скасувати. Поточного учасника та учасника за замовчуванням видалити не можна.",
+      memberDeleted: "Учасника видалено",
+      memberDeleteFailed: "Не вдалося видалити учасника. Спробуйте ще раз.",
+      memberDeleteLast: "Повинен залишитися хоча б один учасник",
+      familyDeleteActiveHint: "Перед видаленням перемкніть ТБ на іншого учасника.",
+      familyDeleteDefaultHint: "Учасник за замовчуванням зберігає історичні дані цього ТБ і не може бути видалений; змініть ім’я або аватар.",
+      memberNameInvalid: "Введіть ім’я не довше 12 символів",
+      memberImageType: "Виберіть файл зображення",
+      memberImageTooLarge: "Зображення має бути не більше 25 МБ",
+      memberImageInvalid: "Не вдалося прочитати зображення. Спробуйте інше.",
+      memberImageSaveFailed: "Не вдалося зберегти фото. Спробуйте ще раз.",
+      avatarCropTitle: "Налаштування аватара",
+      avatarCropHint: "Перетягніть фото, щоб вибрати кадр; масштаб — жестом або повзунком",
+      avatarCropZoom: "Масштаб",
+      avatarCropApply: "Використати фото",
+      avatarCropProcessing: "Обробка фото…",
+      avatarCropFailed: "Це фото не підходить для аватара. Спробуйте інше.",
+      memberNotFound: "Учасника не знайдено",
+      familyNotReady: "Профілі учасників поки недоступні",
+      avatarRabbit: "Кролик",
+      avatarFox: "Лис",
+      avatarBear: "Ведмідь",
+      avatarPanda: "Панда",
+      memberSourceLocal: "Цей ТБ",
+      memberSourceCloud: "Хмара",
+      timeAndApps: "План часу розваг",
+      timeAndAppsSummary: "{groups} груп днів · {apps}",
+      timeTabManage: "Застосунки",
+      timeTabPlan: "План часу",
+      timeTabsLabel: "Розділи плану часу розваг",
+      day1: "Пн",
+      day2: "Вт",
+      day3: "Ср",
+      day4: "Чт",
+      day5: "Пт",
+      day6: "Сб",
+      day7: "Нд",
+      daySeparator: ", ",
+      groupWeekdays: "Пн–Пт",
+      groupWeekend: "Сб–Нд",
+      addGroup: "Додати групу",
+      addGroupTitle: "Перенести день у нову групу",
+      addGroupHint: "Нова група скопіює інтервали й ліміти поточної; потім їх можна змінити окремо.",
+      deleteGroup: "Видалити групу",
+      deleteGroupTitle: "Видалити цю групу?",
+      deleteGroupBody: "Її дні перейдуть до сусідньої групи.",
+      dayGroupsSection: "Групи днів",
+      publicParams: "Спільні параметри",
+      dayAssignment: "Розподіл днів",
+      dayAssignmentHint: "Натисніть день, щоб перенести його до вибраної групи.",
+      segmentHint: "Натисніть день, щоб почати новий сегмент; натисніть початок сегмента, щоб об'єднати його з попереднім.",
+      segmentSplitHint: "Почати новий сегмент тут",
+      segmentMergeHint: "Об'єднати з попереднім",
+      segmentFirstHint: "Тут починається перший сегмент",
+      segmentNonContiguous: "У збережених групах є несуміжні дні; їх показано як окремі суміжні сегменти. Правила не змінено.",
+      presetWholeWeek: "Весь тиждень",
+      presetEveryDay: "Щодня",
+      studyShort: "Навчання",
+      entertainmentShort: "Розваги",
+      mergeSegmentsTitle: "Об'єднати сегменти?",
+      mergeSegmentsBody: "Об'єднаний сегмент використовуватиме налаштування лівого; налаштування інших сегментів буде очищено.",
+      mergeSegmentsAction: "Об'єднати",
+      studySchedule: "Навчальний час",
+      entertainmentSchedule: "Час розваг",
+      studyLimit: "Навчальний ліміт",
+      entertainmentLimit: "Ліміт розваг",
+      unlimited: "Без обмежень",
+      unlimitedApps: "Застосунки без обмежень",
+      unlimitedAppsHint: "Не витрачають навчальний або розважальний час і не залежать від інтервалів",
+      unlimitedNone: "Застосунки без обмежень не задано",
+      unlimitedEmpty: "Застосунки без обмежень не задано",
+      selectAllApps: "Вибрати всі",
+      clearAllApps: "Зняти вибір",
+      unlimitedAllWarning: "Усі доступні застосунки стали без обмежень; план часу розваг більше не обмежуватиме їх.",
+      unlimitedManageHint: "Торкніться будь-якого значка, щоб керувати",
+      appIconHint: "Торкніться значка або +, щоб вибрати застосунки",
+      appPickerManage: "Керування застосунками",
+      studyEarnEmptyHint: "Додайте навчальні застосунки, які дитина не відкриває сама",
+      moveToUnlimitedConfirm: "Після додавання до без обмежень застосунок буде прибрано з навчання з нагородою.",
+      moveToUnlimitedAction: "Усе одно додати",
+      moveToStudyConfirm: "Після додавання до навчальних застосунок буде прибрано з без обмежень.",
+      studyAppsHint: "Обмежені навчальними інтервалами й лімітом",
+      appPickerUnlimited: "Застосунки без обмежень",
+      appPickerUnlimitedHint: "Ці застосунки не витрачають навчальний або розважальний час",
+      appPickerTakenStudy: "Навчальний застосунок",
+      appPickerTakenUnlimited: "Без обмежень",
+      restAndBuffer: "Спільні параметри",
+      onlyUnlimitedNoTimer: "У зоні лише застосунки без обмежень; таймер не потрібен.",
+      rulesDayGroups: "Групи мають покривати всі сім днів, а інтервали й ліміти мають бути коректними",
+      rulesUnlimitedApps: "Список застосунків без обмежень некоректний; виберіть їх знову",
+      rulesClientOutdated: "Сторінка застаріла. Оновіть її та повторіть.",
       localSettings: "Цей телевізор",
       pinSet: "Задано",
       pinUnset: "Не задано",
       quizAndAi: "Банк питань і ШІ",
-      bankMaintenance: "Керування банками",
-      bankMaintenanceHint: "Очищення банку курсу/ШІ та власних банків, налаштування вікторини",
       otherOptions: "Інше",
       privacyHint: "Дані та дозволи на цьому телевізорі",
       aiTitle: "ШІ-питання",
@@ -1257,10 +1987,9 @@
       viewAction: "Відкрити",
       manageAction: "Керувати",
       logoutAccount: "Вийти",
-      timePageHint: "Список застосунків діє одразу; вікна, ліміти й перерви — з наступного сеансу",
+      timePageHint: "Виберіть, які застосунки потребують часу розваг, як дитина його отримує і коли він доступний. Застосунки розваг і спільні параметри діють увесь тиждень і одразу; кожна група днів задає свої інтервали й ліміти, вони застосовуються з наступного сеансу.",
       tvInputSources: "Джерела ТБ",
       tvInputSourcesHint: "Впливає лише на входи на головному екрані, це не жорстке блокування",
-      singleWindowHint: "Один інтервал на день",
       entryChecking: "Читання стану телевізора…",
       entryPair: "Вимкнено · потрібне сполучення на ТБ",
       entryNotReady: "Телевізор ще не готовий",
@@ -1308,13 +2037,49 @@
       todayUsed: "Сьогодні використано {n} хв",
       localRules: "Локальні правила",
       cloudRules: "Хмарні правила · лише читання",
-      appScope: "Застосунки",
+      appScope: "Розваги",
       entertainmentApps: "Розваги",
       studyApps: "Навчальні застосунки",
       allApps: "Усі застосунки",
       appsSelected: "Вибрано застосунків: {n}",
       noEntertainment: "Нічого не вибрано (розваги заборонені)",
       studyNone: "Не задано (навчального режиму немає)",
+      watchMethods: "Умови запуску розваг",
+      quizGateSwitchHint: "Спочатку тест: його результат визначає тривалість сеансу",
+      studyEarnSwitchHint: "Навчальні застосунки дають час на розваги за заданою пропорцією; після вимкнення навчання теж призупиняється",
+      directStartTitle: "Прямий запуск",
+      directStartSwitchHint: "Без тесту й навчання: торкніться застосунку розваг і дивіться",
+      directDuration: "Час за сеанс",
+      directPauseNote: "Три способи перегляду незалежні й можуть бути ввімкнені одночасно. Кожна сесія й далі обмежена квотою, інтервалом поточної групи днів і лімітом часу однієї сесії.",
+      unifiedLimits: "Спільні параметри",
+      sessionCapTitle: "Ліміт часу однієї сесії",
+      sessionCapHint: "Верхня межа однієї сесії для будь-якого з трьох способів; денна квота задається в групі днів.",
+      directMaxHint: "Час за один перегляд, не більше {n} хв",
+      quizAutoLength: "Розраховується за результатом тесту, до {n} хв за сесію",
+      routeDailyCount: "Разів на день",
+      countTimes: "{n} разів",
+      studyRewardMaxHint: "Обмежено лише спільним лімітом, не більше {n} хв; час навчання не впливає",
+      allRoutesOffTitle: "Вимкнути всі способи перегляду?",
+      allRoutesOffBody: "Після збереження дитина не матиме способу дивитися розваги, а телевізор покаже «Немає доступного способу перегляду». Батьківський доступ не змінюється.",
+      allRoutesOffConfirm: "Все одно зберегти",
+      routesOffHint: "Усі три способи перегляду вимкнено.",
+      capClampedNotice: "Скориговано за спільним лімітом: {n} хв",
+      studyAppsRetained: "Вимкнено · збережено навчальних застосунків: {n}; вони повернуться після ввімкнення",
+      manageStudyApps: "Керувати навчальними застосунками",
+      studyMovedHint: "Навчальні застосунки тепер у «Навчання в обмін на розваги» вище; окремого налаштування більше немає.",
+      studyEarnTitle: "Навчання в обмін на розваги",
+      studyEarnIntro: "Час у навчальному застосунку з увімкненою нагородою дає час на розваги. Навчання завжди обмежене навчальними інтервалами й лімітом; під час нагороди розважальні інтервал і ліміт перевіряються ще раз. Враховується лише час, вміст не відстежується.",
+      studyEarnRatio: "Навчання {study} хв → {reward} хв",
+      studyEarnStudyMinutes: "Хвилини навчання",
+      studyEarnRewardMinutes: "Хвилини винагороди",
+      studyEarnApps: "Навчальні застосунки (усі дають нагороду)",
+      studyEarnNoApps: "Навчальних застосунків ще немає.",
+      studyEarnHint: "Усі навчальні застосунки рахуються за навчальними інтервалами й лімітом та дають нагороду. Вихід із застосунку та вимкнення екрана ставлять таймер на паузу.",
+      addStudyApps: "Додати навчальні застосунки",
+      studyEarnEmptyHint: "Додайте застосунки, якими дитина не любить займатися, і заохочуйте її нагородою.",
+      studyEarnEnabledCount: "Увімкнено: {n}",
+      studyEarnDisabled: "Вимкнено",
+      studyEarnInvalid: "Некоректні налаштування навчання в обмін на розваги",
       sourcesAndQuiz: "Джерела й тести",
       sourceEntries: "Пункти джерел",
       sourceHint: "Змінює лише пункти на головному екрані, це не блокування",
@@ -1332,10 +2097,6 @@
       parentAppPromptLater: "Пізніше",
       parentAppDownloadLimit: "Денний ліміт завантажень вичерпано; повторіть завтра",
       quizQrFailed: "Не вдалося створити QR-код; повторіть",
-      timing: "Режим часу",
-      autoMode: "Авто",
-      manualMode: "Вручну",
-      activationHint: "Перемикання завершить поточний сеанс; новий не почнеться автоматично",
       unlockFineprint: "Розблокування спільне з телевізором: та сама перевірка батьків, що й на екрані блокування ТБ, діє тут і знову блокується через 10 хвилин.",
       pairHint: "Код сполучення діє 5 хвилин. Після 5 помилок створіть новий код на ТБ.",
       passwordHint: "Для зміни пароля батьків потрібен поточний пароль; зміни застосовуються одразу.",
@@ -1343,17 +2104,14 @@
       sensitivePinTitle: "Підтвердьте пароль батьків",
       sensitivePinLeadRules: "Введіть пароль батьків, щоб змінити час і застосунки",
       sensitivePinLeadTakeOver: "Введіть пароль батьків, щоб тимчасово вийти з дитячого режиму",
+      sensitivePinLeadDelete: "Введіть пароль батьків, щоб видалити учасника",
       sensitivePinDefault: "Спочатку змініть початковий пароль батьків на телевізорі",
       sensitivePinExpired: "Підтвердження минуло; введіть пароль ще раз",
       sensitivePinRequired: "Спочатку підтвердьте пароль батьків",
       confirmAutoUpdateOffTitle: "Вимкнути автооновлення?",
       confirmAutoUpdateOffBody: "Телевізор перестане автоматично отримувати нові версії; оновлення доведеться встановлювати вручну.",
       confirmAutoUpdateOffAction: "Вимкнути",
-      activationInvalid: "Режим часу не змінився; оновіть і повторіть",
       remoteRefreshFailed: "Не вдалося оновити віддалений стан; перевірте мережу ТБ і повторіть",
-      activationConfirmTitle: "Перемкнути режим часу?",
-      activationConfirmText: "Поточний сеанс завершиться зараз, новий автоматично не почнеться.",
-      activationConfirm: "Перемкнути",
       timeRules: "Правила часу",
       nextSession: "З наступного сеансу",
       weekday: "Будні",
@@ -1366,9 +2124,9 @@
       windowsFull: "Один інтервал на день",
       limits: "Ліміти й перерви",
       dailyLimit: "Денний ліміт",
-      sessionLimit: "Ліміт сеансу",
-      rest: "Перерва",
-      buffer: "Буфер вимкнення екрана",
+      dailyLimitDay: "{day} · денний ліміт",
+      rest: "Час перерви",
+      buffer: "Ліміт паузи",
       minutes: "{n} хв",
       deviceSecurity: "Пристрій і безпека",
       parentPassword: "Пароль батьків",
@@ -1456,7 +2214,7 @@
       appPickerOnly: "Лише вибрані",
       appPickerEmpty: "Немає відповідних застосунків",
       appPickerHint: "Якщо нічого не вибрати, розваги заборонені",
-      appPickerStudyHint: "Якщо нічого не вибрати, навчального режиму немає; навчальні застосунки не обмежені часом розваг",
+      appPickerStudyHint: "Якщо нічого не вибрати, навчального режиму немає. Навчальні застосунки рахуються за навчальними інтервалами й лімітом; нагорода налаштовується в «Навчання в обмін на розваги».",
       appPickerDone: "Готово",
       appPickerCancel: "Скасувати",
       appPickerLoading: "Читання списку застосунків…",
@@ -1624,9 +2382,70 @@
       mediaDownloadFailed: "Помилка завантаження; перевірте мережу ТБ і повторіть",
       mediaLocalEmpty: "Завантажених шпалер ще немає",
       mediaSoundTitle: "Звук шпалер",
-      mediaSoundHint: "Грає в дитячому режимі; у батьківському — без звуку",
-      mediaSoundUnavailable: "Спершу виберіть відео зі звуком",
+      mediaSoundHint: "Загальний звук дитячого режиму: за наявності музики лунає вона, а відео без звуку; у батьківському режимі — без звуку",
+      mediaSoundUnavailable: "Спершу виберіть відео зі звуком або фонову музику",
       mediaSoundSaved: "Налаштування звуку шпалер оновлено",
+      mediaLockSummary: "{count} елем. · зображення кожні {duration}",
+      mediaLockPickerHint: "Порядок — порядок натискань; зображення тримаються заданий час, відео грає до кінця",
+      mediaLockEmptyHint: "Без вибору використовуються стандартні шпалери. Виберіть кілька для зміни.",
+      mediaLockSingleHint: "Виберіть ще одні, щоб увімкнути зміну; натисніть ще раз, щоб прибрати.",
+      mediaLockInterval: "Показ зображення",
+      audioTitle: "Фонова музика",
+      audioHint: "Грає під усіма шпалерами дитячого режиму та підпорядковується перемикачу «Звук шпалер»; поки лунає музика, відео шпалер без звуку; пауза під час тесту або роботи батька",
+      audioNone: "Без фонової музики",
+      audioNoneHint: "Лише звук із відеошпалер",
+      audioUpload: "Завантажити аудіо",
+      audioUploading: "Завантаження аудіо…",
+      audioUploaded: "Аудіо завантажено",
+      audioSelected: "Фонову музику оновлено",
+      audioDeleted: "Аудіо видалено",
+      audioDelete: "Видалити",
+      audioDeleteTitle: "Видалити це аудіо?",
+      audioDeleteText: "Це не можна скасувати; дитячий режим повернеться до роботи без фонової музики.",
+      audioMeta: "{size} МБ · {duration}",
+      audioBadFormat: "Підтримуються лише MP3, M4A/AAC та OGG.",
+      audioTooLarge: "Аудіо більше 20 МБ; стисніть його та спробуйте знову.",
+      audioBadDuration: "Тривалість аудіо — не більше 30 хвилин.",
+      audioUnsupported: "Цей телевізор не декодує такий аудіокодек.",
+      audioNoSpace: "На телевізорі недостатньо місця.",
+      audioEmpty: "Аудіо ще не завантажено",
+      audioSourceCloud: "Хмарна музика",
+      audioSourceLocal: "Власне завантаження",
+      audioSourceTabsLabel: "Джерело музики",
+      audioCloudEmpty: "У хмарній музиці ще немає треків",
+      audioCatalogOff: "У цій збірці хмарна музика не налаштована",
+      audioCatalogUnavailable: "Хмарна музика недоступна; завантажені треки працюють далі",
+      audioRefresh: "Оновити музику",
+      audioRefreshing: "Оновлення…",
+      audioDownloadUse: "Завантажити й використати",
+      audioUse: "Використати",
+      audioDownload: "Завантажити",
+      audioRetry: "Повторити",
+      audioUpdate: "Оновити",
+      audioReady: "Завантажено",
+      audioNotDownloaded: "Не завантажено",
+      audioStateDownloading: "Завантаження {percent}%",
+      audioStateVerifying: "Перевірка…",
+      audioStateFailed: "Помилка завантаження",
+      audioStateUpdate: "Є нова версія",
+      audioDownloadStarted: "Завантаження почалося; після перевірки трек стане фоновою музикою",
+      audioDownloadDone: "Трек завантажено й вибрано фоновою музикою",
+      audioDownloaded: "Трек завантажено",
+      audioDownloadCancelled: "Завантаження скасовано",
+      audioDownloadFailed: "Помилка завантаження; перевірте мережу ТВ і повторіть",
+      audioBusy: "Інший трек уже завантажується; спробуйте пізніше",
+      audioDeleteDownload: "Видалити локальну копію",
+      audioDeleteDownloadTitle: "Видалити завантажений трек?",
+      audioDeleteDownloadText: "З телевізора видалиться лише копія; трек можна знову завантажити з хмарної музики. Якщо він використовується, фонова музика повернеться до «без музики».",
+      audioDownloadDeleted: "Локальну копію видалено",
+      mediaIntervalSeconds: "{n} с",
+      mediaIntervalMinutes: "{n} хв",
+      mediaLockLimitHint: "Досягнуто ліміту шпалер; спершу приберіть одні",
+      mediaLockInvalid: "Неправильні налаштування зміни; виберіть знову",
+      mediaSave: "Зберегти",
+      mediaSaveCount: "Зберегти ({n})",
+      mediaUseDefault: "Використовувати стандартні",
+      mediaPlaylistSaved: "Зміну шпалер оновлено",
       mediaOnlyWallpaper: "Лише шпалери",
       mediaHasAudio: "Зі звуком",
       mediaTimingLead: "Разовий таймер",
@@ -1644,14 +2463,124 @@
     kk: {
       parentCenterTitle: "Ата-ана орталығы",
       moreTitle: "Қосымша",
-      timeAndApps: "Уақыт және қолданбалар",
-      timeAndAppsSummary: "Жұмыс күндері мен демалыста бір уақыт терезесінен · {apps}",
+      familyGroup: "Отбасы",
+      familyMemberCount: "Мүше саны: {n}",
+      familyActiveOnTv: "Қазір ТВ-де",
+      familyAddChild: "Бала қосу",
+      familyAddChildDisabled: "Қазір мүше қосу мүмкін емес.",
+      familySingleNote: "Аты мен аватарын өзгерту үшін мүшені түртіңіз; теледидар тек ағымдағы мүшенің параметрлерін ескереді.",
+      memberAddAction: "Қосу",
+      memberNewLabel: "Жаңа мүше",
+      memberAdded: "Мүше қосылды",
+      memberAddFailed: "Мүшені қосу мүмкін болмады. Қайталап көріңіз.",
+      familyCloudReadOnly: "Бұлтқа байланған. Отбасы мүшелерін телефонда немесе бұлтта басқарыңыз.",
+      familyLocalOnly: "Профиль осы теледидарда сақталады және бүгінгі пайдалану мен викторина прогресіне әсер етпейді.",
+      memberEditTitle: "Мүшені өңдеу",
+      memberNameLabel: "Аты",
+      memberNamePlaceholder: "Мысалы: Бала 1",
+      memberAvatarLabel: "Аватар",
+      memberUploadPhoto: "Фото жүктеу",
+      memberChangePhoto: "Фотоны ауыстыру",
+      memberRemovePhoto: "Фотоны жою",
+      memberSaveAction: "Сақтау",
+      memberSaved: "Мүше профилі сақталды",
+      memberDeleteAction: "Мүшені жою",
+      memberDeleteTitle: "Мүшені жою керек пе?",
+      memberDeleteText: "«{name}» мүшесінің профилі, параметрлері және фотосы жойылады. Бұны қайтару мүмкін емес. Ағымдағы және әдепкі мүшені жою мүмкін емес.",
+      memberDeleted: "Мүше жойылды",
+      memberDeleteFailed: "Мүшені жою мүмкін болмады. Қайталап көріңіз.",
+      memberDeleteLast: "Кемінде бір мүше қалуы керек",
+      familyDeleteActiveHint: "Жою алдында теледидарды басқа мүшеге ауыстырыңыз.",
+      familyDeleteDefaultHint: "Әдепкі мүше осы теледидардың тарихи деректерін сақтайды және жойыла алмайды; атын немесе аватарын өзгертіңіз.",
+      memberNameInvalid: "12 таңбадан аспайтын ат енгізіңіз",
+      memberImageType: "Сурет файлын таңдаңыз",
+      memberImageTooLarge: "Сурет 25 МБ-тан аспауы керек",
+      memberImageInvalid: "Суретті оқу мүмкін болмады. Басқасын таңдап көріңіз.",
+      memberImageSaveFailed: "Фотоны сақтау мүмкін болмады. Қайталап көріңіз.",
+      avatarCropTitle: "Аватарды реттеу",
+      avatarCropHint: "Фотоны сүйреп орнын таңдаңыз; масштабты қимылмен немесе сырғытпамен өзгертіңіз",
+      avatarCropZoom: "Масштаб",
+      avatarCropApply: "Фотоны қолдану",
+      avatarCropProcessing: "Фото өңделуде…",
+      avatarCropFailed: "Бұл фото аватарға жарамайды. Басқасын таңдап көріңіз.",
+      memberNotFound: "Мүше табылмады",
+      familyNotReady: "Мүше профильдері әзірге қолжетімсіз",
+      avatarRabbit: "Қоян",
+      avatarFox: "Түлкі",
+      avatarBear: "Аю",
+      avatarPanda: "Панда",
+      memberSourceLocal: "Осы ТВ",
+      memberSourceCloud: "Бұлт",
+      timeAndApps: "Ойын-сауық уақытының жоспары",
+      timeAndAppsSummary: "{groups} күн тобы · {apps}",
+      timeTabManage: "Қолданбалар",
+      timeTabPlan: "Уақыт жоспары",
+      timeTabsLabel: "Ойын-сауық уақыты жоспарының бөлімдері",
+      day1: "Дс",
+      day2: "Сс",
+      day3: "Ср",
+      day4: "Бс",
+      day5: "Жм",
+      day6: "Сб",
+      day7: "Жс",
+      daySeparator: ", ",
+      groupWeekdays: "Дс–Жм",
+      groupWeekend: "Сб–Жс",
+      addGroup: "Топ қосу",
+      addGroupTitle: "Күнді жаңа топқа жылжыту",
+      addGroupHint: "Жаңа топ ағымдағы топтың аралықтары мен шектеулерін көшіреді; кейін оларды бөлек өзгертуге болады.",
+      deleteGroup: "Топты жою",
+      deleteGroupTitle: "Осы топты жою керек пе?",
+      deleteGroupBody: "Оның күндері көрші топқа өтеді.",
+      dayGroupsSection: "Күн топтары",
+      publicParams: "Жалпы параметрлер",
+      dayAssignment: "Күндерді бөлу",
+      dayAssignmentHint: "Күнді таңдалған топқа жылжыту үшін оны түртіңіз.",
+      segmentHint: "Жаңа сегментті бастау үшін күнді түртіңіз; сегмент басын түртсеңіз, ол алдыңғы сегментке қосылады.",
+      segmentSplitHint: "Осы жерден жаңа сегмент бастау",
+      segmentMergeHint: "Алдыңғы сегментке қосу",
+      segmentFirstHint: "Бірінші сегмент осы жерден басталады",
+      segmentNonContiguous: "Сақталған топтарда іргелес емес күндер бар; олар жеке іргелес сегменттер ретінде көрсетіледі. Ережелер өзгерген жоқ.",
+      presetWholeWeek: "Бүкіл апта",
+      presetEveryDay: "Күн сайын",
+      studyShort: "Оқу",
+      entertainmentShort: "Ойын-сауық",
+      mergeSegmentsTitle: "Сегменттерді қосу керек пе?",
+      mergeSegmentsBody: "Қосылған сегмент сол жақтағы параметрлерді пайдаланады; қалған сегменттердің параметрлері жойылады.",
+      mergeSegmentsAction: "Қосу",
+      studySchedule: "Оқу уақыты",
+      entertainmentSchedule: "Ойын-сауық уақыты",
+      studyLimit: "Оқу шектеуі",
+      entertainmentLimit: "Ойын-сауық шектеуі",
+      unlimited: "Шектеусіз",
+      unlimitedApps: "Шектеусіз қолданбалар",
+      unlimitedAppsHint: "Оқу немесе ойын-сауық уақытын жұмсамайды және аралықтарға бағынбайды",
+      unlimitedNone: "Шектеусіз қолданбалар орнатылмаған",
+      unlimitedEmpty: "Шектеусіз қолданбалар орнатылмаған",
+      selectAllApps: "Барлығын таңдау",
+      clearAllApps: "Таңдауды алу",
+      unlimitedAllWarning: "Барлық қолжетімді қолданба шектеусіз болды; ойын-сауық уақытының жоспары оларды енді шектемейді.",
+      unlimitedManageHint: "Кез келген белгішені түртіп басқарыңыз",
+      appIconHint: "Қолданбаларды таңдау үшін белгішені немесе + түртіңіз",
+      appPickerManage: "Қолданбаларды басқару",
+      studyEarnEmptyHint: "Бала өзі ашпайтын оқу қолданбаларын қосыңыз",
+      moveToUnlimitedConfirm: "Шектеусізге қосқаннан кейін қолданба оқу → ойын-сауық тізімінен алынады.",
+      moveToUnlimitedAction: "Бәрібір қосу",
+      moveToStudyConfirm: "Оқу қолданбаларына қосқаннан кейін қолданба шектеусіздерден алынады.",
+      studyAppsHint: "Оқу аралықтары мен шектеуіне бағынады",
+      appPickerUnlimited: "Шектеусіз қолданбалар",
+      appPickerUnlimitedHint: "Бұл қолданбалар оқу немесе ойын-сауық уақытын жұмсамайды",
+      appPickerTakenStudy: "Оқу қолданбасы",
+      appPickerTakenUnlimited: "Шектеусіз",
+      restAndBuffer: "Жалпы параметрлер",
+      onlyUnlimitedNoTimer: "Аумақта тек шектеусіз қолданбалар бар; таймер қажет емес.",
+      rulesDayGroups: "Топтар жеті күнді толық қамтуы, аралықтар мен шектеулер жарамды болуы керек",
+      rulesUnlimitedApps: "Шектеусіз қолданбалар тізімі жарамсыз; оларды қайта таңдаңыз",
+      rulesClientOutdated: "Бет ескірген. Жаңартып, қайталаңыз.",
       localSettings: "Осы теледидар",
       pinSet: "Орнатылған",
       pinUnset: "Орнатылмаған",
       quizAndAi: "Сұрақ банкі және ИИ",
-      bankMaintenance: "Банктерді басқару",
-      bankMaintenanceHint: "Курс/AI және жеке банктерді тазалау, викторина баптаулары",
       otherOptions: "Басқа",
       privacyHint: "Осы теледидардағы деректер мен рұқсаттар",
       aiTitle: "AI сұрақтары",
@@ -1661,10 +2590,9 @@
       viewAction: "Ашу",
       manageAction: "Басқару",
       logoutAccount: "Шығу",
-      timePageHint: "Қолданбалар тізімі бірден қолданылады; уақыт терезелері, шектеулер мен үзілістер келесі сеанстан бастап әсер етеді",
+      timePageHint: "Қандай қолданбаларға ойын-сауық уақыты қажет, бала оны қалай алады және қашан қолжетімді екенін таңдаңыз. Ойын-сауық қолданбалары мен жалпы параметрлер бүкіл аптаға ортақ және бірден қолданылады; әр күн тобы өз аралықтары мен шектеулерін орнатады, олар келесі сеанстан бастап әсер етеді.",
       tvInputSources: "ТВ кірістері",
       tvInputSourcesHint: "Тек басты экрандағы кірістерге әсер етеді, бұл қатаң құлып емес",
-      singleWindowHint: "Күніне бір уақыт аралығы",
       entryChecking: "Теледидар күйі оқылуда…",
       entryPair: "Өшірулі · ТВ-де жұптау керек",
       entryNotReady: "Теледидар әзір емес",
@@ -1712,13 +2640,49 @@
       todayUsed: "Бүгін {n} минут қолданылды",
       localRules: "Жергілікті ережелер",
       cloudRules: "Бұлттық ережелер · тек оқу",
-      appScope: "Қолданбалар",
+      appScope: "Ойын-сауық қолданбалары",
       entertainmentApps: "Ойын-сауық қолданбалары",
       studyApps: "Оқу қолданбалары",
       allApps: "Барлық қолданбалар",
       appsSelected: "{n} қолданба таңдалды",
       noEntertainment: "Ештеңе таңдалмаған (ойын-сауыққа рұқсат жоқ)",
       studyNone: "Орнатылмаған (оқу режимі жоқ)",
+      watchMethods: "Ойын-сауықты іске қосу шарттары",
+      quizGateSwitchHint: "Алдымен тест: оның нәтижесі сеанс ұзақтығын анықтайды",
+      studyEarnSwitchHint: "Оқу қолданбалары белгіленген пропорция бойынша ойын-сауық уақытын береді; өшіргенде оқу да тоқтатылады",
+      directStartTitle: "Тікелей іске қосу",
+      directStartSwitchHint: "Тестсіз және оқусыз: ойын-сауық қолданбасын басып, көріңіз",
+      directDuration: "Бір сеанс уақыты",
+      directPauseNote: "Үш көру жолы тәуелсіз және бірге қосулы бола алады. Әр сессия ағымдағы күн тобының ойын-сауық шектеуімен, аралығымен және бір сеанс уақытының шегімен шектеледі.",
+      unifiedLimits: "Жалпы параметрлер",
+      sessionCapTitle: "Бір сеанс уақытының шегі",
+      sessionCapHint: "Кез келген үш жол үшін бір сеанстың жоғарғы шегі; күндік жалпы шек күн тобында орнатылады.",
+      directMaxHint: "Бір көруге арналған уақыт, ең көбі {n} мин",
+      quizAutoLength: "Тест нәтижесі бойынша есептеледі, сеанс үшін ең көбі {n} мин",
+      routeDailyCount: "Күндік саны",
+      countTimes: "{n} рет",
+      studyRewardMaxHint: "Тек жалпы шекпен шектеледі, ең көбі {n} мин; оқу уақыты әсер етпейді",
+      allRoutesOffTitle: "Барлық көру жолдарын өшіру керек пе?",
+      allRoutesOffBody: "Сақтағаннан кейін баланың ойын-сауыққа кіретін жолы болмайды, теледидар «Қолжетімді көру жолы жоқ» деп көрсетеді. Ата-ананың уақытша ашуы өзгермейді.",
+      allRoutesOffConfirm: "Бәрібір сақтау",
+      routesOffHint: "Барлық үш көру жолы өшірулі.",
+      capClampedNotice: "Жалпы шекке сәйкес реттелді: {n} мин",
+      studyAppsRetained: "Өшірулі · {n} оқу қолданбасы сақталды; қосқанда қайта оралады",
+      manageStudyApps: "Оқу қолданбаларын басқару",
+      studyMovedHint: "Оқу қолданбалары енді жоғарыдағы «Оқуға уақыт бөліп, ойын уақытын алу» бөлімінде; жеке параметр жоқ.",
+      studyEarnTitle: "Оқуға уақыт бөліп, ойын уақытын алу",
+      studyEarnIntro: "Сыйлығы қосылған оқу қолданбасындағы уақыт ойын-сауық уақытын береді. Оқу әрдайым оқу аралықтарымен және шектеуімен шектеледі; сыйлық берілгенде ойын-сауық аралығы мен шектеуі қайта тексеріледі. Тек уақыт есептеледі, мазмұн бақыланбайды.",
+      studyEarnRatio: "Оқу {study} мин → {reward} мин",
+      studyEarnStudyMinutes: "Оқу минуттары",
+      studyEarnRewardMinutes: "Сыйақы минуттары",
+      studyEarnApps: "Оқу қолданбалары (барлығы сыйақы алады)",
+      studyEarnNoApps: "Оқу қолданбалары әзірге жоқ.",
+      studyEarnHint: "Барлық оқу қолданбалары оқу аралықтары мен шектеуі бойынша есептеледі және сыйақы алады. Қолданбадан шығу және экранды өшіру таймерді тоқтатады.",
+      addStudyApps: "Оқу қолданбаларын қосу",
+      studyEarnEmptyHint: "Бала құлықсыз қолданатын оқу қолданбаларын қосып, сыйақымен ынталандырыңыз.",
+      studyEarnEnabledCount: "Қосылған: {n}",
+      studyEarnDisabled: "Өшірулі",
+      studyEarnInvalid: "Оқуға уақыт бөліп, ойын уақытын алу параметрлері жарамсыз",
       sourcesAndQuiz: "Дереккөздер мен тесттер",
       sourceEntries: "Дереккөз жазбалары",
       sourceHint: "Тек басты экрандағы жазбаларды өзгертеді, бұл құлып емес",
@@ -1736,10 +2700,6 @@
       parentAppPromptLater: "Кейінірек",
       parentAppDownloadLimit: "Күнделікті жүктеу шегіне жеттіңіз; ертең қайталаңыз",
       quizQrFailed: "QR код жасалмады; қайталаңыз",
-      timing: "Уақыт режимі",
-      autoMode: "Авто",
-      manualMode: "Қолмен",
-      activationHint: "Ауыстыру ағымдағы сеансты аяқтайды; жаңасы өздігінен басталмайды",
       unlockFineprint: "Ашу теледидармен ортақ: ТВ құлып экранындағы ата-ана тексеруі осында да әсер етеді және 10 минуттан кейін қайта құлыпталады.",
       pairHint: "Жұптау коды 5 минут жарамды. 5 рет қате енгізсеңіз, ТВ-де жаңа код жасаңыз.",
       passwordHint: "Ата-ана құпиясөзін өзгерту үшін ағымдағы құпиясөз қажет; өзгеріс бірден әсер етеді.",
@@ -1747,17 +2707,14 @@
       sensitivePinTitle: "Ата-ана құпиясөзін растаңыз",
       sensitivePinLeadRules: "Уақыт пен қолданбаларды өңдеу үшін ата-ана құпиясөзін енгізіңіз",
       sensitivePinLeadTakeOver: "Бала режимінен уақытша шығу үшін ата-ана құпиясөзін енгізіңіз",
+      sensitivePinLeadDelete: "Мүшені жою үшін ата-ана құпиясөзін енгізіңіз",
       sensitivePinDefault: "Алдымен теледидарда бастапқы ата-ана құпиясөзін өзгертіңіз",
       sensitivePinExpired: "Растау мерзімі бітті; құпиясөзді қайта енгізіңіз",
       sensitivePinRequired: "Алдымен ата-ана құпиясөзін растаңыз",
       confirmAutoUpdateOffTitle: "Автоматты жаңартуды өшіру керек пе?",
       confirmAutoUpdateOffBody: "Теледидар жаңа нұсқаларды автоматты түрде алмайды; жаңартуды қолмен орнату қажет.",
       confirmAutoUpdateOffAction: "Өшіру",
-      activationInvalid: "Уақыт режимі ауыспады; жаңартып, қайталаңыз",
       remoteRefreshFailed: "Қашықтан күйді жаңарту мүмкін болмады; ТВ желісін тексеріп қайталаңыз",
-      activationConfirmTitle: "Уақыт режимін ауыстыру керек пе?",
-      activationConfirmText: "Ағымдағы сеанс қазір аяқталады, жаңасы өздігінен басталмайды.",
-      activationConfirm: "Ауыстыру",
       timeRules: "Уақыт ережелері",
       nextSession: "Келесі сеанстан бастап",
       weekday: "Жұмыс күндері",
@@ -1770,9 +2727,9 @@
       windowsFull: "Күніне бір уақыт аралығы",
       limits: "Шектеулер мен үзілістер",
       dailyLimit: "Күндік шектеу",
-      sessionLimit: "Сеанс шектеуі",
-      rest: "Үзіліс",
-      buffer: "Экранды өшіру буфері",
+      dailyLimitDay: "{day} · күндік шектеу",
+      rest: "Үзіліс уақыты",
+      buffer: "Кідірту шегі",
       minutes: "{n} минут",
       deviceSecurity: "Құрылғы және қауіпсіздік",
       parentPassword: "Ата-ана құпиясөзі",
@@ -1860,7 +2817,7 @@
       appPickerOnly: "Тек таңдалғандар",
       appPickerEmpty: "Сәйкес қолданба жоқ",
       appPickerHint: "Ештеңе таңдамасаңыз, ойын-сауыққа рұқсат жоқ",
-      appPickerStudyHint: "Ештеңе таңдамасаңыз, оқу режимі жоқ; оқу қолданбалары ойын-сауық уақытымен шектелмейді",
+      appPickerStudyHint: "Ештеңе таңдамасаңыз, оқу режимі жоқ. Оқу қолданбалары оқу аралықтары мен шектеуі бойынша есептеледі; сыйлық «Оқуға уақыт бөліп, ойын уақытын алу» бөлімінде орнатылады.",
       appPickerDone: "Дайын",
       appPickerCancel: "Болдырмау",
       appPickerLoading: "Қолданбалар тізімі оқылуда…",
@@ -2028,9 +2985,70 @@
       mediaDownloadFailed: "Жүктеу сәтсіз; ТВ желісін тексеріп, қайталаңыз",
       mediaLocalEmpty: "Әзірге жүктелген тұсқағаз жоқ",
       mediaSoundTitle: "Тұсқағаз дыбысы",
-      mediaSoundHint: "Бала режимінде ойнайды; ата-ана режимінде дыбыссыз",
-      mediaSoundUnavailable: "Қосу үшін дыбысы бар бейнені таңдаңыз",
+      mediaSoundHint: "Бала режимінің жалпы дыбысы: музыка таңдалса, сол ойнайды, бейне дыбыссыз; ата-ана режимінде дыбыссыз",
+      mediaSoundUnavailable: "Қосу үшін дыбысы бар бейнені немесе фондық музыканы таңдаңыз",
       mediaSoundSaved: "Тұсқағаз дыбысы жаңартылды",
+      mediaLockSummary: "{count} элемент · суреттер {duration} сайын",
+      mediaLockPickerHint: "Реті таңдау ретімен; суреттер белгіленген уақыт тұрады, бейне соңына дейін ойнайды",
+      mediaLockEmptyHint: "Таңдалмаса, әдепкі тұсқағаз қолданылады. Ауыстыру үшін бірнешеуін таңдаңыз.",
+      mediaLockSingleHint: "Ауыстыруды бастау үшін тағы біреуін таңдаңыз; алып тастау үшін қайта басыңыз.",
+      mediaLockInterval: "Сурет ұсталымы",
+      audioTitle: "Фондық музыка",
+      audioHint: "Бала режимінің барлық тұсқағаздары астында қайталанады және «Тұсқағаз дыбысы» қосқышына бағынады; музыка ойнап тұрғанда тұсқағаз бейнелері дыбыссыз; тест немесе ата-ана әрекеті кезінде үзіледі",
+      audioNone: "Фондық музыка жоқ",
+      audioNoneHint: "Тек бейне тұсқағаздың дыбысы",
+      audioUpload: "Аудио жүктеу",
+      audioUploading: "Аудио жүктелуде…",
+      audioUploaded: "Аудио жүктелді",
+      audioSelected: "Фондық музыка жаңартылды",
+      audioDeleted: "Аудио жойылды",
+      audioDelete: "Жою",
+      audioDeleteTitle: "Осы аудионы жою керек пе?",
+      audioDeleteText: "Мұны қайтару мүмкін емес; бала режимі фондық музыкасыз жалғасады.",
+      audioMeta: "{size} МБ · {duration}",
+      audioBadFormat: "Тек MP3, M4A/AAC және OGG қолданылады.",
+      audioTooLarge: "Аудио 20 МБ-тан асады; қысып, қайталап көріңіз.",
+      audioBadDuration: "Аудио ұзақтығы 30 минуттан аспауы керек.",
+      audioUnsupported: "Бұл теледидар бұл аудиокодекті декодтай алмайды.",
+      audioNoSpace: "Теледидарда орын жеткіліксіз.",
+      audioEmpty: "Әзірге аудио жүктелмеген",
+      audioSourceCloud: "Бұлттық музыка",
+      audioSourceLocal: "Жергілікті жүктеу",
+      audioSourceTabsLabel: "Музыка көзі",
+      audioCloudEmpty: "Бұлттық музыкада әзірге трек жоқ",
+      audioCatalogOff: "Бұл жинақта бұлттық музыка бапталмаған",
+      audioCatalogUnavailable: "Бұлттық музыка қолжетімсіз; жүктелген тректер жұмысын жалғастырады",
+      audioRefresh: "Музыканы жаңарту",
+      audioRefreshing: "Жаңартылуда…",
+      audioDownloadUse: "Жүктеп, қолдану",
+      audioUse: "Қолдану",
+      audioDownload: "Жүктеу",
+      audioRetry: "Қайталау",
+      audioUpdate: "Жаңарту",
+      audioReady: "Жүктелді",
+      audioNotDownloaded: "Жүктелмеген",
+      audioStateDownloading: "Жүктелуде {percent}%",
+      audioStateVerifying: "Тексерілуде…",
+      audioStateFailed: "Жүктеу сәтсіз",
+      audioStateUpdate: "Жаңа нұсқа бар",
+      audioDownloadStarted: "Жүктеу басталды; тексерілген соң трек фондық музыка болады",
+      audioDownloadDone: "Трек жүктеліп, фондық музыка етіп таңдалды",
+      audioDownloaded: "Трек жүктелді",
+      audioDownloadCancelled: "Жүктеу тоқтатылды",
+      audioDownloadFailed: "Жүктеу сәтсіз; ТВ желісін тексеріп, қайталаңыз",
+      audioBusy: "Басқа трек жүктелуде; сәл кейін қайталаңыз",
+      audioDeleteDownload: "Жергілікті көшірмені жою",
+      audioDeleteDownloadTitle: "Жүктелген тректі жою керек пе?",
+      audioDeleteDownloadText: "Теледидардағы көшірме ғана жойылады; тректі бұлттық музыкадан қайта жүктеуге болады. Егер ол қолданылып жатса, фондық музыка «музыкасыз» күйіне оралады.",
+      audioDownloadDeleted: "Жергілікті көшірме жойылды",
+      mediaIntervalSeconds: "{n} с",
+      mediaIntervalMinutes: "{n} мин",
+      mediaLockLimitHint: "Тұсқағаз шегіне жеттіңіз; алдымен біреуін алып тастаңыз",
+      mediaLockInvalid: "Ауыстыру параметрлері жарамсыз; қайта таңдаңыз",
+      mediaSave: "Сақтау",
+      mediaSaveCount: "Сақтау ({n})",
+      mediaUseDefault: "Әдепкі тұсқағазды қолдану",
+      mediaPlaylistSaved: "Тұсқағаз ауыстыруы жаңартылды",
       mediaOnlyWallpaper: "Тек тұсқағаз",
       mediaHasAudio: "Дыбысты",
       mediaTimingLead: "Бір реттік таймер",
@@ -2048,6 +3066,310 @@
   };
 
   /*
+   * V41 four-tab copy. The user tab edits one member's own settings; the system tab holds
+   * everything that belongs to the TV rather than to a member. Merged into TEXTS so t()
+   * keeps one lookup path.
+   */
+  const V41_TEXTS = {
+    zh: {
+      userConfigTitle: "用户配置",
+      systemConfigTitle: "系统配置",
+      userOnTv: "电视当前：{name}",
+      userNoMember: "还没有家庭成员",
+      memberHeaderSubtitle: "{member} · 电视当前：{name}",
+      userSiblingNote: "正在查看「{name}」。把电视切换到这位用户后，可在这里修改 TA 的时间、计时和壁纸。",
+      userActiveNote: "这些设置只影响「{name}」；电视同一时间只按一个成员计时。",
+      userSwitchAction: "切换",
+      userPinLabel: "密码",
+      userPinHint: "6 位数字，切换成员时使用",
+      userPinInitial: "初始 123456",
+      userPinKeep: "不修改",
+      userPinInvalid: "请输入 6 位数字密码",
+      userPinRequired: "请为这位成员设置 6 位数字密码",
+      systemMemberSwitch: "切换需要密码",
+      systemMemberSwitchHint: "开启后需 6 位密码",
+      userConfigPinInput: "用户配置密码输入",
+      userConfigPinInputHint: "关闭后，用户配置中的修改和单次计时不再要求家长密码",
+      sensitivePinLeadUserConfig: "关闭后，持有本页面的任何人都可以修改用户配置。请输入家长密码确认。",
+      controlManualLeadPinless: "用户配置密码输入已关闭，本次不再要求家长密码。电视将立即开始计时。",
+      controlManualPinRestored: "用户配置密码输入已重新开启，请重新打开单次计时并输入家长密码。",
+      userConfigPinSaved: "已更新用户配置密码输入",
+      userSwitchTo: "切换到当前用户",
+      userSwitchEnabled: "电视将使用「{name}」",
+      userSwitchDisabled: "电视当前用户",
+      userSwitchConfirm: "切换到「{name}」？",
+      memberSwitched: "已切换",
+      memberSwitchSaved: "已保存",
+      tvBusy: "电视正在使用，暂时不能切换",
+      userTimeDisabled: "切到电视当前成员后可修改",
+      systemAiHint: "模型、密钥与语音",
+      systemGroupFamilyTv: "家庭与电视",
+      systemGroupParent: "家长与内容",
+      systemGroupAccount: "更新与账号",
+      systemAppRecord: "APP 备案号：{number}",
+      systemAppRecordLookup: "备案查询",
+      systemLanguage: "语言",
+      systemLanguageHint: "界面显示语言",
+      systemFamily: "家庭成员",
+      systemFamilyHint: "称呼、头像与新增孩子",
+      systemDevice: "设备状态",
+      systemDeviceHint: "权限、系统与内存",
+      systemEntries: "入口显示",
+      systemEntriesHint: "电视输入源与答题入口",
+      systemUpdates: "软件更新",
+      systemUpdatesHint: "自动更新与当前版本",
+      entriesPageHint: "这些开关只影响电视上的入口，不改变已设定的规则。",
+      familyPageHint: "点成员可修改称呼、年级和头像；新增成员从空白开始。",
+      memberGradeLabel: "年级",
+      memberSemesterLabel: "册次",
+      memberGradeAll: "全部年级",
+      memberSemesterAll: "全部册次",
+      memberGradeHint: "作为默认出题和关卡范围；留空表示全部",
+      memberGradeInvalid: "年级设置无效",
+      memberGradeNumber: "{n}年级",
+      semesterFirst: "上册",
+      semesterSecond: "下册",
+    },
+    en: {
+      userConfigTitle: "User settings",
+      systemConfigTitle: "System settings",
+      userOnTv: "On TV now: {name}",
+      userNoMember: "No family members yet",
+      memberHeaderSubtitle: "{member} · On TV: {name}",
+      userSiblingNote: "Viewing {name}. Switch the TV to this user to edit their time, timer or wallpaper here.",
+      userActiveNote: "These settings apply only to {name}; the TV enforces one member at a time.",
+      userSwitchAction: "Switch",
+      userPinLabel: "Password",
+      userPinHint: "6 digits, used when switching members",
+      userPinInitial: "Initial 123456",
+      userPinKeep: "Keep unchanged",
+      userPinInvalid: "Enter a 6-digit password",
+      userPinRequired: "Set a 6-digit password for this member",
+      systemMemberSwitch: "Password to switch",
+      systemMemberSwitchHint: "Requires the 6-digit password",
+      userConfigPinInput: "Password for user settings",
+      userConfigPinInputHint: "When off, changes in user settings and the one-time timer no longer ask for the parent password",
+      sensitivePinLeadUserConfig: "Turning this off lets anyone holding this page change user settings. Enter the parent PIN to confirm.",
+      controlManualLeadPinless: "Password input for user settings is off, so this timer does not ask for the parent PIN. The TV will start immediately.",
+      controlManualPinRestored: "Password input for user settings was turned back on. Reopen the one-time timer and enter the parent PIN.",
+      userConfigPinSaved: "User settings password setting updated",
+      userSwitchTo: "Switch to this user",
+      userSwitchEnabled: "The TV will use {name}",
+      userSwitchDisabled: "Current TV user",
+      userSwitchConfirm: "Switch to {name}?",
+      memberSwitched: "Switched",
+      memberSwitchSaved: "Saved",
+      tvBusy: "The TV is in use; try again later",
+      userTimeDisabled: "Switch to the TV's current member to edit",
+      systemAiHint: "Models, keys and speech",
+      systemGroupFamilyTv: "Family & TV",
+      systemGroupParent: "Parent & content",
+      systemGroupAccount: "Updates & account",
+      systemAppRecord: "App record number: {number}",
+      systemAppRecordLookup: "Lookup",
+      systemLanguage: "Language",
+      systemLanguageHint: "Display language",
+      systemFamily: "Family members",
+      systemFamilyHint: "Names, avatars and adding a child",
+      systemDevice: "Device status",
+      systemDeviceHint: "Permissions, system and memory",
+      systemEntries: "Entry visibility",
+      systemEntriesHint: "TV input sources and quiz entry",
+      systemUpdates: "Software update",
+      systemUpdatesHint: "Automatic updates and current version",
+      entriesPageHint: "These switches only change TV entry points; saved rules stay as they are.",
+      familyPageHint: "Tap a member to change the name, grade or avatar; a new member starts empty.",
+      memberGradeLabel: "Grade",
+      memberSemesterLabel: "Semester",
+      memberGradeAll: "All grades",
+      memberSemesterAll: "All semesters",
+      memberGradeHint: "Default scope for questions and levels; empty means all",
+      memberGradeInvalid: "Invalid grade setting",
+      memberGradeNumber: "Grade {n}",
+      semesterFirst: "Semester 1",
+      semesterSecond: "Semester 2",
+    },
+    ru: {
+      userConfigTitle: "Настройки пользователя",
+      systemConfigTitle: "Системные настройки",
+      userOnTv: "Сейчас на ТВ: {name}",
+      userNoMember: "Пока нет членов семьи",
+      memberHeaderSubtitle: "{member} · Сейчас на ТВ: {name}",
+      userSiblingNote: "Открыты настройки «{name}». Переключите ТВ на этого участника, чтобы менять его время, таймер и обои здесь.",
+      userActiveNote: "Настройки относятся только к «{name}»; ТВ соблюдает правила одного члена.",
+      userSwitchAction: "Сменить",
+      userPinLabel: "Пароль",
+      userPinHint: "6 цифр, нужен при смене участника",
+      userPinInitial: "Начальный 123456",
+      userPinKeep: "Не менять",
+      userPinInvalid: "Введите пароль из 6 цифр",
+      userPinRequired: "Задайте пароль из 6 цифр для этого участника",
+      systemMemberSwitch: "Пароль для смены",
+      systemMemberSwitchHint: "Нужен пароль из 6 цифр",
+      userConfigPinInput: "Пароль для настроек пользователя",
+      userConfigPinInputHint: "Если выключено, изменения в настройках пользователя и разовый таймер больше не требуют пароля родителя",
+      sensitivePinLeadUserConfig: "После выключения любой, у кого открыта эта страница, сможет менять настройки пользователя. Введите пароль родителя для подтверждения.",
+      controlManualLeadPinless: "Ввод пароля для настроек пользователя выключен, поэтому этот таймер не требует пароля родителя. Телевизор начнёт сразу.",
+      controlManualPinRestored: "Ввод пароля для настроек пользователя снова включён. Откройте разовый таймер заново и введите пароль родителя.",
+      userConfigPinSaved: "Настройка пароля для настроек пользователя обновлена",
+      userSwitchTo: "Переключить на этого пользователя",
+      userSwitchEnabled: "ТВ будет использовать {name}",
+      userSwitchDisabled: "Текущий пользователь ТВ",
+      userSwitchConfirm: "Переключить на {name}?",
+      memberSwitched: "Переключено",
+      memberSwitchSaved: "Сохранено",
+      tvBusy: "ТВ используется; повторите позже",
+      userTimeDisabled: "Переключитесь на текущего члена ТВ",
+      systemAiHint: "Модели, ключи и озвучивание",
+      systemGroupFamilyTv: "Семья и ТВ",
+      systemGroupParent: "Родитель и контент",
+      systemGroupAccount: "Обновления и аккаунт",
+      systemAppRecord: "Номер регистрации приложения: {number}",
+      systemAppRecordLookup: "Проверка",
+      systemLanguage: "Язык",
+      systemLanguageHint: "Язык интерфейса",
+      systemFamily: "Члены семьи",
+      systemFamilyHint: "Имена, аватары и новый ребёнок",
+      systemDevice: "Состояние устройства",
+      systemDeviceHint: "Разрешения, система и память",
+      systemEntries: "Видимость входов",
+      systemEntriesHint: "Источники входа и вход в викторину",
+      systemUpdates: "Обновление ПО",
+      systemUpdatesHint: "Автообновление и текущая версия",
+      entriesPageHint: "Эти переключатели меняют только входы на ТВ; сохранённые правила не меняются.",
+      familyPageHint: "Нажмите на члена, чтобы изменить имя, класс или аватар; новый член начинается с пустых настроек.",
+      memberGradeLabel: "Класс",
+      memberSemesterLabel: "Полугодие",
+      memberGradeAll: "Все классы",
+      memberSemesterAll: "Все полугодия",
+      memberGradeHint: "Класс и полугодие по умолчанию для вопросов и уровней; пусто — все",
+      memberGradeInvalid: "Неверный класс",
+      memberGradeNumber: "{n} класс",
+      semesterFirst: "1-е полугодие",
+      semesterSecond: "2-е полугодие",
+    },
+    uk: {
+      userConfigTitle: "Налаштування користувача",
+      systemConfigTitle: "Системні налаштування",
+      userOnTv: "Зараз на ТБ: {name}",
+      userNoMember: "Ще немає членів родини",
+      memberHeaderSubtitle: "{member} · Зараз на ТБ: {name}",
+      userSiblingNote: "Відкрито налаштування «{name}». Перемкніть ТБ на цього учасника, щоб змінювати його час, таймер і шпалери тут.",
+      userActiveNote: "Ці налаштування стосуються лише «{name}»; ТБ дотримується правил одного учасника.",
+      userSwitchAction: "Змінити",
+      userPinLabel: "Пароль",
+      userPinHint: "6 цифр, потрібен під час зміни учасника",
+      userPinInitial: "Початковий 123456",
+      userPinKeep: "Не змінювати",
+      userPinInvalid: "Введіть пароль із 6 цифр",
+      userPinRequired: "Задайте пароль із 6 цифр для цього учасника",
+      systemMemberSwitch: "Пароль для зміни",
+      systemMemberSwitchHint: "Потрібен пароль із 6 цифр",
+      userConfigPinInput: "Пароль для налаштувань користувача",
+      userConfigPinInputHint: "Якщо вимкнено, зміни в налаштуваннях користувача та разовий таймер більше не потребують пароля батьків",
+      sensitivePinLeadUserConfig: "Після вимкнення будь-хто, у кого відкрита ця сторінка, зможе змінювати налаштування користувача. Введіть пароль батьків для підтвердження.",
+      controlManualLeadPinless: "Введення пароля для налаштувань користувача вимкнено, тому цей таймер не потребує пароля батьків. Телевізор почне одразу.",
+      controlManualPinRestored: "Введення пароля для налаштувань користувача знову ввімкнено. Відкрийте разовий таймер ще раз і введіть пароль батьків.",
+      userConfigPinSaved: "Налаштування пароля для налаштувань користувача оновлено",
+      userSwitchTo: "Перемкнути на цього користувача",
+      userSwitchEnabled: "ТБ використовуватиме {name}",
+      userSwitchDisabled: "Поточний користувач ТБ",
+      userSwitchConfirm: "Перемкнути на {name}?",
+      memberSwitched: "Перемкнено",
+      memberSwitchSaved: "Збережено",
+      tvBusy: "ТБ зараз зайнятий; спробуйте пізніше",
+      userTimeDisabled: "Перемкніться на поточного учасника ТБ",
+      systemAiHint: "Моделі, ключі й озвучення",
+      systemGroupFamilyTv: "Родина й ТБ",
+      systemGroupParent: "Батьки та вміст",
+      systemGroupAccount: "Оновлення й акаунт",
+      systemAppRecord: "Номер реєстрації застосунку: {number}",
+      systemAppRecordLookup: "Перевірка",
+      systemLanguage: "Мова",
+      systemLanguageHint: "Мова інтерфейсу",
+      systemFamily: "Члени родини",
+      systemFamilyHint: "Імена, аватари й додавання дитини",
+      systemDevice: "Стан пристрою",
+      systemDeviceHint: "Дозволи, система й пам'ять",
+      systemEntries: "Видимість входів",
+      systemEntriesHint: "Джерела входу й вхід у вікторину",
+      systemUpdates: "Оновлення ПЗ",
+      systemUpdatesHint: "Автооновлення й поточна версія",
+      entriesPageHint: "Ці перемикачі змінюють лише входи на ТБ; збережені правила не змінюються.",
+      familyPageHint: "Натисніть на учасника, щоб змінити ім'я, клас чи аватар; новий учасник починає з порожніх налаштувань.",
+      memberGradeLabel: "Клас",
+      memberSemesterLabel: "Семестр",
+      memberGradeAll: "Усі класи",
+      memberSemesterAll: "Усі семестри",
+      memberGradeHint: "Клас і семестр типових питань та рівнів; порожньо — усі",
+      memberGradeInvalid: "Некоректний клас",
+      memberGradeNumber: "{n} клас",
+      semesterFirst: "1-й семестр",
+      semesterSecond: "2-й семестр",
+    },
+    kk: {
+      userConfigTitle: "Пайдаланушы параметрлері",
+      systemConfigTitle: "Жүйе параметрлері",
+      userOnTv: "Қазір ТВ-де: {name}",
+      userNoMember: "Отбасы мүшелері әлі жоқ",
+      memberHeaderSubtitle: "{member} · Қазір ТВ-де: {name}",
+      userSiblingNote: "«{name}» параметрлері ашық. Оның уақытын, таймерін және тұсқағазын осында өзгерту үшін ТВ-ні осы мүшеге ауыстырыңыз.",
+      userActiveNote: "Бұл параметрлер тек «{name}» үшін; ТВ бір уақытта бір мүшенің ережесін ұстанады.",
+      userSwitchAction: "Ауыстыру",
+      userPinLabel: "Құпия сөз",
+      userPinHint: "6 цифр, мүшені ауыстырғанда қолданылады",
+      userPinInitial: "Бастапқы 123456",
+      userPinKeep: "Өзгертпеу",
+      userPinInvalid: "6 цифрлық құпия сөзді енгізіңіз",
+      userPinRequired: "Бұл мүше үшін 6 цифрлық құпиясөз орнатыңыз",
+      systemMemberSwitch: "Ауыстыру құпия сөзі",
+      systemMemberSwitchHint: "6 цифрлық құпия сөз қажет",
+      userConfigPinInput: "Пайдаланушы параметрлерінің құпиясөзі",
+      userConfigPinInputHint: "Өшірілсе, пайдаланушы параметрлеріндегі өзгерістер мен бір реттік таймер ата-ана құпиясөзін сұрамайды",
+      sensitivePinLeadUserConfig: "Өшіргеннен кейін бұл бетті ашқан кез келген адам пайдаланушы параметрлерін өзгерте алады. Растау үшін ата-ана құпиясөзін енгізіңіз.",
+      controlManualLeadPinless: "Пайдаланушы параметрлерінің құпиясөзі өшірілген, сондықтан бұл таймер ата-ана құпиясөзін сұрамайды. Теледидар бірден басталады.",
+      controlManualPinRestored: "Пайдаланушы параметрлерінің құпиясөзі қайта қосылды. Бір реттік таймерді қайта ашып, ата-ана құпиясөзін енгізіңіз.",
+      userConfigPinSaved: "Пайдаланушы параметрлерінің құпиясөзі жаңартылды",
+      userSwitchTo: "Осы пайдаланушыға ауысу",
+      userSwitchEnabled: "ТВ {name} пайдаланады",
+      userSwitchDisabled: "ТВ-дегі ағымдағы пайдаланушы",
+      userSwitchConfirm: "{name} пайдаланушысына ауысу керек пе?",
+      memberSwitched: "Ауыстырылды",
+      memberSwitchSaved: "Сақталды",
+      tvBusy: "ТВ қолданыста; кейінірек қайталаңыз",
+      userTimeDisabled: "ТВ-дегі ағымдағы мүшеге ауысыңыз",
+      systemAiHint: "Модельдер, кілттер және дыбыс",
+      systemGroupFamilyTv: "Отбасы және ТВ",
+      systemGroupParent: "Ата-ана және мазмұн",
+      systemGroupAccount: "Жаңартулар және аккаунт",
+      systemAppRecord: "Қолданбаны тіркеу нөмірі: {number}",
+      systemAppRecordLookup: "Тексеру",
+      systemLanguage: "Тіл",
+      systemLanguageHint: "Интерфейс тілі",
+      systemFamily: "Отбасы мүшелері",
+      systemFamilyHint: "Аттары, аватарлары және бала қосу",
+      systemDevice: "Құрылғы күйі",
+      systemDeviceHint: "Рұқсаттар, жүйе және жады",
+      systemEntries: "Кірулердің көрінуі",
+      systemEntriesHint: "ТВ кіріс көздері және викторина кіруі",
+      systemUpdates: "Бағдарламаны жаңарту",
+      systemUpdatesHint: "Автоматты жаңарту және ағымдағы нұсқа",
+      entriesPageHint: "Бұл қосқыштар тек ТВ кірулерін өзгертеді; сақталған ережелер өзгермейді.",
+      familyPageHint: "Атын, сыныбын немесе аватарын өзгерту үшін мүшені түртіңіз; жаңа мүше бос параметрлерден басталады.",
+      memberGradeLabel: "Сынып",
+      memberSemesterLabel: "Жартыжылдық",
+      memberGradeAll: "Барлық сыныптар",
+      memberSemesterAll: "Барлық жартыжылдықтар",
+      memberGradeHint: "Сұрақтар мен деңгейлер үшін әдепкі ауқым; бос — барлығы",
+      memberGradeInvalid: "Сынып параметрі жарамсыз",
+      memberGradeNumber: "{n}-сынып",
+      semesterFirst: "1-жартыжылдық",
+      semesterSecond: "2-жартыжылдық",
+    }
+  };
+  for (const code of LANGS) Object.assign(TEXTS[code], V41_TEXTS[code]);
+
+  /*
    * V31 remote control copy. Kept separate from TEXTS so the control surface can grow without
    * touching the configuration dictionaries; t() falls back here when TEXTS has no key.
    */
@@ -2055,11 +3377,13 @@
     zh: {
       controlTitle: "控制面板",
       controlChildSection: "儿童模式",
-      controlTimerSection: "计时",
+      controlTimerSection: "计划外计时",
+      timeConfigSection: "时间配置",
       controlLocalOnly: "仅在本机局域网生效，电视须为本地儿童模式。",
       controlStatusChildOff: "儿童模式未开启",
       controlStatusEnforcing: "儿童模式 · 已锁定",
       controlStatusTimer: "计时中 · 剩余 {time}",
+      controlStatusManualTimer: "计划外计时中 · 剩余 {minutes} 分钟",
       controlStatusRest: "休息中 · 剩余 {time}",
       controlStatusPending: "等待孩子确认家长授权",
       controlStatusOverride: "已临时退出 · 剩余 {time}",
@@ -2068,13 +3392,13 @@
       controlStatusQuiz: "答题闯关进行中",
       controlTakeOverTitle: "临时退出儿童模式",
       controlTakeOverHint: "立即解锁电视，家长使用不计时",
-      controlTakeOverConfirmHint: "计时或答题中，需要二次确认",
+      controlTakeOverDiscardHint: "计时或答题中，退出会结束当前计时并清空本轮进度",
       controlTakeOverAlready: "电视已临时退出儿童模式",
       controlEnterTitle: "进入儿童模式",
       controlEnterHint: "结束临时退出，恢复儿童守护",
       controlEnterAlready: "电视已在儿童模式",
       controlStartTitle: "单次计时",
-      controlStartHint: "输入家长密码并选择时长",
+      controlStartHint: "计划外 · 不计入每日额度",
       controlStopTitle: "退出计时",
       controlStopHint: "当前计时剩余 {time}",
       controlStopNoTimer: "当前没有计时",
@@ -2088,7 +3412,7 @@
       controlAppliedManual: "单次计时已开始",
       controlStateChanged: "电视状态已变化，已刷新，请重新操作。",
       controlConfirmEndTitle: "退出本次计时？",
-      controlConfirmEndBody: "已用时间会保留。自动模式会先休息，手动模式回到等待家长安排。",
+      controlConfirmEndBody: "已用时间会保留。结束后回到等待家长安排。",
       controlConfirmEndAction: "退出计时",
       controlConfirmTakeTimerTitle: "临时退出儿童模式？",
       controlConfirmTakeTimerBody: "当前计时会结束，已用时间会保留，本次休息会跳过。",
@@ -2096,11 +3420,17 @@
       controlConfirmTakeQuizBody: "本轮进度和已获得的时间会清空，电视将临时解锁。",
       controlConfirmTakeAction: "临时退出",
       controlConfirmQuizAction: "退出并解锁",
-      controlManualTitle: "单次计时",
-      controlManualLead: "输入家长密码并选择本次时长。",
+      controlManualTitle: "单次计时（计划外）",
+      controlManualLead: "本次不受时间计划、时段、每日额度和入口次数限制。本次不计入孩子的娱乐时间。",
       controlManualDuration: "本次时长",
       controlManualMinutesValue: "{n} 分钟",
       controlManualStart: "开始",
+      manualScopeTitle: "本次可用",
+      manualScopeEntertainment: "娱乐应用 · {n} 个",
+      manualScopeEntertainmentAll: "娱乐应用 · 全部",
+      manualScopeUnlimited: "不限时应用 · {n} 个",
+      manualScopeStudy: "学习换娱乐 · {n} 个",
+      manualStudyNote: "学习换娱乐应用本次只作为普通应用打开，不会触发学习任务和奖励。",
       controlStartBlocked: "电视当前不能开始单次计时。",
       controlDeviceSection: "设备状态",
       controlDeviceTitle: "权限、系统与内存",
@@ -2162,11 +3492,13 @@
     en: {
       controlTitle: "Control panel",
       controlChildSection: "Child mode",
-      controlTimerSection: "Timing",
+      controlTimerSection: "Out-of-plan timer",
+      timeConfigSection: "Time settings",
       controlLocalOnly: "Works only on this local network. The TV must be in local child mode.",
       controlStatusChildOff: "Child mode is off",
       controlStatusEnforcing: "Child mode · locked",
       controlStatusTimer: "Timing · {time} left",
+      controlStatusManualTimer: "Out-of-plan timer · {minutes} min left",
       controlStatusRest: "Resting · {time} left",
       controlStatusPending: "Waiting for the child to confirm the parent grant",
       controlStatusOverride: "Temporarily unlocked · {time} left",
@@ -2175,13 +3507,13 @@
       controlStatusQuiz: "Quiz challenge in progress",
       controlTakeOverTitle: "Temporarily leave child mode",
       controlTakeOverHint: "Unlock the TV now; parent use is not timed",
-      controlTakeOverConfirmHint: "Timing or a quiz is running; confirmation is required",
+      controlTakeOverDiscardHint: "Timing or a quiz is running; leaving ends the timer and clears this round",
       controlTakeOverAlready: "The TV is already temporarily unlocked",
       controlEnterTitle: "Enter child mode",
       controlEnterHint: "End the temporary unlock and restore the child guard",
       controlEnterAlready: "The TV is already in child mode",
       controlStartTitle: "One-time timing",
-      controlStartHint: "Enter the parent password and choose a duration",
+      controlStartHint: "Out of plan · not counted against the daily quota",
       controlStopTitle: "Exit timing",
       controlStopHint: "Current timer has {time} left",
       controlStopNoTimer: "There is no active timer",
@@ -2195,7 +3527,7 @@
       controlAppliedManual: "One-time timing started",
       controlStateChanged: "The TV state changed. Refreshed; try again.",
       controlConfirmEndTitle: "Exit this timing session?",
-      controlConfirmEndBody: "Used time is kept. Automatic mode starts the usual rest; manual mode returns to waiting for a parent.",
+      controlConfirmEndBody: "Used time is kept. The TV returns to waiting for a parent.",
       controlConfirmEndAction: "Exit",
       controlConfirmTakeTimerTitle: "Temporarily leave child mode?",
       controlConfirmTakeTimerBody: "The current timer will end, used time is kept, and this rest is skipped.",
@@ -2203,11 +3535,17 @@
       controlConfirmTakeQuizBody: "This round's progress and earned time will be cleared, and the TV will be temporarily unlocked.",
       controlConfirmTakeAction: "Temporarily exit",
       controlConfirmQuizAction: "Exit and unlock",
-      controlManualTitle: "One-time timing",
-      controlManualLead: "Enter the parent password and choose the duration.",
+      controlManualTitle: "One-time timer (out of plan)",
+      controlManualLead: "This session ignores the time plan, windows, daily quota and route counts. It is not counted as the child's entertainment time.",
       controlManualDuration: "Session length",
       controlManualMinutesValue: "{n} min",
       controlManualStart: "Start",
+      manualScopeTitle: "Apps in this session",
+      manualScopeEntertainment: "Entertainment · {n}",
+      manualScopeEntertainmentAll: "Entertainment · All",
+      manualScopeUnlimited: "Unlimited · {n}",
+      manualScopeStudy: "Study reward · {n}",
+      manualStudyNote: "Study-reward apps open as ordinary apps in this session; no focus round or reward starts.",
       controlStartBlocked: "A one-time session cannot start on the TV right now.",
       controlDeviceSection: "Device status",
       controlDeviceTitle: "Permissions, system & memory",
@@ -2269,11 +3607,13 @@
     ru: {
       controlTitle: "Панель управления",
       controlChildSection: "Детский режим",
-      controlTimerSection: "Таймер",
+      controlTimerSection: "Таймер вне плана",
+      timeConfigSection: "Настройки времени",
       controlLocalOnly: "Работает только в локальной сети. Телевизор должен быть в локальном детском режиме.",
       controlStatusChildOff: "Детский режим выключен",
       controlStatusEnforcing: "Детский режим · заблокирован",
       controlStatusTimer: "Таймер · осталось {time}",
+      controlStatusManualTimer: "Таймер вне плана · осталось {minutes} мин",
       controlStatusRest: "Перерыв · осталось {time}",
       controlStatusPending: "Ожидание подтверждения ребёнком родительского доступа",
       controlStatusOverride: "Временно разблокирован · осталось {time}",
@@ -2282,13 +3622,13 @@
       controlStatusQuiz: "Идёт викторина",
       controlTakeOverTitle: "Временно выйти из детского режима",
       controlTakeOverHint: "Разблокировать телевизор сейчас; время родителя не учитывается",
-      controlTakeOverConfirmHint: "Идёт таймер или викторина; нужно подтверждение",
+      controlTakeOverDiscardHint: "Идёт таймер или викторина: выход завершит таймер и сбросит текущий раунд",
       controlTakeOverAlready: "Телевизор уже временно разблокирован",
       controlEnterTitle: "Войти в детский режим",
       controlEnterHint: "Завершить временную разблокировку и вернуть защиту",
       controlEnterAlready: "Телевизор уже в детском режиме",
       controlStartTitle: "Разовый таймер",
-      controlStartHint: "Введите пароль родителя и выберите длительность",
+      controlStartHint: "Вне плана · не расходует дневную квоту",
       controlStopTitle: "Выйти из таймера",
       controlStopHint: "До конца таймера осталось {time}",
       controlStopNoTimer: "Активного таймера нет",
@@ -2302,7 +3642,7 @@
       controlAppliedManual: "Разовый таймер запущен",
       controlStateChanged: "Состояние телевизора изменилось. Данные обновлены; повторите действие.",
       controlConfirmEndTitle: "Завершить этот сеанс?",
-      controlConfirmEndBody: "Использованное время сохранится. В автоматическом режиме начнётся обычный перерыв; в ручном — ожидание родителя.",
+      controlConfirmEndBody: "Использованное время сохранится. Телевизор вернётся в режим ожидания родителя.",
       controlConfirmEndAction: "Выйти",
       controlConfirmTakeTimerTitle: "Временно выйти из детского режима?",
       controlConfirmTakeTimerBody: "Текущий таймер завершится, использованное время сохранится, этот перерыв будет пропущен.",
@@ -2310,11 +3650,17 @@
       controlConfirmTakeQuizTitle: "Выйти из викторины и временно выйти из детского режима?",
       controlConfirmTakeQuizBody: "Прогресс этого раунда и полученное время будут сброшены, телевизор временно разблокируется.",
       controlConfirmQuizAction: "Выйти и разблокировать",
-      controlManualTitle: "Разовый таймер",
-      controlManualLead: "Введите пароль родителя и выберите длительность.",
+      controlManualTitle: "Разовый таймер (вне плана)",
+      controlManualLead: "Этот сеанс не подчиняется плану, интервалам, дневной квоте и дневным лимитам запусков. Он не засчитывается как время развлечений ребёнка.",
       controlManualDuration: "Длительность",
       controlManualMinutesValue: "{n} мин",
       controlManualStart: "Начать",
+      manualScopeTitle: "Приложения в этом сеансе",
+      manualScopeEntertainment: "Развлечения · {n}",
+      manualScopeEntertainmentAll: "Развлечения · все",
+      manualScopeUnlimited: "Без ограничений · {n}",
+      manualScopeStudy: "Учёба → развлечения · {n}",
+      manualStudyNote: "Приложения учёбы с наградой в этом сеансе открываются как обычные; учебный раунд и награда не запускаются.",
       controlStartBlocked: "Сейчас нельзя запустить разовый таймер.",
       controlDeviceSection: "Состояние устройства",
       controlDeviceTitle: "Разрешения, система и память",
@@ -2376,11 +3722,13 @@
     uk: {
       controlTitle: "Панель керування",
       controlChildSection: "Дитячий режим",
-      controlTimerSection: "Таймер",
+      controlTimerSection: "Таймер поза планом",
+      timeConfigSection: "Налаштування часу",
       controlLocalOnly: "Працює лише в локальній мережі. Телевізор має бути в локальному дитячому режимі.",
       controlStatusChildOff: "Дитячий режим вимкнено",
       controlStatusEnforcing: "Дитячий режим · заблоковано",
       controlStatusTimer: "Таймер · залишилося {time}",
+      controlStatusManualTimer: "Таймер поза планом · залишилося {minutes} хв",
       controlStatusRest: "Перерва · залишилося {time}",
       controlStatusPending: "Очікування підтвердження дитиною батьківського доступу",
       controlStatusOverride: "Тимчасово розблоковано · залишилося {time}",
@@ -2389,13 +3737,13 @@
       controlStatusQuiz: "Триває вікторина",
       controlTakeOverTitle: "Тимчасово вийти з дитячого режиму",
       controlTakeOverHint: "Розблокувати телевізор зараз; час батьків не враховується",
-      controlTakeOverConfirmHint: "Триває таймер або вікторина; потрібне підтвердження",
+      controlTakeOverDiscardHint: "Триває таймер або вікторина: вихід завершить таймер і скине поточний раунд",
       controlTakeOverAlready: "Телевізор уже тимчасово розблоковано",
       controlEnterTitle: "Увійти в дитячий режим",
       controlEnterHint: "Завершити тимчасове розблокування й повернути захист",
       controlEnterAlready: "Телевізор уже в дитячому режимі",
       controlStartTitle: "Разовий таймер",
-      controlStartHint: "Введіть пароль батьків і виберіть тривалість",
+      controlStartHint: "Поза планом · не витрачає денну квоту",
       controlStopTitle: "Вийти з таймера",
       controlStopHint: "До кінця таймера залишилося {time}",
       controlStopNoTimer: "Активного таймера немає",
@@ -2409,7 +3757,7 @@
       controlAppliedManual: "Разовий таймер запущено",
       controlStateChanged: "Стан телевізора змінився. Дані оновлено; повторіть дію.",
       controlConfirmEndTitle: "Завершити цей сеанс?",
-      controlConfirmEndBody: "Використаний час збережеться. В автоматичному режимі почнеться звичайна перерва; у ручному — очікування батьків.",
+      controlConfirmEndBody: "Використаний час збережеться. Телевізор повернеться до очікування батьків.",
       controlConfirmEndAction: "Вийти",
       controlConfirmTakeTimerTitle: "Тимчасово вийти з дитячого режиму?",
       controlConfirmTakeTimerBody: "Поточний таймер завершиться, використаний час збережеться, ця перерва буде пропущена.",
@@ -2417,11 +3765,17 @@
       controlConfirmTakeQuizTitle: "Вийти з вікторини й тимчасово вийти з дитячого режиму?",
       controlConfirmTakeQuizBody: "Прогрес цього раунду та отриманий час буде очищено, телевізор тимчасово розблокується.",
       controlConfirmQuizAction: "Вийти й розблокувати",
-      controlManualTitle: "Разовий таймер",
-      controlManualLead: "Введіть пароль батьків і виберіть тривалість.",
+      controlManualTitle: "Разовий таймер (поза планом)",
+      controlManualLead: "Цей сеанс не підкоряється плану, інтервалам, денній квоті та денним лімітам запусків. Він не зараховується як час розваг дитини.",
       controlManualDuration: "Тривалість",
       controlManualMinutesValue: "{n} хв",
       controlManualStart: "Почати",
+      manualScopeTitle: "Застосунки в цьому сеансі",
+      manualScopeEntertainment: "Розваги · {n}",
+      manualScopeEntertainmentAll: "Розваги · усі",
+      manualScopeUnlimited: "Без обмежень · {n}",
+      manualScopeStudy: "Навчання → розваги · {n}",
+      manualStudyNote: "Навчальні застосунки з нагородою в цьому сеансі відкриваються як звичайні; навчальний раунд і нагорода не запускаються.",
       controlStartBlocked: "Зараз не можна запустити разовий таймер.",
       controlDeviceSection: "Стан пристрою",
       controlDeviceTitle: "Дозволи, система й пам'ять",
@@ -2483,11 +3837,13 @@
     kk: {
       controlTitle: "Басқару панелі",
       controlChildSection: "Бала режимі",
-      controlTimerSection: "Таймер",
+      controlTimerSection: "Жоспардан тыс таймер",
+      timeConfigSection: "Уақыт параметрлері",
       controlLocalOnly: "Тек жергілікті желіде жұмыс істейді. Теледидар жергілікті бала режимінде болуы керек.",
       controlStatusChildOff: "Бала режимі өшірулі",
       controlStatusEnforcing: "Бала режимі · құлыпталған",
       controlStatusTimer: "Таймер · {time} қалды",
+      controlStatusManualTimer: "Жоспардан тыс таймер · {minutes} мин қалды",
       controlStatusRest: "Демалыс · {time} қалды",
       controlStatusPending: "Баланың ата-ана рұқсатын растауын күту",
       controlStatusOverride: "Уақытша ашылған · {time} қалды",
@@ -2496,13 +3852,13 @@
       controlStatusQuiz: "Викторина жүріп жатыр",
       controlTakeOverTitle: "Бала режимінен уақытша шығу",
       controlTakeOverHint: "Теледидарды қазір ашу; ата-ана уақыты есептелмейді",
-      controlTakeOverConfirmHint: "Таймер немесе викторина жүріп жатыр; растау қажет",
+      controlTakeOverDiscardHint: "Таймер немесе викторина жүріп жатыр: шығу таймерді аяқтап, осы раундты тазартады",
       controlTakeOverAlready: "Теледидар уақытша ашылған",
       controlEnterTitle: "Бала режиміне кіру",
       controlEnterHint: "Уақытша ашуды аяқтап, бала қорғанысын қалпына келтіру",
       controlEnterAlready: "Теледидар бала режимінде",
       controlStartTitle: "Бір реттік таймер",
-      controlStartHint: "Ата-ана құпиясөзін енгізіп, ұзақтықты таңдаңыз",
+      controlStartHint: "Жоспардан тыс · күндік шектеуді жұмсамайды",
       controlStopTitle: "Таймерден шығу",
       controlStopHint: "Таймер аяқталуына {time} қалды",
       controlStopNoTimer: "Белсенді таймер жоқ",
@@ -2516,7 +3872,7 @@
       controlAppliedManual: "Бір реттік таймер басталды",
       controlStateChanged: "Теледидар күйі өзгерді. Деректер жаңартылды; әрекетті қайталаңыз.",
       controlConfirmEndTitle: "Осы сеанстан шығу керек пе?",
-      controlConfirmEndBody: "Пайдаланылған уақыт сақталады. Автоматты режимде әдеттегі демалыс басталады; қол режимінде ата-ананы күтуге оралады.",
+      controlConfirmEndBody: "Пайдаланылған уақыт сақталады. Теледидар ата-ана күтуіне оралады.",
       controlConfirmEndAction: "Шығу",
       controlConfirmTakeTimerTitle: "Бала режимінен уақытша шығу керек пе?",
       controlConfirmTakeTimerBody: "Ағымдағы таймер аяқталады, пайдаланылған уақыт сақталады, бұл демалыс өткізіледі.",
@@ -2524,11 +3880,17 @@
       controlConfirmTakeQuizTitle: "Викторинадан шығып, бала режимінен уақытша шығу керек пе?",
       controlConfirmTakeQuizBody: "Осы раундтың прогресі мен алынған уақыт тазартылады, теледидар уақытша ашылады.",
       controlConfirmQuizAction: "Шығып, ашу",
-      controlManualTitle: "Бір реттік таймер",
-      controlManualLead: "Ата-ана құпиясөзін енгізіп, ұзақтықты таңдаңыз.",
+      controlManualTitle: "Бір реттік таймер (жоспардан тыс)",
+      controlManualLead: "Бұл сеанс жоспарға, аралықтарға, күндік шектеуге және күндік іске қосу шектеріне бағынбайды. Ол баланың ойын-сауық уақытына есептелмейді.",
       controlManualDuration: "Ұзақтық",
       controlManualMinutesValue: "{n} мин",
       controlManualStart: "Бастау",
+      manualScopeTitle: "Осы сеанстағы қолданбалар",
+      manualScopeEntertainment: "Ойын-сауық · {n}",
+      manualScopeEntertainmentAll: "Ойын-сауық · барлығы",
+      manualScopeUnlimited: "Шектеусіз · {n}",
+      manualScopeStudy: "Оқу → ойын-сауық · {n}",
+      manualStudyNote: "Оқу → ойын-сауық қолданбалары бұл сеанста қарапайым қолданба ретінде ашылады; оқу раунды мен сыйақы басталмайды.",
       controlStartBlocked: "Қазір бір реттік таймерді бастау мүмкін емес.",
       controlDeviceSection: "Құрылғы күйі",
       controlDeviceTitle: "Рұқсаттар, жүйе және жады",
@@ -2591,6 +3953,12 @@
 
   const successKeys = {
     SAVED: "saved",
+    SUBJECT_SAVED: "memberSaved",
+    SUBJECT_ADDED: "memberAdded",
+    SUBJECT_DELETED: "memberDeleted",
+    SUBJECT_SWITCHED: "memberSwitched",
+    MEMBER_SWITCH_SAVED: "memberSwitchSaved",
+    USER_CONFIG_PIN_SAVED: "userConfigPinSaved",
     SAVED_NEXT_SESSION: "savedNextSession",
     APP_SCOPE_SAVED: "savedAppScope",
     QUIZ_ENTRY_SAVED: "savedQuiz",
@@ -2611,7 +3979,15 @@
     MEDIA_DELETED: "mediaDeleted",
     MEDIA_CANCELLED: "mediaCancelled",
     MEDIA_REFRESHING: "mediaRefreshing",
+    MEDIA_PLAYLIST_SAVED: "mediaPlaylistSaved",
     MEDIA_SOUND_SAVED: "mediaSoundSaved",
+    AUDIO_SELECTED: "audioSelected",
+    AUDIO_DELETED: "audioDeleted",
+    AUDIO_REFRESHING: "audioRefreshing",
+    AUDIO_DOWNLOAD_STARTED: "audioDownloadStarted",
+    AUDIO_ALREADY_READY: "audioDownloaded",
+    AUDIO_DOWNLOADING: "audioDownloadStarted",
+    AUDIO_CANCELLED: "audioDownloadCancelled",
     CONSENT_SAVED: "saved",
     REMOTE_STARTED: "remoteWaiting",
     REMOTE_STOPPED: "saved",
@@ -2636,10 +4012,38 @@
     STATE_CHANGED: "stateChanged",
     READ_ONLY: "readOnlyCloud",
     LOCAL_ONLY: "stateChanged",
+    FAMILY_NOT_READY: "familyNotReady",
+    SUBJECT_REQUIRED: "memberNotFound",
+    SUBJECT_NOT_FOUND: "memberNotFound",
+    SUBJECT_NAME_INVALID: "memberNameInvalid",
+    SUBJECT_AVATAR_INVALID: "memberImageInvalid",
+    SUBJECT_AVATAR_EMPTY: "memberImageInvalid",
+    SUBJECT_AVATAR_TOO_LARGE: "memberImageTooLarge",
+    SUBJECT_AVATAR_WRITE_FAILED: "memberImageSaveFailed",
+    SUBJECT_AVATAR_NOT_FOUND: "memberImageInvalid",
+    SUBJECT_GRADE_INVALID: "memberGradeInvalid",
+    SUBJECT_PIN_INVALID: "userPinInvalid",
+    SUBJECT_PIN_REQUIRED: "userPinRequired",
+    SUBJECT_ACTIVE: "familyDeleteActiveHint",
+    SUBJECT_DEFAULT: "familyDeleteDefaultHint",
+    SUBJECT_LAST: "memberDeleteLast",
+    TV_BUSY: "tvBusy",
+    SUBJECT_UPDATE_FAILED: "memberImageSaveFailed",
+    SUBJECT_ADD_FAILED: "memberAddFailed",
+    SUBJECT_DELETE_FAILED: "memberDeleteFailed",
+    CONTENT_TYPE: "memberImageType",
+    REQUEST_HEADER: "unknownError",
     RULES_OVERLAP: "rulesOverlap",
     RULES_TOO_MANY_WINDOWS: "rulesTooMany",
     RULES_INVALID_APPS: "rulesApps",
     RULES_INVALID_STUDY_APPS: "rulesApps",
+    RULES_INVALID_STUDY_EARN: "studyEarnInvalid",
+    RULES_INVALID_DAY_GROUPS: "rulesDayGroups",
+    RULES_INVALID_UNLIMITED_APPS: "rulesUnlimitedApps",
+    RULES_INVALID_ROUTE_COUNTS: "rulesInvalid",
+    RULES_INVALID_DIRECT_SESSION: "rulesInvalid",
+    RULES_INVALID_SESSION_CAP: "rulesInvalid",
+    RULES_CLIENT_OUTDATED: "rulesClientOutdated",
     RULES_INVALID: "rulesInvalid",
     QUIZ_SESSION_RUNNING: "quizRunning",
     SAVE_FAILED: "unknownError",
@@ -2680,7 +4084,6 @@
     NOT_ON_LOCK_SCREEN: "entryLocalUnlock",
     DEFAULT_PIN: "passwordDefault",
     NETWORK: "network",
-    INVALID_ACTIVATION: "activationInvalid",
     REMOTE_REFRESH_FAILED: "remoteRefreshFailed",
     INTRO_VIDEO_TOO_LARGE: "introVideoTooLarge",
     INTRO_VIDEO_BAD_DURATION: "introVideoBadDuration",
@@ -2707,9 +4110,26 @@
     MEDIA_NO_SPACE: "mediaNoSpace",
     MEDIA_DELETE_FAILED: "mediaDeleteFailed",
     MEDIA_DOWNLOAD_FAILED: "mediaDownloadFailed",
+    MEDIA_PLAYLIST_TOO_LONG: "mediaLockLimitHint",
+    MEDIA_PLAYLIST_INVALID: "mediaLockInvalid",
     MEDIA_SOUND_UNAVAILABLE: "mediaSoundUnavailable",
     MEDIA_BAD_FORMAT: "mediaBadFormat",
     MEDIA_TOO_LARGE: "mediaTooLarge",
+    AUDIO_TOO_LARGE: "audioTooLarge",
+    AUDIO_BAD_FORMAT: "audioBadFormat",
+    AUDIO_BAD_DURATION: "audioBadDuration",
+    AUDIO_UNSUPPORTED_CODEC: "audioUnsupported",
+    AUDIO_INVALID: "audioBadFormat",
+    AUDIO_NO_SPACE: "audioNoSpace",
+    AUDIO_NOT_FOUND: "mediaNotFound",
+    AUDIO_DELETE_FAILED: "mediaDeleteFailed",
+    AUDIO_CATALOG_UNAVAILABLE: "audioCatalogOff",
+    AUDIO_BUSY: "audioBusy",
+    AUDIO_NETWORK: "audioDownloadFailed",
+    AUDIO_LENGTH_REQUIRED: "audioDownloadFailed",
+    AUDIO_CHECKSUM_MISMATCH: "audioDownloadFailed",
+    AUDIO_DOWNLOAD_FAILED: "audioDownloadFailed",
+    AUDIO_CANCELLED: "audioDownloadCancelled",
     CATALOG_UNAVAILABLE: "mediaCatalogUnavailable"
   };
 
@@ -2730,7 +4150,12 @@
   let rulesHold = false;
   let releaseRulesWhenIdle = false;
   let picker = null;
+  let studyEarnCatalog = null;
+  let studyEarnLoading = false;
   let subpage = null;
+  // V48: the entertainment page splits into app management and the time plan. Both panels
+  // are rendered so a save can repaint either side; only the selected one is visible.
+  let timeTab = "manage";
   let personalizeLoading = false;
   let personalizeRefreshing = false;
   let mediaPollTimer = 0;
@@ -2738,11 +4163,18 @@
   let mediaSheetId = null;
   let mediaPickerRole = "quiz";
   let mediaPickerChoice = "";
+  // The lock picker is multi-select; order is the order the child sees. quiz keeps one choice.
+  let mediaLockChoices = [];
+  let mediaLockInterval = 0;
   let mediaPickerScrollPending = false;
+  let audioUploading = false;
   let mediaDownloadWatch = null;
+  let audioDownloadWatch = null;
+  let audioDownloadWatchFrom = "";
   let mediaPosterEpoch = 0;
   let mediaKind = "video";
   let mediaSource = "cloud";
+  let audioSource = "cloud";
   const mediaPosterUrls = new Map();
   const mediaPosterWaiters = new Map();
   const mediaPosterLoading = new Set();
@@ -2753,7 +4185,14 @@
   let lastActiveElement = null;
   let pendingPairCode = "";
   let appPromptSeenMemory = false;
-  let rootMode = "more";
+  // V41: the overlay is one of two top-level tabs. "system" is the old More surface;
+  // "user" edits the selected member's own settings.
+  let rootMode = "user";
+  // The quiz page can open a full-page form above the overlay (AI setup, bank manage).
+  // Suspending keeps the editor lease and the exact page alive underneath.
+  let rootSuspended = false;
+  let suspendedMode = "user";
+  let suspendedSubpage = null;
   let leaseRecovering = false;
   let leaseRecoverySerial = 0;
   let controlBusy = null;
@@ -3017,27 +4456,86 @@
 
   // -------------------------------------------------------------------- open / close
 
+  function normalizeRootMode(mode) {
+    // "control" is the pre-V41 name for the TV-control surface, which now lives in system.
+    return mode === "system" || mode === "control" ? "system" : "user";
+  }
+
+  function resumeOverlay() {
+    if (!rootOpen) return;
+    rootSuspended = false;
+    const root = $(ROOT_ID);
+    if (root) root.classList.remove("hidden");
+    document.body.classList.add("modal-open", "parent-open");
+  }
+
+  function suspend() {
+    if (!rootOpen || rootSuspended) return;
+    rootSuspended = true;
+    suspendedMode = rootMode;
+    suspendedSubpage = subpage;
+    const root = $(ROOT_ID);
+    if (root) root.classList.add("hidden");
+    document.body.classList.remove("modal-open", "parent-open");
+  }
+
+  /**
+   * Resumes a suspended overlay on the page it had. AI setup and bank maintenance call
+   * suspend(), then open() when their full-page form closes, so the parent never loses the
+   * page they were on. A plain open with nothing suspended lands on the user tab.
+   */
   async function open() {
-    return openRoot("more");
+    if (!host) return;
+    if (rootOpen && rootSuspended) {
+      resumeOverlay();
+      rootMode = normalizeRootMode(suspendedMode);
+      subpage = suspendedSubpage;
+      suspendedSubpage = null;
+      clearNotices();
+      if (editorToken) {
+        try {
+          await refreshSnapshot();
+        } catch (error) {
+          handleLeaseError(error);
+          return;
+        }
+        render();
+      } else {
+        await openGate();
+      }
+      return;
+    }
+    return openRoot("user");
+  }
+
+  async function openUser() {
+    return openRoot("user");
+  }
+
+  async function openSystem() {
+    return openRoot("system");
   }
 
   async function openControl() {
-    return openRoot("control");
+    // Child mode actions live on the system page itself now; the native shell's entry
+    // should land there instead of opening a page that no longer exists.
+    return openRoot("system");
   }
 
-  async function openRoot(mode) {
+  async function openRoot(mode, targetSubpage) {
     if (!host) return;
-    const nextMode = mode === "control" ? "control" : "more";
-    if (rootMode === "control" && nextMode !== "control") resetControlDevice();
+    const nextMode = normalizeRootMode(mode);
     rootMode = nextMode;
     controlNotice = null;
     controlNoticeError = false;
+    resetControlDevice();
     if (rootOpen) {
-      // Switching between More and Control on the same page reuses the editor lease, but
-      // neither surface may inherit a proof from the other.
+      if (rootSuspended) resumeOverlay();
+      // Switching top-level tabs reuses the editor lease, but neither surface may inherit
+      // a PIN proof or a subpage from the other.
       releaseAllSensitive();
       clearSensitiveMemory();
-      subpage = null;
+      subpage = targetSubpage || null;
       if (editorToken) {
         try {
           await refreshSnapshot();
@@ -3055,6 +4553,8 @@
     if (!root) return;
     lastActiveElement = document.activeElement;
     rootOpen = true;
+    rootSuspended = false;
+    subpage = targetSubpage || null;
     root.classList.remove("hidden");
     document.body.classList.add("modal-open", "parent-open");
     clearNotices();
@@ -3065,7 +4565,6 @@
       try {
         await refreshSnapshot();
         startHeartbeat();
-        subpage = null;
         render();
         return;
       } catch (error) {
@@ -3084,13 +4583,13 @@
     clear(root);
     const shell = el("div", "parent-shell");
     // Loading is a top-level tab, not the parent center: show the tab's own title so
-    // entering Control never flashes "家长中心" and never draws a back button.
+    // entering user/system settings never flashes "家长中心" and never draws a back button.
     const content = el("div", "parent-content parent-more-content");
     const head = el("div", "parent-more-head");
     head.appendChild(el(
       "h1",
       "parent-more-title",
-      t(rootMode === "control" ? "controlTitle" : "moreTitle"),
+      t(rootMode === "system" ? "systemConfigTitle" : "userConfigTitle"),
     ));
     content.appendChild(head);
     content.appendChild(el("p", "parent-empty", t("loading")));
@@ -3123,6 +4622,8 @@
       clear(root);
     }
     rootOpen = false;
+    rootSuspended = false;
+    suspendedSubpage = null;
     document.body.classList.remove("modal-open", "parent-open");
     revokeAppIcons();
     subpage = null;
@@ -3196,10 +4697,10 @@
     const root = $(ROOT_ID);
     clear(root);
     const shell = el("div", "parent-shell");
-    // A gate opened from the Control tab keeps that tab's identity instead of
-    // showing the parent-center title and a back affordance that tab does not have.
-    const barTitle = rootMode === "control" ? t("controlTitle") : t("parentCenterTitle");
-    shell.appendChild(barNode(barTitle, statusLine(gate), rootMode === "control" ? null : confirmClose));
+    // The gate keeps the identity of the tab that opened it, but both tabs can always
+    // close back to the quiz page.
+    const barTitle = rootMode === "system" ? t("systemConfigTitle") : t("userConfigTitle");
+    shell.appendChild(barNode(barTitle, statusLine(gate), confirmClose));
     const content = el("div", "parent-content");
     const card = el("div", "parent-card parent-gate-card");
     card.appendChild(el("div", "parent-gate-icon", icon || "🔒"));
@@ -3353,7 +4854,8 @@
 
   function maybePromptParentApp() {
     if (!host || typeof host.openParentAppDownload !== "function") return;
-    if (rootMode === "control") return;
+    // The system tab already has an explicit parent-app row; do not cover it with a nudge.
+    if (rootMode === "system") return;
     if (window.ParentShell || window.__pytvParentShell) return;
     if (appPromptSeen()) return;
     // Let the editor paint first; this is a first-entry nudge, not a gate.
@@ -3515,6 +5017,7 @@
   function releaseAllSensitive(keepalive) {
     releaseSensitive("RULES_EDIT", keepalive);
     releaseSensitive("TAKE_OVER", keepalive);
+    releaseSensitive("USER_CONFIG", keepalive);
   }
 
   /**
@@ -3678,6 +5181,22 @@
     }
   }
 
+  /**
+   * Rules writes follow the V47 user-configuration switch. A pinless page goes straight to the
+   * TV; if another phone just re-enabled the prompts, the server's SENSITIVE_* answer falls
+   * back to the normal RULES_EDIT sheet. The server is always the authority.
+   */
+  async function requestUserConfigWrite(path, options) {
+    if (host && snap && snap.userConfigRequirePin === false) {
+      try {
+        return await host.request(path, options);
+      } catch (error) {
+        if (!isSensitiveError(error)) throw error;
+      }
+    }
+    return requestWithSensitive(path, options, "RULES_EDIT", "sensitivePinLeadRules");
+  }
+
   async function promptUnlock() {
     // One unlock for both surfaces: prefer the quiz page's existing temporary-unlock dialog
     // so the phone never shows two different PIN sheets. The local sheet below is the
@@ -3765,7 +5284,10 @@
       }
       const changed = data.rulesRevision !== snap.rulesRevision ||
         data.modeRevision !== snap.modeRevision;
-      if (rootMode === "control") {
+      // Only the pages that show live control data need a repaint every heartbeat.
+      const controlSurface = (rootMode === "system" && !subpage) ||
+        (rootMode === "user" && !subpage);
+      if (controlSurface) {
         if (data && data.control) {
           if (!snap) await refreshSnapshot();
           else snap.control = data.control;
@@ -3827,16 +5349,33 @@
   // ---------------------------------------------------------------------- rendering
 
   function render() {
-    if (!rootOpen) return;
-    if (rootMode === "control") return renderControlPage();
+    if (!rootOpen || rootSuspended) return;
     if (subpage !== "personalize") stopMediaPoll();
+    if (!(rootMode === "system" && subpage === "device")) {
+      stopControlDevicePolling();
+      controlDeviceRefs = null;
+    }
     applyStaticText();
     if (!snap) return renderLoading();
+    // The parent backend and TV runtime are still active-member only. Opening a sibling's
+    // time or wallpaper page would silently write to the member the TV is running, so those
+    // pages stay closed until the TV itself switches.
+    if (rootMode === "user" && editingContext().sibling &&
+        (subpage === "time" || subpage === "personalize" || subpage === "apps")) {
+      subpage = null;
+    }
+    if (rootMode === "system") {
+      if (subpage === "family") return renderFamilyPage();
+      if (subpage === "device") return renderDevicePage();
+      if (subpage === "entries") return renderEntriesPage();
+      if (subpage === "updates") return renderUpdatesPage();
+      if (subpage === "password") return renderPassword();
+      return renderSystemIndex();
+    }
     if (subpage === "apps") return renderAppPicker();
-    if (subpage === "password") return renderPassword();
     if (subpage === "personalize") return renderPersonalize();
     if (subpage === "time") return renderTimeAndApps();
-    renderMain();
+    return renderUserIndex();
   }
 
   function sectionLabel(text) {
@@ -3876,105 +5415,360 @@
     return parts.join(" · ");
   }
 
-  function renderMain() {
+  function editingContext() {
+    const members = familyMembers();
+    const active = members.find((member) => member.isActive) || members[0] || null;
+    const selected = host && typeof host.editingSubjectId === "function"
+      ? String(host.editingSubjectId() || "")
+      : "";
+    const member = selected ? (findMember(selected) || active) : active;
+    return {
+      member: member,
+      active: active,
+      sibling: Boolean(member && active && member.userId !== active.userId)
+    };
+  }
+
+  function activeMemberName() {
+    const active = familyMembers().find((member) => member.isActive) || familyMembers()[0] || null;
+    return active && active.name ? active.name : "—";
+  }
+
+  /**
+   * The user tab header follows the chat-app pattern the quiz page uses: squared
+   * avatar on the left, member name over the TV's current member. Tapping it chooses
+   * which member this page edits; the TV's active member has its own explicit row.
+   */
+  function userHeaderNode(context) {
+    const bar = el("div", "parent-bar parent-member-bar");
+    const head = el("button", "parent-member-head");
+    head.type = "button";
+    head.setAttribute("aria-haspopup", "dialog");
+    head.setAttribute("aria-label",
+      t("userSwitchAction") + " · " +
+      (context.member ? context.member.name : t("userNoMember")));
+    if (context.member) {
+      const avatar = memberAvatarNode(context.member, "parent-avatar-head");
+      // Same status ring as the quiz header; member identity, not image equality.
+      avatar.classList.toggle("is-tv-current", Boolean(context.member.isActive));
+      head.appendChild(avatar);
+    } else {
+      head.appendChild(el("span", "parent-avatar parent-avatar-head parent-avatar-empty", "?"));
+    }
+    const copy = el("div", "parent-member-copy");
+    // Same hierarchy as DingTalk: page title on the first line beside the
+    // avatar, the editing member and the TV's current member below it.
+    copy.appendChild(el("span", "parent-member-head-name", t("userConfigTitle")));
+    copy.appendChild(el("span", "parent-member-head-sub",
+      t("memberHeaderSubtitle", {
+        member: context.member ? context.member.name : t("userNoMember"),
+        name: activeMemberName(),
+      })));
+    head.appendChild(copy);
+    head.appendChild(el("span", "chevron", "›"));
+    const canPick = familyMembers().length > 0 && host &&
+      typeof host.openSubjectPicker === "function";
+    head.disabled = !canPick;
+    if (canPick) head.addEventListener("click", () => host.openSubjectPicker());
+    bar.appendChild(head);
+    return bar;
+  }
+
+  /**
+   * User settings is an index: the Time & Apps and wallpaper rows open their existing pages,
+   * while the timer block is inline because it is only a status line and two actions. The
+   * header names the member being edited and the member the TV is actually running, because
+   * V41 keeps those two pointers separate.
+   */
+  function renderUserIndex() {
     const root = $(ROOT_ID);
     if (!root) return;
     clear(root);
     const shell = el("div", "parent-shell");
+    const context = editingContext();
+    shell.appendChild(userHeaderNode(context));
     const content = el("div", "parent-content parent-more-content");
-
-    const head = el("div", "parent-more-head");
-    head.appendChild(el("h1", "parent-more-title", t("moreTitle")));
-    const status = el("p", "parent-more-status");
-    status.appendChild(el("span", "parent-more-dot"));
-    status.appendChild(el("span", null, moreStatusText()));
-    head.appendChild(status);
-    content.appendChild(head);
     content.appendChild(noticeArea());
 
-    content.appendChild(sectionLabel(t("childMode")));
-    const child = el("div", "parent-card");
-    child.appendChild(row(
+    content.appendChild(el(
+      "p",
+      "parent-hint parent-user-note",
+      context.sibling
+        ? t("userSiblingNote", { name: context.member ? context.member.name : "" })
+        : t("userActiveNote", { name: context.member ? context.member.name : activeMemberName() })
+    ));
+
+    // Remote switching shares the TV's own gate: the server refuses while a timer, quiz,
+    // study round or temporary unlock owns the TV, so this row only reflects the active
+    // member and lets the click report "busy" instead of pretending the TV is free.
+    if (context.member) {
+      const isActive = Boolean(context.active &&
+        context.member.userId === context.active.userId);
+      const switchCard = el("div", "parent-card");
+      switchCard.appendChild(row(
+        t("userSwitchTo"),
+        isActive
+          ? t("userSwitchDisabled")
+          : t("userSwitchEnabled", { name: context.member.name || "" }),
+        null,
+        () => confirmRemoteSwitch(context.member),
+        isActive || !(snap.capabilities && snap.capabilities.canSwitchSubject),
+        "parent-row-data"
+      ));
+      content.appendChild(switchCard);
+    }
+
+    const blocked = context.sibling || !context.member;
+    // The timer is short enough to live on this page: a status line and the two actions,
+    // instead of a second-level page the parent has to open first. It only makes sense for
+    // the member the TV is actually running, so a sibling being viewed gets no timer block.
+    let timerRefs = null;
+    if (!blocked) {
+      content.appendChild(sectionLabel(t("controlTimerSection")));
+      const timerStatus = el("p", "parent-more-status");
+      const timerDot = el("span", "parent-more-dot");
+      const timerStatusLabel = el("span", null, "");
+      timerStatus.appendChild(timerDot);
+      timerStatus.appendChild(timerStatusLabel);
+      content.appendChild(timerStatus);
+      const timerCard = el("div", "parent-card");
+      const startManual = controlActionRow(
+        t("controlStartTitle"),
+        () => openControlManual(),
+        false
+      );
+      const stopTimer = controlActionRow(
+        t("controlStopTitle"),
+        () => sendControl("STOP_TIMER"),
+        true
+      );
+      timerCard.appendChild(startManual.button);
+      timerCard.appendChild(stopTimer.button);
+      content.appendChild(timerCard);
+      const timerNotice = el("p", "parent-hint parent-control-notice");
+      timerNotice.setAttribute("role", "status");
+      content.appendChild(timerNotice);
+      content.appendChild(el("p", "parent-hint parent-control-note", t("controlLocalOnly")));
+      timerRefs = {
+        dot: timerDot,
+        statusText: timerStatusLabel,
+        notice: timerNotice,
+        startManual: startManual,
+        stopTimer: stopTimer
+      };
+    }
+
+    content.appendChild(sectionLabel(t("timeConfigSection")));
+    const card = el("div", "parent-card");
+    card.appendChild(row(
       t("timeAndApps"),
-      t("timeAndAppsSummary", { apps: rulesAppSummary() }),
-      null,
+      t("timeAndAppsSummary", { groups: String(dayGroups().length), apps: rulesAppSummary() }),
+      blocked ? t("userTimeDisabled") : null,
       enterTimeAndApps,
-      !(snap.capabilities && snap.capabilities.canEditRules),
+      blocked || !(snap.capabilities && snap.capabilities.canEditRules),
       "parent-row-data"
     ));
-    // The quiz switch lives only inside Time & Apps in V32. Keeping a second copy here
-    // would bypass the PIN gate and let a child re-enable the challenge.
-    content.appendChild(child);
+    content.appendChild(card);
 
-    content.appendChild(sectionLabel(t("localSettings")));
-    const local = el("div", "parent-card");
-    local.appendChild(row(
-      t("parentPassword"),
-      null,
-      snap.pinConfigured ? t("pinSet") : t("pinUnset"),
-      () => {
-        subpage = "password";
-        clearNotices();
-        render();
-        window.scrollTo({ top: 0 });
-      },
-      !(snap.capabilities && snap.capabilities.canChangePin)
-    ));
-    local.appendChild(row(
+    // V45: unlimited apps stay a first-level object but no longer need a summary page of
+    // their own. The icons are the entry — one click opens the picker and Save returns here.
+    content.appendChild(renderUnlimitedCard(blocked));
+
+    const personalizeCard = el("div", "parent-card");
+    personalizeCard.appendChild(row(
       t("personalize"),
       t("personalizeHint"),
       mediaSummary(),
-      openPersonalize
+      openPersonalize,
+      blocked
     ));
-    content.appendChild(local);
+    content.appendChild(personalizeCard);
 
-    content.appendChild(sectionLabel(t("quizAndAi")));
-    const knowledge = el("div", "parent-card");
-    knowledge.appendChild(row(t("aiTitle"), null, t("manageAction"), () => {
-      if (host && host.openAi) host.openAi();
-    }));
-    knowledge.appendChild(row(
-      t("bankMaintenance"),
-      t("bankMaintenanceHint"),
-      t("manageAction"),
-      () => {
-        if (host && host.openQuizBank) host.openQuizBank();
-      }
-    ));
-    content.appendChild(knowledge);
+    shell.appendChild(content);
+    root.appendChild(shell);
+    controlRefs = timerRefs;
+    if (controlRefs) paintControl();
+  }
 
-    content.appendChild(sectionLabel(t("otherOptions")));
-    const other = el("div", "parent-card");
-    other.appendChild(row(
-      t("downloadParentApp"),
-      t("downloadParentAppHint"),
-      t("viewAction"),
-      () => {
-        if (host && host.openParentAppDownload) host.openParentAppDownload();
-      }
-    ));
-    other.appendChild(switchRow(
-      t("autoUpdate"),
-      t("autoUpdateHint"),
-      snap.autoUpdate,
-      false,
-      (input) => saveAutoUpdateSwitch(input)
-    ));
-    other.appendChild(row(
-      t("softwareUpdate"),
-      updateSubtitle(),
-      snap.update && snap.update.current ? "v" + snap.update.current : null,
-      openUpdateSheet
-    ));
-    other.appendChild(row(
-      t("privacyInfo"),
-      t("privacyHint"),
-      t("viewAction"),
-      () => {
-        if (host && host.openPrivacy) host.openPrivacy();
-      }
-    ));
-    content.appendChild(other);
+  /** Confirms and moves the TV's active pointer; the selected member is already not active. */
+  function confirmRemoteSwitch(member) {
+    if (!member) return;
+    const name = member.name || "";
+    confirmSheet(
+      t("userSwitchConfirm", { name: name }),
+      t("userSwitchEnabled", { name: name }),
+      t("userSwitchAction"),
+      async () => {
+        const family = snap.family || {};
+        try {
+          const data = await host.request("/api/parent/subjects/activate", {
+            method: "POST",
+            body: {
+              userId: member.userId,
+              expectedActiveEpoch: Number(family.activeEpoch) || 0
+            },
+            editorToken: editorToken,
+            quizAuth: true
+          });
+          if (data && data.snapshot) adoptSnapshot(data.snapshot, false);
+          else await refreshSnapshot();
+          setNotice(successText((data && data.messageKey) || "SUBJECT_SWITCHED"), false);
+          render();
+          if (host.memberProfileChanged) host.memberProfileChanged();
+        } catch (error) {
+          await recoverWrite(error);
+          render();
+        }
+      },
+      t("cancel")
+    );
+  }
+
+  function systemGroup(title, rows) {
+    const wrap = el("div", "parent-system-group");
+    wrap.appendChild(sectionLabel(title));
+    const card = el("div", "parent-card");
+    for (const item of rows) card.appendChild(item);
+    wrap.appendChild(card);
+    return wrap;
+  }
+
+  function openSystemSubpage(next) {
+    subpage = next;
+    clearNotices();
+    render();
+    window.scrollTo({ top: 0 });
+  }
+
+  function renderSystemIndex() {
+    const root = $(ROOT_ID);
+    if (!root) return;
+    clear(root);
+    const shell = el("div", "parent-shell");
+    // System config is a top-level tab; the bottom nav is the way out, so no back
+    // button in its header.
+    shell.appendChild(barNode(t("systemConfigTitle"), moreStatusText()));
+    const content = el("div", "parent-content parent-more-content");
+    content.appendChild(noticeArea());
+
+    content.appendChild(systemGroup(t("systemGroupFamilyTv"), [
+      row(
+        t("systemFamily"),
+        t("systemFamilyHint"),
+        t("familyMemberCount", { n: familyMembers().length }),
+        () => openSystemSubpage("family")
+      ),
+      switchRow(
+        t("systemMemberSwitch"),
+        t("systemMemberSwitchHint"),
+        snap.memberSwitchRequired,
+        !(snap.capabilities && snap.capabilities.canToggleMemberSwitch),
+        (input) => saveSimple("/api/parent/member-switch", {
+          enabled: input.checked
+        }, "memberSwitchRequired", input.checked)
+      ),
+      row(
+        t("systemDevice"),
+        t("systemDeviceHint"),
+        null,
+        () => openSystemSubpage("device")
+      ),
+      row(
+        t("systemEntries"),
+        t("systemEntriesHint"),
+        null,
+        () => openSystemSubpage("entries")
+      )
+    ]));
+
+    // TV control is short enough to live on this page: a status line and the two child
+    // mode actions, instead of a second-level page the parent has to open first.
+    content.appendChild(sectionLabel(t("controlChildSection")));
+    const controlStatus = el("p", "parent-more-status");
+    const controlDot = el("span", "parent-more-dot");
+    const controlStatusLabel = el("span", null, "");
+    controlStatus.appendChild(controlDot);
+    controlStatus.appendChild(controlStatusLabel);
+    content.appendChild(controlStatus);
+    const childCard = el("div", "parent-card");
+    const takeOver = controlActionRow(
+      t("controlTakeOverTitle"),
+      () => sendControl("TAKE_OVER"),
+      false
+    );
+    const enterChild = controlActionRow(
+      t("controlEnterTitle"),
+      () => sendControl("ENTER_CHILD_MODE"),
+      false
+    );
+    childCard.appendChild(takeOver.button);
+    childCard.appendChild(enterChild.button);
+    content.appendChild(childCard);
+    const controlNoticeNode = el("p", "parent-hint parent-control-notice");
+    controlNoticeNode.setAttribute("role", "status");
+    content.appendChild(controlNoticeNode);
+    content.appendChild(el("p", "parent-hint parent-control-note", t("controlLocalOnly")));
+
+    content.appendChild(systemGroup(t("systemGroupParent"), [
+      switchRow(
+        t("userConfigPinInput"),
+        t("userConfigPinInputHint"),
+        snap.userConfigRequirePin !== false,
+        !(snap.capabilities && snap.capabilities.canEditRules),
+        saveUserConfigPinSwitch
+      ),
+      row(
+        t("parentPassword"),
+        null,
+        snap.pinConfigured ? t("pinSet") : t("pinUnset"),
+        () => openSystemSubpage("password"),
+        !(snap.capabilities && snap.capabilities.canChangePin)
+      ),
+      row(t("aiTitle"), t("systemAiHint"), t("manageAction"), () => {
+        if (host && host.openAi) host.openAi();
+      }),
+      row(
+        t("downloadParentApp"),
+        t("downloadParentAppHint"),
+        t("viewAction"),
+        () => {
+          if (host && host.openParentAppDownload) host.openParentAppDownload();
+        }
+      )
+    ]));
+
+    content.appendChild(systemGroup(t("systemGroupAccount"), [
+      languageRow(),
+      row(
+        t("systemUpdates"),
+        updateSubtitle(),
+        snap.update && snap.update.current ? "v" + snap.update.current : null,
+        () => openSystemSubpage("updates")
+      ),
+      row(
+        t("privacyInfo"),
+        t("privacyHint"),
+        t("viewAction"),
+        () => {
+          if (host && host.openPrivacy) host.openPrivacy();
+        }
+      )
+    ]));
+
+    // The TV filing covers com.planyourtv.tv only. The parent shell is a separate package
+    // and has not been filed yet, so do not show the TV's number inside it.
+    const recordNumber = String(snap.appRecordNumber || "").trim();
+    const inParentShell = Boolean(window.ParentShell || window.__pytvParentShell);
+    if (recordNumber && !inParentShell) {
+      const record = el("p", "parent-hint parent-app-record");
+      record.appendChild(document.createTextNode(t("systemAppRecord", { number: recordNumber }) + " · "));
+      const lookup = el("a", null, t("systemAppRecordLookup"));
+      lookup.href = "https://beian.miit.gov.cn/";
+      lookup.target = "_blank";
+      lookup.rel = "noopener";
+      record.appendChild(lookup);
+      content.appendChild(record);
+    }
 
     const footer = el("div", "parent-logout-wrap");
     footer.appendChild(button(t("logoutAccount"), "parent-logout-btn", () => {
@@ -3991,6 +5785,120 @@
 
     shell.appendChild(content);
     root.appendChild(shell);
+    controlRefs = {
+      dot: controlDot,
+      statusText: controlStatusLabel,
+      notice: controlNoticeNode,
+      takeOver: takeOver,
+      enterChild: enterChild
+    };
+    paintControl();
+  }
+
+  function backToRoot() {
+    subpage = null;
+    clearNotices();
+    render();
+    window.scrollTo({ top: 0 });
+  }
+
+  function renderFamilyPage() {
+    const root = $(ROOT_ID);
+    if (!root) return;
+    clear(root);
+    const shell = el("div", "parent-shell");
+    shell.appendChild(barNode(t("systemFamily"), moreStatusText(), backToRoot));
+    const content = el("div", "parent-content");
+    content.appendChild(noticeArea());
+    content.appendChild(el("p", "parent-hint", t("familyPageHint")));
+    content.appendChild(renderFamilyCard());
+    shell.appendChild(content);
+    root.appendChild(shell);
+  }
+
+  function renderEntriesPage() {
+    const root = $(ROOT_ID);
+    if (!root) return;
+    clear(root);
+    const shell = el("div", "parent-shell");
+    shell.appendChild(barNode(t("systemEntries"), moreStatusText(), backToRoot));
+    const content = el("div", "parent-content");
+    content.appendChild(noticeArea());
+    content.appendChild(el("p", "parent-hint", t("entriesPageHint")));
+    content.appendChild(sectionLabel(t("tvInputSources")));
+    content.appendChild(renderInputSources());
+    content.appendChild(sectionLabel(t("quizChallenge")));
+    content.appendChild(renderQuizChallenge());
+    shell.appendChild(content);
+    root.appendChild(shell);
+  }
+
+  function renderUpdatesPage() {
+    const root = $(ROOT_ID);
+    if (!root) return;
+    clear(root);
+    const shell = el("div", "parent-shell");
+    shell.appendChild(barNode(t("systemUpdates"), moreStatusText(), backToRoot));
+    const content = el("div", "parent-content");
+    content.appendChild(noticeArea());
+    const card = el("div", "parent-card");
+    card.appendChild(switchRow(
+      t("autoUpdate"),
+      t("autoUpdateHint"),
+      snap.autoUpdate,
+      false,
+      (input) => saveAutoUpdateSwitch(input)
+    ));
+    card.appendChild(row(
+      t("softwareUpdate"),
+      updateSubtitle(),
+      snap.update && snap.update.current ? "v" + snap.update.current : null,
+      openUpdateSheet
+    ));
+    content.appendChild(card);
+    shell.appendChild(content);
+    root.appendChild(shell);
+  }
+
+  function renderDevicePage() {
+    if (!snap) return renderLoading();
+    const root = $(ROOT_ID);
+    if (!root) return;
+    clear(root);
+    controlDeviceOpen = true;
+    const shell = el("div", "parent-shell");
+    shell.appendChild(barNode(t("systemDevice"), moreStatusText(), backToRoot));
+    const content = el("div", "parent-content");
+    content.appendChild(noticeArea());
+    content.appendChild(el("p", "parent-hint", t("controlDevicePermissionsHint")));
+
+    const card = el("div", "parent-card parent-device-card");
+    const deviceHead = el("div", "parent-row parent-device-head");
+    deviceHead.setAttribute("aria-expanded", "true");
+    const deviceDot = el("span", "parent-device-dot");
+    const deviceMain = el("div", "parent-row-main");
+    deviceMain.appendChild(el("span", "parent-row-title", t("controlDeviceTitle")));
+    const deviceSummary = el("span", "parent-row-sub", t("controlDeviceSummaryHint"));
+    deviceMain.appendChild(deviceSummary);
+    deviceHead.appendChild(deviceDot);
+    deviceHead.appendChild(deviceMain);
+    const deviceBody = el("div", "parent-device-body");
+    deviceBody.id = "parentDeviceBody";
+    card.appendChild(deviceHead);
+    card.appendChild(deviceBody);
+    content.appendChild(card);
+
+    shell.appendChild(content);
+    root.appendChild(shell);
+    controlDeviceRefs = {
+      head: deviceHead,
+      dot: deviceDot,
+      summary: deviceSummary,
+      body: deviceBody
+    };
+    paintControlDevice();
+    syncControlDevicePolling();
+    loadControlDevice();
   }
 
   function mediaSummary() {
@@ -4303,39 +6211,1806 @@
     return node;
   }
 
-  function renderAppRows() {
-    const card = el("div", "parent-card");
-    const rules = snap.rules || {};
-    const allowAll = Boolean(rules.allApps);
-    const allowed = Array.isArray(rules.allowedPackages) ? rules.allowedPackages.length : 0;
-    const study = Array.isArray(rules.studyPackages) ? rules.studyPackages.length : 0;
-    const entValue = allowAll ? t("allApps")
-      : allowed > 0 ? t("appsSelected", { n: allowed }) : t("noEntertainment");
-    const studyValue = study > 0 ? t("appsSelected", { n: study }) : t("studyNone");
-    card.appendChild(row(
-      t("entertainmentApps"),
-      null,
-      entValue,
-      () => openPicker("entertainment"),
-      !(snap.capabilities && snap.capabilities.canEditRules)
-    ));
-    card.appendChild(row(
-      t("studyApps"),
-      null,
-      studyValue,
-      () => openPicker("study"),
-      !(snap.capabilities && snap.capabilities.canEditRules)
+  const LANGUAGE_NAMES = {
+    zh: "中文",
+    en: "English",
+    ru: "Русский",
+    uk: "Українська",
+    kk: "Қазақша",
+  };
+
+  /** V41: language is an ordinary system preference, not a header control. */
+  function languageRow() {
+    const node = el("label", "parent-row");
+    const main = el("div", "parent-row-main");
+    main.appendChild(el("span", "parent-row-title", t("systemLanguage")));
+    main.appendChild(el("span", "parent-row-sub", t("systemLanguageHint")));
+    node.appendChild(main);
+    const select = el("select", "parent-time-select parent-language-select");
+    select.setAttribute("aria-label", t("systemLanguage"));
+    for (const code of LANGS) {
+      const option = el("option", "", LANGUAGE_NAMES[code] || code);
+      option.value = code;
+      if (code === lang) option.selected = true;
+      select.appendChild(option);
+    }
+    select.addEventListener("change", () => {
+      if (host && typeof host.changeLanguage === "function") {
+        host.changeLanguage(select.value);
+      } else {
+        setLang(select.value);
+      }
+    });
+    node.appendChild(select);
+    return node;
+  }
+
+  // ------------------------------------------------------------------ family members
+  // The four presets are the approved V40 visual set. Uploaded photos are fetched through
+  // host.blob() because /api/parent/avatar requires the same editor lease as the rest of the
+  // page; an <img src> would be an unauthenticated read. Blob URLs are cached per revision so
+  // a rename or a rules save does not refetch every avatar.
+  const MEMBER_AVATARS = {
+    rabbit: { bg: "#f3ddc9", face: "#f7e7d6", ear: "#efc3a8", inner: "#fff8ef", eye: "#3d3029", cheek: "rgba(232,115,101,.28)" },
+    fox: { bg: "#f8dfca", face: "#eeb170", ear: "#d9824a", inner: "#f9d3ae", eye: "#4b3021", cheek: "rgba(226,109,77,.25)" },
+    bear: { bg: "#e9e1d4", face: "#c99769", ear: "#a36d45", inner: "#e4bb8f", eye: "#3d2c23", cheek: "rgba(206,102,90,.22)" },
+    panda: { bg: "#e3e8e1", face: "#fbf8f0", ear: "#303630", inner: "#d7ddd5", eye: "#2f342e", cheek: "rgba(232,143,143,.22)" }
+  };
+  const MEMBER_AVATAR_KEYS = ["rabbit", "fox", "bear", "panda"];
+  const MEMBER_AVATAR_LABELS = {
+    rabbit: "avatarRabbit",
+    fox: "avatarFox",
+    bear: "avatarBear",
+    panda: "avatarPanda"
+  };
+  const memberAvatarUrls = new Map();
+
+  function avatarSvg(key) {
+    const a = MEMBER_AVATARS[key] || MEMBER_AVATARS.rabbit;
+    const eye = (cx, cy) => '<circle cx="' + cx + '" cy="' + cy + '" r="2.1" fill="' + a.eye + '"/>';
+    if (key === "fox") {
+      return '<svg viewBox="0 0 64 64" aria-hidden="true">'
+        + '<rect width="64" height="64" fill="' + a.bg + '"/>'
+        + '<path d="M14 24 18 8l12 12z" fill="' + a.ear + '"/><path d="M50 24 46 8 34 20z" fill="' + a.ear + '"/>'
+        + '<path d="M18 14l3 8" stroke="' + a.inner + '" stroke-width="3" stroke-linecap="round"/>'
+        + '<circle cx="32" cy="35" r="18" fill="' + a.face + '"/>'
+        + '<path d="M20 33q12-10 24 0" fill="none" stroke="' + a.ear + '" stroke-width="3" stroke-linecap="round"/>'
+        + eye(25, 35) + eye(39, 35)
+        + '<path d="M29 41q3 3 6 0" fill="none" stroke="' + a.eye + '" stroke-width="1.7" stroke-linecap="round"/>'
+        + '<circle cx="19" cy="41" r="3" fill="' + a.cheek + '"/><circle cx="45" cy="41" r="3" fill="' + a.cheek + '"/>'
+        + '</svg>';
+    }
+    if (key === "panda") {
+      return '<svg viewBox="0 0 64 64" aria-hidden="true">'
+        + '<rect width="64" height="64" fill="' + a.bg + '"/>'
+        + '<circle cx="20" cy="19" r="10" fill="' + a.ear + '"/><circle cx="44" cy="19" r="10" fill="' + a.ear + '"/>'
+        + '<circle cx="32" cy="35" r="18" fill="' + a.face + '"/>'
+        + '<ellipse cx="24" cy="34" rx="6" ry="7" fill="' + a.ear + '" transform="rotate(28 24 34)"/>'
+        + '<ellipse cx="40" cy="34" rx="6" ry="7" fill="' + a.ear + '" transform="rotate(-28 40 34)"/>'
+        + '<circle cx="24" cy="34" r="2" fill="#fff8ef"/><circle cx="40" cy="34" r="2" fill="#fff8ef"/>'
+        + '<ellipse cx="32" cy="42" rx="3" ry="2.2" fill="' + a.eye + '"/>'
+        + '<path d="M29 46q3 2 6 0" fill="none" stroke="' + a.eye + '" stroke-width="1.4" stroke-linecap="round"/>'
+        + '</svg>';
+    }
+    const isBear = key === "bear";
+    return '<svg viewBox="0 0 64 64" aria-hidden="true">'
+      + '<rect width="64" height="64" fill="' + a.bg + '"/>'
+      + (isBear
+        ? '<circle cx="20" cy="19" r="8" fill="' + a.ear + '"/><circle cx="44" cy="19" r="8" fill="' + a.ear + '"/>'
+        : '<ellipse cx="23" cy="17" rx="6" ry="12" fill="' + a.ear + '" transform="rotate(-17 23 17)"/>'
+          + '<ellipse cx="41" cy="17" rx="6" ry="12" fill="' + a.ear + '" transform="rotate(17 41 17)"/>'
+          + '<ellipse cx="23" cy="18" rx="2.6" ry="7" fill="' + a.inner + '" transform="rotate(-17 23 18)"/>'
+          + '<ellipse cx="41" cy="18" rx="2.6" ry="7" fill="' + a.inner + '" transform="rotate(17 41 18)"/>')
+      + '<circle cx="32" cy="35" r="18" fill="' + a.face + '"/>'
+      + (isBear ? '<circle cx="26" cy="30" r="2" fill="' + a.ear + '"/><circle cx="38" cy="30" r="2" fill="' + a.ear + '"/>' : '')
+      + eye(25, 35) + eye(39, 35)
+      + '<path d="M29 41q3 3 6 0" fill="none" stroke="' + a.eye + '" stroke-width="1.7" stroke-linecap="round"/>'
+      + '<circle cx="19" cy="41" r="3" fill="' + a.cheek + '"/><circle cx="45" cy="41" r="3" fill="' + a.cheek + '"/>'
+      + '</svg>';
+  }
+
+  function memberAvatarNode(member, extraClass) {
+    const node = el("span", "parent-avatar" + (extraClass ? " " + extraClass : ""));
+    node.dataset.member = member.userId;
+    node.dataset.revision = String(member.avatarRevision || 0);
+    paintMemberAvatar(node, member);
+    return node;
+  }
+
+  function paintMemberAvatar(node, member) {
+    clear(node);
+    const cached = member.avatarUrl ? memberAvatarUrls.get(member.userId) : null;
+    if (cached && cached.revision === String(member.avatarRevision || 0)) {
+      const image = document.createElement("img");
+      image.src = cached.url;
+      image.alt = "";
+      node.appendChild(image);
+      return;
+    }
+    node.innerHTML = avatarSvg(member.avatarPreset);
+    if (!member.avatarUrl || !host || !editorToken) return;
+    const revision = String(member.avatarRevision || 0);
+    host.blob(member.avatarUrl, editorToken).then((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const previous = memberAvatarUrls.get(member.userId);
+      if (previous && previous.url !== url) URL.revokeObjectURL(previous.url);
+      memberAvatarUrls.set(member.userId, { revision: revision, url: url });
+      if (!node.isConnected) return;
+      if (node.dataset.member !== member.userId || node.dataset.revision !== revision) return;
+      clear(node);
+      const image = document.createElement("img");
+      image.src = url;
+      image.alt = "";
+      node.appendChild(image);
+    }).catch(() => { /* the preset remains visible */ });
+  }
+
+  const MEMBER_AVATAR_SOURCE_BYTES = 25 * 1024 * 1024;
+  const MEMBER_AVATAR_OUTPUT_PX = 512;
+  const MEMBER_AVATAR_MAX_ZOOM = 4;
+
+  function clampNumber(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  function canvasJpegBlob(canvas, done) {
+    if (typeof canvas.toBlob === "function") {
+      canvas.toBlob((blob) => done(blob), "image/jpeg", 0.9);
+      return;
+    }
+    try {
+      const encoded = canvas.toDataURL("image/jpeg", 0.9);
+      const raw = atob(encoded.slice(encoded.indexOf(",") + 1));
+      const bytes = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; i += 1) bytes[i] = raw.charCodeAt(i);
+      done(new Blob([bytes], { type: "image/jpeg" }));
+    } catch (_) {
+      done(null);
+    }
+  }
+
+  /**
+   * Square avatar cropper. The photo is decoded on the phone, panned and zoomed under a
+   * square mask, then redrawn at 512x512 and sent as JPEG. The TV therefore receives a small,
+   * already-oriented image even when the source is a 25 MB camera photo, and the parent
+   * chooses the crop instead of the server center-cropping it.
+   */
+  function openAvatarCropper(file, onApply) {
+    const existing = document.querySelector(".parent-crop-root");
+    if (existing) existing.remove();
+    const root = el("div", "parent-crop-root");
+    const backdrop = el("div", "parent-crop-backdrop");
+    const panel = el("div", "parent-crop-panel");
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-modal", "true");
+    panel.appendChild(el("h2", null, t("avatarCropTitle")));
+    panel.appendChild(el("p", "parent-crop-hint", t("avatarCropHint")));
+
+    const viewport = el("div", "parent-crop-viewport");
+    const image = document.createElement("img");
+    image.alt = "";
+    image.draggable = false;
+    viewport.appendChild(image);
+    panel.appendChild(viewport);
+
+    const zoomRow = el("div", "parent-crop-zoom");
+    zoomRow.appendChild(el("span", "parent-field-label", t("avatarCropZoom")));
+    const range = document.createElement("input");
+    range.type = "range";
+    range.min = "1";
+    range.max = String(MEMBER_AVATAR_MAX_ZOOM);
+    range.step = "0.01";
+    range.value = "1";
+    range.disabled = true;
+    zoomRow.appendChild(range);
+    panel.appendChild(zoomRow);
+
+    const error = el("p", "parent-error hidden");
+    panel.appendChild(error);
+    const actions = el("div", "parent-actions");
+    const cancel = button(t("cancel"), "parent-btn ghost", () => close());
+    const apply = button(t("avatarCropApply"), "parent-btn primary", () => applyCrop());
+    apply.disabled = true;
+    actions.appendChild(cancel);
+    actions.appendChild(apply);
+    panel.appendChild(actions);
+    root.appendChild(backdrop);
+    root.appendChild(panel);
+    document.body.appendChild(root);
+
+    const url = URL.createObjectURL(file);
+    const state = { zoom: 1, x: 0, y: 0, base: 1, view: 0, ready: false };
+    let busy = false;
+    let closed = false;
+    const pointers = new Map();
+    let dragPoint = null;
+    let pinch = null;
+    let resize = null;
+    let previousFocus = document.activeElement;
+
+    function close() {
+      if (closed) return;
+      closed = true;
+      document.removeEventListener("keydown", onKey, true);
+      if (resize) window.removeEventListener("resize", resize);
+      URL.revokeObjectURL(url);
+      root.remove();
+      if (previousFocus && typeof previousFocus.focus === "function") {
+        try { previousFocus.focus(); } catch (_) { /* ignore */ }
+      }
+    }
+
+    function onKey(event) {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      close();
+    }
+    document.addEventListener("keydown", onKey, true);
+    backdrop.addEventListener("click", close);
+
+    function layoutImage() {
+      if (!state.ready) return;
+      const view = viewport.clientWidth;
+      if (!view) return;
+      state.view = view;
+      state.base = Math.max(
+        view / image.naturalWidth,
+        view / image.naturalHeight
+      );
+      image.style.width = (image.naturalWidth * state.base) + "px";
+      image.style.height = (image.naturalHeight * state.base) + "px";
+      render();
+    }
+
+    function render() {
+      if (!state.ready) return;
+      const view = state.view || viewport.clientWidth;
+      const width = image.naturalWidth * state.base * state.zoom;
+      const height = image.naturalHeight * state.base * state.zoom;
+      const maxX = Math.max(0, (width - view) / 2);
+      const maxY = Math.max(0, (height - view) / 2);
+      state.x = clampNumber(state.x, -maxX, maxX);
+      state.y = clampNumber(state.y, -maxY, maxY);
+      image.style.left = "50%";
+      image.style.top = "50%";
+      image.style.transform =
+        "translate(calc(-50% + " + state.x + "px), calc(-50% + " + state.y + "px)) " +
+        "scale(" + state.zoom + ")";
+      range.value = String(state.zoom);
+    }
+
+    function setZoom(next) {
+      state.zoom = clampNumber(Number(next) || 1, 1, MEMBER_AVATAR_MAX_ZOOM);
+      render();
+    }
+
+    function pointerCenterDistance() {
+      const points = Array.from(pointers.values());
+      if (points.length < 2) return 0;
+      return Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+    }
+
+    viewport.addEventListener("pointerdown", (event) => {
+      if (!state.ready || busy) return;
+      viewport.setPointerCapture(event.pointerId);
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (pointers.size === 1) {
+        dragPoint = { x: event.clientX, y: event.clientY };
+        pinch = null;
+      } else if (pointers.size === 2) {
+        dragPoint = null;
+        pinch = { distance: pointerCenterDistance(), zoom: state.zoom };
+      }
+      event.preventDefault();
+    });
+
+    viewport.addEventListener("pointermove", (event) => {
+      if (!pointers.has(event.pointerId) || busy) return;
+      const previous = pointers.get(event.pointerId);
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (pointers.size === 1 && dragPoint) {
+        state.x += event.clientX - dragPoint.x;
+        state.y += event.clientY - dragPoint.y;
+        dragPoint = { x: event.clientX, y: event.clientY };
+        render();
+      } else if (pointers.size === 2 && pinch) {
+        const distance = pointerCenterDistance();
+        if (pinch.distance > 0) {
+          state.zoom = clampNumber(
+            pinch.zoom * distance / pinch.distance,
+            1,
+            MEMBER_AVATAR_MAX_ZOOM
+          );
+          // Render with a temporary view equal to the previous pointer position: the
+          // scale is about the crop center, which keeps the gesture predictable.
+          render();
+        }
+      }
+      event.preventDefault();
+    });
+
+    function releasePointer(event) {
+      pointers.delete(event.pointerId);
+      pinch = null;
+      if (pointers.size === 1) {
+        const only = Array.from(pointers.values())[0];
+        dragPoint = { x: only.x, y: only.y };
+      } else {
+        dragPoint = null;
+      }
+    }
+    viewport.addEventListener("pointerup", releasePointer);
+    viewport.addEventListener("pointercancel", releasePointer);
+    viewport.addEventListener("wheel", (event) => {
+      if (!state.ready || busy) return;
+      event.preventDefault();
+      setZoom(state.zoom * Math.exp(-event.deltaY * 0.0015));
+    }, { passive: false });
+    range.addEventListener("input", () => setZoom(range.value));
+
+    function fail() {
+      error.textContent = t("avatarCropFailed");
+      error.classList.remove("hidden");
+      apply.disabled = true;
+    }
+
+    image.onload = () => {
+      if (closed) return;
+      state.ready = true;
+      range.disabled = false;
+      apply.disabled = false;
+      layoutImage();
+    };
+    image.onerror = fail;
+    image.src = url;
+
+    resize = () => layoutImage();
+    window.addEventListener("resize", resize);
+
+    function applyCrop() {
+      if (!state.ready || busy) return;
+      busy = true;
+      apply.disabled = true;
+      cancel.disabled = true;
+      range.disabled = true;
+      error.classList.add("hidden");
+      apply.textContent = t("avatarCropProcessing");
+      const view = state.view || viewport.clientWidth;
+      const scale = state.base * state.zoom;
+      const size = Math.min(
+        view / scale,
+        image.naturalWidth,
+        image.naturalHeight
+      );
+      const sourceX = clampNumber(
+        image.naturalWidth / 2 - (view / 2 + state.x) / scale,
+        0,
+        image.naturalWidth - size
+      );
+      const sourceY = clampNumber(
+        image.naturalHeight / 2 - (view / 2 + state.y) / scale,
+        0,
+        image.naturalHeight - size
+      );
+      const canvas = document.createElement("canvas");
+      canvas.width = MEMBER_AVATAR_OUTPUT_PX;
+      canvas.height = MEMBER_AVATAR_OUTPUT_PX;
+      const context = canvas.getContext("2d");
+      if (!context) {
+        busy = false;
+        apply.disabled = false;
+        cancel.disabled = false;
+        range.disabled = false;
+        apply.textContent = t("avatarCropApply");
+        fail();
+        return;
+      }
+      context.fillStyle = "#000";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = "high";
+      try {
+        context.drawImage(
+          image,
+          sourceX,
+          sourceY,
+          size,
+          size,
+          0,
+          0,
+          canvas.width,
+          canvas.height
+        );
+      } catch (_) {
+        busy = false;
+        apply.disabled = false;
+        cancel.disabled = false;
+        range.disabled = false;
+        apply.textContent = t("avatarCropApply");
+        fail();
+        return;
+      }
+      canvasJpegBlob(canvas, (blob) => {
+        if (closed) return;
+        if (!blob) {
+          busy = false;
+          apply.disabled = false;
+          cancel.disabled = false;
+          range.disabled = false;
+          apply.textContent = t("avatarCropApply");
+          fail();
+          return;
+        }
+        close();
+        onApply(blob);
+      });
+    }
+
+    apply.focus();
+  }
+
+  function familyMembers() {
+    return (Array.isArray(snap && snap.members) ? snap.members : [])
+      .filter((member) => member && member.status === "ACTIVE")
+      .slice()
+      .sort((a, b) => (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0));
+  }
+
+  function findMember(userId) {
+    return familyMembers().find((member) => member.userId === userId) || null;
+  }
+
+  // The TV sends the curriculum's grade labels, so the member sheet uses exactly the same
+  // wording as the quiz page. An older cached page falls back to a plain list.
+  function memberGradeChoices() {
+    const raw = Array.isArray(snap && snap.gradeOptions) ? snap.gradeOptions : [];
+    const choices = raw
+      .map((option) => ({
+        no: Number(option && option.no),
+        labels: (option && option.labels) || {}
+      }))
+      .filter((option) => Number.isInteger(option.no) && option.no >= 1);
+    if (choices.length) return choices;
+    return [1, 2, 3, 4, 5, 6].map((no) => ({ no, labels: {} }));
+  }
+
+  function memberGradeLabel(no) {
+    const number = Number(no);
+    const option = memberGradeChoices().find((choice) => choice.no === number);
+    return (option && option.labels && option.labels[lang])
+      || t("memberGradeNumber", { n: number });
+  }
+
+  /** A member with no grade/semester is unrestricted, so both fields stay empty. */
+  function memberScopeSummary(member) {
+    const grade = Number(member && member.grade);
+    if (!Number.isInteger(grade) || grade < 1) return "";
+    const semester = Number(member && member.semester);
+    const label = memberGradeLabel(grade);
+    if (semester === 1 || semester === 2) {
+      return label + " · " + t(semester === 2 ? "semesterSecond" : "semesterFirst");
+    }
+    return label;
+  }
+
+  function memberScopeFieldset(initialGrade, initialSemester, editable = true) {
+    const field = el("div", "parent-field");
+    const row = el("div", "parent-scope-row");
+
+    function selectField(labelKey) {
+      const box = el("div", "parent-scope-field");
+      box.appendChild(el("span", "parent-field-label", t(labelKey)));
+      const select = el("select", "parent-name-input parent-member-select");
+      select.disabled = !editable;
+      box.appendChild(select);
+      return { box, select };
+    }
+
+    const grade = selectField("memberGradeLabel");
+    const allGrades = el("option", null, t("memberGradeAll"));
+    allGrades.value = "";
+    grade.select.appendChild(allGrades);
+    for (const choice of memberGradeChoices()) {
+      const option = el("option", null, memberGradeLabel(choice.no));
+      option.value = String(choice.no);
+      grade.select.appendChild(option);
+    }
+
+    const semester = selectField("memberSemesterLabel");
+    const allSemesters = el("option", null, t("memberSemesterAll"));
+    allSemesters.value = "";
+    semester.select.appendChild(allSemesters);
+    [1, 2].forEach((value) => {
+      const option = el("option", null, t(value === 2 ? "semesterSecond" : "semesterFirst"));
+      option.value = String(value);
+      semester.select.appendChild(option);
+    });
+
+    function syncSemester() {
+      const hasGrade = grade.select.value !== "";
+      semester.select.disabled = !editable || !hasGrade;
+      if (!hasGrade) semester.select.value = "";
+    }
+
+    grade.select.value = Number(initialGrade) >= 1 ? String(Number(initialGrade)) : "";
+    semester.select.value = Number(initialSemester) === 1 || Number(initialSemester) === 2
+      ? String(Number(initialSemester))
+      : "";
+    grade.select.addEventListener("change", syncSemester);
+    syncSemester();
+
+    row.appendChild(grade.box);
+    row.appendChild(semester.box);
+    field.appendChild(row);
+    field.appendChild(el("p", "parent-hint", t("memberGradeHint")));
+
+    return {
+      field,
+      read: () => ({
+        grade: Number(grade.select.value) || 0,
+        semester: Number(semester.select.value) || 0
+      })
+    };
+  }
+
+  /**
+   * The 6-digit switch password. The avatar beside the input names whose password it is;
+   * the stored value is never rendered. A legacy member (no stored credential) shows the
+   * initial-password placeholder, an existing custom one shows "leave unchanged".
+   */
+  function memberSwitchPinField(options) {
+    const opts = options || {};
+    const field = el("div", "parent-field");
+    field.appendChild(el("label", "parent-field-label", t("userPinLabel")));
+    const line = el("div", "parent-pin-line");
+    const avatar = el("span", "parent-avatar");
+    const input = el("input", "parent-pin-input");
+    const seeded = opts.value ? String(opts.value) : "";
+    // The built-in 123456 is a documented first-run credential, not a secret: show it
+    // directly for the default member so the parent can see what the TV expects. As
+    // soon as the field differs from that default, mask the custom password.
+    input.type = opts.reveal && seeded ? "text" : "password";
+    input.inputMode = "numeric";
+    input.autocomplete = "new-password";
+    input.maxLength = 6;
+    input.placeholder = opts.placeholderKey
+      ? t(opts.placeholderKey)
+      : opts.initial ? t("userPinInitial") : t("userPinKeep");
+    input.disabled = Boolean(opts.disabled);
+    if (seeded) input.value = seeded;
+    input.addEventListener("input", () => {
+      input.value = input.value.replace(/\D/g, "").slice(0, 6);
+      if (opts.reveal && seeded) {
+        input.type = input.value === seeded ? "text" : "password";
+      }
+    });
+    line.appendChild(avatar);
+    line.appendChild(input);
+    field.appendChild(line);
+    field.appendChild(el("p", "parent-hint", t("userPinHint")));
+
+    function paint(preset) {
+      avatar.innerHTML = avatarSvg(preset || "rabbit");
+    }
+    paint(opts.preset);
+
+    return {
+      field,
+      input,
+      paint,
+      read: () => input.value.trim()
+    };
+  }
+
+  function memberSourceText(member) {
+    return member.source === "CLOUD" ? t("memberSourceCloud") : t("memberSourceLocal");
+  }
+
+  function familySectionHead(count) {
+    const head = el("div", "parent-family-head");
+    head.appendChild(el("p", "parent-section-label", t("familyGroup")));
+    head.appendChild(el("span", "parent-family-count", t("familyMemberCount", { n: count })));
+    return head;
+  }
+
+  function renderFamilyCard() {
+    const card = el("div", "parent-card parent-family-card");
+    const members = familyMembers();
+    for (const member of members) {
+      const node = el("button", "parent-row parent-member-row");
+      node.type = "button";
+      node.appendChild(memberAvatarNode(member, "parent-avatar-member"));
+      const main = el("div", "parent-row-main");
+      const title = el("span", "parent-member-name");
+      title.appendChild(document.createTextNode(member.name || ""));
+      if (member.isActive) title.appendChild(el("span", "parent-member-badge", t("familyActiveOnTv")));
+      main.appendChild(title);
+      const scopeText = memberScopeSummary(member);
+      main.appendChild(el(
+        "span",
+        "parent-row-sub",
+        [scopeText, memberSourceText(member)].filter(Boolean).join(" · ")
+      ));
+      node.appendChild(main);
+      node.appendChild(el("span", "chevron", "›"));
+      node.addEventListener("click", () => openMemberSheet(member.userId));
+      card.appendChild(node);
+    }
+    const canAdd = Boolean(snap.capabilities && snap.capabilities.canAddMember) && snap.mode !== "CLOUD";
+    const add = el("button", "parent-row parent-add-member");
+    add.type = "button";
+    add.disabled = !canAdd;
+    add.appendChild(el("span", "parent-add-icon", "+"));
+    const addMain = el("div", "parent-row-main");
+    addMain.appendChild(el("span", "parent-row-title", t("familyAddChild")));
+    addMain.appendChild(el("span", "parent-row-sub", canAdd ? null : t("familyAddChildDisabled")));
+    add.appendChild(addMain);
+    if (canAdd) add.addEventListener("click", openAddMemberSheet);
+    card.appendChild(add);
+    card.appendChild(el(
+      "p",
+      "parent-family-note",
+      snap.mode === "CLOUD" ? t("familyCloudReadOnly") : t("familySingleNote")
     ));
     return card;
   }
 
+  function openAddMemberSheet() {
+    const editable = Boolean(snap.capabilities && snap.capabilities.canEditFamily) && snap.mode !== "CLOUD";
+    if (!editable) return;
+    // The add sheet matches the edit sheet: the chosen preset or a cropped phone photo is
+    // previewed in the same hero. The photo stays on the phone until the member exists,
+    // because the avatar route needs a userId; it is uploaded immediately after creation.
+    // Historical installs with no roster are represented by a first member named 大宝 and
+    // the documented 123456 default; later members must choose their own password.
+    const firstMember = familyMembers().length === 0;
+    let draftPhotoBlob = null;
+    let draftPhotoUrl = null;
+    openSheet((sheet, close) => {
+      sheet.appendChild(el("h2", null, t("familyAddChild")));
+
+      const hero = el("div", "parent-member-hero");
+      const avatarSlot = el("span", "parent-avatar-slot");
+      hero.appendChild(avatarSlot);
+      const heroMain = el("div", "parent-member-hero-main");
+      const heroName = el("strong", "parent-member-hero-name", "");
+      const heroSub = el("p", "parent-member-hero-sub", t("memberSourceLocal"));
+      heroMain.appendChild(heroName);
+      heroMain.appendChild(heroSub);
+      hero.appendChild(heroMain);
+      sheet.appendChild(hero);
+
+      const field = el("div", "parent-field");
+      field.appendChild(el("label", "parent-field-label", t("memberNameLabel")));
+      const nameInput = el("input", "parent-name-input");
+      nameInput.type = "text";
+      nameInput.maxLength = 12;
+      nameInput.autocomplete = "off";
+      nameInput.placeholder = t("memberNamePlaceholder");
+      if (firstMember) nameInput.value = "大宝";
+      field.appendChild(nameInput);
+      sheet.appendChild(field);
+
+      const scopeFields = memberScopeFieldset(0, 0);
+      sheet.appendChild(scopeFields.field);
+
+      let draftPreset = "rabbit";
+      let pinField = null;
+      let uploadPhoto = null;
+      let removePhoto = null;
+      let submitting = false;
+
+      function clearDraftPhoto() {
+        if (draftPhotoUrl) URL.revokeObjectURL(draftPhotoUrl);
+        draftPhotoUrl = null;
+        draftPhotoBlob = null;
+      }
+
+      function paintMediaActions() {
+        if (!uploadPhoto || !removePhoto) return;
+        removePhoto.hidden = !draftPhotoBlob;
+        uploadPhoto.textContent = draftPhotoBlob ? t("memberChangePhoto") : t("memberUploadPhoto");
+      }
+
+      function setSubmitting(value) {
+        submitting = value;
+        if (!uploadPhoto) return;
+        uploadPhoto.disabled = value;
+        removePhoto.disabled = value;
+        fileInput.disabled = value;
+        for (const choice of options.querySelectorAll(".parent-avatar-option")) {
+          choice.disabled = value;
+        }
+      }
+
+      function paintHero() {
+        clear(avatarSlot);
+        const preview = el("span", "parent-avatar parent-avatar-sheet");
+        if (draftPhotoUrl) {
+          const image = document.createElement("img");
+          image.src = draftPhotoUrl;
+          image.alt = "";
+          preview.appendChild(image);
+        } else {
+          preview.innerHTML = avatarSvg(draftPreset);
+        }
+        avatarSlot.appendChild(preview);
+        heroName.textContent = nameInput.value.trim() || t("memberNewLabel");
+      }
+
+      sheet.appendChild(el("span", "parent-field-label", t("memberAvatarLabel")));
+      const options = el("div", "parent-avatar-options");
+      function paintOptions() {
+        clear(options);
+        for (const key of MEMBER_AVATAR_KEYS) {
+          const choice = el("button", "parent-avatar-option" + (key === draftPreset ? " is-selected" : ""));
+          choice.type = "button";
+          choice.setAttribute("aria-label", t(MEMBER_AVATAR_LABELS[key]));
+          choice.innerHTML = avatarSvg(key);
+          choice.addEventListener("click", () => {
+            if (submitting) return;
+            draftPreset = key;
+            clearDraftPhoto();
+            paintOptions();
+            paintHero();
+            paintMediaActions();
+            if (pinField) pinField.paint(draftPreset);
+          });
+          options.appendChild(choice);
+        }
+      }
+      paintOptions();
+      sheet.appendChild(options);
+
+      // Only the first member keeps the historical 123456 default, shown directly so the
+      // parent can see it. A later member starts empty and cannot be added without a
+      // 6-digit password of its own.
+      pinField = memberSwitchPinField({
+        preset: draftPreset,
+        initial: firstMember,
+        value: firstMember ? "123456" : "",
+        reveal: firstMember,
+        placeholderKey: "userPinRequired"
+      });
+      sheet.appendChild(pinField.field);
+
+      const mediaActions = el("div", "parent-avatar-actions");
+      const fileInput = el("input", "hidden");
+      fileInput.type = "file";
+      fileInput.accept = "image/*";
+      uploadPhoto = button(t("memberUploadPhoto"), "parent-btn ghost", () => {
+        if (!submitting) fileInput.click();
+      });
+      removePhoto = button(t("memberRemovePhoto"), "parent-btn ghost danger-text", () => {
+        if (submitting) return;
+        clearDraftPhoto();
+        paintHero();
+        paintMediaActions();
+      });
+      mediaActions.appendChild(uploadPhoto);
+      mediaActions.appendChild(removePhoto);
+      mediaActions.appendChild(fileInput);
+      sheet.appendChild(mediaActions);
+      sheet.appendChild(el("p", "parent-hint", t("familyLocalOnly")));
+
+      const error = el("p", "parent-error hidden");
+      sheet.appendChild(error);
+      function showError(text) {
+        error.textContent = text;
+        error.classList.remove("hidden");
+      }
+
+      fileInput.addEventListener("change", () => {
+        const file = fileInput.files && fileInput.files[0];
+        fileInput.value = "";
+        if (!file || submitting) return;
+        error.classList.add("hidden");
+        if (!/^image\//.test(file.type || "")) {
+          showError(t("memberImageType"));
+          return;
+        }
+        if (file.size > MEMBER_AVATAR_SOURCE_BYTES) {
+          showError(t("memberImageTooLarge"));
+          return;
+        }
+        if (typeof host.upload !== "function") {
+          showError(t("featureUnavailable"));
+          return;
+        }
+        // Same phone-side crop as the edit sheet: only the 512px JPEG reaches the TV.
+        openAvatarCropper(file, (blob) => {
+          clearDraftPhoto();
+          draftPhotoBlob = blob;
+          draftPhotoUrl = URL.createObjectURL(blob);
+          paintHero();
+          paintMediaActions();
+        });
+      });
+
+      const actions = el("div", "parent-actions");
+      actions.appendChild(button(t("cancel"), "parent-btn ghost", close));
+      const add = button(t("memberAddAction"), "parent-btn primary", async () => {
+        const name = nameInput.value.trim();
+        error.classList.add("hidden");
+        if (!name) {
+          showError(t("memberNameInvalid"));
+          nameInput.focus();
+          return;
+        }
+        const pin = pinField.read();
+        if (!pin) {
+          showError(t("userPinRequired"));
+          pinField.input.focus();
+          return;
+        }
+        if (!/^\d{6}$/.test(pin)) {
+          showError(t("userPinInvalid"));
+          pinField.input.focus();
+          return;
+        }
+        setSubmitting(true);
+        add.disabled = true;
+        const pendingPhoto = draftPhotoBlob;
+        const beforeIds = new Set(familyMembers().map((member) => member.userId));
+        try {
+          const scope = scopeFields.read();
+          const body = {
+            name: name,
+            avatarPreset: draftPreset,
+            grade: scope.grade,
+            semester: scope.semester,
+            switchPin: pin
+          };
+          const data = await host.request("/api/parent/subjects/add", {
+            method: "POST",
+            body: body,
+            editorToken: editorToken,
+            quizAuth: true
+          });
+          if (data && data.snapshot) adoptSnapshot(data.snapshot, false);
+          else await refreshSnapshot();
+          const added = familyMembers().find((member) => !beforeIds.has(member.userId)) || null;
+          if (pendingPhoto && !added) {
+            close();
+            setNotice(t("memberAdded") + " · " + t("memberImageSaveFailed"), true);
+            render();
+            if (host.memberProfileChanged) host.memberProfileChanged();
+            return;
+          }
+          if (pendingPhoto && added) {
+            try {
+              const uploaded = await host.upload(
+                "/api/parent/subjects/avatar?userId=" + encodeURIComponent(added.userId),
+                pendingPhoto,
+                editorToken,
+                null,
+                "image/jpeg"
+              );
+              if (uploaded && uploaded.snapshot) adoptSnapshot(uploaded.snapshot, false);
+              else await refreshSnapshot();
+            } catch (uploadError) {
+              if (isLeaseError(uploadError)) {
+                close();
+                handleLeaseError(uploadError);
+                return;
+              }
+              // The member exists with the selected icon; the photo is the only failed
+              // part, so report that instead of asking the parent to add the child again.
+              try { await refreshSnapshot(); } catch (_) { /* keep the added snapshot */ }
+              close();
+              setNotice(t("memberAdded") + " · " + t("memberImageSaveFailed"), true);
+              render();
+              if (host.memberProfileChanged) host.memberProfileChanged();
+              return;
+            }
+          }
+          close();
+          setNotice(successText("SUBJECT_ADDED"), false);
+          render();
+          if (host.memberProfileChanged) host.memberProfileChanged();
+        } catch (err) {
+          if (isLeaseError(err)) {
+            close();
+            handleLeaseError(err);
+            return;
+          }
+          setSubmitting(false);
+          add.disabled = false;
+          showError(errorText(err) || t("memberAddFailed"));
+        }
+      });
+      actions.appendChild(add);
+      sheet.appendChild(actions);
+      nameInput.addEventListener("input", paintHero);
+      paintHero();
+      paintMediaActions();
+      nameInput.focus();
+    }, () => {
+      if (draftPhotoUrl) URL.revokeObjectURL(draftPhotoUrl);
+      draftPhotoUrl = null;
+      draftPhotoBlob = null;
+    });
+  }
+
+  function openMemberSheet(userId) {
+    const initial = findMember(userId);
+    if (!initial) return;
+    const editable = Boolean(snap.capabilities && snap.capabilities.canEditFamily) && snap.mode !== "CLOUD";
+    openSheet((sheet, close) => {
+      sheet.appendChild(el("h2", null, t("memberEditTitle")));
+      const hero = el("div", "parent-member-hero");
+      const avatarSlot = el("span", "parent-avatar-slot");
+      hero.appendChild(avatarSlot);
+      const heroMain = el("div", "parent-member-hero-main");
+      const heroName = el("strong", "parent-member-hero-name", "");
+      const heroSub = el("p", "parent-member-hero-sub", "");
+      heroMain.appendChild(heroName);
+      heroMain.appendChild(heroSub);
+      hero.appendChild(heroMain);
+      sheet.appendChild(hero);
+
+      let draftPreset = initial.avatarPreset || "rabbit";
+      // Choosing a preset over an uploaded photo is a draft until Save; cancelling must not
+      // delete the family photo. The delete request is sent only after the profile write.
+      let dropPhoto = false;
+
+      function currentMember() {
+        return findMember(userId) || initial;
+      }
+
+      function paintHero() {
+        const member = currentMember();
+        clear(avatarSlot);
+        if (dropPhoto) {
+          const preview = el("span", "parent-avatar parent-avatar-sheet");
+          preview.innerHTML = avatarSvg(draftPreset);
+          avatarSlot.appendChild(preview);
+        } else {
+          avatarSlot.appendChild(memberAvatarNode(member, "parent-avatar-sheet"));
+        }
+        heroName.textContent = member.name || "";
+        heroSub.textContent = member.isActive
+          ? t("familyActiveOnTv")
+          : memberSourceText(member);
+        removePhoto.hidden = !member.avatarUrl || !editable;
+        uploadPhoto.textContent = member.avatarUrl && !dropPhoto
+          ? t("memberChangePhoto")
+          : t("memberUploadPhoto");
+      }
+
+      const field = el("div", "parent-field");
+      field.appendChild(el("label", "parent-field-label", t("memberNameLabel")));
+      const nameInput = el("input", "parent-name-input");
+      nameInput.type = "text";
+      nameInput.maxLength = 12;
+      nameInput.autocomplete = "off";
+      nameInput.placeholder = t("memberNamePlaceholder");
+      nameInput.value = initial.name || "";
+      nameInput.disabled = !editable;
+      field.appendChild(nameInput);
+      sheet.appendChild(field);
+
+      const scopeFields = memberScopeFieldset(initial.grade, initial.semester, editable);
+      sheet.appendChild(scopeFields.field);
+
+      let pinField = null;
+      sheet.appendChild(el("span", "parent-field-label", t("memberAvatarLabel")));
+      const options = el("div", "parent-avatar-options");
+      function paintOptions() {
+        clear(options);
+        for (const key of MEMBER_AVATAR_KEYS) {
+          const choice = el("button", "parent-avatar-option" + (key === draftPreset ? " is-selected" : ""));
+          choice.type = "button";
+          choice.disabled = !editable;
+          choice.setAttribute("aria-label", t(MEMBER_AVATAR_LABELS[key]));
+          choice.innerHTML = avatarSvg(key);
+          choice.addEventListener("click", () => {
+            draftPreset = key;
+            dropPhoto = Boolean(currentMember().avatarUrl);
+            paintOptions();
+            paintHero();
+            if (pinField) pinField.paint(draftPreset);
+          });
+          options.appendChild(choice);
+        }
+      }
+      paintOptions();
+      sheet.appendChild(options);
+
+      // The default member still has the documented 123456 credential; show it so the
+      // parent is not left guessing. A custom password is never rendered: the field stays
+      // empty and "keep unchanged" is the placeholder.
+      const initialPin = Boolean(initial.switchPinInitial) ? "123456" : "";
+      pinField = memberSwitchPinField({
+        preset: draftPreset,
+        initial: Boolean(initial.switchPinInitial),
+        disabled: !editable,
+        value: initialPin,
+        reveal: Boolean(initial.switchPinInitial)
+      });
+      sheet.appendChild(pinField.field);
+
+      const mediaActions = el("div", "parent-avatar-actions");
+      const fileInput = el("input", "hidden");
+      fileInput.type = "file";
+      fileInput.accept = "image/*";
+      const uploadPhoto = button(t("memberUploadPhoto"), "parent-btn ghost", () => fileInput.click());
+      uploadPhoto.disabled = !editable;
+      const removePhoto = button(t("memberRemovePhoto"), "parent-btn ghost danger-text", async () => {
+        if (!editable) return;
+        hideError();
+        try {
+          await host.request("/api/parent/subjects/avatar/delete", {
+            method: "POST",
+            body: { userId: userId },
+            editorToken: editorToken,
+            quizAuth: true
+          });
+          dropPhoto = false;
+          await refreshSnapshot();
+          render();
+          paintHero();
+          // The family card, member header and the quiz page all show this avatar too;
+          // refresh them from the new revision instead of waiting for a page reload.
+          if (host.memberProfileChanged) host.memberProfileChanged();
+        } catch (error) {
+          if (isLeaseError(error)) {
+            close();
+            handleLeaseError(error);
+            return;
+          }
+          showError(errorText(error));
+        }
+      });
+      mediaActions.appendChild(uploadPhoto);
+      mediaActions.appendChild(removePhoto);
+      mediaActions.appendChild(fileInput);
+      sheet.appendChild(mediaActions);
+
+      const hint = el(
+        "p",
+        "parent-hint",
+        snap.mode === "CLOUD" ? t("familyCloudReadOnly") : t("familyLocalOnly")
+      );
+      sheet.appendChild(hint);
+
+      if (editable) {
+        const deleteArea = el("div", "parent-member-delete");
+        // Keep the action visible even when blocked; a hint-only area made the feature
+        // hard to find for the TV's current or default member.
+        const deleteButton = button(
+          t("memberDeleteAction"),
+          "parent-btn ghost danger-text",
+          () => {
+            const member = currentMember();
+            confirmSheet(
+              t("memberDeleteTitle"),
+              t("memberDeleteText", { name: member.name || "" }),
+              t("memberDeleteAction"),
+              async () => {
+                try {
+                  const data = await requestWithSensitive(
+                    "/api/parent/subjects/delete",
+                    {
+                      method: "POST",
+                      body: { userId: userId },
+                      editorToken: editorToken,
+                      quizAuth: true
+                    },
+                    "RULES_EDIT",
+                    "sensitivePinLeadDelete"
+                  );
+                  if (!data) return;
+                  const cached = memberAvatarUrls.get(userId);
+                  if (cached) {
+                    URL.revokeObjectURL(cached.url);
+                    memberAvatarUrls.delete(userId);
+                  }
+                  if (data.snapshot) adoptSnapshot(data.snapshot, false);
+                  else await refreshSnapshot();
+                  setNotice(successText((data && data.messageKey) || "SUBJECT_DELETED"), false);
+                  render();
+                  if (host.memberProfileChanged) host.memberProfileChanged();
+                } catch (error) {
+                  if (isLeaseError(error)) {
+                    handleLeaseError(error);
+                    return;
+                  }
+                  setNotice(errorText(error) || t("memberDeleteFailed"), true);
+                  render();
+                }
+              }
+            );
+          }
+        );
+        deleteButton.disabled = initial.isActive || initial.isDefault;
+        deleteArea.appendChild(deleteButton);
+        if (initial.isActive) {
+          deleteArea.appendChild(el("p", "parent-hint", t("familyDeleteActiveHint")));
+        } else if (initial.isDefault) {
+          deleteArea.appendChild(el("p", "parent-hint", t("familyDeleteDefaultHint")));
+        }
+        sheet.appendChild(deleteArea);
+      }
+
+      const error = el("p", "parent-error hidden");
+      const ok = el("p", "parent-ok hidden");
+      sheet.appendChild(error);
+      sheet.appendChild(ok);
+
+      function showError(text) {
+        ok.classList.add("hidden");
+        error.textContent = text;
+        error.classList.remove("hidden");
+      }
+
+      function hideError() {
+        error.classList.add("hidden");
+      }
+
+      fileInput.addEventListener("change", () => {
+        const file = fileInput.files && fileInput.files[0];
+        fileInput.value = "";
+        if (!file || !editable) return;
+        hideError();
+        ok.classList.add("hidden");
+        if (!/^image\//.test(file.type || "")) {
+          showError(t("memberImageType"));
+          return;
+        }
+        if (file.size > MEMBER_AVATAR_SOURCE_BYTES) {
+          showError(t("memberImageTooLarge"));
+          return;
+        }
+        if (typeof host.upload !== "function") {
+          showError(t("featureUnavailable"));
+          return;
+        }
+        // The source photo never goes to the TV. The phone crops it to a square and sends a
+        // 512px JPEG, so a large camera photo works without making the TV decode it.
+        openAvatarCropper(file, async (blob) => {
+          uploadPhoto.disabled = true;
+          uploadPhoto.textContent = t("avatarCropProcessing");
+          try {
+            const data = await host.upload(
+              "/api/parent/subjects/avatar?userId=" + encodeURIComponent(userId),
+              blob,
+              editorToken,
+              null,
+              "image/jpeg"
+            );
+            dropPhoto = false;
+            if (data && data.snapshot) adoptSnapshot(data.snapshot, false);
+            else await refreshSnapshot();
+            // Repaint the page behind the sheet and tell the quiz header about the new
+            // avatar revision; otherwise only this hero would show the new photo.
+            render();
+            paintHero();
+            if (host.memberProfileChanged) host.memberProfileChanged();
+            ok.textContent = t("memberSaved");
+            ok.classList.remove("hidden");
+          } catch (err) {
+            if (isLeaseError(err)) {
+              close();
+              handleLeaseError(err);
+              return;
+            }
+            showError(errorText(err));
+          } finally {
+            uploadPhoto.disabled = !editable;
+            uploadPhoto.textContent = currentMember().avatarUrl && !dropPhoto
+              ? t("memberChangePhoto")
+              : t("memberUploadPhoto");
+          }
+        });
+      });
+
+      const actions = el("div", "parent-actions");
+      actions.appendChild(button(t("cancel"), "parent-btn ghost", close));
+      if (editable) {
+        const save = button(t("memberSaveAction"), "parent-btn primary", async () => {
+          const name = nameInput.value.trim();
+          hideError();
+          if (!name) {
+            showError(t("memberNameInvalid"));
+            nameInput.focus();
+            return;
+          }
+          const pin = pinField.read();
+          if (pin && !/^\d{6}$/.test(pin)) {
+            showError(t("userPinInvalid"));
+            pinField.input.focus();
+            return;
+          }
+          save.disabled = true;
+          try {
+            const scope = scopeFields.read();
+            const body = {
+              userId: userId,
+              name: name,
+              avatarPreset: draftPreset,
+              grade: scope.grade,
+              semester: scope.semester
+            };
+            // Leaving the visible 123456 default untouched must keep the initial
+            // credential instead of rewriting it as a custom PBKDF2 hash.
+            if (pin && !(initial.switchPinInitial && pin === "123456")) {
+              body.switchPin = pin;
+            }
+            const data = await host.request("/api/parent/subjects/profile", {
+              method: "POST",
+              body: body,
+              editorToken: editorToken,
+              quizAuth: true
+            });
+            if (dropPhoto && currentMember().avatarUrl) {
+              await host.request("/api/parent/subjects/avatar/delete", {
+                method: "POST",
+                body: { userId: userId },
+                editorToken: editorToken,
+                quizAuth: true
+              });
+            }
+            await refreshSnapshot();
+            close();
+            setNotice(successText((data && data.messageKey) || "SUBJECT_SAVED"), false);
+            render();
+            // The quiz page mirrors the member list; refresh it so a changed grade or
+            // semester becomes the default scope without a page reload.
+            if (host.memberProfileChanged) host.memberProfileChanged();
+          } catch (err) {
+            if (isLeaseError(err)) {
+              close();
+              handleLeaseError(err);
+              return;
+            }
+            save.disabled = false;
+            showError(errorText(err));
+          }
+        });
+        actions.appendChild(save);
+      }
+      sheet.appendChild(actions);
+      paintHero();
+    });
+  }
+
+  function unlimitedPackages() {
+    const value = snap && snap.rules && snap.rules.unlimitedPackages;
+    return Array.isArray(value) ? value : [];
+  }
+
+  /**
+   * One tappable app tile. V45 routes every icon click straight to its picker, so the tile
+   * is the entry and `+`/`+N` is the same entry; there is no intermediate summary page.
+   */
+  function appIconTile(options) {
+    const tile = el("button", "parent-icon-tile");
+    tile.type = "button";
+    const icon = el("span", "parent-app-icon");
+    const label = options.label || "";
+    if (options.pkg) {
+      icon.appendChild(el("span", "parent-app-initial",
+        (label.trim()[0] || "?").toUpperCase()));
+      requestAppIcon(options.pkg, icon);
+    } else {
+      tile.classList.add("is-add");
+      icon.appendChild(el("span", "parent-app-initial", options.marker || "+"));
+    }
+    tile.appendChild(icon);
+    if (options.showLabel && label) {
+      const name = el("span", "parent-app-name", label);
+      if (options.pkg) name.dataset.studyEarnLabel = options.pkg;
+      tile.appendChild(name);
+    }
+    tile.disabled = Boolean(options.disabled);
+    tile.setAttribute("aria-label", options.ariaLabel || label || t("appPickerManage"));
+    if (options.onClick) tile.addEventListener("click", options.onClick);
+    return tile;
+  }
+
+  function appScopeGrid(packages, open, canEdit, maxShown) {
+    const grid = el("div", "parent-icon-grid");
+    packages.slice(0, maxShown).forEach((pkg) => {
+      grid.appendChild(appIconTile({
+        pkg,
+        label: studyEarnAppLabel(pkg),
+        onClick: open,
+        disabled: !canEdit,
+      }));
+    });
+    grid.appendChild(appIconTile({
+      marker: packages.length > maxShown ? "+" + (packages.length - maxShown) : "+",
+      onClick: open,
+      disabled: !canEdit,
+      ariaLabel: t("appPickerManage"),
+    }));
+    return grid;
+  }
+
+  function appEmptyAdd(label, open, canEdit) {
+    const empty = el("button", "parent-empty-add");
+    empty.type = "button";
+    empty.disabled = !canEdit;
+    empty.appendChild(el("span", "parent-empty-add-mark", "+"));
+    empty.appendChild(el("span", null, label));
+    empty.addEventListener("click", open);
+    return empty;
+  }
+
+  /** V45 first-level object: the unlimited icons themselves are the way into the picker. */
+  function renderUnlimitedCard(blocked) {
+    const card = el("div", "parent-card parent-icon-card");
+    const head = el("div", "parent-icon-card-head");
+    head.appendChild(el("span", "parent-row-title", t("unlimitedApps")));
+    head.appendChild(el("span", "parent-row-sub", t("unlimitedAppsHint")));
+    card.appendChild(head);
+    const canEdit = !blocked && Boolean(snap.capabilities && snap.capabilities.canEditRules);
+    const open = () => openPicker("unlimited", "user");
+    const packages = unlimitedPackages();
+    if (!packages.length) {
+      card.appendChild(appEmptyAdd(t("unlimitedEmpty"), open, canEdit));
+    } else {
+      card.appendChild(appScopeGrid(packages, open, canEdit, 4));
+    }
+    card.appendChild(el("p", "parent-hint parent-icon-card-hint", t("unlimitedManageHint")));
+    return card;
+  }
+
+  function renderAppRows() {
+    const card = el("div", "parent-card parent-icon-card");
+    const rules = snap.rules || {};
+    const canEdit = Boolean(snap.capabilities && snap.capabilities.canEditRules);
+    const open = () => openPicker("entertainment", "time");
+    const allApps = Boolean(rules.allApps);
+    const allowed = Array.isArray(rules.allowedPackages) ? rules.allowedPackages : [];
+    if (allApps) {
+      const grid = el("div", "parent-icon-grid");
+      const tile = appIconTile({
+        marker: "∞",
+        label: t("allApps"),
+        showLabel: true,
+        onClick: open,
+        disabled: !canEdit,
+        ariaLabel: t("allApps"),
+      });
+      tile.classList.add("is-all");
+      grid.appendChild(tile);
+      card.appendChild(grid);
+    } else if (!allowed.length) {
+      card.appendChild(appEmptyAdd(t("noEntertainment"), open, canEdit));
+    } else {
+      card.appendChild(appScopeGrid(allowed, open, canEdit, 4));
+    }
+    card.appendChild(el("p", "parent-hint parent-icon-card-hint", t("appIconHint")));
+    return card;
+  }
+
+  /** Stored switch values. All three routes are independent and may be on together. */
+  function routeFlags(rules) {
+    return {
+      quiz: rules.quizGateEnabled !== false,
+      study: rules.studyEarnEnabled !== false,
+      direct: rules.directStartEnabled === true,
+    };
+  }
+
+  function sessionCapMinutes() {
+    const value = Number(snap && snap.rules && snap.rules.sessionCapMinutes);
+    const bounded = Number.isFinite(value) ? value : DEFAULT_SESSION_CAP_MINUTES;
+    return Math.min(MAX_SESSION_CAP_MINUTES, Math.max(MIN_SESSION_CAP_MINUTES, bounded));
+  }
+
+  function routeCount(field) {
+    const value = Number(snap && snap.rules && snap.rules[field]);
+    if (!Number.isFinite(value)) return DEFAULT_ROUTE_DAILY_COUNT;
+    return Math.min(MAX_ROUTE_DAILY_COUNT, Math.max(0, Math.round(value)));
+  }
+
+  function routeCountRow(field, label, canEdit) {
+    // The stepper is fixed-width; on a 360px phone the row wraps it under the label instead
+    // of squeezing either side.
+    const node = el("div", "parent-row parent-route-count");
+    const main = el("div", "parent-row-main");
+    main.appendChild(el("span", "parent-row-title", label));
+    node.appendChild(main);
+    const controls = el("div", "parent-stepper");
+    const minus = button("−", "parent-step", () => adjustRouteCount(field, -1));
+    const value = button(t("countTimes", { n: routeCount(field) }), "parent-step-value",
+      () => setRouteCount(field, routeCount(field)));
+    value.dataset.routeCount = field;
+    const plus = button("+", "parent-step", () => adjustRouteCount(field, 1));
+    [minus, value, plus].forEach((control) => {
+      control.disabled = !canEdit;
+      controls.appendChild(control);
+    });
+    node.appendChild(controls);
+    return node;
+  }
+
+  function adjustRouteCount(field, delta) {
+    if (!snap.capabilities || !snap.capabilities.canEditRules) return;
+    const current = routeCount(field);
+    const next = Math.min(MAX_ROUTE_DAILY_COUNT, Math.max(0, current + delta));
+    if (next === current) return;
+    setRouteCount(field, next);
+  }
+
+  function setRouteCount(field, value) {
+    const next = clone(snap.rules);
+    next.rulesContractVersion = RULES_CONTRACT_VERSION;
+    next[field] = Math.min(MAX_ROUTE_DAILY_COUNT, Math.max(0, value));
+    if (!saveRules(next)) return;
+    paintRouteCounts();
+  }
+
+  function paintRouteCounts() {
+    document.querySelectorAll(".parent-step-value[data-route-count]").forEach((node) => {
+      node.textContent = t("countTimes", { n: routeCount(node.dataset.routeCount) });
+    });
+  }
+
+  function paintRouteHints() {
+    const cap = sessionCapMinutes();
+    document.querySelectorAll("[data-route-hint]").forEach((node) => {
+      const key = node.dataset.routeHint;
+      if (key === "quiz") node.textContent = t("quizAutoLength", { n: cap });
+      else if (key === "direct") node.textContent = t("directMaxHint", { n: cap });
+      else if (key === "studyReward") {
+        node.textContent = t("studyRewardMaxHint", { n: cap });
+      }
+    });
+  }
+
+  function renderWatchMethods() {
+    const canEdit = Boolean(snap.capabilities && snap.capabilities.canEditRules);
+    const rules = snap.rules || {};
+    const flags = routeFlags(rules);
+    const cap = sessionCapMinutes();
+    const card = el("div", "parent-card");
+    card.appendChild(switchRow(
+      t("quizChallenge"), t("quizGateSwitchHint"), flags.quiz, !canEdit,
+      (input) => setRouteSwitch("quizGateEnabled", input)
+    ));
+    // V45: a route that is off shows only its switch row. Its body stays out of the page
+    // entirely — no retained counts, no manage buttons, no half-configured controls.
+    if (flags.quiz) {
+      card.appendChild(routeCountRow("quizDailyLimitCount", t("routeDailyCount"), canEdit));
+      const quizHint = el("p", "parent-hint", t("quizAutoLength", { n: cap }));
+      quizHint.dataset.routeHint = "quiz";
+      card.appendChild(quizHint);
+    }
+    card.appendChild(switchRow(
+      t("studyEarnTitle"), t("studyEarnSwitchHint"), flags.study, !canEdit,
+      (input) => setRouteSwitch("studyEarnEnabled", input)
+    ));
+    if (flags.study) card.appendChild(renderStudyMethodBody(canEdit));
+    card.appendChild(switchRow(
+      t("directStartTitle"), t("directStartSwitchHint"), flags.direct, !canEdit,
+      (input) => setRouteSwitch("directStartEnabled", input)
+    ));
+    if (flags.direct) card.appendChild(renderDirectMethodBody(canEdit));
+    if (!flags.quiz && !flags.study && !flags.direct) {
+      card.appendChild(el("p", "parent-hint", t("routesOffHint")));
+    }
+    return card;
+  }
+
+  function renderStudyMethodBody(canEdit) {
+    const rules = snap.rules || {};
+    // studyPackages is the only study list in V45; studyEarnPackages is normalized to match.
+    const study = Array.isArray(rules.studyPackages) ? rules.studyPackages : [];
+    const body = el("div", "parent-method-body");
+    body.appendChild(studyEarnStepRow("study", t("studyEarnStudyMinutes"), canEdit));
+    body.appendChild(studyEarnStepRow("reward", t("studyEarnRewardMinutes"), canEdit));
+    const rewardHint = el("p", "parent-hint", t("studyRewardMaxHint", {
+      n: sessionCapMinutes(),
+    }));
+    rewardHint.dataset.routeHint = "studyReward";
+    body.appendChild(rewardHint);
+    body.appendChild(routeCountRow("studyRewardDailyLimitCount", t("routeDailyCount"), canEdit));
+    body.appendChild(el("div", "parent-method-title", t("studyEarnApps")));
+    const open = () => openPicker("study", "time");
+    const shown = study.length > 3 ? study.slice(0, 3) : study;
+    if (!study.length) {
+      const grid = el("div", "parent-icon-grid");
+      grid.appendChild(appIconTile({
+        marker: "+",
+        onClick: open,
+        disabled: !canEdit,
+        ariaLabel: t("addStudyApps"),
+      }));
+      body.appendChild(grid);
+      body.appendChild(el("p", "parent-hint", t("studyEarnEmptyHint")));
+    } else {
+      const grid = el("div", "parent-icon-grid");
+      shown.forEach((pkg) => {
+        grid.appendChild(appIconTile({
+          pkg,
+          label: studyEarnAppLabel(pkg),
+          showLabel: true,
+          onClick: open,
+          disabled: !canEdit,
+        }));
+      });
+      grid.appendChild(appIconTile({
+        marker: study.length > 3 ? "+" + (study.length - 3) : "+",
+        onClick: open,
+        disabled: !canEdit,
+        ariaLabel: t("appPickerManage"),
+      }));
+      body.appendChild(grid);
+    }
+    return body;
+  }
+
+  function renderDirectMethodBody(canEdit) {
+    const body = el("div", "parent-method-body");
+    const node = el("div", "parent-row");
+    const main = el("div", "parent-row-main");
+    main.appendChild(el("span", "parent-row-title", t("directDuration")));
+    node.appendChild(main);
+    const controls = el("div", "parent-stepper");
+    const minus = button("−", "parent-step",
+      () => adjustDirectMinutes(-STEP_DIRECT_MINUTES));
+    const value = directMinutes();
+    const valueBtn = button(t("minutes", { n: value }), "parent-step-value",
+      () => openDirectMinutesSheet(value));
+    valueBtn.dataset.directMinutes = "1";
+    const plus = button("+", "parent-step",
+      () => adjustDirectMinutes(STEP_DIRECT_MINUTES));
+    [minus, valueBtn, plus].forEach((control) => {
+      control.disabled = !canEdit;
+      controls.appendChild(control);
+    });
+    node.appendChild(controls);
+    body.appendChild(node);
+    const directHint = el("p", "parent-hint", t("directMaxHint", { n: sessionCapMinutes() }));
+    directHint.dataset.routeHint = "direct";
+    body.appendChild(directHint);
+    body.appendChild(routeCountRow("directDailyFreeCount", t("routeDailyCount"), canEdit));
+    body.appendChild(el("p", "parent-hint", t("directPauseNote")));
+    return body;
+  }
+
+  function directMinutes() {
+    const rules = snap && snap.rules;
+    const directValue = Number(rules && rules.directSessionMinutes);
+    const alias = Number(rules && rules.sessionLimitMinutes);
+    const value = Number.isFinite(directValue) ? directValue
+      : (Number.isFinite(alias) ? alias : DEFAULT_DIRECT_MINUTES);
+    const cap = sessionCapMinutes();
+    return Math.min(cap, Math.max(MIN_DIRECT_MINUTES, Math.round(value)));
+  }
+
+  /** Switches never pause each other; turning all three off asks for confirmation. */
+  function setRouteSwitch(field, input) {
+    if (!snap.capabilities || !snap.capabilities.canEditRules) return;
+    const next = clone(snap.rules);
+    const wanted = Boolean(input.checked);
+    next[field] = wanted;
+    const flags = routeFlags(next);
+    if (!wanted && !flags.quiz && !flags.study && !flags.direct) {
+      // Keep the switch visually on until the parent confirms; cancel leaves it untouched.
+      input.checked = true;
+      confirmSheet(
+        t("allRoutesOffTitle"), t("allRoutesOffBody"), t("allRoutesOffConfirm"),
+        () => {
+          next.rulesContractVersion = RULES_CONTRACT_VERSION;
+          if (!saveRules(next)) return;
+          clearNotices();
+          rerenderTimePage();
+        }
+      );
+      return;
+    }
+    next.rulesContractVersion = RULES_CONTRACT_VERSION;
+    if (!saveRules(next)) {
+      input.checked = !wanted;
+      return;
+    }
+    clearNotices();
+    rerenderTimePage();
+  }
+
+  /**
+   * 1 minute is kept as an explicit stop below the normal 5-minute grid, so stepping from
+   * 1 goes to 5 and back to 1 (or 0 for fields that allow a disabled value).
+   */
+  function stepMinuteValue(value, delta, min, max) {
+    const current = Number(value);
+    if (delta > 0) {
+      if (current < 1) return Math.min(max, 1);
+      if (current < 5) return Math.min(max, 5);
+    } else if (delta < 0) {
+      if (current <= 1) return min;
+      if (current <= 5) return Math.max(min, 1);
+    } else {
+      return current;
+    }
+    return Math.min(max, Math.max(min, current + delta));
+  }
+
+  function adjustDirectMinutes(delta) {
+    if (!snap.capabilities || !snap.capabilities.canEditRules) return;
+    const current = directMinutes();
+    const next = stepMinuteValue(current, delta, MIN_DIRECT_MINUTES, sessionCapMinutes());
+    if (next === current) return;
+    setDirectMinutes(next);
+  }
+
+  function setDirectMinutes(value) {
+    const next = clone(snap.rules);
+    next.rulesContractVersion = RULES_CONTRACT_VERSION;
+    const capped = Math.min(sessionCapMinutes(), Math.max(MIN_DIRECT_MINUTES, value));
+    next.sessionLimitMinutes = capped;
+    next.directSessionMinutes = capped;
+    if (!saveRules(next)) return;
+    paintDirectMinutes();
+  }
+
+  function paintDirectMinutes() {
+    const node = document.querySelector(".parent-step-value[data-direct-minutes]");
+    if (node) node.textContent = t("minutes", { n: directMinutes() });
+  }
+
+  function openDirectMinutesSheet(current) {
+    if (!snap.capabilities || !snap.capabilities.canEditRules) return;
+    const cap = sessionCapMinutes();
+    const allowed = DIRECT_OPTIONS.filter((option) => option <= cap);
+    const options = allowed.indexOf(current) >= 0
+      ? allowed : allowed.concat(current).sort((a, b) => a - b);
+    openLimitSheet(t("directDuration"), current, options, setDirectMinutes);
+  }
+
+  function studyEarnMinutes(field) {
+    const rules = snap && snap.rules;
+    if (field === "studyEarnStudyMinutes") {
+      const value = Number(rules && rules.studyEarnStudyMinutes);
+      const bounded = Number.isFinite(value) ? value : DEFAULT_STUDY_EARN_STUDY_MINUTES;
+      return Math.min(MAX_STUDY_EARN_MINUTES,
+        Math.max(MIN_STUDY_EARN_MINUTES, Math.round(bounded)));
+    }
+    const value = Number(rules && rules.studyEarnRewardMinutes);
+    const bounded = Number.isFinite(value) ? value : DEFAULT_STUDY_EARN_REWARD_MINUTES;
+    // Reward minutes are independent of study minutes; only the public cap bounds them.
+    return Math.min(sessionCapMinutes(),
+      Math.max(MIN_STUDY_EARN_MINUTES, Math.round(bounded)));
+  }
+
+  function studyEarnField(key) {
+    return key === "study" ? "studyEarnStudyMinutes" : "studyEarnRewardMinutes";
+  }
+
+  function studyPackagesAll() {
+    const value = snap && snap.rules && snap.rules.studyPackages;
+    return Array.isArray(value) ? value : [];
+  }
+
+  function studyEarnAppLabel(pkg) {
+    const apps = studyEarnCatalog || [];
+    const found = apps.find((app) => String(app.packageName || "") === pkg);
+    return found && found.label ? String(found.label) : pkg;
+  }
+
+  /** Labels come from the installed-app list; fetching once keeps the inline list readable. */
+  async function ensureStudyEarnCatalog() {
+    if (studyEarnCatalog || studyEarnLoading) return;
+    studyEarnLoading = true;
+    try {
+      const data = await host.request("/api/parent/apps", {
+        editorToken: editorToken,
+        quizAuth: true,
+      });
+      studyEarnCatalog = Array.isArray(data.apps) ? data.apps : [];
+    } catch (_) {
+      studyEarnCatalog = [];
+    }
+    studyEarnLoading = false;
+    document.querySelectorAll("[data-study-earn-label]").forEach((node) => {
+      node.textContent = studyEarnAppLabel(node.dataset.studyEarnLabel);
+    });
+  }
+
+  function studyEarnStepRow(key, label, canEdit) {
+    const value = studyEarnMinutes(studyEarnField(key));
+    const node = el("div", "parent-row");
+    const main = el("div", "parent-row-main");
+    main.appendChild(el("span", "parent-row-title", label));
+    node.appendChild(main);
+    const controls = el("div", "parent-stepper");
+    const minus = button("−", "parent-step", () => adjustStudyEarn(key, -STEP_STUDY_EARN_MINUTES));
+    const valueBtn = button(t("minutes", { n: value }), "parent-step-value", () => {
+      openStudyEarnSheet(key, label, studyEarnMinutes(studyEarnField(key)));
+    });
+    valueBtn.dataset.studyEarnKey = key;
+    const plus = button("+", "parent-step", () => adjustStudyEarn(key, STEP_STUDY_EARN_MINUTES));
+    [minus, valueBtn, plus].forEach((control) => {
+      control.disabled = !canEdit;
+      controls.appendChild(control);
+    });
+    node.appendChild(controls);
+    return node;
+  }
+
+  function adjustStudyEarn(key, delta) {
+    if (!snap.capabilities || !snap.capabilities.canEditRules) return;
+    const field = studyEarnField(key);
+    const current = studyEarnMinutes(field);
+    const max = key === "study" ? MAX_STUDY_EARN_MINUTES : sessionCapMinutes();
+    const next = stepMinuteValue(current, delta, MIN_STUDY_EARN_MINUTES, max);
+    if (next === current) return;
+    setStudyEarn(key, next);
+  }
+
+  function setStudyEarn(key, value) {
+    const next = clone(snap.rules);
+    next.rulesContractVersion = RULES_CONTRACT_VERSION;
+    const max = key === "study" ? MAX_STUDY_EARN_MINUTES : sessionCapMinutes();
+    next[studyEarnField(key)] = Math.min(max, Math.max(MIN_STUDY_EARN_MINUTES, value));
+    if (!saveRules(next)) return;
+    paintStudyEarnControls();
+    paintRouteHints();
+  }
+
+  function paintStudyEarnControls() {
+    document.querySelectorAll(".parent-step-value[data-study-earn-key]").forEach((node) => {
+      const value = studyEarnMinutes(studyEarnField(node.dataset.studyEarnKey));
+      node.textContent = t("minutes", { n: value });
+    });
+  }
+
+  function openStudyEarnSheet(key, label, value) {
+    if (!snap.capabilities || !snap.capabilities.canEditRules) return;
+    openSheet((sheet, close) => {
+      sheet.appendChild(el("h2", null, label));
+      const list = el("div", "parent-choice-list");
+      const max = key === "study" ? MAX_STUDY_EARN_MINUTES : sessionCapMinutes();
+      // Show the 1-minute test stop next to the normal 5-minute grid, never 1, 6, 11...
+      const options = MIN_STUDY_EARN_MINUTES <= 1 ? [MIN_STUDY_EARN_MINUTES] : [];
+      const firstStep = Math.max(5, MIN_STUDY_EARN_MINUTES);
+      for (let option = firstStep; option <= max; option += STEP_STUDY_EARN_MINUTES) {
+        options.push(option);
+      }
+      if (options.indexOf(Number(value)) < 0) options.push(Number(value));
+      options.sort((a, b) => a - b);
+      options.forEach((option) => {
+        const choice = button(t("minutes", { n: option }), "parent-choice", () => {
+          setStudyEarn(key, option);
+          close();
+        });
+        choice.setAttribute("aria-pressed", String(option === Number(value)));
+        list.appendChild(choice);
+      });
+      sheet.appendChild(list);
+      const actions = el("div", "parent-actions");
+      actions.appendChild(button(t("cancel"), "parent-btn ghost", close));
+      sheet.appendChild(actions);
+    });
+  }
+
   async function enterTimeAndApps() {
-    if (!snap || !(snap.capabilities && snap.capabilities.canEditRules)) return;
+    if (!snap) return;
+    const context = editingContext();
+    if (context.sibling || !context.member) {
+      setNotice(t("userSiblingNote", {
+        name: context.member ? context.member.name : t("userNoMember"),
+      }), true);
+      subpage = null;
+      render();
+      return;
+    }
+    if (!(snap.capabilities && snap.capabilities.canEditRules)) return;
     // Every visit starts with a fresh proof, even if an old tab still holds one.
     releaseSensitive("RULES_EDIT");
-    const token = await requestSensitiveToken("RULES_EDIT", "sensitivePinLeadRules");
-    if (!token) return;
+    if (snap.userConfigRequirePin !== false) {
+      const token = await requestSensitiveToken("RULES_EDIT", "sensitivePinLeadRules");
+      if (!token) return;
+    }
     rulesHold = false;
+    timeTab = "manage";
     subpage = "time";
     clearNotices();
     render();
@@ -4357,6 +8032,69 @@
     subpage = null;
   }
 
+  /**
+   * V48: the page keeps its two top tabs independent of subpage routing. A picker or a
+   * save can rebuild the page, but the chosen tab survives until the parent leaves.
+   */
+  function timeTabButton(tab, label, panelId) {
+    const node = button(label, "parent-time-tab", () => selectTimeTab(tab));
+    node.id = tab === "manage" ? "timeTabManage" : "timeTabPlan";
+    node.dataset.timeTab = tab;
+    node.setAttribute("role", "tab");
+    node.setAttribute("aria-selected", timeTab === tab ? "true" : "false");
+    node.setAttribute("aria-controls", panelId);
+    node.tabIndex = timeTab === tab ? 0 : -1;
+    return node;
+  }
+
+  function selectTimeTab(next) {
+    if (next !== "manage" && next !== "plan") return;
+    if (timeTab === next) return;
+    timeTab = next;
+    document.querySelectorAll(".parent-time-tab").forEach((node) => {
+      const active = node.dataset.timeTab === timeTab;
+      node.setAttribute("aria-selected", active ? "true" : "false");
+      node.tabIndex = active ? 0 : -1;
+    });
+    document.querySelectorAll(".parent-time-panel").forEach((node) => {
+      node.hidden = node.dataset.timePanel !== timeTab;
+    });
+    // The hidden panel stayed in the DOM, so a cap change made on the other tab may not
+    // have repainted its hints yet. Refresh both sides from the current draft.
+    paintRulesControls();
+    // The two panels share one scroll container; starting at its top avoids landing in
+    // the middle of the other tab's content.
+    const root = $(ROOT_ID);
+    if (root) root.scrollTop = 0;
+  }
+
+  function timeTabBar() {
+    const bar = el("div", "parent-time-tabs");
+    bar.setAttribute("role", "tablist");
+    bar.setAttribute("aria-label", t("timeTabsLabel"));
+    bar.addEventListener("keydown", (event) => {
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      event.preventDefault();
+      const next = timeTab === "manage" ? "plan" : "manage";
+      selectTimeTab(next);
+      const nextTab = bar.querySelector(`.parent-time-tab[data-time-tab="${next}"]`);
+      if (nextTab) nextTab.focus();
+    });
+    bar.appendChild(timeTabButton("manage", t("timeTabManage"), "timePanelManage"));
+    bar.appendChild(timeTabButton("plan", t("timeTabPlan"), "timePanelPlan"));
+    return bar;
+  }
+
+  function timeTabPanel(tab, labelledBy) {
+    const panel = el("div", "parent-time-panel");
+    panel.id = tab === "manage" ? "timePanelManage" : "timePanelPlan";
+    panel.dataset.timePanel = tab;
+    panel.setAttribute("role", "tabpanel");
+    panel.setAttribute("aria-labelledby", labelledBy);
+    panel.hidden = timeTab !== tab;
+    return panel;
+  }
+
   function renderTimeAndApps() {
     const root = $(ROOT_ID);
     if (!root) return;
@@ -4368,27 +8106,35 @@
       render();
       window.scrollTo({ top: 0 });
     }));
+    shell.appendChild(timeTabBar());
     const content = el("div", "parent-content");
     content.appendChild(noticeArea());
     content.appendChild(el("p", "parent-hint", t("timePageHint")));
+    // V48 keeps V45's relative order inside each tab. The app grid and the unlock routes
+    // are app management; shared limits and day groups are the time plan. Unlimited apps
+    // stay on the user index, not here.
+    const managePanel = timeTabPanel("manage", "timeTabManage");
+    managePanel.appendChild(sectionLabel(t("appScope")));
+    managePanel.appendChild(renderAppRows());
+    managePanel.appendChild(sectionLabel(t("watchMethods")));
+    managePanel.appendChild(renderWatchMethods());
 
-    content.appendChild(sectionLabel(t("timeRules")));
-    content.appendChild(renderWindows());
+    const planPanel = timeTabPanel("plan", "timeTabPlan");
+    planPanel.appendChild(sectionLabel(t("publicParams")));
+    planPanel.appendChild(renderPublicParams());
+    planPanel.appendChild(sectionLabel(t("dayGroupsSection")));
+    planPanel.appendChild(renderSegmentEditor());
+    planPanel.appendChild(renderSegmentCards());
 
-    content.appendChild(sectionLabel(t("limits")));
-    content.appendChild(renderLimits());
-
-    content.appendChild(sectionLabel(t("appScope")));
-    content.appendChild(renderAppRows());
-
-    content.appendChild(sectionLabel(t("quizChallenge")));
-    content.appendChild(renderQuizChallenge());
-
-    content.appendChild(sectionLabel(t("tvInputSources")));
-    content.appendChild(renderInputSources());
-
+    content.appendChild(managePanel);
+    content.appendChild(planPanel);
     shell.appendChild(content);
     root.appendChild(shell);
+    // The tab bar sticks under the page bar; measure the bar because long translations
+    // and the safe-area inset change its height.
+    const pageBar = shell.querySelector(".parent-bar");
+    if (pageBar) root.style.setProperty("--parent-bar-h", pageBar.offsetHeight + "px");
+    if (routeFlags(snap.rules || {}).study) ensureStudyEarnCatalog();
   }
 
   function renderInputSources() {
@@ -4442,6 +8188,35 @@
     );
   }
 
+  /**
+   * V47: turning the user-configuration PIN prompts off is a deliberate reduction of
+   * protection, so it always asks for a fresh single-use USER_CONFIG proof. Turning them back
+   * on only restores protection; no PIN sheet. The server repeats both rules.
+   */
+  function saveUserConfigPinSwitch(input) {
+    const enabled = Boolean(input && input.checked);
+    releaseSensitive("USER_CONFIG");
+    if (enabled) {
+      saveSimple(
+        "/api/parent/user-config-pin/enable",
+        {},
+        "userConfigRequirePin",
+        true
+      );
+      return;
+    }
+    saveSimple(
+      "/api/parent/user-config-pin/disable",
+      {},
+      "userConfigRequirePin",
+      false,
+      {
+        sensitiveScope: "USER_CONFIG",
+        leadKey: "sensitivePinLeadUserConfig"
+      }
+    ).finally(() => releaseSensitive("USER_CONFIG"));
+  }
+
   function renderPersonalizeEntry() {
     const card = el("div", "parent-card");
     const media = snap.media || {};
@@ -4459,6 +8234,15 @@
   }
 
   function openPersonalize() {
+    const context = editingContext();
+    if (context.sibling || !context.member) {
+      setNotice(t("userSiblingNote", {
+        name: context.member ? context.member.name : t("userNoMember"),
+      }), true);
+      subpage = null;
+      render();
+      return;
+    }
     subpage = "personalize";
     personalizeLoading = !snap.media;
     mediaSheetMode = null;
@@ -4515,9 +8299,18 @@
     });
   }
 
+  function audioActiveDownloads(media) {
+    const downloads = (media && media.audio && media.audio.downloads) || {};
+    return Object.keys(downloads).some((id) => {
+      const state = downloads[id] && downloads[id].state;
+      return state === "DOWNLOADING" || state === "VERIFYING";
+    });
+  }
+
   function mediaNeedsPoll(media) {
-    return mediaActiveDownloads(media) ||
-      Boolean(media && media.catalog && media.catalog.refreshing);
+    return mediaActiveDownloads(media) || audioActiveDownloads(media) ||
+      Boolean(media && media.catalog && media.catalog.refreshing) ||
+      Boolean(media && media.audio && media.audio.catalog && media.audio.catalog.refreshing);
   }
 
   function stopMediaPoll() {
@@ -4585,17 +8378,18 @@
     const current = el("div", "parent-card parent-media-modules");
     current.appendChild(mediaModuleRow("quiz"));
     current.appendChild(mediaModuleRow("lock"));
-    const lockItem = mediaItem(mediaRolesState().lock);
-    const lockHasAudio = Boolean(lockItem) && mediaHasAudio(lockItem);
+    const lockHasAudio = mediaLockHasAudio();
+    const soundAvailable = lockHasAudio || Boolean(mediaAudioSelected());
     current.appendChild(switchRow(
       t("mediaSoundTitle"),
-      lockHasAudio ? t("mediaSoundHint") : t("mediaSoundUnavailable"),
+      soundAvailable ? t("mediaSoundHint") : t("mediaSoundUnavailable"),
       Boolean(media.lockSound),
-      !canEdit || !lockHasAudio,
+      !canEdit || !soundAvailable,
       (input) => {
         mediaWrite("/api/parent/media/sound", { enabled: input.checked }, "mediaSoundSaved");
       }
     ));
+    current.appendChild(mediaAudioRow());
     content.appendChild(current);
     const timing = el("p", "parent-media-timing-note");
     timing.appendChild(el("span", "parent-media-note-icon", "◷"));
@@ -4949,10 +8743,160 @@
     return (snap && snap.media && snap.media.roles) || {};
   }
 
+  function mediaLockPlaylist() {
+    return (snap && snap.media && snap.media.lockPlaylist) || {};
+  }
+
+  function mediaLockLimits() {
+    return (snap && snap.media && snap.media.limits) || {};
+  }
+
+  function mediaLockMaxItems() {
+    return Math.max(1, Number(mediaLockLimits().maxWallpaperItems) || 20);
+  }
+
+  function mediaLockMinInterval() {
+    return Number(mediaLockLimits().minWallpaperIntervalMs) || 15000;
+  }
+
+  function mediaLockMaxInterval() {
+    return Number(mediaLockLimits().maxWallpaperIntervalMs) || 300000;
+  }
+
+  function mediaLockStoredInterval() {
+    const fallback = Number(mediaLockLimits().defaultWallpaperIntervalMs) || 30000;
+    const value = Number(mediaLockPlaylist().intervalMs) || fallback;
+    return Math.min(mediaLockMaxInterval(), Math.max(mediaLockMinInterval(), value));
+  }
+
+  /** Compact interval labels; the carousel only exposes a few familiar choices. */
+  function mediaIntervalText(ms) {
+    const seconds = Math.max(1, Math.round((Number(ms) || 0) / 1000));
+    if (seconds >= 60 && seconds % 60 === 0) {
+      return t("mediaIntervalMinutes", { n: seconds / 60 });
+    }
+    return t("mediaIntervalSeconds", { n: seconds });
+  }
+
+  function mediaIntervalOptions() {
+    const values = [15000, 30000, 60000, 120000, 300000,
+      mediaLockInterval, mediaLockMinInterval(), mediaLockMaxInterval()];
+    return values.filter((value, index) =>
+      value >= mediaLockMinInterval() && value <= mediaLockMaxInterval() &&
+      values.indexOf(value) === index
+    ).sort((left, right) => left - right);
+  }
+
+  /**
+   * The lock rotation in display order. Older snapshots only carry the single legacy role;
+   * treating it as a one-item rotation keeps those TVs fully editable.
+   */
+  function mediaLockIds() {
+    const ids = mediaLockPlaylist().ids;
+    const list = Array.isArray(ids) ? ids.filter((id) => typeof id === "string" && id) : [];
+    if (list.length) return list;
+    const legacy = mediaRolesState().lock;
+    return legacy ? [legacy] : [];
+  }
+
+  /** Items in the rotation that can actually be drawn; missing files are skipped like on TV. */
+  function mediaLockItems() {
+    return mediaLockIds().map(mediaItem).filter((item) => item && mediaIsPlayable(item));
+  }
+
+  /** Every selectable item in the rotation, not just the first one, decides sound availability. */
+  function mediaLockHasAudio() {
+    return mediaLockItems().some(mediaHasAudio);
+  }
+
+  function mediaAudio() {
+    return (snap && snap.media && snap.media.audio) || {};
+  }
+
+  function mediaAudioItems() {
+    const items = mediaAudio().items;
+    return Array.isArray(items) ? items : [];
+  }
+
+  function mediaAudioCloudItems() {
+    const items = mediaAudio().cloudItems;
+    return Array.isArray(items) ? items : [];
+  }
+
+  function mediaAudioCloudItem(id) {
+    return mediaAudioCloudItems().find((item) => item.id === id) || null;
+  }
+
+  /** A selection can point at an upload or at a verified cloud download. */
+  function mediaAudioSelected() {
+    const id = mediaAudio().selectedId || "";
+    if (!id) return null;
+    return mediaAudioItems().find((item) => item.id === id) ||
+      mediaAudioCloudItems().find((item) => item.id === id) || null;
+  }
+
+  function audioDurationText(ms) {
+    const seconds = Math.max(0, Math.round((Number(ms) || 0) / 1000));
+    const minutes = Math.floor(seconds / 60);
+    const rest = seconds % 60;
+    return minutes + ":" + String(rest).padStart(2, "0");
+  }
+
+  function audioMetaText(item) {
+    const bytes = Number(item && item.sizeBytes) || 0;
+    const megabytes = bytes / (1024 * 1024);
+    return t("audioMeta", {
+      size: bytes ? (megabytes < 10 ? megabytes.toFixed(1) : Math.round(megabytes)) : 0,
+      duration: audioDurationText(item && item.durationMs)
+    });
+  }
+
+  function audioCloudState(item) {
+    return (item && ((item.download && item.download.state) || item.state)) || "NOT_DOWNLOADED";
+  }
+
+  function audioCloudBusy(item) {
+    const state = audioCloudState(item);
+    return state === "DOWNLOADING" || state === "VERIFYING";
+  }
+
+  function audioCloudSub(item) {
+    const parts = [];
+    if (item && item.artist) parts.push(item.artist);
+    parts.push(audioMetaText(item));
+    if (item && item.license) parts.push(item.license);
+    return parts.join(" · ");
+  }
+
+  function audioCloudAction(item, canEdit) {
+    if (!canEdit) return "";
+    const state = audioCloudState(item);
+    if (state === "DOWNLOADING") {
+      return t("audioStateDownloading", {
+        percent: Number(item.download && item.download.percent) || 0
+      });
+    }
+    if (state === "VERIFYING") return t("audioStateVerifying");
+    if (state === "FAILED") return t("audioRetry");
+    if (state === "UPDATE_AVAILABLE") return t("audioUpdate");
+    if (state === "READY") return t("audioUse");
+    return t("audioDownload");
+  }
+
+  function mediaLockStoredSelectableIds() {
+    return mediaLockIds().filter((id) => {
+      const item = mediaItem(id);
+      return Boolean(item) && mediaIsPlayable(item) && mediaCanUseInRole(item, "lock");
+    });
+  }
+
   /** Roles that currently point at this exact item, so a change never clears another film. */
   function mediaItemRoles(item) {
     const stored = mediaRolesState();
-    return ["quiz", "lock"].filter((role) => stored[role] === item.id);
+    const lockIds = mediaLockIds();
+    return ["quiz", "lock"].filter((role) =>
+      stored[role] === item.id || (role === "lock" && lockIds.indexOf(item.id) >= 0)
+    );
   }
 
   function mediaDefaultThumb(className) {
@@ -4968,7 +8912,9 @@
   }
 
   function mediaModuleRow(role) {
-    const item = mediaItem(mediaRolesState()[role]);
+    const lockItems = role === "lock" ? mediaLockItems() : [];
+    const item = lockItems.length ? lockItems[0] : mediaItem(mediaRolesState()[role]);
+    const lockCount = role === "lock" ? lockItems.length : 0;
     const node = el("button", "parent-row parent-media-module-row");
     node.type = "button";
     node.appendChild(item
@@ -4976,16 +8922,66 @@
       : mediaDefaultThumb("parent-media-module-thumb"));
     const main = el("div", "parent-row-main");
     main.appendChild(el("span", "parent-row-title", mediaModuleTitle(role)));
-    main.appendChild(el("span", "parent-row-sub", item
-      ? mediaKindLabel(item) + " · " + mediaSourceText(item) + " · " + mediaName(item)
-      : t("mediaKindImage") + " · " + t("mediaSourceDefault")));
+    main.appendChild(el("span", "parent-row-sub",
+      lockCount > 1
+        ? t("mediaLockSummary", {
+          count: lockCount,
+          duration: mediaIntervalText(mediaLockStoredInterval())
+        })
+        : item
+          ? mediaKindLabel(item) + " · " + mediaSourceText(item) + " · " + mediaName(item)
+          : t("mediaKindImage") + " · " + t("mediaSourceDefault")));
     node.appendChild(main);
     const action = el("span", "parent-media-module-action");
-    action.appendChild(el("span", "parent-media-module-action-label", t("mediaChange")));
+    action.appendChild(el("span", "parent-media-module-action-label",
+      t(lockCount > 1 ? "mediaManage" : "mediaChange")));
     action.appendChild(el("span", "chevron", "›"));
     node.appendChild(action);
     node.addEventListener("click", () => openMediaPicker(role));
     return node;
+  }
+
+  /**
+ * The background-music entry sits with the wallpaper choices: the track is chosen once and
+ * then plays under every item in the rotation instead of being tied to one video.
+ */
+  function mediaAudioRow() {
+    const selected = mediaAudioSelected();
+    const node = el("button", "parent-row parent-media-module-row");
+    node.type = "button";
+    const thumb = el("div", "parent-media-audio-thumb");
+    thumb.appendChild(el("span", "parent-media-audio-note", "♪"));
+    node.appendChild(thumb);
+    const main = el("div", "parent-row-main");
+    main.appendChild(el("span", "parent-row-title", t("audioTitle")));
+    main.appendChild(el("span", "parent-row-sub", selected
+      ? selected.name + " · " + audioMetaText(selected)
+      : t("audioNone")));
+    node.appendChild(main);
+    const action = el("span", "parent-media-module-action");
+    action.appendChild(el("span", "parent-media-module-action-label",
+      t(selected ? "mediaChange" : "mediaChoose")));
+    action.appendChild(el("span", "chevron", "›"));
+    node.appendChild(action);
+    node.addEventListener("click", openAudioPicker);
+    return node;
+  }
+
+  function openAudioPicker() {
+    mediaSheetMode = "audio";
+    mediaSheetId = null;
+    mediaDownloadWatch = null;
+    mediaPickerScrollPending = false;
+    audioDownloadWatch = null;
+    audioDownloadWatchFrom = "";
+    const catalog = mediaAudio().catalog || {};
+    audioSource = catalog.configured === false ? "local" : "cloud";
+    openSheet((sheet) => renderMediaSheetContent(sheet, closeMediaSheet));
+    // Opening the picker is the point where a stale cloud catalogue becomes visible; ask for
+    // a refresh only when there is nothing valid cached, not on every open.
+    if (catalog.configured !== false && catalog.state !== "READY" && !catalog.refreshing) {
+      mediaWrite("/api/parent/media/audio/refresh", {}, null, true);
+    }
   }
 
   function mediaCover(item, className) {
@@ -5125,10 +9121,17 @@
     mediaSheetId = null;
     mediaDownloadWatch = null;
     mediaPickerRole = role === "lock" ? "lock" : "quiz";
-    const stored = mediaRolesState()[mediaPickerRole] || "";
-    const current = mediaItem(stored);
-    mediaPickerChoice = current && mediaCanUseInRole(current, mediaPickerRole) &&
-      mediaIsPlayable(current) ? stored : "";
+    if (mediaPickerRole === "lock") {
+      mediaPickerChoice = "";
+      mediaLockChoices = mediaLockStoredSelectableIds().slice(0, mediaLockMaxItems());
+      mediaLockInterval = mediaLockStoredInterval();
+    } else {
+      mediaLockChoices = [];
+      const stored = mediaRolesState()[mediaPickerRole] || "";
+      const current = mediaItem(stored);
+      mediaPickerChoice = current && mediaCanUseInRole(current, mediaPickerRole) &&
+        mediaIsPlayable(current) ? stored : "";
+    }
     mediaPickerScrollPending = true;
     openSheet((sheet) => renderMediaSheetContent(sheet, closeMediaSheet));
   }
@@ -5137,10 +9140,13 @@
     const root = $(SHEET_ID);
     const sheet = root ? root.querySelector(".parent-sheet") : null;
     if (resolveMediaDownloadWatch(Boolean(sheet))) return;
+    if (resolveAudioDownloadWatch()) return;
     if (!sheet) {
       mediaSheetMode = null;
       mediaSheetId = null;
       mediaPickerScrollPending = false;
+      audioDownloadWatch = null;
+      audioDownloadWatchFrom = "";
       return;
     }
     renderMediaSheetContent(sheet, closeMediaSheet);
@@ -5180,7 +9186,11 @@
     mediaSheetMode = null;
     mediaSheetId = null;
     mediaPickerChoice = "";
+    mediaLockChoices = [];
+    mediaLockInterval = 0;
     mediaDownloadWatch = null;
+    audioDownloadWatch = null;
+    audioDownloadWatchFrom = "";
     mediaPickerScrollPending = false;
     closeSheet();
   }
@@ -5197,6 +9207,8 @@
     sheet.appendChild(closeButton);
     if (mediaSheetMode === "picker") {
       renderMediaPickerSheet(sheet, close);
+    } else if (mediaSheetMode === "audio") {
+      renderAudioSheet(sheet, close);
     } else {
       renderMediaPreviewSheet(sheet, close);
     }
@@ -5307,6 +9319,342 @@
     if (footer) sheet.appendChild(footer);
   }
 
+  /** The background-music sheet: curated cloud tracks plus unchanged local uploads. */
+  function renderAudioSheet(sheet, close) {
+    const canEdit = mediaCanEdit();
+    const audio = mediaAudio();
+    const catalog = audio.catalog || {};
+    const cloudItems = mediaAudioCloudItems();
+    const localItems = mediaAudioItems();
+    const cloudReady = cloudItems.filter((item) => audioCloudState(item) === "READY").length;
+    const scroll = el("div", "parent-media-sheet-scroll");
+    scroll.appendChild(el("h2", null, t("audioTitle")));
+    scroll.appendChild(el("p", "parent-hint", t("audioHint")));
+
+    // Silence is a choice independent of where a track comes from, so it stays on top.
+    const noneList = el("div", "parent-media-audio-list parent-media-audio-none");
+    noneList.appendChild(audioOption({ id: "", name: t("audioNone"), hint: t("audioNoneHint") }, canEdit));
+    scroll.appendChild(noneList);
+
+    const sourceRow = el("div", "parent-media-source-row");
+    const sourceTabs = el("div", "parent-media-source-tabs");
+    sourceTabs.setAttribute("role", "tablist");
+    sourceTabs.setAttribute("aria-label", t("audioSourceTabsLabel"));
+    sourceTabs.addEventListener("keydown", (event) => {
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      event.preventDefault();
+      selectAudioSource(audioSource === "cloud" ? "local" : "cloud");
+    });
+    sourceTabs.appendChild(audioSourceTabButton(
+      "cloud",
+      t("audioSourceCloud"),
+      cloudItems.length ? cloudReady + "/" + cloudItems.length : "0"
+    ));
+    sourceTabs.appendChild(audioSourceTabButton(
+      "local",
+      t("audioSourceLocal"),
+      localItems.length
+    ));
+    sourceRow.appendChild(sourceTabs);
+    if (audioSource === "cloud") {
+      const refreshBusy = Boolean(catalog.refreshing);
+      const refresh = button(refreshBusy ? "…" : "↻", "parent-media-refresh-icon",
+        () => refreshAudioLibrary());
+      refresh.setAttribute("aria-label", refreshBusy ? t("audioRefreshing") : t("audioRefresh"));
+      refresh.title = refreshBusy ? t("audioRefreshing") : t("audioRefresh");
+      refresh.disabled = refreshBusy || !editorToken;
+      sourceRow.appendChild(refresh);
+    }
+    scroll.appendChild(sourceRow);
+
+    if (audioSource === "cloud") {
+      if (catalog.state === "ERROR" && cloudItems.length) {
+        scroll.appendChild(el("div", "parent-media-notice", t("audioCatalogUnavailable")));
+      }
+      if (!cloudItems.length) {
+        let emptyText = t("audioCloudEmpty");
+        if (catalog.configured === false) emptyText = t("audioCatalogOff");
+        else if (catalog.state === "ERROR") emptyText = t("audioCatalogUnavailable");
+        else if (catalog.refreshing) emptyText = t("audioRefreshing");
+        scroll.appendChild(el("div", "parent-empty", emptyText));
+      } else {
+        const cloudList = el("div", "parent-media-audio-list");
+        cloudItems.forEach((item) => cloudList.appendChild(audioCloudOption(item, canEdit)));
+        scroll.appendChild(cloudList);
+      }
+    } else {
+      const uploadZone = el("div", "parent-media-upload-zone");
+      const uploadWrap = el("div", "parent-upload parent-media-upload");
+      const input = el("input");
+      input.type = "file";
+      input.accept = "audio/mpeg,audio/mp4,audio/aac,audio/ogg,.mp3,.m4a,.aac,.ogg,.oga";
+      input.className = "parent-upload-file";
+      input.setAttribute("aria-label", t("audioUpload"));
+      const upload = button(
+        audioUploading ? t("audioUploading") : "＋ " + t("audioUpload"),
+        "parent-btn parent-media-upload-btn",
+        () => input.click()
+      );
+      upload.disabled = !canEdit || audioUploading;
+      input.addEventListener("change", () => {
+        const file = input.files && input.files[0];
+        input.value = "";
+        if (file) uploadAudioFile(file);
+      });
+      uploadWrap.appendChild(upload);
+      uploadWrap.appendChild(input);
+      uploadZone.appendChild(uploadWrap);
+      scroll.appendChild(uploadZone);
+
+      const localList = el("div", "parent-media-audio-list");
+      localItems.forEach((item) => localList.appendChild(audioOption(item, canEdit)));
+      if (localItems.length) scroll.appendChild(localList);
+      if (!localItems.length) scroll.appendChild(el("p", "parent-hint", t("audioEmpty")));
+    }
+    sheet.appendChild(scroll);
+  }
+
+  function audioSourceTabButton(source, label, count) {
+    const node = button("", "parent-media-source-tab" + (audioSource === source ? " is-active" : ""),
+      () => selectAudioSource(source));
+    node.id = source === "cloud" ? "audioCloudSourceTab" : "audioLocalSourceTab";
+    node.dataset.source = source;
+    node.setAttribute("role", "tab");
+    node.setAttribute("aria-selected", audioSource === source ? "true" : "false");
+    node.tabIndex = audioSource === source ? 0 : -1;
+    node.appendChild(el("span", "parent-media-source-label", label));
+    node.appendChild(el("span", "parent-media-source-count", count));
+    return node;
+  }
+
+  function selectAudioSource(source) {
+    if ((source !== "cloud" && source !== "local") || source === audioSource) return;
+    audioSource = source;
+    paintMediaSheet();
+    const tab = $(source === "cloud" ? "audioCloudSourceTab" : "audioLocalSourceTab");
+    if (tab) tab.focus({ preventScroll: true });
+  }
+
+  function refreshAudioLibrary() {
+    if (!editorToken) {
+      setNotice(t("editorLost"), true);
+      return;
+    }
+    mediaWrite("/api/parent/media/audio/refresh", {}, null, true);
+  }
+
+  function audioCloudOption(item, canEdit) {
+    const selected = item.id === (mediaAudio().selectedId || "");
+    const state = audioCloudState(item);
+    const busy = audioCloudBusy(item);
+    const row = el("div", "parent-media-audio-row" + (selected ? " is-selected" : ""));
+    const pick = el("button", "parent-media-audio-pick");
+    pick.type = "button";
+    pick.setAttribute("aria-pressed", String(selected));
+    pick.appendChild(el("span", "parent-media-audio-mark", "♪"));
+    const main = el("span", "parent-media-audio-main");
+    main.appendChild(el("span", "parent-media-audio-name", mediaName(item)));
+    main.appendChild(el("span", "parent-media-audio-sub", audioCloudSub(item)));
+    pick.appendChild(main);
+    if (selected) {
+      pick.appendChild(el("span", "parent-media-audio-check", "✓"));
+    } else {
+      const action = audioCloudAction(item, canEdit);
+      if (action) pick.appendChild(el("span", "parent-media-audio-action", action));
+    }
+    pick.disabled = !canEdit || selected || busy;
+    pick.addEventListener("click", () => useOrDownloadCloudAudio(item));
+    row.appendChild(pick);
+
+    if (busy) {
+      const cancel = button("×", "parent-media-audio-delete", () => {
+        audioDownloadWatch = null;
+        audioDownloadWatchFrom = "";
+        mediaWrite("/api/parent/media/audio/cancel", { id: item.id });
+      });
+      cancel.setAttribute("aria-label", t("audioCancelDownload"));
+      cancel.disabled = !canEdit;
+      row.appendChild(cancel);
+    } else if (state === "READY" || state === "UPDATE_AVAILABLE") {
+      const remove = button("×", "parent-media-audio-delete", () => {
+        confirmSheet(
+          t("audioDeleteDownloadTitle"),
+          t("audioDeleteDownloadText"),
+          t("audioDeleteDownload"),
+          async () => {
+            if (audioDownloadWatch === item.id) {
+              audioDownloadWatch = null;
+              audioDownloadWatchFrom = "";
+            }
+            await mediaWrite("/api/parent/media/audio/delete", { id: item.id },
+              "audioDownloadDeleted");
+            paintMediaSheet();
+            if (subpage === "personalize") render();
+          },
+          t("cancel")
+        );
+      });
+      remove.setAttribute("aria-label", t("audioDeleteDownload"));
+      remove.disabled = !canEdit;
+      row.appendChild(remove);
+    }
+    return row;
+  }
+
+  /** A ready track is selected; anything else is downloaded first and selected on completion. */
+  async function useOrDownloadCloudAudio(item) {
+    if (!mediaCanEdit()) return;
+    const state = audioCloudState(item);
+    if (state === "READY") {
+      await mediaWrite("/api/parent/media/audio/select", { id: item.id }, "audioSelected");
+      return;
+    }
+    if (audioCloudBusy(item)) return;
+    const from = mediaAudio().selectedId || "";
+    const ok = await mediaWrite("/api/parent/media/audio/download", { id: item.id }, null, true);
+    if (!ok) return;
+    const fresh = mediaAudioCloudItem(item.id);
+    if (fresh && audioCloudState(fresh) === "READY") {
+      await mediaWrite("/api/parent/media/audio/select", { id: item.id }, "audioDownloadDone");
+      return;
+    }
+    audioDownloadWatch = item.id;
+    audioDownloadWatchFrom = from;
+    setNotice(t("audioDownloadStarted"), false);
+    paintMediaSheet();
+    scheduleMediaPoll();
+  }
+
+  /**
+   * Polling resolves a started download. Only auto-select when the parent has not chosen
+   * another track while waiting; a manual choice always wins.
+   */
+  function resolveAudioDownloadWatch() {
+    if (!audioDownloadWatch || mediaSheetMode !== "audio") return false;
+    const item = mediaAudioCloudItem(audioDownloadWatch);
+    if (!item) {
+      audioDownloadWatch = null;
+      audioDownloadWatchFrom = "";
+      return false;
+    }
+    const state = audioCloudState(item);
+    if (state === "DOWNLOADING" || state === "VERIFYING") return false;
+    const from = audioDownloadWatchFrom;
+    audioDownloadWatch = null;
+    audioDownloadWatchFrom = "";
+    if (state === "FAILED") {
+      const code = item.download && item.download.error;
+      setNotice(code ? errorText({ code: code }) : t("audioDownloadFailed"), true);
+      return false;
+    }
+    if (state !== "READY") return false;
+    if ((mediaAudio().selectedId || "") !== from) {
+      setNotice(t("audioDownloaded"), false);
+      return false;
+    }
+    mediaWrite("/api/parent/media/audio/select", { id: item.id }, "audioDownloadDone");
+    return true;
+  }
+
+  function audioOption(item, canEdit) {
+    const isNone = !item.id;
+    const selectedId = mediaAudio().selectedId || "";
+    const selected = isNone ? !selectedId : item.id === selectedId;
+    const row = el("div", "parent-media-audio-row" + (selected ? " is-selected" : ""));
+    const pick = el("button", "parent-media-audio-pick");
+    pick.type = "button";
+    pick.setAttribute("aria-pressed", String(selected));
+    pick.appendChild(el("span", "parent-media-audio-mark", isNone ? "∅" : "♪"));
+    const main = el("span", "parent-media-audio-main");
+    main.appendChild(el("span", "parent-media-audio-name", item.name));
+    main.appendChild(el("span", "parent-media-audio-sub",
+      isNone ? item.hint : audioMetaText(item)));
+    pick.appendChild(main);
+    if (selected) pick.appendChild(el("span", "parent-media-audio-check", "✓"));
+    pick.disabled = !canEdit || selected;
+    pick.addEventListener("click", async () => {
+      await mediaWrite("/api/parent/media/audio/select", { id: item.id || "" }, "audioSelected");
+      paintMediaSheet();
+      if (subpage === "personalize") render();
+    });
+    row.appendChild(pick);
+    if (!isNone) {
+      const remove = button("×", "parent-media-audio-delete", () => {
+        confirmSheet(t("audioDeleteTitle"), t("audioDeleteText"), t("audioDelete"), async () => {
+          await mediaWrite("/api/parent/media/audio/delete", { id: item.id }, "audioDeleted");
+          paintMediaSheet();
+          if (subpage === "personalize") render();
+        }, t("cancel"));
+      });
+      remove.setAttribute("aria-label", t("audioDelete"));
+      remove.disabled = !canEdit;
+      row.appendChild(remove);
+    }
+    return row;
+  }
+
+  async function uploadAudioFile(file) {
+    if (!editorToken || audioUploading) return;
+    if (typeof host.upload !== "function") {
+      setNotice(t("featureUnavailable"), true);
+      return;
+    }
+    const name = file.name || "audio";
+    const limit = Number(mediaAudio().maxBytes) || 20 * 1024 * 1024;
+    if (!/\.(mp3|m4a|aac|ogg|oga)$/i.test(name)) {
+      setNotice(t("audioBadFormat"), true);
+      return;
+    }
+    if (!file.size || file.size > limit) {
+      setNotice(t("audioTooLarge"), true);
+      return;
+    }
+    // The upload route only stores the file. Remember the list and selection first, so the
+    // first track can be adopted automatically; a track the parent already chose is kept.
+    const knownIds = new Set(mediaAudioItems().map((item) => item.id));
+    const hadSelection = !!mediaAudio().selectedId;
+    clearNotices();
+    audioUploading = true;
+    paintMediaSheet();
+    let noticeKey = "audioUploaded";
+    let keepError = false;
+    try {
+      const data = await host.upload(
+        "/api/parent/audio?name=" + encodeURIComponent(name),
+        file,
+        editorToken
+      );
+      if (data && data.snapshot) adoptSnapshot(data.snapshot, false);
+      if (!hadSelection) {
+        const fresh = mediaAudioItems().find((item) => !knownIds.has(item.id));
+        if (fresh) {
+          // If this fails, mediaWrite has already shown the error; do not hide it with the
+          // upload notice.
+          if (await mediaWrite(
+            "/api/parent/media/audio/select", { id: fresh.id }, "audioSelected", true
+          )) {
+            noticeKey = "audioSelected";
+          } else {
+            keepError = true;
+          }
+        }
+      }
+    } catch (error) {
+      if (isLeaseError(error)) {
+        audioUploading = false;
+        handleLeaseError(error);
+        return;
+      }
+      if (error.data && error.data.snapshot) adoptSnapshot(error.data.snapshot, false);
+      setNotice(errorText(error), true);
+      keepError = true;
+    }
+    audioUploading = false;
+    paintMediaSheet();
+    if (subpage === "personalize") render();
+    if (!keepError) setNotice(t(noticeKey), false);
+  }
+
   function mediaPickerOptions() {
     const options = [{ id: "", item: null }];
     const items = (snap && snap.media && snap.media.items) || [];
@@ -5315,10 +9663,14 @@
     return options;
   }
 
-  function mediaPickerOption(option, currentId) {
-    const selected = option.id === mediaPickerChoice;
+  function mediaPickerOption(option, currentId, multi) {
+    const selectedIndex = multi && option.id ? mediaLockChoices.indexOf(option.id) : -1;
+    const selected = multi
+      ? (option.id ? selectedIndex >= 0 : mediaLockChoices.length === 0)
+      : option.id === mediaPickerChoice;
     const card = el("button", "parent-media-option" + (selected ? " is-selected" : ""));
     card.type = "button";
+    card.setAttribute("aria-pressed", String(selected));
     const cover = option.item
       ? mediaCover(option.item, "parent-media-option-cover")
       : mediaDefaultThumb("parent-media-option-cover");
@@ -5326,11 +9678,14 @@
       cover.appendChild(el("span", "parent-media-kind-badge parent-media-option-kind",
         mediaKindLabel(option.item)));
     }
-    if (option.id && option.id === currentId) {
+    if (!multi && option.id && option.id === currentId) {
       cover.appendChild(el("span", "parent-media-option-current", t("mediaCurrentBadge")));
     }
     if (selected) {
-      cover.appendChild(el("span", "parent-media-option-check", "✓"));
+      // A multi-select badge is both the check and the position in the rotation.
+      const check = el("span", "parent-media-option-check" +
+        (selectedIndex >= 0 ? " is-order" : ""), selectedIndex >= 0 ? "✓ " + (selectedIndex + 1) : "✓");
+      cover.appendChild(check);
     }
     card.appendChild(cover);
     let title = option.item ? mediaName(option.item) : t("mediaSourceDefault");
@@ -5338,7 +9693,23 @@
     if (mediaIsWallpaperOnly(option.item)) title += " · " + t("mediaOnlyWallpaper");
     card.appendChild(el("span", "parent-media-option-title", title));
     card.title = title;
+    // At the limit the unselected tiles stay visible but cannot join; selected ones can leave.
+    card.disabled = Boolean(multi && option.id && !selected &&
+      mediaLockChoices.length >= mediaLockMaxItems());
     card.addEventListener("click", () => {
+      if (multi) {
+        if (!option.id) {
+          if (!mediaLockChoices.length) return;
+          mediaLockChoices = [];
+        } else {
+          const index = mediaLockChoices.indexOf(option.id);
+          if (index >= 0) mediaLockChoices.splice(index, 1);
+          else if (mediaLockChoices.length < mediaLockMaxItems()) mediaLockChoices.push(option.id);
+          else return;
+        }
+        paintMediaSheet();
+        return;
+      }
       if (mediaPickerChoice === option.id) return;
       mediaPickerChoice = option.id;
       paintMediaSheet();
@@ -5355,38 +9726,90 @@
     mediaWrite("/api/parent/media/select", { id: id, role: role }, "mediaSelected");
   }
 
+  function mediaLockSelectionMatchesStored() {
+    const stored = mediaLockStoredSelectableIds().slice(0, mediaLockMaxItems());
+    const sameIds = stored.length === mediaLockChoices.length &&
+      stored.every((id, index) => id === mediaLockChoices[index]);
+    if (!sameIds) return false;
+    // The interval only matters while there are at least two items to rotate.
+    return mediaLockChoices.length < 2 || mediaLockInterval === mediaLockStoredInterval();
+  }
+
+  function applyMediaLockChoices() {
+    const ids = mediaLockChoices.slice();
+    const intervalMs = mediaLockInterval || mediaLockStoredInterval();
+    closeMediaSheet();
+    mediaWrite("/api/parent/media/playlist",
+      { ids: ids, intervalMs: intervalMs }, "mediaPlaylistSaved");
+  }
+
+  function mediaLockIntervalRow(canEdit) {
+    const wrap = el("div", "parent-media-interval");
+    wrap.appendChild(el("span", "parent-media-interval-label", t("mediaLockInterval")));
+    const choices = el("div", "parent-media-interval-options");
+    mediaIntervalOptions().forEach((ms) => {
+      const active = ms === mediaLockInterval;
+      const chip = button(mediaIntervalText(ms),
+        "parent-media-interval-chip" + (active ? " is-active" : ""), () => {
+          if (mediaLockInterval === ms) return;
+          mediaLockInterval = ms;
+          paintMediaSheet();
+        });
+      chip.setAttribute("aria-pressed", String(active));
+      chip.disabled = !canEdit;
+      choices.appendChild(chip);
+    });
+    wrap.appendChild(choices);
+    return wrap;
+  }
+
   function renderMediaPickerSheet(sheet, close) {
     const canEdit = mediaCanEdit();
+    const lockMode = mediaPickerRole === "lock";
     const stored = mediaRolesState()[mediaPickerRole] || "";
     const options = mediaPickerOptions();
-    if (mediaPickerChoice && !options.some((option) => option.id === mediaPickerChoice)) {
+    if (lockMode) {
+      mediaLockChoices = mediaLockChoices.filter((id, index) =>
+        options.some((option) => option.id === id) &&
+        mediaLockChoices.indexOf(id) === index
+      ).slice(0, mediaLockMaxItems());
+      mediaLockInterval = Math.min(mediaLockMaxInterval(),
+        Math.max(mediaLockMinInterval(), mediaLockInterval || mediaLockStoredInterval()));
+    } else if (mediaPickerChoice && !options.some((option) => option.id === mediaPickerChoice)) {
       mediaPickerChoice = options.some((option) => option.id === stored) ? stored : "";
     }
-    const selected = options.find((option) => option.id === mediaPickerChoice) || options[0];
+    const selected = lockMode ? null : options.find((option) => option.id === mediaPickerChoice) || options[0];
     const scroll = el("div", "parent-media-sheet-scroll");
     scroll.appendChild(el("h2", null,
       t("mediaPickerTitle", { module: mediaModuleTitle(mediaPickerRole) })));
 
-    const stage = el("div", "parent-media-stage");
-    if (selected.item) {
-      stage.appendChild(mediaCover(selected.item, "parent-media-stage-cover"));
+    if (lockMode) {
+      const hintKey = mediaLockChoices.length === 0
+        ? "mediaLockEmptyHint"
+        : mediaLockChoices.length === 1
+          ? "mediaLockSingleHint"
+          : mediaLockChoices.length >= mediaLockMaxItems()
+            ? "mediaLockLimitHint"
+            : "mediaLockPickerHint";
+      scroll.appendChild(el("p", "parent-hint parent-media-lock-hint", t(hintKey)));
     } else {
-      stage.classList.add("is-default");
-      stage.appendChild(mediaDefaultThumb("parent-media-stage-cover"));
+      const stage = el("div", "parent-media-stage");
+      if (selected.item) {
+        stage.appendChild(mediaCover(selected.item, "parent-media-stage-cover"));
+      } else {
+        stage.classList.add("is-default");
+        stage.appendChild(mediaDefaultThumb("parent-media-stage-cover"));
+      }
+      const stageCaption = el("div", "parent-media-stage-caption");
+      stageCaption.appendChild(el("strong", null,
+        selected.item ? mediaName(selected.item) : t("mediaSourceDefault")));
+      stageCaption.appendChild(el("span", null, mediaStageMeta(selected.item)));
+      stage.appendChild(stageCaption);
+      scroll.appendChild(stage);
     }
-    const stageCaption = el("div", "parent-media-stage-caption");
-    stageCaption.appendChild(el("strong", null,
-      selected.item ? mediaName(selected.item) : t("mediaSourceDefault")));
-    stageCaption.appendChild(el("span", null, mediaStageMeta(selected.item)));
-    stage.appendChild(stageCaption);
-    scroll.appendChild(stage);
 
-    if (selected.item && mediaPickerRole === "lock" && mediaKindOf(selected.item) === "image") {
-      scroll.appendChild(el("p", "parent-hint", t("mediaImageRoleNote")));
-    }
-
-    const strip = el("div", "parent-media-strip");
-    options.forEach((option) => strip.appendChild(mediaPickerOption(option, stored)));
+    const strip = el("div", lockMode ? "parent-media-lock-grid" : "parent-media-strip");
+    options.forEach((option) => strip.appendChild(mediaPickerOption(option, stored, lockMode)));
     scroll.appendChild(strip);
 
     if (options.length === 1) {
@@ -5406,20 +9829,36 @@
     sheet.appendChild(scroll);
 
     const footer = el("div", "parent-media-sheet-footer");
-    const same = mediaPickerChoice === (stored || "");
-    const use = button(same ? t("mediaInUse") : t("mediaUse"), "parent-btn primary",
-      applyMediaPickerChoice);
-    use.disabled = !canEdit || same;
-    footer.appendChild(use);
+    if (lockMode) {
+      if (mediaLockChoices.length >= 2) footer.appendChild(mediaLockIntervalRow(canEdit));
+      const same = mediaLockSelectionMatchesStored();
+      const label = mediaLockChoices.length === 0
+        ? t("mediaUseDefault")
+        : mediaLockChoices.length === 1
+          ? t("mediaSave")
+          : t("mediaSaveCount", { n: mediaLockChoices.length });
+      const use = button(same ? t("mediaInUse") : label, "parent-btn primary",
+        applyMediaLockChoices);
+      use.disabled = !canEdit || same;
+      footer.appendChild(use);
+    } else {
+      const same = mediaPickerChoice === (stored || "");
+      const use = button(same ? t("mediaInUse") : t("mediaUse"), "parent-btn primary",
+        applyMediaPickerChoice);
+      use.disabled = !canEdit || same;
+      footer.appendChild(use);
+    }
     if (!canEdit) footer.appendChild(el("p", "parent-hint", t("readOnlyCloud")));
     sheet.appendChild(footer);
 
     if (mediaPickerScrollPending) {
       mediaPickerScrollPending = false;
-      requestAnimationFrame(() => {
-        const active = strip.querySelector(".is-selected");
-        if (active) strip.scrollLeft = Math.max(0, active.offsetLeft - 8);
-      });
+      if (!lockMode) {
+        requestAnimationFrame(() => {
+          const active = strip.querySelector(".is-selected");
+          if (active) strip.scrollLeft = Math.max(0, active.offsetLeft - 8);
+        });
+      }
     }
   }
 
@@ -5470,6 +9909,7 @@
       const bad = $("parentErrorNotice");
       if (bad) bad.scrollIntoView({ block: "nearest", behavior: "smooth" });
     }
+    return !failed;
   }
 
   function isLeaseError(error) {
@@ -5478,116 +9918,478 @@
       code === "LEASE_EXPIRED" || code === "LEASE_TAKEN_OVER" || code === "QUIZ_TAKEN_OVER");
   }
 
-  function renderActivation() {
-    const card = el("div", "parent-card");
-    const wrap = el("div", "parent-row");
-    const main = el("div", "parent-row-main");
-    main.appendChild(el("span", "parent-row-title", t("timing")));
-    main.appendChild(el("span", "parent-row-sub", t("activationHint")));
-    wrap.appendChild(main);
-    // The segmented control sits on its own row on every width; a single column keeps the
-    // 9:16 phone and the 16:9 TV reading order identical without a two-pane layout.
-    const segmented = el("div", "parent-seg");
-    ["AUTO", "MANUAL"].forEach((value) => {
-      const btn = button(t(value === "AUTO" ? "autoMode" : "manualMode"), null, () => {
-        if (!snap.capabilities || !snap.capabilities.canEditRules) return;
-        if (snap.activation === value) return;
-        confirmSheet(t("activationConfirmTitle"), t("activationConfirmText"), t("activationConfirm"), () => {
-          saveSimple("/api/parent/activation", {
-            activation: value,
-            expectedModeRevision: snap.modeRevision
-          }, null, null);
-        }, t("cancel"));
-      });
-      btn.setAttribute("aria-pressed", String(snap.activation === value));
-      btn.disabled = !(snap.capabilities && snap.capabilities.canEditRules);
-      segmented.appendChild(btn);
-    });
-    const segRow = el("div", "parent-row");
-    segRow.appendChild(segmented);
-    card.appendChild(wrap);
-    card.appendChild(segRow);
-    return card;
-  }
+  // ------------------------------------------------------------ V42 day segments
 
-  function renderWindows() {
-    const card = el("div", "parent-card");
-    if (!snap.capabilities || !snap.capabilities.canEditRules) {
-      card.appendChild(el("div", "parent-empty", t("readOnlyCloud")));
-      return card;
-    }
-    ["weekday", "weekend"].forEach((kind) => {
-      card.appendChild(renderWindowGroup(kind === "weekday"));
-    });
-    card.appendChild(el("div", "parent-hint parent-window-note", t("singleWindowHint")));
-    return card;
+  const DEFAULT_WINDOW_START = 0; // 00:00
+  const DEFAULT_WINDOW_END = 24 * 60; // 24:00, the rule engine's all-day bound
+  const SEGMENT_COLORS = [
+    "#2e7d6f", "#2f6fdb", "#8057c7", "#b45f2a",
+    "#3f8a46", "#bd4f7a", "#9a7b16",
+  ];
+
+  function defaultWindow() {
+    return { start: DEFAULT_WINDOW_START, end: DEFAULT_WINDOW_END };
   }
 
   /**
-   * V29 allows exactly one window per day. Old local documents may still carry two; only the
-   * first is shown, and the next edit saves a one-element list, which the server now enforces.
+   * The snapshot always carries schema-3 groups. The fallback only keeps the page usable
+   * while the first snapshot is missing; it is never saved back on its own.
    */
-  function renderWindowGroup(weekday) {
-    const group = el("div");
-    group.appendChild(el("div", "parent-row", t(weekday ? "weekday" : "weekend")));
-    const windows = (snap.rules && snap.rules[weekday ? "weekdayWindows" : "weekendWindows"]) || [];
-    const window = windows[0];
-    if (!window) {
-      group.appendChild(el("div", "parent-empty", t("noWindows")));
-      return group;
+  function dayGroups() {
+    const value = snap && snap.rules && snap.rules.dayGroups;
+    if (Array.isArray(value) && value.length) return value;
+    return [
+      {
+        days: [1, 2, 3, 4, 5],
+        studyWindows: [defaultWindow()],
+        studyDailyLimitMinutes: null,
+        entertainmentWindows: [defaultWindow()],
+        entertainmentDailyLimitMinutes: null,
+      },
+      {
+        days: [6, 7],
+        studyWindows: [defaultWindow()],
+        studyDailyLimitMinutes: null,
+        entertainmentWindows: [defaultWindow()],
+        entertainmentDailyLimitMinutes: null,
+      },
+    ];
+  }
+
+  function dayLabel(day) {
+    return t("day" + day);
+  }
+
+  /** Gives the draft the schema-3 shape without changing what the parent configured. */
+  function normalizedGroups(rules) {
+    if (!Array.isArray(rules.dayGroups)) rules.dayGroups = [];
+    rules.dayGroups = rules.dayGroups.map((group) => ({
+      days: (Array.isArray(group.days) ? group.days.slice() : []).sort((a, b) => a - b),
+      studyWindows: Array.isArray(group.studyWindows) ? group.studyWindows : [],
+      studyDailyLimitMinutes: group.studyDailyLimitMinutes === undefined
+        ? null : group.studyDailyLimitMinutes,
+      entertainmentWindows: Array.isArray(group.entertainmentWindows)
+        ? group.entertainmentWindows : [],
+      entertainmentDailyLimitMinutes: group.entertainmentDailyLimitMinutes === undefined
+        ? null : group.entertainmentDailyLimitMinutes,
+    }));
+    return rules.dayGroups;
+  }
+
+  function segmentColor(index) {
+    return SEGMENT_COLORS[index % SEGMENT_COLORS.length];
+  }
+
+  function copyWindows(windows) {
+    return Array.isArray(windows) ? clone(windows) : [];
+  }
+
+  /** Copies one group's settings without its days; an empty window stays closed. */
+  function cloneGroupSettings(source) {
+    return {
+      days: [],
+      studyWindows: copyWindows(source.studyWindows),
+      studyDailyLimitMinutes: source.studyDailyLimitMinutes === undefined
+        ? null : source.studyDailyLimitMinutes,
+      entertainmentWindows: copyWindows(source.entertainmentWindows),
+      entertainmentDailyLimitMinutes: source.entertainmentDailyLimitMinutes === undefined
+        ? null : source.entertainmentDailyLimitMinutes,
+    };
+  }
+
+  function hasNonContiguousGroups(groups) {
+    return (Array.isArray(groups) ? groups : []).some((group) => {
+      const days = (Array.isArray(group.days) ? group.days.slice() : []).sort((a, b) => a - b);
+      return days.some((day, index) => index > 0 && day !== days[index - 1] + 1);
+    });
+  }
+
+  /**
+   * The editor draws contiguous week runs. A group saved by an older client may contain a gap;
+   * each run then becomes its own segment with a copy of the original settings. The effective
+   * rules stay the same, and walking a seven-day week can never produce more than seven runs.
+   */
+  function contiguousGroups(groups) {
+    const owner = new Array(8).fill(null);
+    (groups || []).forEach((group) => {
+      (Array.isArray(group.days) ? group.days : []).forEach((day) => {
+        if (day >= 1 && day <= 7) owner[day] = group;
+      });
+    });
+    const result = [];
+    let current = null;
+    for (let day = 1; day <= 7; day++) {
+      const source = owner[day];
+      if (!source) {
+        current = null;
+        continue;
+      }
+      if (!current || current.source !== source) {
+        current = { source, group: cloneGroupSettings(source) };
+        result.push(current.group);
+      }
+      current.group.days.push(day);
     }
-    const wrap = el("div", "parent-window");
-    const start = timeField(window.start, t("from"), false);
-    const end = timeField(window.end, t("to"), true);
-    let currentStart = window.start;
-    let currentEnd = window.end;
+    return result;
+  }
+
+  /** The contiguous segments the editor draws for the current snapshot. */
+  function editorGroups() {
+    const rules = { dayGroups: clone(dayGroups()) };
+    return contiguousGroups(normalizedGroups(rules));
+  }
+
+  function segmentStarts(groups) {
+    return (groups || []).map((group) => group.days[0]);
+  }
+
+  function sameStarts(left, right) {
+    return left.length === right.length && left.every((day, index) => day === right[index]);
+  }
+
+  function segmentLabel(group) {
+    const days = (Array.isArray(group.days) ? group.days.slice() : []).sort((a, b) => a - b);
+    if (!days.length) return t("emptyValue");
+    if (days.length === 7) return t("presetWholeWeek");
+    if (days.length === 5 && days[0] === 1 && days[4] === 5) return t("groupWeekdays");
+    if (days.length === 2 && days[0] === 6 && days[1] === 7) return t("groupWeekend");
+    if (days.length === 1) return dayLabel(days[0]);
+    return dayLabel(days[0]) + "–" + dayLabel(days[days.length - 1]);
+  }
+
+  function groupWindow(group, kind) {
+    const windows = group[kind + "Windows"];
+    return Array.isArray(windows) && windows.length ? windows[0] : null;
+  }
+
+  function groupQuota(group, kind) {
+    const value = group[kind + "DailyLimitMinutes"];
+    return value === null || value === undefined ? null : Number(value);
+  }
+
+  function quotaText(value) {
+    return value === null || value === undefined || !Number.isFinite(Number(value))
+      ? t("unlimited") : t("minutes", { n: Number(value) });
+  }
+
+  function quotaOptions() {
+    return [null, 0, 1, 5, 15, 30, 45, 60, 90, 120, 180, 240, 300, 360, 480, 600, 720, 960, 1200, 1440];
+  }
+
+  function sameWindows(left, right) {
+    const a = Array.isArray(left) ? left : [];
+    const b = Array.isArray(right) ? right : [];
+    if (a.length !== b.length) return false;
+    return a.every((window, index) =>
+      Number(window.start) === Number(b[index].start) &&
+      Number(window.end) === Number(b[index].end));
+  }
+
+  function sameGroupSettings(left, right) {
+    return sameWindows(left.studyWindows, right.studyWindows) &&
+      sameWindows(left.entertainmentWindows, right.entertainmentWindows) &&
+      groupQuota(left, "study") === groupQuota(right, "study") &&
+      groupQuota(left, "entertainment") === groupQuota(right, "entertainment");
+  }
+
+  function updateGroupAt(startDay, mutate) {
+    if (!snap.capabilities || !snap.capabilities.canEditRules) return false;
+    const next = clone(snap.rules || {});
+    if (!Array.isArray(next.dayGroups) || !next.dayGroups.length) {
+      next.dayGroups = clone(dayGroups());
+    }
+    const groups = contiguousGroups(normalizedGroups(next));
+    const group = groups.find((item) => item.days[0] === startDay);
+    if (!group) return false;
+    mutate(group);
+    next.dayGroups = groups;
+    next.rulesContractVersion = RULES_CONTRACT_VERSION;
+    return saveRules(next);
+  }
+
+  function updateGroupWindowAt(startDay, kind, start, end) {
+    if (start < 0 || end <= start || end > 1440) {
+      setNotice(t("rulesInvalid"), true);
+      return false;
+    }
+    return updateGroupAt(startDay, (group) => {
+      group[kind + "Windows"] = [{ start: start, end: end }];
+    });
+  }
+
+  function setGroupQuotaAt(startDay, kind, value) {
+    if (!updateGroupAt(startDay, (group) => {
+      group[kind + "DailyLimitMinutes"] = value === null ? null : Number(value);
+    })) return;
+    paintSegmentQuotas();
+  }
+
+  /** Repaints quota chips after a debounced save; the segment layout itself is unchanged. */
+  function paintSegmentQuotas() {
+    const rules = snap && snap.rules;
+    if (!rules) return;
+    const source = Array.isArray(rules.dayGroups) && rules.dayGroups.length
+      ? rules.dayGroups : dayGroups();
+    const groups = contiguousGroups(normalizedGroups({ dayGroups: clone(source) }));
+    const canEdit = Boolean(snap.capabilities && snap.capabilities.canEditRules);
+    document.querySelectorAll(".parent-seg-quota").forEach((node) => {
+      const group = groups.find((item) => item.days[0] === Number(node.dataset.groupStart));
+      if (!group) return;
+      const kind = node.dataset.groupKind;
+      const value = groupQuota(group, kind);
+      const label = kind === "study" ? t("studyLimit") : t("entertainmentLimit");
+      node.textContent = quotaText(value);
+      node.setAttribute("aria-label", label + ": " + quotaText(value));
+      node.disabled = !canEdit;
+    });
+  }
+
+  function applySegmentGroups(groups) {
+    if (!snap.capabilities || !snap.capabilities.canEditRules) return false;
+    const normalized = contiguousGroups(normalizedGroups({ dayGroups: clone(groups) }));
+    const seen = new Set();
+    for (const group of normalized) {
+      for (const day of group.days) {
+        if (day < 1 || day > 7 || seen.has(day)) return false;
+        seen.add(day);
+      }
+    }
+    if (seen.size !== 7 || normalized.length < 1 || normalized.length > 7) return false;
+    const next = clone(snap.rules || {});
+    next.dayGroups = normalized;
+    next.rulesContractVersion = RULES_CONTRACT_VERSION;
+    if (!saveRules(next)) return false;
+    rerenderTimePage();
+    return true;
+  }
+
+  function toggleSegmentStart(day) {
+    if (!snap.capabilities || !snap.capabilities.canEditRules) return;
+    if (day < 2 || day > 7) return;
+    const groups = editorGroups();
+    const index = groups.findIndex((group) => group.days.indexOf(day) >= 0);
+    if (index < 0) return;
+    const group = groups[index];
+    const position = group.days.indexOf(day);
+    if (position === 0) {
+      if (index === 0) return;
+      const merged = cloneGroupSettings(groups[index - 1]);
+      merged.days = groups[index - 1].days.concat(group.days).sort((a, b) => a - b);
+      const apply = () => {
+        const next = groups.slice(0, index - 1)
+          .concat([merged], groups.slice(index + 1));
+        applySegmentGroups(next);
+      };
+      if (sameGroupSettings(groups[index - 1], group)) {
+        apply();
+      } else {
+        confirmSheet(
+          t("mergeSegmentsTitle"),
+          t("mergeSegmentsBody"),
+          t("mergeSegmentsAction"),
+          apply
+        );
+      }
+      return;
+    }
+    const right = cloneGroupSettings(group);
+    right.days = group.days.slice(position);
+    group.days = group.days.slice(0, position);
+    applySegmentGroups(groups.slice(0, index).concat([group, right], groups.slice(index + 1)));
+  }
+
+  function applySegmentPreset(starts) {
+    if (!snap.capabilities || !snap.capabilities.canEditRules) return;
+    const current = editorGroups();
+    const targets = starts.slice().sort((a, b) => a - b);
+    if (sameStarts(segmentStarts(current), targets)) return;
+    const built = [];
+    let lossy = false;
+    targets.forEach((start, index) => {
+      const end = index + 1 < targets.length ? targets[index + 1] - 1 : 7;
+      const source = current.find((group) => group.days.indexOf(start) >= 0);
+      if (!source) return;
+      const group = cloneGroupSettings(source);
+      for (let day = start; day <= end; day++) group.days.push(day);
+      built.push(group);
+      // A preset replaces every segment in its range with the settings at the range start.
+      // Confirm when that would discard a different configuration.
+      current.forEach((existing) => {
+        if (existing.days.some((day) => day >= start && day <= end) &&
+            !sameGroupSettings(existing, source)) {
+          lossy = true;
+        }
+      });
+    });
+    if (built.length !== targets.length || built.some((group) => !group.days.length)) return;
+    const apply = () => { applySegmentGroups(built); };
+    if (lossy) {
+      confirmSheet(
+        t("mergeSegmentsTitle"),
+        t("mergeSegmentsBody"),
+        t("mergeSegmentsAction"),
+        apply
+      );
+    } else {
+      apply();
+    }
+  }
+
+  function renderSegmentEditor() {
+    const card = el("div", "parent-card");
+    const canEdit = Boolean(snap.capabilities && snap.capabilities.canEditRules);
+    const groups = editorGroups();
+    const starts = segmentStarts(groups);
+    const presets = [
+      { starts: [1, 6], label: t("groupWeekdays") + " / " + t("groupWeekend") },
+      { starts: [1], label: t("presetWholeWeek") },
+      { starts: [1, 2, 3, 4, 5, 6, 7], label: t("presetEveryDay") },
+    ];
+    const presetRow = el("div", "parent-seg-presets");
+    presets.forEach((preset) => {
+      const chip = button(preset.label, "parent-seg-preset", () => {
+        applySegmentPreset(preset.starts);
+      });
+      chip.setAttribute("aria-pressed", String(sameStarts(starts, preset.starts)));
+      chip.disabled = !canEdit;
+      presetRow.appendChild(chip);
+    });
+    card.appendChild(presetRow);
+
+    const week = el("div", "parent-seg-week");
+    const ownerByDay = new Map();
+    groups.forEach((group, index) => {
+      group.days.forEach((day) => ownerByDay.set(day, index));
+    });
+    for (let day = 1; day <= 7; day++) {
+      const index = ownerByDay.has(day) ? ownerByDay.get(day) : 0;
+      const group = groups[index];
+      const isStart = Boolean(group && group.days[0] === day);
+      const node = button(dayLabel(day), "parent-seg-day", () => toggleSegmentStart(day));
+      node.dataset.segIndex = String(index + 1);
+      node.style.setProperty("--seg-color", segmentColor(index));
+      node.classList.toggle("is-start", isStart);
+      node.classList.toggle("is-first", day === 1);
+      node.setAttribute("aria-pressed", String(isStart));
+      const hint = day === 1
+        ? t("segmentFirstHint")
+        : (isStart ? t("segmentMergeHint") : t("segmentSplitHint"));
+      node.setAttribute("aria-label", dayLabel(day) + " · " + hint);
+      node.disabled = !canEdit || day === 1;
+      week.appendChild(node);
+    }
+    card.appendChild(week);
+    if (canEdit) {
+      card.appendChild(el("p", "parent-hint parent-seg-hint", t("segmentHint")));
+    }
+    if (hasNonContiguousGroups(dayGroups())) {
+      card.appendChild(el("p", "parent-hint parent-inline-note", t("segmentNonContiguous")));
+    }
+    if (!canEdit) {
+      card.appendChild(el("p", "parent-hint parent-inline-note", t("readOnlyCloud")));
+    }
+    return card;
+  }
+
+  function renderSegmentRow(group, startDay, kind, label, quotaLabel, canEdit) {
+    const row = el("div", "parent-seg-row");
+    row.appendChild(el("span", "parent-seg-label", label));
+    const wrap = el("div", "parent-window parent-seg-window");
+    const window = groupWindow(group, kind) || defaultWindow();
+    const start = timeField(window.start, label + " " + t("from"), false);
+    const end = timeField(window.end, label + " " + t("to"), true);
+    let currentStart = Number(window.start);
+    let currentEnd = Number(window.end);
     const commit = (nextStart, nextEnd) => {
-      if (nextStart < 0 || nextEnd <= nextStart || nextEnd > 1440) {
-        setNotice(t("rulesInvalid"), true);
+      if (!updateGroupWindowAt(startDay, kind, nextStart, nextEnd)) {
         start.set(currentStart);
         end.set(currentEnd);
         return;
       }
       currentStart = nextStart;
       currentEnd = nextEnd;
-      updateWindows(weekday, currentStart, currentEnd);
     };
     start.onchange(() => commit(start.get(), currentEnd));
     end.onchange(() => commit(currentStart, end.get()));
     wrap.appendChild(start.node);
     wrap.appendChild(el("span", "parent-time-sep", "—"));
     wrap.appendChild(end.node);
-    group.appendChild(wrap);
-    return group;
+    if (!canEdit) {
+      start.node.querySelectorAll("select").forEach((select) => { select.disabled = true; });
+      end.node.querySelectorAll("select").forEach((select) => { select.disabled = true; });
+    }
+    row.appendChild(wrap);
+    const value = groupQuota(group, kind);
+    const quota = button(quotaText(value), "parent-seg-quota", () => {
+      openLimitSheet(quotaLabel, value, quotaOptions(),
+        (picked) => setGroupQuotaAt(startDay, kind, picked));
+    });
+    quota.dataset.groupStart = String(startDay);
+    quota.dataset.groupKind = kind;
+    quota.setAttribute("aria-label", quotaLabel + ": " + quotaText(value));
+    quota.disabled = !canEdit;
+    const quotaWrap = el("div", "parent-seg-quota-wrap");
+    quotaWrap.appendChild(el("span", "parent-seg-quota-label", t("dailyLimit")));
+    quotaWrap.appendChild(quota);
+    row.appendChild(quotaWrap);
+    return row;
   }
 
-  function updateWindows(weekday, start, end) {
-    const next = clone(snap.rules);
-    const key = weekday ? "weekdayWindows" : "weekendWindows";
-    next[key] = [{ start: start, end: end }];
-    saveRules(next);
+  function renderSegmentCards() {
+    const wrap = el("div", "parent-seg-cards");
+    const canEdit = Boolean(snap.capabilities && snap.capabilities.canEditRules);
+    editorGroups().forEach((group, index) => {
+      const card = el("div", "parent-card parent-seg-card");
+      card.style.setProperty("--seg-color", segmentColor(index));
+      const head = el("div", "parent-seg-head");
+      head.appendChild(el("span", "parent-seg-badge", String(index + 1)));
+      head.appendChild(el("span", "parent-seg-range", segmentLabel(group)));
+      card.appendChild(head);
+      card.appendChild(renderSegmentRow(
+        group, group.days[0], "study", t("studyShort"), t("studyLimit"), canEdit));
+      card.appendChild(renderSegmentRow(
+        group, group.days[0], "entertainment", t("entertainmentShort"),
+        t("entertainmentLimit"), canEdit));
+      wrap.appendChild(card);
+    });
+    return wrap;
   }
 
-  function renderLimits() {
+  function rerenderTimePage() {
+    const top = window.scrollY;
+    renderTimeAndApps();
+    window.scrollTo({ top });
+  }
+
+  /**
+   * V45 public parameters: one card with the shared session ceiling, the rest and the pause
+   * cap. The per-day entertainment quota stays inside each day group below.
+   */
+  function renderPublicParams() {
     const card = el("div", "parent-card");
-    const canEdit = snap.capabilities && snap.capabilities.canEditRules;
+    const canEdit = Boolean(snap.capabilities && snap.capabilities.canEditRules);
     const rules = snap.rules || {};
     card.appendChild(limitRow(
-      "daily", t("dailyLimit"), rules.autoDailyLimitMinutes,
-      STEP_DAILY, MIN_EDIT_DAILY, MAX_EDIT_DAILY, canEdit, 15
+      "sessionCapMinutes", t("sessionCapTitle"), sessionCapMinutes(),
+      STEP_SESSION_CAP_MINUTES, MIN_SESSION_CAP_MINUTES, MAX_SESSION_CAP_MINUTES, canEdit,
+      SESSION_CAP_OPTIONS
+    ));
+    const hint = el("p", "parent-hint", t("sessionCapHint", { n: sessionCapMinutes() }));
+    hint.dataset.capHint = "1";
+    card.appendChild(hint);
+    card.appendChild(limitRow(
+      "restMinutes", t("rest"), Number(rules.restMinutes) || 0,
+      STEP_REST, 0, MAX_EDIT_REST, canEdit, REST_OPTIONS
     ));
     card.appendChild(limitRow(
-      "rest", t("rest"), rules.restMinutes,
-      STEP_REST, 0, MAX_EDIT_REST, canEdit, 5
-    ));
-    card.appendChild(limitRow(
-      "buffer", t("buffer"), rules.sessionScreenOffBufferMinutes,
-      STEP_BUFFER, MIN_BUFFER, MAX_BUFFER, canEdit, 5
+      "sessionScreenOffBufferMinutes", t("buffer"),
+      Number(rules.sessionScreenOffBufferMinutes) || 0,
+      STEP_BUFFER, MIN_BUFFER, MAX_BUFFER, canEdit, BUFFER_OPTIONS
     ));
     return card;
   }
 
-  function limitRow(key, label, value, step, min, max, canEdit, optionStep) {
+  function limitRow(key, label, value, step, min, max, canEdit, options) {
     const node = el("div", "parent-row");
     const main = el("div", "parent-row-main");
     main.appendChild(el("span", "parent-row-title", label));
@@ -5595,7 +10397,7 @@
     const controls = el("div", "parent-stepper");
     const minus = button("−", "parent-step", () => adjustLimit(key, -step, min, max));
     const valueBtn = button(t("minutes", { n: value }), "parent-step-value", () => {
-      openNumberSheet(key, label, value, min, max, optionStep);
+      openLimitSheet(label, value, options, (picked) => setLimit(key, picked));
     });
     valueBtn.dataset.limitKey = key;
     const plus = button("+", "parent-step", () => adjustLimit(key, step, min, max));
@@ -5609,16 +10411,14 @@
 
   function adjustLimit(key, delta, min, max) {
     if (!snap.capabilities || !snap.capabilities.canEditRules) return;
-    const current = Number(snap.rules && snap.rules[limitField(key)]) || 0;
-    const next = Math.min(max, Math.max(min, current + delta));
-    if (next === current) return;
+    // A legacy snapshot may omit the cap; read it through the same normalization the UI shows.
+    const current = key === "sessionCapMinutes"
+      ? sessionCapMinutes()
+      : Number(snap.rules && snap.rules[key]);
+    const value = Number.isFinite(current) ? current : min;
+    const next = stepMinuteValue(value, delta, min, max);
+    if (next === value) return;
     setLimit(key, next);
-  }
-
-  function limitField(key) {
-    if (key === "daily") return "autoDailyLimitMinutes";
-    if (key === "rest") return "restMinutes";
-    return "sessionScreenOffBufferMinutes";
   }
 
   /** Repaints the rule controls already on screen; a save must not rebuild the whole page. */
@@ -5626,24 +10426,36 @@
     const rules = snap && snap.rules;
     if (!rules) return;
     document.querySelectorAll(".parent-step-value[data-limit-key]").forEach((node) => {
-      const value = Number(rules[limitField(node.dataset.limitKey)]);
+      const value = Number(rules[node.dataset.limitKey]);
       if (Number.isFinite(value)) node.textContent = t("minutes", { n: value });
     });
+    paintSegmentQuotas();
+    paintStudyEarnControls();
+    paintDirectMinutes();
+    paintRouteCounts();
+    paintRouteHints();
+    const capHint = document.querySelector("[data-cap-hint]");
+    if (capHint) capHint.textContent = t("sessionCapHint", { n: sessionCapMinutes() });
   }
 
-  function openNumberSheet(key, label, value, min, max, step) {
+  function openLimitSheet(label, current, options, onPick) {
     if (!snap.capabilities || !snap.capabilities.canEditRules) return;
     openSheet((sheet, close) => {
       sheet.appendChild(el("h2", null, label));
       const list = el("div", "parent-choice-list");
-      for (let option = min; option <= max; option += step) {
-        const choice = button(t("minutes", { n: option }), "parent-choice", () => {
-          setLimit(key, option);
-          close();
-        });
-        choice.setAttribute("aria-pressed", String(option === Number(value)));
+      options.forEach((option) => {
+        const choice = button(
+          option === null ? t("unlimited") : t("minutes", { n: option }),
+          "parent-choice",
+          () => {
+            close();
+            onPick(option);
+          }
+        );
+        choice.setAttribute("aria-pressed", String(
+          current === null ? option === null : Number(option) === Number(current)));
         list.appendChild(choice);
-      }
+      });
       sheet.appendChild(list);
       const actions = el("div", "parent-actions");
       actions.appendChild(button(t("cancel"), "parent-btn ghost", close));
@@ -5653,10 +10465,29 @@
 
   function setLimit(key, value) {
     const next = clone(snap.rules);
-    next[limitField(key)] = value;
+    next.rulesContractVersion = RULES_CONTRACT_VERSION;
+    next[key] = value;
+    let clamped = false;
+    if (key === "sessionCapMinutes") {
+      const direct = directMinutes();
+      const y = studyEarnMinutes("studyEarnRewardMinutes");
+      if (direct > value) {
+        next.sessionLimitMinutes = value;
+        next.directSessionMinutes = value;
+        clamped = true;
+      }
+      if (y > value) {
+        next.studyEarnRewardMinutes = value;
+        clamped = true;
+      }
+    }
     if (!saveRules(next)) return;
     const node = document.querySelector(`.parent-step-value[data-limit-key="${key}"]`);
     if (node) node.textContent = t("minutes", { n: value });
+    if (key === "sessionCapMinutes") {
+      paintRulesControls();
+      if (clamped) setNotice(t("capClampedNotice", { n: value }), false);
+    }
   }
 
   function renderDeviceRows() {
@@ -5841,8 +10672,61 @@
     }
   }
 
+  /**
+   * V5 server validation is strict: direct 1..cap, Y 1..cap, X 1..180 and counts 0..10.
+   * X and Y are independent inputs, so Y is not clamped by X. A legacy snapshot can still hold
+   * values outside those ranges, so clamp the outgoing draft; the clamp is what the next
+   * snapshot reads back and displays.
+   */
+  function clampRules(next) {
+    const capValue = Number(next.sessionCapMinutes);
+    const cap = Math.min(MAX_SESSION_CAP_MINUTES, Math.max(MIN_SESSION_CAP_MINUTES,
+      Number.isFinite(capValue) ? capValue : DEFAULT_SESSION_CAP_MINUTES));
+    next.sessionCapMinutes = cap;
+    const directValue = Number(next.directSessionMinutes);
+    const directAlias = Number(next.sessionLimitMinutes);
+    const rawDirect = Number.isFinite(directValue) ? directValue
+      : (Number.isFinite(directAlias) ? directAlias : DEFAULT_DIRECT_MINUTES);
+    const direct = Math.min(cap, Math.max(MIN_DIRECT_MINUTES, Math.round(rawDirect)));
+    next.sessionLimitMinutes = direct;
+    next.directSessionMinutes = direct;
+    const xValue = Number(next.studyEarnStudyMinutes);
+    const x = Math.min(MAX_STUDY_EARN_MINUTES, Math.max(MIN_STUDY_EARN_MINUTES,
+      Number.isFinite(xValue) ? xValue : DEFAULT_STUDY_EARN_STUDY_MINUTES));
+    next.studyEarnStudyMinutes = x;
+    const yValue = Number(next.studyEarnRewardMinutes);
+    const rawY = Number.isFinite(yValue) ? yValue : DEFAULT_STUDY_EARN_REWARD_MINUTES;
+    next.studyEarnRewardMinutes = Math.min(cap,
+      Math.max(MIN_STUDY_EARN_MINUTES, Math.round(rawY)));
+    ["quizDailyLimitCount", "studyRewardDailyLimitCount", "directDailyFreeCount"]
+      .forEach((field) => {
+        const value = Number(next[field]);
+        next[field] = Number.isFinite(value)
+          ? Math.min(MAX_ROUTE_DAILY_COUNT, Math.max(0, Math.round(value)))
+          : DEFAULT_ROUTE_DAILY_COUNT;
+      });
+    // V45: studyPackages is the single study list; the legacy per-app reward subset is
+    // retired. Categories are exclusive, so a study app cannot also be unlimited or
+    // entertainment (study > unlimited > entertainment).
+    const study = Array.isArray(next.studyPackages) ? next.studyPackages : [];
+    next.studyPackages = study;
+    next.studyEarnPackages = study;
+    const studySet = new Set(study);
+    const unlimited = (Array.isArray(next.unlimitedPackages) ? next.unlimitedPackages : [])
+      .filter((pkg) => !studySet.has(pkg));
+    next.unlimitedPackages = unlimited;
+    const unlimitedSet = new Set(unlimited);
+    next.allowedPackages = (Array.isArray(next.allowedPackages) ? next.allowedPackages : [])
+      .filter((pkg) => !studySet.has(pkg) && !unlimitedSet.has(pkg));
+    return next;
+  }
+
   function saveRules(next) {
     if (!editorToken) return false;
+    // V42 rejects pages that cannot express day groups. Snapshot-driven drafts already carry
+    // the version, but an old cached page must never pass by omitting it.
+    next.rulesContractVersion = RULES_CONTRACT_VERSION;
+    clampRules(next);
     snap.rules = next;
     pendingRules = next;
     rulesHold = false;
@@ -5867,7 +10751,7 @@
     pendingRules = null;
     savingRules = true;
     try {
-      const data = await requestWithSensitive(
+      const data = await requestUserConfigWrite(
         "/api/parent/rules",
         {
           method: "POST",
@@ -5877,9 +10761,7 @@
           },
           editorToken: editorToken,
           quizAuth: true,
-        },
-        "RULES_EDIT",
-        "sensitivePinLeadRules"
+        }
       );
       if (!data) {
         // The parent closed the verification sheet. Keep the draft and wait for the next
@@ -5924,7 +10806,7 @@
   async function recoverWrite(error) {
     if (!error) return;
     if (error.code === "STATE_CHANGED" || error.code === "READ_ONLY" ||
-        error.code === "LOCAL_ONLY") {
+        error.code === "LOCAL_ONLY" || error.code === "RULES_CLIENT_OUTDATED") {
       // The TV changed under us. The draft was built on a stale revision, so drop it and
       // show the authoritative snapshot; keeping it would immediately conflict again.
       discardPendingRules();
@@ -5949,7 +10831,12 @@
     }
     if (error.code === "RULES_OVERLAP" || error.code === "RULES_TOO_MANY_WINDOWS" ||
         error.code === "RULES_INVALID_APPS" || error.code === "RULES_INVALID_STUDY_APPS" ||
-        error.code === "RULES_INVALID") {
+        error.code === "RULES_INVALID_STUDY_EARN" || error.code === "RULES_INVALID" ||
+        error.code === "RULES_INVALID_DAY_GROUPS" ||
+        error.code === "RULES_INVALID_UNLIMITED_APPS" ||
+        error.code === "RULES_INVALID_ROUTE_COUNTS" ||
+        error.code === "RULES_INVALID_DIRECT_SESSION" ||
+        error.code === "RULES_INVALID_SESSION_CAP") {
       // Rejected rules cannot be fixed by retrying the same draft; fall back to the TV's
       // last accepted rules so the next edit starts from a valid base.
       discardPendingRules();
@@ -6318,24 +11205,94 @@
 
   function exitPicker() {
     resetAppIconQueue();
-    // The app picker is only opened from Time & Apps, so finishing it returns there.
-    subpage = "time";
+    const returnTo = picker && picker.returnTo;
+    const scroll = picker ? picker.scroll : 0;
     picker = null;
+    // V45: a picker remembers where it was opened. The unlimited card returns to the user
+    // index; the entertainment and study grids return to the plan page.
+    if (returnTo === "user") {
+      subpage = null;
+      if (pendingRules || savingRules) {
+        releaseRulesWhenIdle = true;
+        if (pendingRules && !savingRules) flushRules();
+      } else {
+        releaseSensitive("RULES_EDIT");
+      }
+    } else {
+      subpage = "time";
+    }
     render();
+    window.scrollTo({ top: scroll || 0 });
   }
 
-  async function openPicker(kind) {
+  function pickerPackages(kind) {
+    const rules = snap.rules || {};
+    if (kind === "study") return Array.isArray(rules.studyPackages) ? rules.studyPackages : [];
+    if (kind === "unlimited") {
+      return Array.isArray(rules.unlimitedPackages) ? rules.unlimitedPackages : [];
+    }
+    return !rules.allApps && Array.isArray(rules.allowedPackages)
+      ? rules.allowedPackages : [];
+  }
+
+  function pickerTitle() {
+    if (picker.kind === "study") return t("appPickerStudy");
+    if (picker.kind === "unlimited") return t("appPickerUnlimited");
+    return t("appPickerEntertainment");
+  }
+
+  function pickerHint() {
+    if (picker.kind === "study") return t("appPickerStudyHint");
+    if (picker.kind === "unlimited") return t("appPickerUnlimitedHint");
+    return t("appPickerHint");
+  }
+
+  /**
+   * The entertainment picker locks the other two categories. The unlimited and study
+   * pickers take the app with a confirmation instead, because V45 must let the parent move
+   * an app between categories without first removing it somewhere else.
+   */
+  function pickerConflict(pkg) {
+    if (picker.kind !== "entertainment") return null;
+    const rules = snap.rules || {};
+    if ((rules.studyPackages || []).indexOf(pkg) >= 0) return "study";
+    if ((rules.unlimitedPackages || []).indexOf(pkg) >= 0) return "unlimited";
+    return null;
+  }
+
+  function pickerCategory(pkg) {
+    const rules = snap.rules || {};
+    if (picker.kind === "unlimited" &&
+      (rules.studyPackages || []).indexOf(pkg) >= 0) return "study";
+    if (picker.kind === "study" &&
+      (rules.unlimitedPackages || []).indexOf(pkg) >= 0) return "unlimited";
+    return null;
+  }
+
+  /** Batch candidates never include study apps: adding those must stay a deliberate move. */
+  function unlimitedCandidates() {
+    const study = new Set(studyPackagesAll());
+    return (picker.apps || [])
+      .map((app) => String(app.packageName || ""))
+      .filter((pkg) => pkg && !study.has(pkg));
+  }
+
+  function unlimitedAllSelected(candidates) {
+    return candidates.length > 0 && candidates.every((pkg) => picker.selected.has(pkg));
+  }
+
+  async function openPicker(kind, returnTo) {
     if (!snap.capabilities || !snap.capabilities.canEditRules) return;
     subpage = "apps";
     picker = {
       kind: kind,
+      returnTo: returnTo === "user" ? "user" : "time",
+      scroll: window.scrollY,
       apps: null,
       query: "",
       loading: true,
       allApps: Boolean(snap.rules && snap.rules.allApps),
-      selected: new Set(kind === "study"
-        ? ((snap.rules && snap.rules.studyPackages) || [])
-        : ((snap.rules && !snap.rules.allApps && snap.rules.allowedPackages) || [])),
+      selected: new Set(pickerPackages(kind)),
     };
     render();
     try {
@@ -6356,9 +11313,9 @@
     const root = $(ROOT_ID);
     clear(root);
     const shell = el("div", "parent-shell parent-picker-shell");
-    const title = picker.kind === "study" ? t("appPickerStudy") : t("appPickerEntertainment");
-    shell.appendChild(barNode(title, statusLine(gate), exitPicker));
+    shell.appendChild(barNode(pickerTitle(), statusLine(gate), exitPicker));
     const content = el("div", "parent-subpage parent-picker-content");
+    content.appendChild(noticeArea());
     const search = el("input", "parent-search");
     search.type = "search";
     search.placeholder = t("appPickerSearch");
@@ -6371,8 +11328,7 @@
     content.appendChild(search);
     const list = el("div", "parent-list parent-list-spaced");
     content.appendChild(list);
-    content.appendChild(el("p", "parent-hint", picker.kind === "study"
-      ? t("appPickerStudyHint") : t("appPickerHint")));
+    content.appendChild(el("p", "parent-hint", pickerHint()));
     renderAppList(list);
     shell.appendChild(content);
     const actions = el("div", "parent-sticky-actions");
@@ -6394,7 +11350,7 @@
       list.appendChild(el("div", "parent-empty", t("appPickerLoading")));
       return;
     }
-    if (picker.kind !== "study") {
+    if (picker.kind === "entertainment") {
       const all = el("label", "parent-radio");
       const radio = el("input");
       radio.type = "radio";
@@ -6431,15 +11387,46 @@
       return;
     }
     const grid = el("div", "parent-app-grid");
+    if (picker.kind === "unlimited") {
+      // V45: a virtual "select all" tile, never a real package. It only batches apps that
+      // may join unlimited without moving a study app; those stay explicit choices.
+      const candidates = unlimitedCandidates();
+      const allSelected = unlimitedAllSelected(candidates);
+      const selectAll = el("button", "parent-app-tile parent-select-all" +
+        (allSelected ? " selected" : ""));
+      selectAll.type = "button";
+      selectAll.setAttribute("aria-label",
+        allSelected ? t("clearAllApps") : t("selectAllApps"));
+      const allIcon = el("span", "parent-app-icon parent-select-all-icon");
+      for (let i = 0; i < 4; i += 1) {
+        allIcon.appendChild(el("span", "parent-select-all-dot"));
+      }
+      selectAll.appendChild(allIcon);
+      selectAll.appendChild(el("span", "parent-app-name",
+        allSelected ? t("clearAllApps") : t("selectAllApps")));
+      selectAll.addEventListener("click", () => {
+        const now = unlimitedCandidates();
+        if (unlimitedAllSelected(now)) {
+          now.forEach((pkg) => picker.selected.delete(pkg));
+        } else {
+          now.forEach((pkg) => picker.selected.add(pkg));
+        }
+        renderAppList(list);
+      });
+      grid.appendChild(selectAll);
+    }
     apps.slice(0, 300).forEach((app) => {
       const pkg = String(app.packageName || "");
       const labelText = String(app.label || pkg);
+      const conflict = pickerConflict(pkg);
+      const category = pickerCategory(pkg);
+      const lockedByAllApps = picker.kind === "entertainment" && picker.allApps;
       const tile = el("label", "parent-app-tile");
       tile.dataset.parentIcon = pkg;
       const check = el("input");
       check.type = "checkbox";
       check.checked = picker.selected.has(pkg);
-      check.disabled = picker.kind !== "study" && picker.allApps;
+      check.disabled = lockedByAllApps || Boolean(conflict);
       const icon = el("span", "parent-app-icon");
       icon.appendChild(el("span", "parent-app-initial",
         (labelText.trim()[0] || "?").toUpperCase()));
@@ -6449,7 +11436,33 @@
       const sync = () => tile.classList.toggle("selected", check.checked);
       sync();
       if (check.disabled) tile.classList.add("disabled");
+      if (conflict) {
+        tile.classList.add("conflict");
+        tile.appendChild(el("span", "parent-app-note",
+          conflict === "study" ? t("appPickerTakenStudy") : t("appPickerTakenUnlimited")));
+      } else if (category) {
+        tile.classList.add("category-move");
+        tile.appendChild(el("span", "parent-app-note",
+          category === "study" ? t("appPickerTakenStudy") : t("appPickerTakenUnlimited")));
+      }
       check.addEventListener("change", () => {
+        if (check.checked && category) {
+          // Moving an app between categories is allowed but never silent: the confirmation
+          // spells out which list loses it, and Save applies the move.
+          check.checked = false;
+          sync();
+          confirmSheet(
+            labelText,
+            t(category === "study" ? "moveToUnlimitedConfirm" : "moveToStudyConfirm"),
+            t("moveToUnlimitedAction"),
+            () => {
+              picker.selected.add(pkg);
+              check.checked = true;
+              sync();
+            }
+          );
+          return;
+        }
         if (check.checked) picker.selected.add(pkg);
         else picker.selected.delete(pkg);
         sync();
@@ -6467,14 +11480,52 @@
   async function savePicker() {
     if (!picker || !snap.capabilities || !snap.capabilities.canEditRules) return;
     const next = clone(snap.rules);
+    next.rulesContractVersion = RULES_CONTRACT_VERSION;
+    const selected = Array.from(picker.selected);
     if (picker.kind === "study") {
-      next.studyPackages = Array.from(picker.selected);
+      next.studyPackages = selected;
+      // V45: every study app participates; the retired per-app reward subset always matches.
+      next.studyEarnPackages = selected;
+      next.unlimitedPackages = (next.unlimitedPackages || [])
+        .filter((pkg) => picker.selected.has(pkg) === false);
+      if (!next.allApps) {
+        next.allowedPackages = (next.allowedPackages || [])
+          .filter((pkg) => picker.selected.has(pkg) === false);
+      }
+    } else if (picker.kind === "unlimited") {
+      next.unlimitedPackages = selected;
+      next.studyPackages = (next.studyPackages || [])
+        .filter((pkg) => picker.selected.has(pkg) === false);
+      next.studyEarnPackages = next.studyPackages;
+      if (!next.allApps) {
+        next.allowedPackages = (next.allowedPackages || [])
+          .filter((pkg) => picker.selected.has(pkg) === false);
+      }
+      const installed = (picker.apps || [])
+        .map((app) => String(app.packageName || ""))
+        .filter(Boolean);
+      const coversAll = installed.length > 0 &&
+        installed.every((pkg) => picker.selected.has(pkg));
+      if (coversAll) {
+        // An empty entertainment scope is legal, but the parent must see the consequence.
+        confirmSheet(
+          t("unlimitedApps"),
+          t("unlimitedAllWarning"),
+          t("appPickerDone"),
+          () => { commitPicker(next); }
+        );
+        return;
+      }
     } else {
       next.allApps = picker.allApps;
-      next.allowedPackages = picker.allApps ? [] : Array.from(picker.selected);
+      next.allowedPackages = picker.allApps ? [] : selected;
     }
+    commitPicker(next);
+  }
+
+  async function commitPicker(next) {
     try {
-      const data = await requestWithSensitive(
+      const data = await requestUserConfigWrite(
         "/api/parent/rules",
         {
           method: "POST",
@@ -6484,9 +11535,7 @@
           },
           editorToken: editorToken,
           quizAuth: true,
-        },
-        "RULES_EDIT",
-        "sensitivePinLeadRules"
+        }
       );
       if (!data) return;
       if (data.snapshot) adoptSnapshot(data.snapshot, false);
@@ -6522,7 +11571,7 @@
     return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
   }
 
-  function controlStatusText(control) {
+  function controlStatusText(control, manualPage) {
     if (!control) return t("loading");
     if (!control.childModeOn) return t("controlStatusChildOff");
     if (control.guardState === "PARENT_OVERRIDE") {
@@ -6535,6 +11584,12 @@
     if (control.quiz && control.quiz.roundActive) return t("controlStatusQuiz");
     const timer = control.timer || {};
     if (control.sessionState === "ACTIVE" || timer.active) {
+      // V45: only the user config page starts out-of-plan timers, so it labels that state
+      // differently from a child-started entertainment session.
+      if (manualPage && timer.outsidePlan) {
+        const minutes = Math.max(1, Math.ceil((Number(timer.remainingSeconds) || 0) / 60));
+        return t("controlStatusManualTimer", { minutes: minutes });
+      }
       return t("controlStatusTimer", { time: fmtSeconds(timer.remainingSeconds) });
     }
     if (control.sessionState === "PENDING") return t("controlStatusPending");
@@ -6620,9 +11675,13 @@
     controlDeviceRefs = null;
   }
 
+  function devicePageActive() {
+    return rootOpen && !rootSuspended && rootMode === "system" && subpage === "device";
+  }
+
   function syncControlDevicePolling() {
     stopControlDevicePolling();
-    if (!controlDeviceOpen || !rootOpen || rootMode !== "control") return;
+    if (!controlDeviceOpen || !devicePageActive()) return;
     controlDeviceTimer = setInterval(() => {
       if (document.hidden) return;
       loadControlDevice();
@@ -6635,7 +11694,7 @@
    * visible instead of blanking the panel.
    */
   async function loadControlDevice() {
-    if (!host || !editorToken || controlDeviceLoading || !rootOpen || rootMode !== "control") {
+    if (!host || !editorToken || controlDeviceLoading || !devicePageActive()) {
       return;
     }
     const epoch = controlDeviceEpoch;
@@ -6908,7 +11967,7 @@
 
   function paintControlDevice() {
     const refs = controlDeviceRefs;
-    if (!refs || !rootOpen || rootMode !== "control") return;
+    if (!refs || !devicePageActive()) return;
     const data = controlDeviceData;
     let summaryKey = "controlDeviceSummaryHint";
     let state = "";
@@ -6992,121 +12051,11 @@
     return { button: node, sub: sub };
   }
 
-  function renderControlPage() {
-    if (!snap) return renderLoading();
-    const root = $(ROOT_ID);
-    if (!root) return;
-    clear(root);
-    const shell = el("div", "parent-shell");
-    // The control page is a top-level tab: like the other tabs it has no back
-    // button, and its title uses the shared page-head spacing.
-    const content = el("div", "parent-content parent-more-content parent-control-content");
-    const head = el("div", "parent-more-head");
-    head.appendChild(el("h1", "parent-more-title", t("controlTitle")));
-    const status = el("p", "parent-more-status");
-    const dot = el("span", "parent-more-dot");
-    const statusText = el("span", null, "");
-    status.appendChild(dot);
-    status.appendChild(statusText);
-    head.appendChild(status);
-    content.appendChild(head);
-
-    content.appendChild(sectionLabel(t("controlChildSection")));
-    const childCard = el("div", "parent-card");
-    const takeOver = controlActionRow(
-      t("controlTakeOverTitle"),
-      () => sendControl("TAKE_OVER"),
-      false
-    );
-    const enterChild = controlActionRow(
-      t("controlEnterTitle"),
-      () => sendControl("ENTER_CHILD_MODE"),
-      false
-    );
-    childCard.appendChild(takeOver.button);
-    childCard.appendChild(enterChild.button);
-    content.appendChild(childCard);
-
-    content.appendChild(sectionLabel(t("controlTimerSection")));
-    const timerCard = el("div", "parent-card");
-    const startManual = controlActionRow(
-      t("controlStartTitle"),
-      () => openControlManual(),
-      false
-    );
-    const stopTimer = controlActionRow(
-      t("controlStopTitle"),
-      () => sendControl("STOP_TIMER"),
-      true
-    );
-    timerCard.appendChild(startManual.button);
-    timerCard.appendChild(stopTimer.button);
-    content.appendChild(timerCard);
-
-    content.appendChild(sectionLabel(t("controlDeviceSection")));
-    const deviceCard = el("div", "parent-card parent-device-card");
-    const deviceHead = el("button", "parent-row parent-device-head");
-    deviceHead.type = "button";
-    deviceHead.setAttribute("aria-expanded", "false");
-    deviceHead.setAttribute("aria-controls", "parentDeviceBody");
-    const deviceDot = el("span", "parent-device-dot");
-    const deviceMain = el("div", "parent-row-main");
-    deviceMain.appendChild(el("span", "parent-row-title", t("controlDeviceTitle")));
-    const deviceSummary = el("span", "parent-row-sub", t("controlDeviceSummaryHint"));
-    deviceMain.appendChild(deviceSummary);
-    deviceHead.appendChild(deviceDot);
-    deviceHead.appendChild(deviceMain);
-    deviceHead.appendChild(el("span", "chevron", "›"));
-    const deviceBody = el("div", "parent-device-body");
-    deviceBody.id = "parentDeviceBody";
-    deviceBody.hidden = !controlDeviceOpen;
-    deviceHead.addEventListener("click", () => {
-      controlDeviceOpen = !controlDeviceOpen;
-      if (controlDeviceOpen) {
-        loadControlDevice();
-        syncControlDevicePolling();
-      } else {
-        stopControlDevicePolling();
-      }
-      paintControlDevice();
-    });
-    deviceCard.appendChild(deviceHead);
-    deviceCard.appendChild(deviceBody);
-    content.appendChild(deviceCard);
-
-    const notice = el("p", "parent-hint parent-control-notice");
-    notice.setAttribute("role", "status");
-    content.appendChild(notice);
-    content.appendChild(el("p", "parent-hint parent-control-note", t("controlLocalOnly")));
-
-    shell.appendChild(content);
-    root.appendChild(shell);
-    controlRefs = {
-      dot: dot,
-      statusText: statusText,
-      notice: notice,
-      takeOver: takeOver,
-      enterChild: enterChild,
-      startManual: startManual,
-      stopTimer: stopTimer
-    };
-    controlDeviceRefs = {
-      head: deviceHead,
-      dot: deviceDot,
-      summary: deviceSummary,
-      body: deviceBody
-    };
-    paintControl();
-    paintControlDevice();
-    syncControlDevicePolling();
-    loadControlDevice();
-  }
-
   function paintControl() {
     const refs = controlRefs;
-    if (!refs || !rootOpen || rootMode !== "control") return;
+    if (!refs || !rootOpen || rootSuspended) return;
     const control = controlData();
-    refs.statusText.textContent = controlStatusText(control);
+    refs.statusText.textContent = controlStatusText(control, Boolean(refs.startManual));
     refs.dot.classList.toggle(
       "is-warn",
       Boolean(control && (control.guardState === "PARENT_OVERRIDE" ||
@@ -7114,36 +12063,44 @@
     );
 
     const busy = Boolean(controlBusy);
-    const takeOver = controlAction(control, "takeOver");
-    const enterChild = controlAction(control, "enterChildMode");
-    const start = controlAction(control, "startManual");
-    const stop = controlAction(control, "stopTimer");
-
-    refs.takeOver.button.disabled = !takeOver.enabled || busy;
-    refs.takeOver.sub.textContent = takeOver.enabled
-      ? t(takeOver.requiresConfirm ? "controlTakeOverConfirmHint" : "controlTakeOverHint")
-      : t("controlTakeOverAlready");
-
-    refs.enterChild.button.disabled = !enterChild.enabled || busy;
-    refs.enterChild.sub.textContent = enterChild.enabled
-      ? t("controlEnterHint")
-      : t("controlEnterAlready");
-
-    refs.startManual.button.disabled = !start.enabled || busy;
-    const manual = control && control.manualStart;
-    if (start.enabled) {
-      refs.startManual.sub.textContent = t("controlStartHint");
-    } else if (manual && typeof host.controlManualReason === "function") {
-      refs.startManual.sub.textContent = host.controlManualReason(manual);
-    } else {
-      refs.startManual.sub.textContent = t("controlStartBlocked");
+    // The system page and the timer page share this painter; each page only owns its rows.
+    if (refs.takeOver && refs.enterChild) {
+      const takeOver = controlAction(control, "takeOver");
+      const enterChild = controlAction(control, "enterChildMode");
+      refs.takeOver.button.disabled = !takeOver.enabled || busy;
+      // V48: warn in the row instead of blocking with a second confirmation. The server
+      // still enforces the PIN and discards the timer/quiz round in one step.
+      const takeOverDiscards = Boolean(control && (
+        (control.timer && control.timer.active) ||
+        (control.quiz && control.quiz.roundActive)
+      ));
+      refs.takeOver.sub.textContent = takeOver.enabled
+        ? t(takeOverDiscards ? "controlTakeOverDiscardHint" : "controlTakeOverHint")
+        : t("controlTakeOverAlready");
+      refs.enterChild.button.disabled = !enterChild.enabled || busy;
+      refs.enterChild.sub.textContent = enterChild.enabled
+        ? t("controlEnterHint")
+        : t("controlEnterAlready");
     }
 
-    const timerLeft = controlTimerLeft(control);
-    refs.stopTimer.button.disabled = !stop.enabled || busy;
-    refs.stopTimer.sub.textContent = stop.enabled
-      ? t("controlStopHint", { time: fmtSeconds(timerLeft) })
-      : t("controlStopNoTimer");
+    if (refs.startManual && refs.stopTimer) {
+      const start = controlAction(control, "startManual");
+      const stop = controlAction(control, "stopTimer");
+      refs.startManual.button.disabled = !start.enabled || busy;
+      const manual = control && control.manualStart;
+      if (start.enabled) {
+        refs.startManual.sub.textContent = t("controlStartHint");
+      } else if (manual && typeof host.controlManualReason === "function") {
+        refs.startManual.sub.textContent = host.controlManualReason(manual);
+      } else {
+        refs.startManual.sub.textContent = t("controlStartBlocked");
+      }
+      const timerLeft = controlTimerLeft(control);
+      refs.stopTimer.button.disabled = !stop.enabled || busy;
+      refs.stopTimer.sub.textContent = stop.enabled
+        ? t("controlStopHint", { time: fmtSeconds(timerLeft) })
+        : t("controlStopNoTimer");
+    }
 
     if (busy) {
       refs.notice.textContent = t("controlBusy");
@@ -7203,8 +12160,9 @@
 
   async function sendControl(action, extra) {
     if (!editorToken || controlBusy) return null;
-    // V32: leaving child mode needs the parent PIN. The proof lasts 60s and survives a
-    // cancelled confirmation, so a second click does not ask again until it expires.
+    // V32: leaving child mode needs the parent PIN. V48: the PIN is also the confirmation,
+    // so a running timer or quiz round is discarded without a second dialog. The proof
+    // lasts 60s, so a retry after a failed request does not ask again until it expires.
     let sensitive = "";
     if (action === "TAKE_OVER") {
       sensitive = sensitiveToken("TAKE_OVER");
@@ -7325,6 +12283,7 @@
     const control = controlData();
     const manual = control && control.manualStart;
     if (!manual || !manual.eligible || controlBusy) return;
+    const requiresPin = manual.requiresPin !== false;
     const min = Math.max(1, Number(manual.minMinutes) || 5);
     const max = Math.max(min, Number(manual.maxMinutes) || 120);
     const step = Math.max(1, Number(manual.stepMinutes) || 5);
@@ -7334,7 +12293,34 @@
       let lockRemaining = 0;
       let lockTicker = 0;
       sheet.appendChild(el("h2", null, t("controlManualTitle")));
-      sheet.appendChild(el("p", null, t("controlManualLead")));
+      sheet.appendChild(el(
+        "p",
+        null,
+        t(requiresPin ? "controlManualLead" : "controlManualLeadPinless")
+      ));
+
+      // V45: show the exact scope the TV computed. Entertainment, unlimited and (only while
+      // the study switch is on) the study-reward apps. The runtime re-checks this scope.
+      const scope = manual.scope;
+      if (scope && typeof scope === "object") {
+        sheet.appendChild(el("p", "parent-field-label", t("manualScopeTitle")));
+        const chips = el("div", "parent-manual-scope");
+        const entCount = Number(scope.entertainmentCount) || 0;
+        chips.appendChild(el("span", "parent-manual-chip",
+          scope.entertainmentAll
+            ? t("manualScopeEntertainmentAll")
+            : t("manualScopeEntertainment", { n: entCount })));
+        chips.appendChild(el("span", "parent-manual-chip",
+          t("manualScopeUnlimited", { n: Number(scope.unlimitedCount) || 0 })));
+        if (scope.studyRewardIncluded) {
+          chips.appendChild(el("span", "parent-manual-chip",
+            t("manualScopeStudy", { n: Number(scope.studyRewardCount) || 0 })));
+        }
+        sheet.appendChild(chips);
+        if (scope.studyRewardIncluded) {
+          sheet.appendChild(el("p", "parent-hint", t("manualStudyNote")));
+        }
+      }
 
       const field = el("div", "parent-field");
       const label = el("label", "parent-field-label", t("pinLabel"));
@@ -7349,7 +12335,6 @@
       });
       field.appendChild(label);
       field.appendChild(input);
-      sheet.appendChild(field);
 
       const stepper = el("div", "parent-control-stepper");
       const minus = button("−", "parent-btn ghost", () => {
@@ -7369,6 +12354,9 @@
       stepper.appendChild(plus);
       sheet.appendChild(stepperLabel);
       sheet.appendChild(stepper);
+      // The PIN field follows the duration, matching the V45 sheet order: scope, length, PIN.
+      // V47: when the parent turned the user-config prompts off, no PIN field is shown.
+      if (requiresPin) sheet.appendChild(field);
 
       function refreshStepper() {
         value.textContent = t("controlManualMinutesValue", { n: minutes });
@@ -7418,12 +12406,15 @@
       });
       const start = button(t("controlManualStart"), "parent-btn primary", async () => {
         if (lockRemaining > 0) return;
-        const pin = input.value.replace(/\D/g, "");
-        if (pin.length !== 6) {
-          error.textContent = t("pinLength");
-          error.classList.remove("hidden");
-          input.focus();
-          return;
+        let pin = "";
+        if (requiresPin) {
+          pin = input.value.replace(/\D/g, "");
+          if (pin.length !== 6) {
+            error.textContent = t("pinLength");
+            error.classList.remove("hidden");
+            input.focus();
+            return;
+          }
         }
         start.disabled = true;
         minus.disabled = true;
@@ -7431,14 +12422,15 @@
         error.classList.add("hidden");
         try {
           const requestId = newControlRequestId();
+          const requestBody = {
+            action: "START_MANUAL",
+            requestId: requestId,
+            minutes: minutes
+          };
+          if (requiresPin) requestBody.pin = pin;
           const data = await host.request("/api/parent/control", {
             method: "POST",
-            body: {
-              action: "START_MANUAL",
-              requestId: requestId,
-              pin: pin,
-              minutes: minutes
-            },
+            body: requestBody,
             editorToken: editorToken,
             quizAuth: true
           });
@@ -7461,6 +12453,17 @@
           if (err && err.data && err.data.control) adoptControl(err.data.control);
           input.value = "";
           const code = err && (err.code || err.message);
+          if (!requiresPin && (code === "WRONG_PIN" || code === "PIN_REQUIRED" ||
+              code === "PIN_LOCKED" || code === "DEFAULT_PIN")) {
+            // Another phone re-enabled the prompts after this sheet opened. Reopen with the
+            // server's current state instead of showing a PIN error on a hidden field.
+            stopLockTicker();
+            close();
+            try { await refreshSnapshot(); } catch (_) { /* keep the last view */ }
+            setNotice(t("controlManualPinRestored"), true);
+            render();
+            return;
+          }
           if (code === "PIN_LOCKED") {
             const retry = Number(err.data && err.data.retryAfterSeconds) || 600;
             lockFor(retry);
@@ -7478,7 +12481,9 @@
       actions.appendChild(start);
       sheet.appendChild(actions);
       refreshStepper();
-      setTimeout(() => { try { input.focus(); } catch (_) { /* ignore */ } }, 60);
+      if (requiresPin) {
+        setTimeout(() => { try { input.focus(); } catch (_) { /* ignore */ } }, 60);
+      }
     });
   }
 
@@ -7579,13 +12584,30 @@
   window.addEventListener("pagehide", onPageHide);
   window.addEventListener("pageshow", onPageShow);
 
+  /**
+   * The quiz page owns the member picker; when the selected member changes, the user tab
+   * returns to its index so no page keeps controls for the member that was selected before.
+   */
+  function onSubjectChanged() {
+    if (!rootOpen || rootSuspended || rootMode !== "user") return;
+    subpage = null;
+    clearNotices();
+    render();
+  }
+
   window.ParentCenterUI = {
     init: init,
     open: open,
+    openUser: openUser,
+    openSystem: openSystem,
     openControl: openControl,
+    suspend: suspend,
+    onSubjectChanged: onSubjectChanged,
     close: close,
     isOpen: () => rootOpen,
     refreshEntry: refreshEntry,
     setLang: setLang,
+    // The quiz page header reuses the family avatar artwork.
+    avatarHtml: (preset) => avatarSvg(preset),
   };
 })();

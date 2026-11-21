@@ -11,6 +11,7 @@
     <string name="cc_settings">Налаштування</string>
     <string name="cc_volume">Гучність</string>
     <string name="cc_muted">Звук вимкнено</string>
+    <string name="cc_volume_external">На аудіосистемі</string>
     <string name="cc_home_default">PlanYourTV — ваш головний екран</string>
     <string name="cc_home_guarded">Home Guard увімкнено</string>
     <string name="cc_home_not_default">Не головний екран за замовчуванням</string>
@@ -293,6 +294,8 @@
     <string name="st_play_hint">У спокої: через 10 секунд на верхньому ряду (у дворядному вигляді — на будь-якому з двох); будь-яка кнопка зупиняє. Завжди: кнопки не зупиняють, тло трохи затемнене; зупиняється, коли ви переходите до застосунків нижче.</string>
     <string name="ss_show_time">Час</string>
     <string name="ss_show_time_hint">Час на заставках з аерозйомкою і фото. Час і назва місця час від часу трохи зсуваються, щоб екран не вигорав.</string>
+    <string name="ss_show_caption">Місце</string>
+    <string name="ss_show_caption_hint">Назва місця зліва внизу на заставці з аерозйомкою і назва знімка на заставці з фото.</string>
 
     <!-- Kids and Elders mode (settings/Restricted) -->
     <string name="kids_title">Діти та літні</string>
@@ -359,6 +362,7 @@
     <string name="about_built_on">PlanYourTV — незалежний проєкт на основі лаунчера Aerial з відкритим кодом. Дякуємо автору Aerial pengchujin та всім учасникам.</string>
     <string name="about_not_official">Це не офіційна збірка Aerial. Проєкт не пов’язаний з Apple, Xiaomi, TCL та іншими компаніями й не має їхнього схвалення.</string>
     <string name="about_project">planyourtv.me · github.com/heimi51168/planyourtv</string>
+    <string name="about_app_record">Номер реєстрації застосунку: %1$s\nПеревірка: https://beian.miit.gov.cn/</string>
     <string name="about_license_title">Ліцензія MIT</string>
     <string name="about_license_hint">Aerial поширюється за ліцензією MIT. Гортайте текст стрілками вгору й вниз.</string>
     <string name="about_license_missing">Текст ліцензії недоступний.</string>

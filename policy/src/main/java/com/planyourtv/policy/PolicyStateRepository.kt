@@ -30,8 +30,16 @@ data class GuardStateLoad(
 object PolicyStateRepository {
     private const val TAG = "PolicyStateRepository"
 
-    fun loadRuntimeOrMigrate(): RuntimeStateLoad {
-        val raw = if (TvStore.isReady) TvStore.getString(PolicyKeys.LOCAL_RUNTIME_V2, null) else null
+    fun loadRuntimeOrMigrate(
+        hosted: Boolean = false,
+        hostedScope: String? = null,
+    ): RuntimeStateLoad {
+        val key = if (hosted) {
+            PolicyKeys.hostedScoped(PolicyKeys.HOSTED_RUNTIME_V2, hostedScope)
+        } else {
+            PolicyKeys.LOCAL_RUNTIME_V2
+        }
+        val raw = if (TvStore.isReady) TvStore.getString(key, null) else null
         when (val decoded = PolicyStateCodec.decodeRuntime(raw)) {
             is PolicySnapshotDecode.Success ->
                 return RuntimeStateLoad(decoded.value, RuntimeStateSource.V2)
@@ -45,15 +53,35 @@ object PolicyStateRepository {
 
             is PolicySnapshotDecode.Corrupt -> {
                 if (raw != null) {
-                    Log.w(TAG, "corrupt runtime snapshot (${decoded.reason}); trying legacy keys")
+                    Log.w(
+                        TAG,
+                        if (hosted) {
+                            "corrupt hosted runtime snapshot (${decoded.reason}); starting empty"
+                        } else {
+                            "corrupt runtime snapshot (${decoded.reason}); trying legacy keys"
+                        },
+                    )
                 }
             }
+        }
+        if (hosted) {
+            // The pre-V37 legacy keys belong to the TV's own child mode. A cloud partition must
+            // never adopt them: starting empty is the only honest state for a missing document.
+            return RuntimeStateLoad(RuntimeSnapshot(), RuntimeStateSource.SAFE)
         }
         return RuntimeStateLoad(legacyRuntimeSnapshot(), RuntimeStateSource.LEGACY)
     }
 
-    fun loadGuard(): GuardStateLoad {
-        val raw = if (TvStore.isReady) TvStore.getString(PolicyKeys.LOCAL_GUARD_V2, null) else null
+    fun loadGuard(
+        hosted: Boolean = false,
+        hostedScope: String? = null,
+    ): GuardStateLoad {
+        val key = if (hosted) {
+            PolicyKeys.hostedScoped(PolicyKeys.HOSTED_GUARD_V2, hostedScope)
+        } else {
+            PolicyKeys.LOCAL_GUARD_V2
+        }
+        val raw = if (TvStore.isReady) TvStore.getString(key, null) else null
         return when (val decoded = PolicyStateCodec.decodeGuard(raw)) {
             is PolicySnapshotDecode.Success -> GuardStateLoad(decoded.value, GuardStateSource.V2)
 
@@ -73,31 +101,56 @@ object PolicyStateRepository {
         snapshot: RuntimeSnapshot,
         durable: Boolean,
         forceSync: Boolean = false,
+        hosted: Boolean = false,
+        hostedScope: String? = null,
     ): Boolean {
         if (!TvStore.isReady) return false
+        val key = if (hosted) {
+            PolicyKeys.hostedScoped(PolicyKeys.HOSTED_RUNTIME_V2, hostedScope)
+        } else {
+            PolicyKeys.LOCAL_RUNTIME_V2
+        }
         val raw = PolicyStateCodec.encodeRuntime(snapshot)
         val written = if (durable || TvStore.backend != "mmkv") {
-            TvStore.putStringDurable(PolicyKeys.LOCAL_RUNTIME_V2, raw)
+            TvStore.putStringDurable(key, raw)
         } else {
-            TvStore.putString(PolicyKeys.LOCAL_RUNTIME_V2, raw)
+            TvStore.putString(key, raw)
             true
         }
         if (written && forceSync) TvStore.sync()
         return written
     }
 
-    fun saveGuard(snapshot: GuardSnapshot): Boolean {
+    fun saveGuard(
+        snapshot: GuardSnapshot,
+        hosted: Boolean = false,
+        hostedScope: String? = null,
+    ): Boolean {
         if (!TvStore.isReady) return false
-        return TvStore.putStringDurable(
-            PolicyKeys.LOCAL_GUARD_V2,
-            PolicyStateCodec.encodeGuard(snapshot),
-        )
+        val key = if (hosted) {
+            PolicyKeys.hostedScoped(PolicyKeys.HOSTED_GUARD_V2, hostedScope)
+        } else {
+            PolicyKeys.LOCAL_GUARD_V2
+        }
+        return TvStore.putStringDurable(key, PolicyStateCodec.encodeGuard(snapshot))
     }
 
-    fun clearAll() {
+    fun clearAll(hosted: Boolean = false, hostedScope: String? = null) {
         if (!TvStore.isReady) return
-        TvStore.removeDurable(PolicyKeys.LOCAL_RUNTIME_V2)
-        TvStore.removeDurable(PolicyKeys.LOCAL_GUARD_V2)
+        TvStore.removeDurable(
+            if (hosted) {
+                PolicyKeys.hostedScoped(PolicyKeys.HOSTED_RUNTIME_V2, hostedScope)
+            } else {
+                PolicyKeys.LOCAL_RUNTIME_V2
+            },
+        )
+        TvStore.removeDurable(
+            if (hosted) {
+                PolicyKeys.hostedScoped(PolicyKeys.HOSTED_GUARD_V2, hostedScope)
+            } else {
+                PolicyKeys.LOCAL_GUARD_V2
+            },
+        )
     }
 
     /**
@@ -150,6 +203,7 @@ object PolicyStateRepository {
             reportUsage = saved.reportUsage,
             templateVersion = saved.templateVersion,
             restAfterSeconds = saved.restAfterSeconds,
+            outsidePlan = saved.outsidePlan,
         )
     }
 

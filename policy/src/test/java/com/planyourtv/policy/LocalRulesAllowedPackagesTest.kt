@@ -15,11 +15,13 @@ class LocalRulesAllowedPackagesTest {
     }
 
     @Test
-    fun schema1EmptyListMeansAllApps() {
+    fun anEmptyListMeansNoEntertainmentAppsForEverySchema() {
+        // V42 has no legacy migration: an empty entertainment list is explicit and is preserved
+        // as "no entertainment apps", regardless of the schemaVersion on the document.
         val rules = LocalRules(schemaVersion = 1, allowedPackages = emptySet())
-        assertEquals(setOf(ALL_VALID_APP), rules.effectiveAllowedPackages)
-        assertFalse(rules.usesAppSelection)
-        assertEquals(setOf(ALL_VALID_APP), rules.normalized().allowedPackages)
+        assertTrue(rules.effectiveAllowedPackages.isEmpty())
+        assertTrue(rules.usesAppSelection)
+        assertTrue(rules.normalized().allowedPackages.isEmpty())
         assertEquals(LocalRules.CURRENT_SCHEMA_VERSION, rules.normalized().schemaVersion)
     }
 
@@ -47,10 +49,10 @@ class LocalRulesAllowedPackagesTest {
             studyPackages = setOf("com.example.study"),
         )
         assertEquals(setOf("com.example.study"), rules.effectiveStudyPackages)
-        assertEquals(
-            setOf("com.example.tv", "com.example.study"),
-            rules.effectiveAllowedPackages,
-        )
+        // Study has higher precedence than entertainment, so the overlapping package is removed
+        // from the effective entertainment scope even if a stale caller left it in both lists.
+        assertEquals(setOf("com.example.tv"), rules.effectiveAllowedPackages)
+        assertEquals(setOf("com.example.tv"), rules.normalized().allowedPackages)
         assertEquals(LocalRulesError.NONE, rules.validationError())
         assertTrue(rules.hasStudyMode)
     }

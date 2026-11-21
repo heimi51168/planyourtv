@@ -43,6 +43,18 @@ val tvApiBase = (project.findProperty("tvApiBase") as String?)
 val tvOfficialBuild = (project.findProperty("tvOfficialBuild") as String?)
     ?.equals("true", ignoreCase = true) == true
 
+// The APP filing number shown in About and the web parent center. The release script injects
+// -PtvAppRecordNumber from PLANYOURTV_ICP; a community build leaves it empty so a fork never
+// inherits the official filing number and the UI hides the row.
+val tvAppRecordNumber = (project.findProperty("tvAppRecordNumber") as String?)
+    ?.trim()
+    ?.takeIf { it.isNotEmpty() }
+    ?: ""
+
+if (tvAppRecordNumber.any { it.isWhitespace() }) {
+    throw GradleException("tvAppRecordNumber must not contain whitespace")
+}
+
 // The read-only catalogue of official policy films. Empty (the community build) means the
 // parent center offers local uploads only and never contacts a media host. Official channels
 // pass the R2 manifest URL through tools/build_local_network.sh; the runtime parser still
@@ -57,6 +69,21 @@ if (tvMediaCatalogUrl.isNotBlank()) {
         tvMediaCatalogUrl.startsWith("https://") &&
             !tvMediaCatalogUrl.any { it.isWhitespace() },
         "tvMediaCatalogUrl must be an HTTPS URL without whitespace",
+    )
+}
+
+// The official background-music catalogue. It is separate from the film catalogue because a
+// track has no wallpaper roles, cover or aspect ratio. Empty disables cloud music entirely.
+val tvAudioCatalogUrl = (project.findProperty("tvAudioCatalogUrl") as String?)
+    ?.trim()
+    ?.takeIf { it.isNotEmpty() }
+    ?: ""
+
+if (tvAudioCatalogUrl.isNotBlank()) {
+    requireMqtt(
+        tvAudioCatalogUrl.startsWith("https://") &&
+            !tvAudioCatalogUrl.any { it.isWhitespace() },
+        "tvAudioCatalogUrl must be an HTTPS URL without whitespace",
     )
 }
 
@@ -131,12 +158,12 @@ android {
         // Android 5.0. Compose 1.10 and later need 6.0, so the Compose BOM below stays on 1.9.
         minSdk = 21
         targetSdk = 34
-        // Product version: Aerial's version stays the prefix (v1.97 / 142 -> 1.97.000 / 142000).
+        // Product version: Aerial's version stays the prefix (v2.0 / 148 -> 2.0.000 / 148000).
         // On every upstream merge update these two from the Aerial tag and reset the revision to 0.
         // Raise productRevision for each product release; never reuse or decrease it.
-        val aerialVersionName = "1.97"
-        val aerialVersionCode = 142
-        val productRevision = 3
+        val aerialVersionName = "2.0"
+        val aerialVersionCode = 148
+        val productRevision = 0
         require(productRevision in 0..999) { "productRevision must fit in three digits" }
         versionCode = aerialVersionCode * 1000 + productRevision
         versionName = "$aerialVersionName.${productRevision.toString().padStart(3, '0')}"
@@ -147,6 +174,7 @@ android {
         if (diag) versionNameSuffix = "-diag"
         buildConfigField("String", "TV_API_BASE", "\"$tvApiBase\"")
         buildConfigField("String", "TV_MEDIA_CATALOG_URL", buildConfigString(tvMediaCatalogUrl))
+        buildConfigField("String", "TV_AUDIO_CATALOG_URL", buildConfigString(tvAudioCatalogUrl))
         // The community build has no backend baked in: keep the cloud/remote UI hidden and do
         // not install the HTTP/MQTT adapters. An official build opts in with -PtvApiBase.
         buildConfigField("boolean", "CLOUD_ENABLED", tvApiBase.isNotBlank().toString())
@@ -156,6 +184,7 @@ android {
         buildConfigField("String", "TV_MQTT_TOPIC_PREFIX", buildConfigString(tvMqttTopicPrefix))
         buildConfigField("String", "TV_MQTT_CLIENT_PREFIX", buildConfigString(tvMqttClientPrefix))
         buildConfigField("boolean", "OFFICIAL_BUILD", tvOfficialBuild.toString())
+        buildConfigField("String", "APP_RECORD_NUMBER", buildConfigString(tvAppRecordNumber))
     }
 
     // A call newer than minSdk fails the release build (lintVital runs with assembleRelease):

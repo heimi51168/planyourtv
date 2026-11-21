@@ -122,6 +122,7 @@ data class QuizLevelPackage(
             if (sources.size > MAX_SOURCES) return SourceIssue.TOO_MANY
             val courses = HashSet<String>(sources.size)
             val collections = HashSet<String>(sources.size)
+            val presets = HashSet<QuizPresetBank>(sources.size)
             var wrong = false
             sources.forEach { source ->
                 when (source) {
@@ -136,6 +137,9 @@ data class QuizLevelPackage(
                             return SourceIssue.DUPLICATE_COLLECTION
                         }
                     }
+                    is QuizPackageSource.Preset -> {
+                        if (!presets.add(source.bank)) return SourceIssue.DUPLICATE_PRESET
+                    }
                     QuizPackageSource.WrongReview -> {
                         if (wrong) return SourceIssue.DUPLICATE_WRONG
                         wrong = true
@@ -146,17 +150,26 @@ data class QuizLevelPackage(
         }
 
         fun courseKey(source: QuizPackageSource.Course): String =
-            source.scope.signature() + "|" + source.answerKind.wire
+            source.scope.signature() + "|" + source.answerKind.wire + "|" + source.origin.wire
 
         private fun encodeSource(source: QuizPackageSource): JSONObject = when (source) {
             is QuizPackageSource.Course -> JSONObject()
                 .put("type", "course")
                 .put("scope", source.scope.encode())
                 .put("answerKind", source.answerKind.wire)
+                // Old packages have no origin and keep the combined preset + AI
+                // behavior; only explicit new sources need the extra field.
+                .apply {
+                    if (source.origin != CourseOrigin.ALL) put("origin", source.origin.wire)
+                }
 
             is QuizPackageSource.Collection -> JSONObject()
                 .put("type", "collection")
                 .put("collectionId", source.collectionId)
+
+            is QuizPackageSource.Preset -> JSONObject()
+                .put("type", "preset")
+                .put("bankId", source.bank.wire)
 
             QuizPackageSource.WrongReview -> JSONObject().put("type", "wrong")
         }
@@ -172,12 +185,22 @@ data class QuizLevelPackage(
                     } else {
                         QuizTypeFilter.ANY
                     }
-                    QuizPackageSource.Course(scope, kind)
+                    val origin = if (json.has("origin") && !json.isNull("origin")) {
+                        CourseOrigin.fromWire(json.optString("origin", "")) ?: return null
+                    } else {
+                        CourseOrigin.ALL
+                    }
+                    QuizPackageSource.Course(scope, kind, origin)
                 }
                 "collection" -> {
                     val collectionId = json.optString("collectionId", "").trim()
                     if (!COLLECTION_ID_PATTERN.matches(collectionId)) return null
                     QuizPackageSource.Collection(collectionId)
+                }
+                "preset" -> {
+                    val bank = QuizPresetBank.fromWire(json.optString("bankId", ""))
+                        ?: return null
+                    QuizPackageSource.Preset(bank)
                 }
                 "wrong" -> QuizPackageSource.WrongReview
                 else -> null
@@ -199,13 +222,49 @@ enum class QuizTypeFilter(val wire: String) {
     }
 }
 
+/**
+ * Which rows a course source may draw. [ALL] is the pre-split behavior and is
+ * only produced by packages saved before the origin field existed; the page
+ * never offers it as a new source.
+ */
+enum class CourseOrigin(val wire: String) {
+    ALL("all"),
+    PRESET("preset"),
+    AI("ai"),
+    ;
+
+    companion object {
+        fun fromWire(value: String): CourseOrigin? =
+            entries.firstOrNull { it.wire == value.trim().lowercase() }
+    }
+}
+
+/**
+ * A bundled, non-curriculum question bank. The wire id is stable because it
+ * also appears in the seed rows' `source_ref`; renaming it would strand the
+ * already-imported rows.
+ */
+enum class QuizPresetBank(val wire: String) {
+    PARENT_LIFE("parent-life"),
+    ;
+
+    companion object {
+        fun fromWire(value: String): QuizPresetBank? =
+            entries.firstOrNull { it.wire == value.trim().lowercase() }
+    }
+}
+
 sealed interface QuizPackageSource {
     data class Course(
         val scope: QuizAnswerScope,
         val answerKind: QuizTypeFilter = QuizTypeFilter.ANY,
+        val origin: CourseOrigin = CourseOrigin.ALL,
     ) : QuizPackageSource
 
     data class Collection(val collectionId: String) : QuizPackageSource
+
+    /** One of the banks shipped inside the APK, independent of the curriculum. */
+    data class Preset(val bank: QuizPresetBank) : QuizPackageSource
 
     data object WrongReview : QuizPackageSource
 }
@@ -216,6 +275,7 @@ enum class SourceIssue {
     TOO_MANY,
     DUPLICATE_COURSE,
     DUPLICATE_COLLECTION,
+    DUPLICATE_PRESET,
     DUPLICATE_WRONG,
     INVALID_COLLECTION,
 }

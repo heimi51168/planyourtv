@@ -24,6 +24,21 @@ data class RemotePolicy(
      * reports them. [rules] stays the materialized active snapshot for the executor.
      */
     val ruleSets: LocalRuleSets? = null,
+    /**
+     * Backend `memberScopedFields` (2026-11-21): the fields projected from the active orchard
+     * member's own configuration. `null` means the backend predates the mask, so every
+     * previously local-only field must survive the merge. An empty set is a real mask ("no
+     * member-scoped field"), not the same thing as `null`.
+     */
+    val memberScopedFields: Set<String>? = null,
+    /**
+     * Device-level entry visibility pushed by the garden backend (2026-11-21). It mirrors the
+     * TV local web「系统配置 → 入口显示」so the phone can hide 信号源 / 答题闯关 without a local
+     * edit. `null` means the backend predates the projection: the TV then keeps its previous
+     * composition (local switch × rule gate) instead of guessing a value.
+     */
+    val sourceEntryVisible: Boolean? = null,
+    val quizEntryVisible: Boolean? = null,
 ) {
     /** Old backends carry a single rule set; the TV then runs explicit single-set mode. */
     val supportsRuleSets: Boolean

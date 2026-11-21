@@ -64,7 +64,7 @@ class RevivalListener : NotificationListenerService() {
             runCatching {
                 prepareDiagnostics()
                 noteRevival()
-                GuardSetup.ensureEnabled(this)
+                GuardSetup.ensureEnabled(this, autoRevivalSource = "notification listener")
                 if (GuardSetup.startAfterStopOverStock(this)) trace("stopped over the stock launcher; Aerial started before the guard binds")
             }.onFailure {
                 trace("initial recovery failed: ${it.javaClass.simpleName}: ${it.message}")
@@ -98,10 +98,10 @@ class RevivalListener : NotificationListenerService() {
                 prepareDiagnostics()
                 noteRevival()
                 trace("attempt $attempt: unlocked, guard unbound; requesting recovery")
-                GuardSetup.ensureEnabled(this)
+                GuardSetup.ensureEnabled(this, autoRevivalSource = "notification listener")
                 // Reuse the existing rebind: it preserves other services, waits between the
                 // two writes, and respects the owner's guard_off_in_standby setting.
-                GuardSetup.rebindIfStalled(this)
+                GuardSetup.rebindIfStalled(this, autoRevivalSource = "notification listener")
             }.onFailure {
                 trace("attempt $attempt failed: ${it.javaClass.simpleName}: ${it.message}")
             }
@@ -120,7 +120,7 @@ class RevivalListener : NotificationListenerService() {
     private fun noteRevival() {
         if (revivalNoted) return
         revivalNoted = true
-        GuardSetup.noteRevival(this)
+        GuardSetup.noteRevival(this, source = "notification listener")
     }
 
     private fun trace(message: String) = DiagLog.i("revival: $message")

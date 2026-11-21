@@ -30,6 +30,12 @@ internal class ParentUpdater(private val context: Context) {
         val versionName: String,
         val sha256: String,
         val sizeBytes: Long,
+        /**
+         * Gitee mirrors assets under a version tag and has no
+         * `/releases/latest/download` alias. Null when the cached metadata was
+         * written before this field existed; downloads then skip Gitee.
+         */
+        val releaseTag: String? = null,
     )
 
     sealed class CheckResult {
@@ -75,7 +81,13 @@ internal class ParentUpdater(private val context: Context) {
         val name = prefs.getString(KEY_VERSION_NAME, null) ?: return null
         val sha = prefs.getString(KEY_SHA256, null) ?: return null
         if (code <= BuildConfig.VERSION_CODE) return null
-        return Release(code, name, sha, prefs.getLong(KEY_SIZE, 0L))
+        return Release(
+            code,
+            name,
+            sha,
+            prefs.getLong(KEY_SIZE, 0L),
+            prefs.getString(KEY_RELEASE_TAG, null),
+        )
     }
 
     fun isDismissed(release: Release): Boolean =
@@ -147,7 +159,7 @@ internal class ParentUpdater(private val context: Context) {
         worker.execute {
             var result: DownloadResult = DownloadResult.Failed(Failure.NETWORK)
             var sawHashMismatch = false
-            for (url in APK_URLS) {
+            for (url in parentApkUrls(release.releaseTag)) {
                 if (cancelled) {
                     result = DownloadResult.Cancelled
                     break
@@ -255,6 +267,7 @@ internal class ParentUpdater(private val context: Context) {
             .putString(KEY_VERSION_NAME, release.versionName)
             .putString(KEY_SHA256, release.sha256)
             .putLong(KEY_SIZE, release.sizeBytes)
+            .putString(KEY_RELEASE_TAG, release.releaseTag ?: "")
             .apply()
     }
 
@@ -264,6 +277,7 @@ internal class ParentUpdater(private val context: Context) {
             .remove(KEY_VERSION_NAME)
             .remove(KEY_SHA256)
             .remove(KEY_SIZE)
+            .remove(KEY_RELEASE_TAG)
             .apply()
     }
 
@@ -404,17 +418,12 @@ internal class ParentUpdater(private val context: Context) {
         const val KEY_VERSION_NAME = "version_name"
         const val KEY_SHA256 = "sha256"
         const val KEY_SIZE = "size"
+        const val KEY_RELEASE_TAG = "release_tag"
         const val KEY_DISMISSED_CODE = "dismissed_code"
         const val CHECK_INTERVAL_MS = 24L * 60L * 60L * 1000L
         const val MAX_METADATA_CHARS = 256 * 1024
-        const val APK_NAME = "planyourtv-parent.apk"
-
-        const val SITE_BASE = "https://planyourtv.me/download"
-        const val GITHUB_BASE =
-            "https://github.com/heimi51168/planyourtv/releases/latest/download"
 
         val METADATA_URLS = listOf("$SITE_BASE/notes.json", "$GITHUB_BASE/notes.json")
-        val APK_URLS = listOf("$SITE_BASE/$APK_NAME", "$GITHUB_BASE/$APK_NAME")
     }
 }
 
@@ -434,7 +443,43 @@ internal fun parseParentReleaseMetadata(json: String): ParentUpdater.Release? {
         versionName = name,
         sha256 = sha,
         sizeBytes = parent.optLong("sizeBytes", 0L).coerceAtLeast(0L),
+        releaseTag = parseReleaseTag(root),
     )
 }
 
+/**
+ * notes.json lists releases newest first, and every TV release bundles the
+ * current parent APK, so the newest tag is the one whose Gitee assets (if the
+ * mirror is caught up) match this metadata. A missing or unsafe tag just means
+ * the download skips Gitee.
+ */
+private fun parseReleaseTag(root: JSONObject): String? {
+    val releases = root.optJSONArray("releases") ?: return null
+    val first = releases.optJSONObject(0) ?: return null
+    val version = first.optString("v").trim()
+    if (version.isEmpty()) return null
+    val tag = if (version.startsWith("v")) version else "v$version"
+    return tag.takeIf { PARENT_RELEASE_TAG.matches(it) }
+}
+
+/**
+ * Gitee is the fastest source in mainland China but has no `/latest` alias and
+ * can lag the official release. Its versioned URL is tried first; a missing
+ * asset or a checksum mismatch falls through to the official site and GitHub.
+ */
+internal fun parentApkUrls(releaseTag: String?): List<String> = buildList {
+    if (!releaseTag.isNullOrEmpty()) {
+        add("$GITEE_BASE/releases/download/$releaseTag/$APK_NAME")
+    }
+    add("$SITE_BASE/$APK_NAME")
+    add("$GITHUB_BASE/$APK_NAME")
+}
+
+private const val SITE_BASE = "https://planyourtv.me/download"
+private const val GITHUB_BASE =
+    "https://github.com/heimi51168/planyourtv/releases/latest/download"
+private const val GITEE_BASE = "https://gitee.com/liurumbo/planyourtv"
+private const val APK_NAME = "planyourtv-parent.apk"
+
 private val PARENT_SHA256 = Regex("[0-9a-f]{64}")
+private val PARENT_RELEASE_TAG = Regex("v[0-9][A-Za-z0-9._-]{0,63}")

@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.planyourtv.policy.TvStore
 import com.planyourtv.policy.quiz.QuizItem
+import com.planyourtv.policy.quiz.QuizPresetBank
 import com.planyourtv.policy.quiz.QuizSessionCodec
 import org.json.JSONArray
 import org.json.JSONObject
@@ -41,14 +42,25 @@ object QuizSeedBank {
     const val SEED_VERSION = 4
     /** Bump together with assets/quiz/seed_bank_multi.json. */
     const val MULTI_SEED_VERSION = 1
+    /** Bump together with assets/quiz/parent_fun_bank.json. */
+    const val PARENT_FUN_VERSION = 1
 
     private const val TAG = "QuizSeedBank"
     private const val ASSET = "quiz/seed_bank.json"
     private const val MULTI_ASSET = "quiz/seed_bank_multi.json"
+    private const val PARENT_FUN_ASSET = "quiz/parent_fun_bank.json"
     private const val KEY_VERSION = "quiz.seedBankVersion"
     private const val KEY_MULTI_VERSION = "quiz.seedMultiBankVersion"
+    private const val KEY_PARENT_FUN_VERSION = "quiz.parentFunBankVersion"
     private const val SEED_TAG = "preset-v"
     private const val MULTI_SEED_TAG = "preset-multi-v"
+
+    /**
+     * Stable prefix of the parent life-knowledge bank. It must match
+     * [QuizPresetBank.PARENT_LIFE] in `:policy`; existing `source_ref` values
+     * depend on it, so changing it would orphan imported rows.
+     */
+    private const val PARENT_FUN_TAG = "preset:parent-life:"
 
     /**
      * Imports the bundled banks when this process has not imported their
@@ -71,6 +83,13 @@ object QuizSeedBank {
                 MULTI_SEED_VERSION,
                 MULTI_SEED_TAG,
                 KEY_MULTI_VERSION,
+            ) +
+            installAsset(
+                context,
+                PARENT_FUN_ASSET,
+                PARENT_FUN_VERSION,
+                PARENT_FUN_TAG,
+                KEY_PARENT_FUN_VERSION,
             )
     }
 
@@ -84,6 +103,18 @@ object QuizSeedBank {
     internal fun installMulti(context: Context): Int {
         if (!TvStore.isReady || !QuizQuestionCache.isReady()) return 0
         return installAsset(context, MULTI_ASSET, MULTI_SEED_VERSION, MULTI_SEED_TAG, KEY_MULTI_VERSION)
+    }
+
+    @VisibleForTesting
+    internal fun installParentFun(context: Context): Int {
+        if (!TvStore.isReady || !QuizQuestionCache.isReady()) return 0
+        return installAsset(
+            context,
+            PARENT_FUN_ASSET,
+            PARENT_FUN_VERSION,
+            PARENT_FUN_TAG,
+            KEY_PARENT_FUN_VERSION,
+        )
     }
 
     private fun installAsset(
@@ -124,6 +155,13 @@ object QuizSeedBank {
         version: Int,
         nowMs: Long = System.currentTimeMillis(),
     ): Int = importJson(raw, version, nowMs, MULTI_SEED_TAG, KEY_MULTI_VERSION)
+
+    @VisibleForTesting
+    internal fun importParentFunJson(
+        raw: String,
+        version: Int,
+        nowMs: Long = System.currentTimeMillis(),
+    ): Int = importJson(raw, version, nowMs, PARENT_FUN_TAG, KEY_PARENT_FUN_VERSION)
 
     private fun importReader(
         reader: Reader,
@@ -254,5 +292,6 @@ object QuizSeedBank {
     internal fun clearMarkerForTest() {
         TvStore.remove(KEY_VERSION)
         TvStore.remove(KEY_MULTI_VERSION)
+        TvStore.remove(KEY_PARENT_FUN_VERSION)
     }
 }

@@ -16,8 +16,9 @@ import java.util.concurrent.atomic.AtomicBoolean
  * Pauses apps that keep playing after the lock desktop comes up.
  *
  * A pause is sent only to other apps' media sessions, so the lock film keeps the sound a parent
- * enabled: it is Aerial's own ExoPlayer, without a MediaSession. Muting STREAM_MUSIC or holding
- * audio focus would silence the film too, so this gate does neither.
+ * enabled: it is Aerial's own ExoPlayer, without a MediaSession. During the answering round
+ * [QuizAudioGate] also calls [pauseOthersNow] so a player that keeps running despite the focus
+ * change is paused again for the length of the round.
  *
  * Reading other apps' sessions is the public notification-listener route; the installer enables
  * [RevivalListener] for it. Without that access Android throws and this gate does nothing.
@@ -56,6 +57,19 @@ internal object LockAudioGate {
             logged.clear()
             return
         }
+        pauseOtherSessions(context, "lock-audio")
+    }
+
+    /**
+     * Pauses other apps' active media sessions even when the lock desktop is not the current
+     * branch. [QuizAudioGate] calls this when a round starts, and on a short tick afterwards,
+     * because some players resume after the first pause.
+     */
+    fun pauseOthersNow(context: Context, tag: String) {
+        pauseOtherSessions(context.applicationContext, tag)
+    }
+
+    private fun pauseOtherSessions(context: Context, tag: String) {
         val manager = context.getSystemService(Context.MEDIA_SESSION_SERVICE) as? MediaSessionManager ?: return
         val sessions = try {
             manager.getActiveSessions(ComponentName(context, RevivalListener::class.java))
@@ -64,7 +78,7 @@ internal object LockAudioGate {
             // not, and getActiveSessions throws instead of returning an empty list.
             if (!denied) {
                 denied = true
-                DiagLog.i("lock-audio: session access failed (${e.javaClass.simpleName})")
+                DiagLog.i("$tag: session access failed (${e.javaClass.simpleName})")
             }
             return
         }
@@ -75,7 +89,7 @@ internal object LockAudioGate {
             if (state != PlaybackState.STATE_PLAYING && state != PlaybackState.STATE_BUFFERING) continue
             val paused = runCatching { controller.transportControls.pause() }.isSuccess
             if (paused && logged.add(controller.packageName)) {
-                DiagLog.i("lock-audio: paused ${controller.packageName}")
+                DiagLog.i("$tag: paused ${controller.packageName}")
             }
         }
     }

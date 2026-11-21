@@ -369,6 +369,12 @@ object PolicyMqttClient {
             ack(correlationId, false, command, "EXPIRED")
             return
         }
+        if (command == "start_single_session" && (issuedAt <= 0L || stale)) {
+            // A queued timer must not start long after the parent asked for it.
+            Log.i(TAG, "ignore stale or untimestamped start_single_session")
+            ackResult(correlationId, false, command, "这次计时请求已经过期，请重新发送")
+            return
+        }
 
         // Unbind commands can be queued (QoS 1, non-clean session) from an old unbind and be
         // delivered after the parent has already re-bound. Verify the backend before dropping a
@@ -484,6 +490,27 @@ object PolicyMqttClient {
                 }
                 true
             }
+            "start_single_session" -> {
+                // The orchard page is the remote replacement for the TV's own parent Web timer:
+                // align the active member, then reuse the local manual start (one execution
+                // chain). Off-thread because the member switch needs HTTP plus a config fetch.
+                val minutes = data?.optInt("durationMinutes", 0) ?: 0
+                val memberId = data?.optLong("memberId", 0L) ?: 0L
+                scope.launch {
+                    val outcome = PolicyModeCoordinator.startRemoteSingleSession(minutes, memberId)
+                    PolicyFlowTrace.event(
+                        "mqtt.start_single_session",
+                        "minutes" to minutes,
+                        "memberId" to memberId,
+                        "ok" to outcome.ok,
+                    )
+                    ackResult(correlationId, outcome.ok, command, outcome.message)
+                    if (commandId.isNotBlank()) rememberResult(commandId, outcome.ok)
+                }
+                // The generic tail must not ack or remember the real result before the member
+                // sync and the local admission finish.
+                true
+            }
             "tmp_unlock_monitor", "pause_guard" -> {
                 if (stale) {
                     // The verifier already rejected expired envelopes; this also covers a
@@ -528,8 +555,8 @@ object PolicyMqttClient {
         }
     }
 
+    /** AUTO is deliberately rejected: local execution no longer has an automatic mode. */
     private fun parseActivation(raw: String?): Activation? = when (raw?.uppercase(java.util.Locale.ROOT)) {
-        Activation.AUTO.name -> Activation.AUTO
         Activation.MANUAL.name -> Activation.MANUAL
         else -> null
     }
@@ -643,6 +670,32 @@ object PolicyMqttClient {
         }
         val message = MqttMessage(payload.toString().toByteArray(Charsets.UTF_8)).apply { qos = 1 }
         runCatching { client.publish(responseTopic, message) }
+            .onFailure { Log.w(TAG, "ack failed", it) }
+    }
+
+    /**
+     * Ack with an explicit success flag. Policy commands keep the TV-wide contract
+     * (success=true only means the envelope was processed; the real result is data.accepted),
+     * but the orchard single-session command is read by the phone page as success/message —
+     * the same shape the guardian APK returns — so a refusal must be visible there.
+     */
+    private fun ackResult(
+        correlationId: String,
+        success: Boolean,
+        command: String,
+        message: String,
+    ) {
+        val client = clientRef.get() ?: return
+        if (!client.isConnected || correlationId.isBlank()) return
+        val payload = JSONObject().apply {
+            put("correlationId", correlationId)
+            put("success", success)
+            put("code", if (success) 200 else 400)
+            put("message", message)
+            put("data", JSONObject().put("accepted", success))
+        }
+        val outgoing = MqttMessage(payload.toString().toByteArray(Charsets.UTF_8)).apply { qos = 1 }
+        runCatching { client.publish(responseTopic, outgoing) }
             .onFailure { Log.w(TAG, "ack failed", it) }
     }
 

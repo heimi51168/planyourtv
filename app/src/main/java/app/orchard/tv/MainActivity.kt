@@ -57,7 +57,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.lifecycleScope
 import app.orchard.tv.apps.AppEntry
 import app.orchard.tv.policy.PolicyProduct
-import app.orchard.tv.policy.LockStudyLaunch
+import app.orchard.tv.policy.LockLaunchPermit
 import app.orchard.tv.policy.PolicyModeCoordinator
 import app.orchard.tv.policy.PolicyPanelRefresh
 import app.orchard.tv.apps.CustomIcons
@@ -547,7 +547,8 @@ class MainActivity : ComponentActivity() {
             DiagLog.i("$reason: opening ${intent.first}, what the TV starts on")
             BootOpen.noteOpened(this@MainActivity)
             openedAppSinceHome = true
-            open(intent.second)
+            // The TV's own boot source is not evidence that the viewer opened something from Home.
+            open(intent.second, recordExternal = false)
             if (again && id != null) nudgeVolumeAfterReopen()
         }
     }
@@ -739,6 +740,15 @@ class MainActivity : ComponentActivity() {
     // ---- Screensaver: Aerial's own, before the firmware's ad-carrying one can start ----
 
     private val idleHandler = Handler(Looper.getMainLooper())
+
+    /**
+     * A study launch should cover Aerial within moments. If Aerial is still resumed when this
+     * fires, the launch never happened (blocked, not found, the app closed at once): leave the
+     * round paused instead of counting time on the focus desktop. Cancelled by [onPause].
+     */
+    private val studyLaunchHandler = Handler(Looper.getMainLooper())
+    private var studyLaunchCheck: Runnable? = null
+
     private val showScreensaver = Runnable { if (vm.resumed) startScreensaver(asked = false) }
 
     /** The Dolby Vision screensaver's start, fetched to disk while Home is still up (AerialStart.prepareAhead). */
@@ -828,6 +838,18 @@ class MainActivity : ComponentActivity() {
      */
     private var wakeQuietUntil = 0L
     private var swallowTouch = false
+
+    /**
+     * The external start this Activity just asked for, committed to [GuardSetup] only when Aerial
+     * really pauses. A start that never leaves the foreground must not claim an app is in front.
+     */
+    private data class PendingExternalLaunch(
+        val packageName: String,
+        val activityName: String?,
+        val atUptime: Long,
+    )
+
+    private var pendingExternalLaunch: PendingExternalLaunch? = null
 
     /** An app (or the stock launcher) was opened from the grid and Home has not been pressed since. */
     private var openedAppSinceHome = false
@@ -997,6 +1019,9 @@ class MainActivity : ComponentActivity() {
             // key dispatch, so the overlay cannot close from a key handler; closing here covers
             // both Home-on-Home and the guard bringing Aerial back from the stock launcher.
             if (PolicyProduct.parentCenterVisible.value) PolicyProduct.closeParentSettings()
+            // Home is the viewer leaving whatever app the marker names. Clear it here as well as on
+            // resume: a Home that only rearranges an already-resumed Home must not leave evidence.
+            clearExternalLaunchEvidence()
             // Since 1.11 Home Guard answers Home from an app by bringing Aerial back with this same
             // intent, so the intent alone cannot tell Home-on-Home from coming back from an app.
             vm.onHomePressed(resetFocus = !openedAppSinceHome)
@@ -1085,7 +1110,17 @@ class MainActivity : ComponentActivity() {
         vm.resumed = true
         // Back in front by any route (Back from an app, Home, the app closing): no study app
         // opened from the lock desktop is the foreground any more.
-        LockStudyLaunch.clearForeground()
+        LockLaunchPermit.clearForeground()
+        // Aerial itself is now the foreground: an entertainment session paused by an unlimited
+        // app resumes, while screen-off pauses remain until the screen is actually on.
+        PolicyModeCoordinator.onForegroundChanged(packageName)
+        // The focus timer only counts while the study app is actually in front. Aerial coming
+        // back is the one signal every route shares, so the round freezes here and the focus
+        // desktop's 继续学习 resumes it explicitly.
+        PolicyModeCoordinator.pauseStudyRound("AERIAL_RESUMED")
+        // Likewise no recorded external app is in front any more. A marker that survived a
+        // revival must not make the next launch look like a second app.
+        clearExternalLaunchEvidence()
         CecSwitch.register(this)
         if (!minuteReceiverOn) {
             // TIME_TICK is a protected system broadcast; it is only delivered to registered receivers.
@@ -1126,7 +1161,8 @@ class MainActivity : ComponentActivity() {
             idleHandler.postDelayed({
                 if (vm.resumed && hasWindowFocus()) {
                     DiagLog.i("the page just opened closed at once; opening ${page.component ?: page.action}")
-                    open(page)
+                    // A retry of a page that closed at once is still the page, not a fresh choice.
+                    open(page, recordExternal = false)
                 } else {
                     DiagLog.i("back in front under a window of the page just opened; not opening ${page.component ?: page.action}")
                 }
@@ -1139,10 +1175,19 @@ class MainActivity : ComponentActivity() {
         super.onPause()
         if (locked) return
         vm.resumed = false
+        cancelStudyLaunchCheck()
         if (minuteReceiverOn) { runCatching { unregisterReceiver(minuteReceiver) }; minuteReceiverOn = false }
         KidsWatch.homeInFront = false
         Updates.onHomePaused()
         DiagLog.i("onPause")
+        // Only a start that was actually underway when Aerial lost the front. A permission dialog
+        // or a page that closed at once does not make the pending app the viewer's app.
+        val pending = pendingExternalLaunch
+        pendingExternalLaunch = null
+        if (pending != null && SystemClock.uptimeMillis() - pending.atUptime <= EXTERNAL_LAUNCH_TTL_MS) {
+            GuardSetup.noteLastLeftForApp(this, pending.packageName, pending.activityName)
+            DiagLog.i("onPause: recorded ${pending.packageName}/${pending.activityName} as opened from PlanYourTV")
+        }
         leftForAnApp = openedAppSinceHome
         GuardSetup.setHomeInFront(this, false)
         if (HomeGuardService.onAerialPaused()) {
@@ -1176,13 +1221,64 @@ class MainActivity : ComponentActivity() {
         runCatching { getSystemService<ConnectivityManager>()?.unregisterNetworkCallback(networkCallback) }
     }
 
+    /**
+     * Remembers the package [intent] will bring to the front. Called only for starts the viewer
+     * asked for, never for the boot source or an internal page. The marker is committed in
+     * onPause: a start that fails, or a page that closes at once, leaves no evidence.
+     */
+    private fun armExternalLaunch(intent: Intent) {
+        val component = intent.component ?: runCatching {
+            packageManager.resolveActivity(intent, 0)?.activityInfo?.let { ComponentName(it.packageName, it.name) }
+        }.getOrNull()
+        val pkg = component?.packageName ?: return
+        if (pkg == packageName || HomeGuardService.isStockHome(pkg)) {
+            pendingExternalLaunch = null
+            return
+        }
+        pendingExternalLaunch = PendingExternalLaunch(pkg, component.className, SystemClock.uptimeMillis())
+    }
+
+    /** Aerial is back in front, or Home was pressed: the external start is over. */
+    private fun clearExternalLaunchEvidence() {
+        pendingExternalLaunch = null
+        GuardSetup.clearLastLeftForApp(this)
+    }
+
+    /** The study app has to cover Aerial; if it did not, the round must not keep counting. */
+    private fun armStudyLaunchCheck() {
+        cancelStudyLaunchCheck()
+        val check = Runnable {
+            studyLaunchCheck = null
+            if (vm.resumed) PolicyModeCoordinator.pauseStudyRound("LAUNCH_FAILED")
+        }
+        studyLaunchCheck = check
+        studyLaunchHandler.postDelayed(check, STUDY_LAUNCH_CHECK_MS)
+    }
+
+    private fun cancelStudyLaunchCheck() {
+        studyLaunchCheck?.let { studyLaunchHandler.removeCallbacks(it) }
+        studyLaunchCheck = null
+    }
+
     /** Opens an app, growing it out of its tile. */
     private fun launch(app: AppEntry, bounds: Rect?) {
         // The lock desktop's study tiles grant a one-shot permit for their listed app, so it opens
         // over the lock and leaving it comes back here. Every other caller (tile, boot source,
         // phone page, future automation) is still refused while the lock screen is showing.
-        val studyFromLock = LockStudyLaunch.consume(app.packageName)
+        val studyFromLock = LockLaunchPermit.consume(app.packageName)
+        if (studyFromLock) armStudyLaunchCheck()
         if (PolicyModeCoordinator.isLockScreen() && !studyFromLock) return
+        // The study launcher is a grid, not an untimed bypass: every study tile must pass the
+        // study window/quota admission before its app opens. A rejection keeps the grid.
+        val policyState = PolicyModeCoordinator.state.value
+        val studyTile = policyState.guardState == com.planyourtv.policy.GuardStatus.STUDY_MODE &&
+            app.packageName in policyState.studyPackages
+        if (studyTile &&
+            PolicyModeCoordinator.startStudyFromStudyMode(app.packageName) !=
+            com.planyourtv.policy.SessionStartResult.Started
+        ) {
+            return
+        }
         // Kids and Elders mode shows only its own tiles, and none while locked; this is the last word.
         if (Restricted.active && (app.key !in Restricted.allowed || Restricted.lock != null)) {
             DiagLog.i("kids: ${app.key} not opened")
@@ -1211,9 +1307,13 @@ class MainActivity : ComponentActivity() {
         }
         // The stock launcher (Xiaomi's PatchWall, with the maker's own iQIYI / Mango content) opens
         // through the system Home action where it can; see HomeGuardService.openStockLauncher.
+        // Not an external app for the revival marker: the stock launcher has its own handling.
         if (HomeGuardService.isStockHome(app.packageName) &&
             HomeGuardService.openStockLauncher(app.packageName) { startStockLauncher(app) }
-        ) return
+        ) {
+            pendingExternalLaunch = null
+            return
+        }
         val options = bounds?.asFocusedTile()?.let {
             ActivityOptions.makeScaleUpAnimation(
                 window.decorView, it.left.toInt(), it.top.toInt(), it.width.toInt(), it.height.toInt(),
@@ -1237,12 +1337,20 @@ class MainActivity : ComponentActivity() {
         try {
             FilmAfterInput.noteOpened(this, app.launchIntent())
             if (app.source != null) allowInputThroughHome(app.launchIntent())
-            if (HisenseSources.open(this, app.launchIntent())) return
-            startActivity(settingsLaunchIntent(this, app.launchIntent()), options)
+            if (HisenseSources.open(this, app.launchIntent())) {
+                armExternalLaunch(app.launchIntent())
+                return
+            }
+            val target = settingsLaunchIntent(this, app.launchIntent())
+            armExternalLaunch(target)
+            startActivity(target, options)
         } catch (e: Exception) {
             // XGIMI (GMUI): nothing answers the passthrough intent a source tile carries, so the tile
             // opens the source page of its settings service instead (issue #241).
-            if (app.source != null && SystemProbe.openInputPicker(this)) return
+            if (app.source != null && (SystemProbe.openXgimiInput(this, app.launchIntent()) || SystemProbe.openInputPicker(this))) {
+                armExternalLaunch(app.launchIntent())
+                return
+            }
             // PatchWall's entry needs its permission whether or not the guard runs, and with the
             // guard switched off its tile did nothing (MiTV-ANSP0, Android 9, issue #971).
             if (e is SecurityException && startStockLauncher(app)) {
@@ -1250,8 +1358,10 @@ class MainActivity : ComponentActivity() {
                 // guard had not bound yet, so isStockHome said no above, and once bound it took
                 // PatchWall for one the TV raised (MiTV-ANSP0, Android 9, issue #971, PR #1216).
                 if (isHomeApp(app.packageName)) HomeGuardService.allowStockLauncher(this)
+                pendingExternalLaunch = null
                 return
             }
+            pendingExternalLaunch = null
             Toast.makeText(this, getString(R.string.launch_failed, app.label), Toast.LENGTH_SHORT).show()
         }
     }
@@ -1314,7 +1424,7 @@ class MainActivity : ComponentActivity() {
         if (pkg != packageName && isHomeApp(pkg)) HomeGuardService.allowStockLauncher(this)
     }
 
-    private fun open(intent: Intent) {
+    private fun open(intent: Intent, recordExternal: Boolean = true) {
         FilmAfterInput.noteOpened(this, intent)
         if (intent.hasExtra("inputSrc")) allowInputThroughHome(intent)
         // Older Konka: the input first, then its page, which only shows what is on (issue #710).
@@ -1322,21 +1432,25 @@ class MainActivity : ComponentActivity() {
             val app = applicationContext
             kotlin.concurrent.thread(name = "AerialKonkaInput") {
                 KonkaSources.switchTo(app, intent)
-                runOnUiThread { startPage(intent) }
+                runOnUiThread { startPage(intent, recordExternal) }
             }
             return
         }
-        startPage(intent)
+        startPage(intent, recordExternal)
     }
 
-    private fun startPage(intent: Intent) {
+    private fun startPage(intent: Intent, recordExternal: Boolean = true) {
+        val target = bareOnRewritingFirmware(intent)
+        if (recordExternal) armExternalLaunch(target)
         try {
-            SystemProbe.startSettingsIntent(this, bareOnRewritingFirmware(intent))
+            SystemProbe.startSettingsIntent(this, target)
         } catch (e: Exception) {
             // XGIMI (GMUI): its inputs carry a passthrough intent that nothing answers, so switching
             // goes through the source page of its settings service (issue #241).
-            if (intent.data?.host == "android.media.tv" && SystemProbe.openInputPicker(this)) return
-            LaunchFallback.next()?.let { return open(it) }
+            if (intent.data?.host == "android.media.tv" &&
+                (SystemProbe.openXgimiInput(this, intent) || SystemProbe.openInputPicker(this))
+            ) return
+            LaunchFallback.next()?.let { return open(it, recordExternal) }
             Toast.makeText(this, R.string.unavailable, Toast.LENGTH_SHORT).show()
         }
     }
@@ -1417,6 +1531,12 @@ class MainActivity : ComponentActivity() {
 
         /** An app opened this recently is still on its way to the front; see onResume. */
         private const val JUST_OPENED_MS = 1_000L
+
+        /** How long an external start may wait for Aerial's onPause before it no longer counts. */
+        private const val EXTERNAL_LAUNCH_TTL_MS = 5_000L
+
+        /** Long enough for a slow TV to pause Aerial; a failed study launch costs at most this. */
+        private const val STUDY_LAUNCH_CHECK_MS = 5_000L
         private const val DREAM_FAILS_ON = "dream_fails_on"
         private const val DREAM_FAILS = "dream_fails"
 

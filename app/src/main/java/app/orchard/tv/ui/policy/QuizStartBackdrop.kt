@@ -38,6 +38,7 @@ import app.orchard.tv.policy.media.PolicyVideoSource
 import app.orchard.tv.ui.theme.LocalReducedMotion
 import app.orchard.tv.ui.theme.Motion
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 /**
@@ -51,8 +52,10 @@ import kotlinx.coroutines.withContext
  * There is no bundled fallback film in the APK any more.
  *
  * [fadeOut] is driven by the start request: the music fades away while the
- * round is being prepared, and comes back if the request is refused. The page
- * does not wait for the fade before it starts the business call. The intro
+ * round is being prepared, then the player pauses, and it comes back if the
+ * request is refused. Pausing is deliberate: a prepared round must never share
+ * the speakers with a 20-second intro that has not reached its last frame. The
+ * page does not wait for the fade before it starts the business call. The intro
  * keeps its normal volume while the level card is visible; opening the card
  * never changes the TV's loudness.
  *
@@ -118,6 +121,19 @@ internal fun QuizStartBackdrop(
 
     LaunchedEffect(player, audioVolume) {
         player?.volume = audioVolume
+    }
+
+    // The start request owns the round from the moment it is sent. Once the volume reaches zero,
+    // pause the film instead of leaving it running under the incoming question page. A refused
+    // start flips fadeOut back and resumes the film from the same position.
+    LaunchedEffect(fadeOut, player) {
+        val exo = player ?: return@LaunchedEffect
+        if (fadeOut) {
+            delay(220)
+            runCatching { exo.pause() }
+        } else if (!reduced && !failed && lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+            runCatching { exo.play() }
+        }
     }
 
     // No film, or reduced motion: the default wallpaper is the whole intro.

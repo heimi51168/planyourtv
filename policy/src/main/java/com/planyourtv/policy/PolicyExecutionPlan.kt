@@ -26,6 +26,11 @@ data class PolicyExecutionPlan(
     val recordId: Long? = null,
     /** TV-generated rule session id; null for redemption plans. */
     val sessionId: String? = null,
+    /**
+     * V45 parent-started session that deliberately sits outside the child plan. It neither
+     * consumes nor creates quota, rest, route counts or daily totals.
+     */
+    val outsidePlan: Boolean = false,
 ) {
     init {
         require(id.isNotBlank()) { "plan id is blank" }
@@ -66,8 +71,17 @@ enum class PolicyPlanSource {
 }
 
 enum class PolicyActivation {
-    AUTO,
     MANUAL,
+}
+
+/**
+ * Why a saved local session ended; used to decide whether rest follows. [WINDOW_END] only
+ * survives for sessions written by older builds. This is persisted in the legacy session record.
+ */
+enum class LocalSessionEnd {
+    SESSION_LIMIT,
+    DAILY_LIMIT,
+    WINDOW_END,
 }
 
 /** End reasons written to the rule usage table; redemption keeps its existing reason strings. */
@@ -80,8 +94,6 @@ enum class PolicyEndReason {
     MODE_SWITCH,
     /** The child chose “退出计时” in the TV control center. */
     USER_EXIT,
-    /** AUTO ↔ MANUAL changed, so the running session was ended before the switch. */
-    ACTIVATION_SWITCH,
     /** The fixed wall deadline ran out while the screen was off or paused. */
     SCREEN_OFF_TIMEOUT,
     CANCELED,

@@ -37,10 +37,15 @@ object QuizScoring {
         else -> config.mediumPenaltyMinutes
     }
 
+    /**
+     * @param applyCap whether `config.maxEarnedMinutes` caps the payout. Local v5 rounds pass
+     * false because the day's quota already limits entertainment; hosted rounds keep it.
+     */
     fun score(
         items: List<QuizItem>,
         submissions: List<QuizSubmission>,
         config: QuizConfig,
+        applyCap: Boolean = true,
     ): QuizScore {
         val byId = items.associateBy { it.questionId }
         var correctCount = 0
@@ -57,7 +62,12 @@ object QuizScoring {
             }
         }
         val net = (gross - penalty).coerceAtLeast(0)
-        val cap = config.maxEarnedMinutes.coerceIn(1, QUIZ_MAX_EARNED_MINUTES)
+        val cap = if (applyCap) {
+            config.maxEarnedMinutes.coerceIn(1, QUIZ_MAX_EARNED_MINUTES)
+        } else {
+            // The day's quota decides real play time; keep only the legacy document bound.
+            QUIZ_MAX_EARNED_MINUTES
+        }
         val capped = min(net, cap)
         val threshold = config.minUnlockMinutes.coerceIn(0, QUIZ_MAX_UNLOCK_MINUTES)
         val reached = threshold == 0 || capped >= threshold

@@ -3,7 +3,7 @@ package app.orchard.tv.policy
 import android.os.SystemClock
 
 /**
- * The study app opened from the lock desktop's grid, while the lock screen stays behind it.
+ * One app opened from the lock desktop's grid, while the lock screen stays behind it.
  *
  * The device-level lock refuses every launch. The historical dock path entered STUDY_MODE to pass
  * that gate, which replaced the lock with the old study desktop and brought back the standalone
@@ -13,14 +13,21 @@ import android.os.SystemClock
  * changes: the guard stays ENFORCING, Back/Home comes back to the lock screen, and every other
  * package is still refused.
  *
+ * Study apps and unlimited apps share this permit. A study round additionally keeps its app in
+ * front through [setRoundPackage]; an unlimited app needs no timer, so its one-shot grant is the
+ * whole authorization.
+ *
  * The pending grant is one-shot and expires, so a launch that never arrives cannot authorize a
  * later one. The foreground allowance ends when Aerial is in front again ([clearForeground]).
  */
-internal object LockStudyLaunch {
+internal object LockLaunchPermit {
     private const val TtlMs = 5_000L
     private var pending: String? = null
     private var issuedAt = 0L
     private var inFront: String? = null
+    /** The study app of the running focus round; it may stay in front until the round ends. */
+    @Volatile
+    private var roundPackage: String? = null
 
     /** A lock desktop tile: the next launch may be this package, and it may stay in front. */
     fun grant(pkg: String) {
@@ -38,10 +45,29 @@ internal object LockStudyLaunch {
         return true
     }
 
-    /** The guard's lock check: this is the study app the child opened from the lock desktop. */
-    fun allowsForeground(pkg: String): Boolean = pkg == inFront
+    /**
+     * The guard's lock check: this is the app the child opened from the lock desktop, or the app
+     * of the running focus round (a completion cannot revoke the app mid-foreground).
+     */
+    fun allowsForeground(pkg: String): Boolean = pkg == inFront || pkg == roundPackage
 
-    /** Aerial is in front again: the study app is no longer the lock's foreground. */
+    /**
+     * Whether any lock-launched app may currently be in front. The no-guard watchdog reads the
+     * foreground package only in this window; otherwise no package can be exempt.
+     */
+    fun hasForegroundAllowance(): Boolean = inFront != null || roundPackage != null
+
+    /** A focus round started or was restored: keep its study app allowed while it runs. */
+    fun setRoundPackage(pkg: String) {
+        roundPackage = pkg
+    }
+
+    /** The focus round ended; a later launch must go through the one-shot [grant] again. */
+    fun clearRoundPackage() {
+        roundPackage = null
+    }
+
+    /** Aerial is in front again: the launched app is no longer the lock's foreground. */
     fun clearForeground() {
         inFront = null
     }

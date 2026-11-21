@@ -771,7 +771,7 @@ class MainActivity : AppCompatActivity() {
         val content = versionDialogBinding ?: return
         val dialog = versionDialog ?: return
         content.updateCurrentVersion.text =
-            versionText(BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE)
+            versionText(BuildConfig.VERSION_NAME)
         val muted = ContextCompat.getColor(this, R.color.muted)
         val ink = ContextCompat.getColor(this, R.color.ink)
         val brand = ContextCompat.getColor(this, R.color.brand)
@@ -791,7 +791,7 @@ class MainActivity : AppCompatActivity() {
             is VersionState.Available -> {
                 val release = state.release
                 content.updateLatestVersion.text =
-                    versionText(release.versionName, release.versionCode)
+                    versionText(release.versionName)
                 content.updateLatestVersion.setTextColor(brand)
                 val size = if (release.sizeBytes > 0L) {
                     Formatter.formatShortFileSize(this, release.sizeBytes)
@@ -804,7 +804,7 @@ class MainActivity : AppCompatActivity() {
                 negative.setText(R.string.update_later)
                 positive.text = getString(
                     R.string.update_install_version,
-                    versionText(release.versionName, 0),
+                    versionText(release.versionName),
                 )
                 positive.setOnClickListener {
                     dialog.dismiss()
@@ -824,12 +824,12 @@ class MainActivity : AppCompatActivity() {
                     // like a downgrade.
                     state.latestCode in 1 until BuildConfig.VERSION_CODE -> {
                         content.updateLatestVersion.text =
-                            versionText(BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE)
+                            versionText(BuildConfig.VERSION_NAME)
                         content.updateLatestVersion.setTextColor(ink)
                     }
                     else -> {
                         content.updateLatestVersion.text =
-                            versionText(latestName, state.latestCode)
+                            versionText(latestName)
                         content.updateLatestVersion.setTextColor(ink)
                     }
                 }
@@ -851,14 +851,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun versionText(name: String, code: Int): String {
+    private fun versionText(name: String): String {
         val clean = name.trim().removePrefix("v").removePrefix("V")
         if (clean.isEmpty()) return getString(R.string.update_unknown_version)
-        return if (code > 0) {
-            getString(R.string.update_version_format, clean, code)
-        } else {
-            getString(R.string.update_version_name, clean)
-        }
+        return getString(R.string.update_version_name, clean)
     }
 
     private fun showUpdateBanner(release: ParentUpdater.Release) {

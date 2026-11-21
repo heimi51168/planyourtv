@@ -1,6 +1,5 @@
 package app.orchard.tv.ui.policy
 
-import com.planyourtv.policy.Activation
 import com.planyourtv.policy.LocalRules
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -9,46 +8,34 @@ import org.junit.Test
 
 class PolicyParentLocalPaneTest {
     @Test
-    fun limitRowsExistOnlyInAutomaticMode() {
-        val auto = v6LocalFocusKeys(LocalRules.DEFAULTS, Activation.AUTO, sessionActive = false)
-        val manual = v6LocalFocusKeys(LocalRules.DEFAULTS, Activation.MANUAL, sessionActive = false)
+    fun sharedAppRowsComeBeforeTheManualTimingRows() {
+        val keys = v6LocalFocusKeys(LocalRules.DEFAULTS, sessionActive = false)
 
-        assertTrue("daily" in auto)
-        assertTrue("session" in auto)
-        // Manual has no daily quota and takes its length from the lock-screen entry, so neither
-        // row may advertise a cap the executor does not apply.
-        assertFalse("daily" in manual)
-        assertFalse("session" in manual)
-        assertTrue("rest" in manual)
-    }
-
-    @Test
-    fun sharedAppsComeBeforeActivationTabs() {
-        val keys = v6LocalFocusKeys(LocalRules.DEFAULTS, Activation.MANUAL, sessionActive = false)
-        // The app scope and source switch are shared by both activations, so they sit above the
-        // timing tabs.
+        // The app scope and source switch are shared by every member, so they stay above the
+        // manual time rows.
         assertEquals("apps", keys.first())
         assertEquals("study", keys.getOrNull(1))
         assertEquals("sources", keys.getOrNull(2))
-        assertEquals("activation-auto", keys.getOrNull(3))
-        assertEquals("activation-manual", keys.getOrNull(4))
-        // Manual timing has the quiz switch before the first time row.
-        assertEquals("quiz", keys.getOrNull(5))
-        assertTrue(keys.getOrNull(6)?.startsWith("wd-") == true)
+        assertEquals("quiz", keys.getOrNull(3))
+        assertTrue(keys.getOrNull(4)?.startsWith("wd-") == true)
     }
 
     @Test
-    fun quizSwitchExistsOnlyInManualMode() {
-        val auto = v6LocalFocusKeys(LocalRules.DEFAULTS, Activation.AUTO, sessionActive = false)
-        val manual = v6LocalFocusKeys(LocalRules.DEFAULTS, Activation.MANUAL, sessionActive = false)
+    fun noActivationTabOrQuotaEditorsRemain() {
+        val keys = v6LocalFocusKeys(LocalRules.DEFAULTS, sessionActive = false)
 
-        assertFalse("quiz" in auto)
-        assertEquals(manual.indexOf("activation-manual") + 1, manual.indexOf("quiz"))
+        // Manual time takes its segment length from the lock-screen entry, so neither an
+        // activation tab nor a daily/session cap may advertise a rule the executor ignores.
+        assertFalse(keys.any { it.startsWith("activation-") })
+        assertFalse("daily" in keys)
+        assertFalse("session" in keys)
+        assertTrue("rest" in keys)
+        assertTrue("buffer" in keys)
     }
 
     @Test
     fun windowRowsHaveNoAddAction() {
-        val keys = v6LocalFocusKeys(LocalRules.DEFAULTS, Activation.AUTO, sessionActive = false)
+        val keys = v6LocalFocusKeys(LocalRules.DEFAULTS, sessionActive = false)
         // The TV keeps the existing weekday/weekend windows editable but no longer offers a
         // control to add more.
         assertFalse(keys.any { it.endsWith("-add") })
@@ -57,22 +44,25 @@ class PolicyParentLocalPaneTest {
     }
 
     @Test
+    fun endingASessionIsOfferedOnlyWhileOneIsRunning() {
+        assertFalse("end-session" in v6LocalFocusKeys(LocalRules.DEFAULTS, sessionActive = false))
+        assertTrue("end-session" in v6LocalFocusKeys(LocalRules.DEFAULTS, sessionActive = true))
+    }
+
+    @Test
     fun readOnlyKeepsRuleRowsButRemovesMutatingOnes() {
         val keys = v6LocalFocusKeys(
             LocalRules.DEFAULTS,
-            Activation.AUTO,
             sessionActive = true,
             readOnly = true,
         )
         assertEquals("apps", keys.first())
-        assertTrue("activation-auto" in keys)
-        assertTrue("activation-manual" in keys)
         assertTrue("wd-0-start" in keys)
-        assertTrue("daily" in keys)
+        assertTrue("we-0-start" in keys)
         assertTrue("rest" in keys)
-        assertTrue("apps" in keys)
-        assertFalse("wd-add" in keys)
-        assertFalse("we-add" in keys)
+        assertTrue("buffer" in keys)
+        assertFalse(keys.any { it.endsWith("-add") })
+        assertFalse(keys.any { it.endsWith("-remove") })
         assertFalse("end-session" in keys)
     }
 }

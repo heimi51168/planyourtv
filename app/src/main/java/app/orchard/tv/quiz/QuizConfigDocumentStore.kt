@@ -2,6 +2,7 @@ package app.orchard.tv.quiz
 
 import android.util.Log
 import androidx.annotation.VisibleForTesting
+import app.orchard.tv.policy.FamilyHub
 import com.planyourtv.policy.PolicyRuntime
 import com.planyourtv.policy.TvStore
 import com.planyourtv.policy.quiz.QUIZ_DEFAULT_ANSWER_DISPLAY_SEC
@@ -14,6 +15,7 @@ import com.planyourtv.policy.quiz.QuizDocIssue
 import com.planyourtv.policy.quiz.QuizDocUpdatedBy
 import com.planyourtv.policy.quiz.QuizLevel
 import com.planyourtv.policy.quiz.QuizLevelPackage
+import com.planyourtv.policy.quiz.QuizPackageSource
 import com.planyourtv.policy.quiz.QuizSessionCodec
 import org.json.JSONArray
 import org.json.JSONObject
@@ -99,7 +101,49 @@ object QuizConfigDocumentStore {
     fun ensureLocalDocument(nowMs: Long = System.currentTimeMillis()): QuizDocLoadResult =
         core.ensureLocalDocument(nowMs)
 
+    /**
+     * Creates the initial local document for [targetUserId] while another member is still
+     * active. With a [sourceUserId] the source child's document is cloned (its level
+     * structure and quiz settings, never any progress); without one a clean default document
+     * is written so the new child cannot inherit the first child's legacy settings implicitly.
+     */
+    fun provisionLocalDocument(
+        targetUserId: String,
+        sourceUserId: String? = null,
+        nowMs: Long = System.currentTimeMillis(),
+    ): Boolean = core.provisionLocalDocument(targetUserId, sourceUserId, nowMs)
+
     fun localDocument(): QuizConfigDocument? = core.localDocument()
+
+    /**
+     * V41: reads another member's local QCD without moving the TV's active
+     * pointer. Returns [QuizDocLoadResult.Unreadable] when the stored document
+     * is corrupt; the caller must not silently substitute the active child's
+     * document.
+     */
+    fun localDocumentFor(userId: String): QuizDocLoadResult = core.localDocumentFor(userId)
+
+    /** Writes another member's local QCD; the active pointer is not touched. */
+    fun saveLocalFor(
+        userId: String,
+        document: QuizConfigDocument,
+        baseRevision: Long?,
+        updatedBy: QuizDocUpdatedBy = QuizDocUpdatedBy.TV_WEB,
+        nowMs: Long = System.currentTimeMillis(),
+    ): QuizDocSaveResult = core.saveLocalFor(
+        userId,
+        document,
+        baseRevision,
+        updatedBy,
+        nowMs,
+    )
+
+    /** Replaces another member's level-package extension. */
+    fun updateLevelPackagesFor(
+        userId: String,
+        packages: List<QuizLevelPackage>,
+        nowMs: Long = System.currentTimeMillis(),
+    ): QuizDocSaveResult = core.updateLevelPackagesFor(userId, packages, nowMs)
 
     /**
      * 当前执行文档：有 `quiz.doc.active` 时读它；没有时回退到本机文档（未绑定态）。
@@ -173,6 +217,9 @@ internal class QuizConfigDocumentCore(
 ) {
     private val lock = Any()
 
+    /** Local quiz documents are per child; the default member keeps the legacy key names. */
+    private fun key(base: String): String = QuizSubjectScope.key(base)
+
     fun ensureLocalDocument(nowMs: Long = System.currentTimeMillis()): QuizDocLoadResult =
         synchronized(lock) {
             if (!TvStore.isReady) return QuizDocLoadResult.Storage
@@ -192,9 +239,126 @@ internal class QuizConfigDocumentCore(
     fun localDocument(): QuizConfigDocument? =
         (ensureLocalDocument() as? QuizDocLoadResult.Ok)?.document
 
+    /**
+     * Writes the target child's first document under its own key. The raw clone path keeps
+     * the encrypted envelope unchanged; a missing source falls back to a valid default
+     * document rather than letting the one-time legacy migration copy the first child.
+     */
+    fun provisionLocalDocument(
+        targetUserId: String,
+        sourceUserId: String?,
+        nowMs: Long,
+    ): Boolean = synchronized(lock) {
+        if (!TvStore.isReady || targetUserId.isBlank()) return false
+        val family = FamilyHub.state.value
+        if (!family.ready) return false
+        val targetKey = QuizSubjectScope.keyFor(family, targetUserId, KEY_LOCAL)
+        if (TvStore.getString(targetKey) != null) return true
+        val source = sourceUserId?.trim()?.takeIf { it.isNotEmpty() && it != targetUserId }
+        if (source != null) {
+            val raw = TvStore.getString(QuizSubjectScope.keyFor(family, source, KEY_LOCAL))
+            // The clone carries levels and quiz settings, never the source
+            // child's private tags. Packages that reference a private tag are
+            // removed; course and wrong-review levels stay.
+            val stripped = raw?.let { stripPrivateTagPackages(it) }
+            if (stripped != null) return TvStore.putStringDurable(targetKey, stripped)
+        }
+        val document = QuizLocalConfigDocument.create(
+            installId = installId(),
+            nowMs = nowMs,
+            config = QuizConfig(),
+            legacyAnswerDisplaySec = QUIZ_DEFAULT_ANSWER_DISPLAY_SEC,
+            levels = emptyList(),
+            migrated = false,
+        )
+        val issues = QuizLocalConfigDocument.localWriteIssues(document)
+        if (issues.isNotEmpty()) {
+            Log.e(TAG, "default quiz document is invalid: ${issues.map { it.code }}")
+            return false
+        }
+        val encrypted = encrypt(QuizConfigDocumentCodec.encode(document)) ?: return false
+        TvStore.putStringDurable(targetKey, encrypted)
+    }
+
+    /**
+     * Re-encodes a source document after removing every package that draws
+     * from a private tag. Content is never copied to the new member, so a
+     * cloned tag level would only ever show an empty bank.
+     */
+    private fun stripPrivateTagPackages(raw: String): String? {
+        val json = decrypt(raw) ?: return null
+        val decoded = QuizConfigDocumentCodec.decode(json)
+        if (decoded !is QuizDocDecodeResult.Success) return null
+        var document = decoded.document
+        val extension = QuizLevelPackageStore.read(document)
+        if (extension is QuizLevelPackageStore.Extension.Present) {
+            val kept = extension.packages.filterNot { pkg ->
+                pkg.sources.any { it is QuizPackageSource.Collection }
+            }
+            if (kept.size != extension.packages.size) {
+                document = QuizLevelPackageStore.withPackages(document, kept)
+            }
+        }
+        return encrypt(QuizConfigDocumentCodec.encode(document))
+    }
+
+    /**
+     * Reads one member's local document by id. Unlike [ensureLocalDocument]
+     * this never creates or migrates a document: the active child's legacy
+     * migration must not be copied into a sibling.
+     */
+    fun localDocumentFor(userId: String): QuizDocLoadResult = synchronized(lock) {
+        if (!TvStore.isReady) return QuizDocLoadResult.Storage
+        val localKey = localKeyFor(userId) ?: return QuizDocLoadResult.Storage
+        when (val stored = readStored(localKey)) {
+            is Stored.Present -> QuizDocLoadResult.Ok(stored.document, migrated = false)
+            Stored.Absent -> QuizDocLoadResult.Unreadable(listOf("quiz.doc.local:ABSENT"))
+            is Stored.Broken -> QuizDocLoadResult.Unreadable(stored.errors)
+        }
+    }
+
+    fun saveLocalFor(
+        userId: String,
+        document: QuizConfigDocument,
+        baseRevision: Long?,
+        updatedBy: QuizDocUpdatedBy,
+        nowMs: Long,
+    ): QuizDocSaveResult = synchronized(lock) {
+        val localKey = localKeyFor(userId) ?: return QuizDocSaveResult.Storage
+        saveLocalAt(localKey, document, baseRevision, updatedBy, nowMs)
+    }
+
+    fun updateLevelPackagesFor(
+        userId: String,
+        packages: List<QuizLevelPackage>,
+        nowMs: Long,
+    ): QuizDocSaveResult = synchronized(lock) {
+        val localKey = localKeyFor(userId) ?: return QuizDocSaveResult.Storage
+        val current = when (val stored = readStored(localKey)) {
+            is Stored.Present -> stored.document
+            else -> return QuizDocSaveResult.Storage
+        }
+        val updated = QuizLevelPackageStore.withPackages(current, packages)
+        saveLocalAt(
+            localKey,
+            updated,
+            current.revision,
+            QuizDocUpdatedBy.TV_LOCAL_EDIT,
+            nowMs,
+        )
+    }
+
+    private fun localKeyFor(userId: String): String? {
+        val id = userId.trim()
+        if (id.isEmpty()) return null
+        val family = FamilyHub.state.value
+        if (!family.ready) return null
+        return QuizSubjectScope.keyFor(family, id, KEY_LOCAL)
+    }
+
     fun activeDocument(): QuizConfigDocument? = synchronized(lock) {
         if (!TvStore.isReady) return null
-        if (TvStore.getString(KEY_ACTIVE) == null) {
+        if (TvStore.getString(key(KEY_ACTIVE)) == null) {
             // 未绑定：本机文档就是执行文档。已绑定却没有 active（首次同步前或存储失败）
             // 时不能静默改用 local——那会让家长以为云端配置生效。
             if (PolicyRuntime.state.value.bound) {
@@ -214,7 +378,7 @@ internal class QuizConfigDocumentCore(
         fun matches(cached: CloudQuizDocument): Boolean =
             cached.document.documentId == active.documentId &&
                 cached.document.revision == active.revision
-        val recorded = TvStore.getString(KEY_ACTIVE_LEARNER)?.trim()?.toLongOrNull()
+        val recorded = TvStore.getString(key(KEY_ACTIVE_LEARNER))?.trim()?.toLongOrNull()
         if (recorded != null && recorded > 0L) {
             val cached = cloudDocument(recorded)
             if (cached != null && matches(cached)) {
@@ -235,7 +399,7 @@ internal class QuizConfigDocumentCore(
             Log.e(TAG, "active cloud document has no cached envelope")
             return null
         }
-        TvStore.putStringDurable(KEY_ACTIVE_LEARNER, found.learnerId.toString())
+        TvStore.putStringDurable(key(KEY_ACTIVE_LEARNER), found.learnerId.toString())
         found
     }
 
@@ -264,7 +428,7 @@ internal class QuizConfigDocumentCore(
                 Log.e(TAG, "failed to switch the active quiz document; keeping the previous one")
                 return false
             }
-            if (!TvStore.putStringDurable(KEY_ACTIVE_LEARNER, learnerId.toString())) {
+            if (!TvStore.putStringDurable(key(KEY_ACTIVE_LEARNER), learnerId.toString())) {
                 // The identity is recoverable from the cached envelopes by documentId.
                 Log.w(TAG, "failed to record the active quiz learner; will re-derive it")
             }
@@ -273,8 +437,8 @@ internal class QuizConfigDocumentCore(
 
     fun clearActiveDocument(): Boolean = synchronized(lock) {
         if (!TvStore.isReady) return false
-        val removed = TvStore.removeDurable(KEY_ACTIVE)
-        val learnerRemoved = TvStore.removeDurable(KEY_ACTIVE_LEARNER)
+        val removed = TvStore.removeDurable(key(KEY_ACTIVE))
+        val learnerRemoved = TvStore.removeDurable(key(KEY_ACTIVE_LEARNER))
         removed && learnerRemoved
     }
 
@@ -284,7 +448,7 @@ internal class QuizConfigDocumentCore(
         cloudLearnerIdsLocked().forEach { learnerId ->
             ok = TvStore.removeDurable(cloudKey(learnerId)) && ok
         }
-        ok = TvStore.removeDurable(KEY_CLOUD_INDEX) && ok
+        ok = TvStore.removeDurable(key(KEY_CLOUD_INDEX)) && ok
         ok
     }
 
@@ -298,7 +462,7 @@ internal class QuizConfigDocumentCore(
         syncLearnerIdsLocked().forEach { learnerId ->
             ok = TvStore.removeDurable(syncKey(learnerId)) && ok
         }
-        ok = TvStore.removeDurable(KEY_SYNC_INDEX) && ok
+        ok = TvStore.removeDurable(key(KEY_SYNC_INDEX)) && ok
         ok
     }
 
@@ -405,7 +569,7 @@ internal class QuizConfigDocumentCore(
     }
 
     private fun readActiveDocumentLocked(): QuizConfigDocument? {
-        val raw = TvStore.getString(KEY_ACTIVE) ?: return null
+        val raw = TvStore.getString(key(KEY_ACTIVE)) ?: return null
         val json = decrypt(raw)
         if (json == null) {
             Log.e(TAG, "active quiz document cannot be decrypted; refusing to fall back to local")
@@ -430,11 +594,11 @@ internal class QuizConfigDocumentCore(
 
     private fun writeActive(document: QuizConfigDocument): Boolean {
         val encrypted = encrypt(QuizConfigDocumentCodec.encode(document)) ?: return false
-        return TvStore.putStringDurable(KEY_ACTIVE, encrypted)
+        return TvStore.putStringDurable(key(KEY_ACTIVE), encrypted)
     }
 
     private fun cloudLearnerIdsLocked(): List<Long> {
-        val raw = TvStore.getString(KEY_CLOUD_INDEX) ?: return emptyList()
+        val raw = TvStore.getString(key(KEY_CLOUD_INDEX)) ?: return emptyList()
         return try {
             val array = JSONArray(raw)
             (0 until array.length()).mapNotNull { index ->
@@ -459,11 +623,11 @@ internal class QuizConfigDocumentCore(
         }
         val array = JSONArray()
         kept.forEach { array.put(it) }
-        return TvStore.putStringDurable(KEY_CLOUD_INDEX, array.toString())
+        return TvStore.putStringDurable(key(KEY_CLOUD_INDEX), array.toString())
     }
 
     private fun syncLearnerIdsLocked(): List<Long> {
-        val raw = TvStore.getString(KEY_SYNC_INDEX) ?: return emptyList()
+        val raw = TvStore.getString(key(KEY_SYNC_INDEX)) ?: return emptyList()
         return try {
             val array = JSONArray(raw)
             (0 until array.length()).mapNotNull { index ->
@@ -487,12 +651,14 @@ internal class QuizConfigDocumentCore(
         }
         val array = JSONArray()
         ids.take(SYNC_STATE_LIMIT).forEach { array.put(it) }
-        return TvStore.putStringDurable(KEY_SYNC_INDEX, array.toString())
+        return TvStore.putStringDurable(key(KEY_SYNC_INDEX), array.toString())
     }
 
-    private fun cloudKey(learnerId: Long): String = "$KEY_CLOUD_PREFIX$learnerId"
+    private fun cloudKey(learnerId: Long): String =
+        QuizSubjectScope.key("$KEY_CLOUD_PREFIX$learnerId")
 
-    private fun syncKey(learnerId: Long): String = "$KEY_SYNC_PREFIX$learnerId"
+    private fun syncKey(learnerId: Long): String =
+        QuizSubjectScope.key("$KEY_SYNC_PREFIX$learnerId")
 
     fun saveLocal(
         document: QuizConfigDocument,
@@ -500,6 +666,16 @@ internal class QuizConfigDocumentCore(
         updatedBy: QuizDocUpdatedBy,
         nowMs: Long,
     ): QuizDocSaveResult = synchronized(lock) {
+        saveLocalAt(key(KEY_LOCAL), document, baseRevision, updatedBy, nowMs)
+    }
+
+    private fun saveLocalAt(
+        localKey: String,
+        document: QuizConfigDocument,
+        baseRevision: Long?,
+        updatedBy: QuizDocUpdatedBy,
+        nowMs: Long,
+    ): QuizDocSaveResult {
         if (!TvStore.isReady) return QuizDocSaveResult.Storage
         val installId = installId()
         if (document.documentId != QuizLocalConfigDocument.documentId(installId)) {
@@ -507,7 +683,7 @@ internal class QuizConfigDocumentCore(
                 listOf(QuizDocIssue("documentId", "LOCAL_DOCUMENT_ID_REQUIRED")),
             )
         }
-        val stored = readStored()
+        val stored = readStored(localKey)
         val current = (stored as? Stored.Present)?.document
         if (baseRevision != null) {
             val currentRevision = current?.revision ?: 0L
@@ -526,10 +702,10 @@ internal class QuizConfigDocumentCore(
         )
         val issues = QuizLocalConfigDocument.localWriteIssues(next)
         if (issues.isNotEmpty()) return QuizDocSaveResult.Invalid(issues)
-        if (!writeLocal(next)) return QuizDocSaveResult.Storage
+        if (!writeLocal(localKey, next)) return QuizDocSaveResult.Storage
         markMigrated()
         clearDiagnostic()
-        QuizDocSaveResult.Ok(next)
+        return QuizDocSaveResult.Ok(next)
     }
 
     fun updateLevels(
@@ -584,6 +760,13 @@ internal class QuizConfigDocumentCore(
     }
 
     private fun migrate(nowMs: Long): QuizDocLoadResult {
+        // Only the device default member may adopt the pre-V40 single-child
+        // legacy keys. A later member must start from an empty document; the
+        // caller provisions it when the member is added.
+        val family = FamilyHub.state.value
+        if (family.ready && family.activeUserId != family.defaultUserId) {
+            return createCleanDefault(nowMs)
+        }
         val configRaw = QuizSessionStore.challengeConfigRawForMigration()
         val hasConfig = QuizSessionStore.hasChallengeConfig()
         val config = when {
@@ -615,11 +798,31 @@ internal class QuizConfigDocumentCore(
             diagnose("MIGRATION_INVALID", issues.map { it.toString() }, nowMs)
             return QuizDocLoadResult.Unreadable(issues.map { it.toString() })
         }
-        if (!writeLocal(document)) return QuizDocLoadResult.Storage
+        if (!writeLocal(key(KEY_LOCAL), document)) return QuizDocLoadResult.Storage
         markMigrated()
         clearDiagnostic()
         Log.i(TAG, "local quiz document created (migrated=$hasLegacy, levels=${document.levels.size})")
         return QuizDocLoadResult.Ok(document, migrated = hasLegacy)
+    }
+
+    private fun createCleanDefault(nowMs: Long): QuizDocLoadResult {
+        val document = QuizLocalConfigDocument.create(
+            installId = installId(),
+            nowMs = nowMs,
+            config = QuizConfig(),
+            legacyAnswerDisplaySec = QUIZ_DEFAULT_ANSWER_DISPLAY_SEC,
+            levels = emptyList(),
+            migrated = false,
+        )
+        val issues = QuizLocalConfigDocument.localWriteIssues(document)
+        if (issues.isNotEmpty()) {
+            Log.e(TAG, "default quiz document is invalid: ${issues.map { it.code }}")
+            return QuizDocLoadResult.Unreadable(issues.map { it.toString() })
+        }
+        if (!writeLocal(key(KEY_LOCAL), document)) return QuizDocLoadResult.Storage
+        markMigrated()
+        clearDiagnostic()
+        return QuizDocLoadResult.Ok(document, migrated = false)
     }
 
     private fun migrationInvalid(nowMs: Long): QuizDocLoadResult {
@@ -635,8 +838,8 @@ internal class QuizConfigDocumentCore(
         data class Broken(val errors: List<String>) : Stored
     }
 
-    private fun readStored(): Stored {
-        val raw = TvStore.getString(KEY_LOCAL) ?: return Stored.Absent
+    private fun readStored(localKey: String = key(KEY_LOCAL)): Stored {
+        val raw = TvStore.getString(localKey) ?: return Stored.Absent
         val json = decrypt(raw) ?: return Stored.Broken(listOf("quiz.doc.local:DECRYPT"))
         val decoded = QuizConfigDocumentCodec.decode(json)
         if (decoded is QuizDocDecodeResult.Failure) {
@@ -678,9 +881,9 @@ internal class QuizConfigDocumentCore(
     private fun storedInstallId(): String? =
         TvStore.getString(KEY_INSTALL_ID)?.trim()?.takeIf { INSTALL_ID_RE.matches(it) }
 
-    private fun writeLocal(document: QuizConfigDocument): Boolean {
+    private fun writeLocal(localKey: String, document: QuizConfigDocument): Boolean {
         val encrypted = encrypt(QuizConfigDocumentCodec.encode(document)) ?: return false
-        return TvStore.putStringDurable(KEY_LOCAL, encrypted)
+        return TvStore.putStringDurable(localKey, encrypted)
     }
 
     private fun migrated(): Boolean = TvStore.getString(KEY_MIGRATED) == "1"

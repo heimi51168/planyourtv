@@ -548,7 +548,12 @@ fun HomeScreen(
                             return@onPreviewKeyEvent !PolicyModeCoordinator.sourceEntriesAllowed()
                         }
                         if (!PolicyModeCoordinator.sourceEntriesAllowed()) return@onPreviewKeyEvent true
-                        vm.overlay = Overlay.ControlCenter(CcPage.Inputs)
+                        // With no inputs listed to Android, the key opens the TV's own input panel,
+                        // as Control Center's Inputs button does: the key reached Aerial and only
+                        // showed an empty Inputs page (Philips 75PUF6393/T3, TV838, MStar, Android
+                        // 6, issue #1580, the reporter's log on 1.99).
+                        vm.overlay = if (vm.sources.isEmpty() && SystemProbe.openInputPicker(appContext)) Overlay.None
+                        else Overlay.ControlCenter(CcPage.Inputs)
                         true
                     }
                     else -> false

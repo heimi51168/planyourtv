@@ -167,6 +167,28 @@ object QbClient {
         return DeviceLearnerSelection(selectedLearnerId, learners)
     }
 
+    /**
+     * 把 QB 的「当前孩子」切到 [learnerId]（`qb_device_learner`）；之后 `/next` 按该孩子取题。
+     *
+     * 电视跟随果园当前用户（`device_list.active_member_id`）调用：用户切换后，QB 上次的
+     * 选择不能继续生效，否则会把上一个孩子的题库下发给新用户。
+     */
+    fun selectDeviceLearner(learnerId: Long) {
+        if (learnerId <= 0L) throw QbContractException("QB learner id is invalid")
+        val json = authorized(
+            "POST",
+            "/api/v1/quiz/learners/$learnerId/select",
+            null,
+            TIMEOUT_MS,
+        )
+        val result = json.optJSONObject("result")
+            ?: throw QbContractException("QB select response missing result")
+        val selected = result.optLong("selectedLearnerId", 0L)
+        if (selected != learnerId) {
+            throw QbContractException("QB select did not apply the learner")
+        }
+    }
+
     /** QB 的已启用关卡（QCD 关卡部分）。字段缺失/形态不对一律拒绝，不静默补默认值。 */
     fun deviceLevels(learnerId: Long): CloudLevelsBundle {
         if (learnerId <= 0L) throw QbContractException("QB learner id is invalid")

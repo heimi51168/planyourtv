@@ -28,6 +28,8 @@ data class SessionSnapshot(
     val planDeadlineEpochMs: Long = 0L,
     val wallDeadlineEpochMs: Long = 0L,
     val pausedAtEpochMs: Long = 0L,
+    /** Why the session is paused; screen-off wins over an unlimited app in front. */
+    val pauseReason: SessionPauseReason? = null,
     val checkpointWallMs: Long = 0L,
     val checkpointElapsedMs: Long = 0L,
     val checkpointAsleepMs: Long = 0L,
@@ -40,9 +42,14 @@ data class SessionSnapshot(
     val reportUsage: Boolean = false,
     val templateVersion: Long = 0L,
     val restAfterSeconds: Long = 0L,
+    /** V45 parent-started session outside the child plan; never writes the daily ledger. */
+    val outsidePlan: Boolean = false,
 )
 
 enum class SessionPhase { ACTIVE, PAUSED }
+
+/** Why an active session stopped consuming budget. Recovery/restore leaves this null. */
+enum class SessionPauseReason { SCREEN_OFF, UNLIMITED_APP }
 
 /**
  * LOCAL is a parent-confirmed start on the TV itself, GRANT is a REST exchange record and REMOTE
@@ -87,10 +94,14 @@ enum class PendingGrantSource { MQTT, GRANT }
  */
 data class RuntimeLedger(
     val days: Map<String, Long> = emptyMap(),
+    /** Study seconds per local date. Kept apart from the entertainment [days] ledger. */
+    val studyDays: Map<String, Long> = emptyMap(),
     val breakUntilEpochMs: Long = 0L,
     val lastEndedAtEpochMs: Long = 0L,
     val settled: Map<String, SettledSessionSnapshot> = emptyMap(),
     val pendingGrant: PendingGrantSnapshot? = null,
+    /** V44 successful-session counts for the child unlock routes, scoped to one local date. */
+    val routeUsage: RouteUsage? = null,
 )
 
 data class GuardSnapshot(

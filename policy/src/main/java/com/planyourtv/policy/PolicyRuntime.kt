@@ -73,6 +73,13 @@ object PolicyRuntime {
     @Volatile
     private var host: PolicyHost? = null
 
+    /**
+     * Product-owned fallback for installs where Home Guard is not running. Kept apart from
+     * [host] because the guard does not detach its host when the service goes away.
+     */
+    @Volatile
+    private var fallbackHost: PolicyHost? = null
+
     @Volatile
     private var syncHost: PolicySyncHost? = null
 
@@ -111,6 +118,15 @@ object PolicyRuntime {
     private var remotePolicySnapshot: RemotePolicy? = null
     private var validUntil = ""
     private var userIconUrl = ""
+    /**
+     * Garden family identity for the desktop (2026-11-21). Memory only and deliberately kept
+     * across grants/session resets: the family roster outlives any single entertainment
+     * session, and it is refreshed on every config poll.
+     */
+    private var cloudActiveMemberId: Long? = null
+    private var cloudActiveMemberName = ""
+    private var cloudActiveMemberIcon = ""
+    private var cloudMembers: List<CloudMember> = emptyList()
     /**
      * True while the local rule executor owns the guard. The redemption engine keeps network,
      * binding and identity duties, but must not run a second grant state machine: no PENDING
@@ -268,7 +284,25 @@ object PolicyRuntime {
         if (this.host === host) this.host = null
     }
 
+    /**
+     * Installs the product adapter that works without an accessibility guard. It is preferred
+     * over [host] so policy entries keep one bring-home path even when the guard dies without
+     * detaching; the adapter itself delegates to a live guard when there is one.
+     */
+    fun attachFallbackHost(host: PolicyHost) {
+        fallbackHost = host
+    }
+
+    fun detachFallbackHost(host: PolicyHost) {
+        if (fallbackHost === host) fallbackHost = null
+    }
+
     fun host(): PolicyHost? = host
+
+    /** One policy-side entry for hosts; the adapter decides guard versus direct start. */
+    private fun requestBringHome() {
+        (fallbackHost ?: host)?.bringHome()
+    }
 
     /** True for an install that already has cloud binding or a cloud PIN. Used for migration only. */
     fun hasStoredCloudIdentity(): Boolean {
@@ -513,7 +547,7 @@ object PolicyRuntime {
         guardState = GuardStatus.STUDY_MODE
         publish()
         notifyPolicyChanged()
-        host?.bringHome()
+        requestBringHome()
         return true
     }
 
@@ -688,7 +722,7 @@ object PolicyRuntime {
         TvStore.sync()
         publish()
         notifyPolicyChanged()
-        host?.bringHome()
+        requestBringHome()
     }
 
     /** Debug hooks, used by the debug-only broadcast receiver and the TV test harness. */
@@ -701,7 +735,7 @@ object PolicyRuntime {
         saveSession()
         publish()
         notifyPolicyChanged()
-        host?.bringHome()
+        requestBringHome()
     }
 
     @Synchronized
@@ -716,7 +750,7 @@ object PolicyRuntime {
         saveSession()
         publish()
         notifyPolicyChanged()
-        host?.bringHome()
+        requestBringHome()
     }
 
     @Synchronized
@@ -727,7 +761,7 @@ object PolicyRuntime {
         saveSession()
         publish()
         notifyPolicyChanged()
-        host?.bringHome()
+        requestBringHome()
     }
 
     @Synchronized
@@ -745,9 +779,11 @@ object PolicyRuntime {
      *
      * Deliberately does not consume the PIN failure-lockout state: a backend password change is
      * an authoritative parent action and must not be blocked by failed attempts on the TV.
-     * A default value only stays ignored before the V6 handoff, where legacy TVs may still carry
-     * a seeded 123456 in `device_list.device_pass_word`. Once handoff is DONE the cloud is the
-     * single source of truth, including a deliberate 123456/666666.
+     * A default value never overwrites a locally customized PIN: `device_list.device_pass_word`
+     * is seeded with 123456 on most TVs, and the unified policy marks the handoff DONE at bind
+     * time, so the legacy before-handoff guard below no longer covers this case. It is still
+     * ignored before the V6 handoff. Once the handoff is DONE and the TV still uses a default
+     * PIN, a deliberate cloud 123456/666666 is applied as the single source of truth.
      */
     @Synchronized
     fun applyCloudPin(password: String?): CloudPinApplyResult {
@@ -757,6 +793,13 @@ object PolicyRuntime {
         if (!TvPinStore.isValid(pin)) {
             Log.w(TAG, "ignore invalid cloud PIN")
             return CloudPinApplyResult.INVALID
+        }
+        // Cloud and local stay independent: binding/rebinding must not reset the parent's
+        // local PIN to the server's seeded default. A TV that still has a default PIN takes
+        // the cloud value (single source of truth), a customized one keeps its own.
+        if (TvPinStore.isDefault(pin) && TvPinStore.hasCustomLocalPin()) {
+            Log.i(TAG, "ignore default cloud PIN; local custom PIN kept")
+            return CloudPinApplyResult.IGNORED
         }
         if (!pinConfigured) {
             setPin(pin)
@@ -845,6 +888,27 @@ object PolicyRuntime {
         remotePolicySnapshot = next
         RemotePolicyStore.save(next)
         _remotePolicy.value = next
+        // One line per received snapshot: what the backend projected and which fields it owns.
+        // This is the first place to look when a garden edit does not reach the desktop.
+        PolicyFlowTrace.event(
+            "config.snapshot",
+            "version" to next.configVersion,
+            "mode" to next.mode,
+            "handoff" to next.handoffState,
+            "ruleSets" to (next.ruleSets != null),
+            "mask" to (next.memberScopedFields?.joinToString(",") ?: "LEGACY_ALL_LOCAL"),
+            "allowed" to next.rules.allowedPackages.size,
+            "study" to next.rules.effectiveStudyPackages.size,
+            "unlimited" to next.rules.effectiveUnlimitedPackages.size,
+            "earn" to next.rules.effectiveStudyEarnPackages.size,
+            "dayGroups" to next.rules.dayGroups.size,
+            "cap" to next.rules.effectiveSessionCapMinutes,
+            "direct" to next.rules.directRouteActive,
+            "quiz" to next.rules.quizRouteActive,
+            "studyMin" to next.rules.studyEarnStudyMinutes,
+            "rewardMin" to next.rules.effectiveStudyRewardMinutes,
+            "pkgs" to next.rules.allowedPackages.sorted().joinToString(","),
+        )
         // The study list comes from this mirror even in redemption mode. Publish it so the
         // lock screen knows whether the fixed study entry can open, and reload the desktop
         // when the list changes underneath an active study scope.
@@ -856,6 +920,36 @@ object PolicyRuntime {
                 notifyPolicyChanged()
             }
         }
+    }
+
+    /**
+     * Stores the garden family identity shipped with the config (2026-11-21).
+     *
+     * <p>This is what the desktop shows and what the switch sheet lists: after binding, the
+     * TV identity is a member of the uniapp family, so a locally created member must never
+     * shadow it. The identity is independent of the grant — it is kept when a session ends
+     * and only changes when the backend reports another member or roster.
+     */
+    @Synchronized
+    fun onCloudMembers(snapshot: PolicySyncSnapshot) {
+        if (!_cloudActive.value) return
+        val nextMembers = snapshot.members
+        if (cloudActiveMemberId == snapshot.activeMemberId &&
+            cloudActiveMemberName == snapshot.activeMemberName &&
+            cloudActiveMemberIcon == snapshot.activeMemberIcon &&
+            cloudMembers == nextMembers
+        ) {
+            return
+        }
+        cloudActiveMemberId = snapshot.activeMemberId
+        cloudActiveMemberName = snapshot.activeMemberName
+        cloudActiveMemberIcon = snapshot.activeMemberIcon
+        cloudMembers = nextMembers
+        Log.i(
+            TAG,
+            "cloud members: active=${snapshot.activeMemberId} roster=${nextMembers.size}",
+        )
+        publish()
     }
 
     /**
@@ -894,7 +988,7 @@ object PolicyRuntime {
 
     /** Hosted arm brings the lock screen forward, matching the legacy grant flow. */
     fun bringHome() {
-        host?.bringHome()
+        requestBringHome()
     }
 
     /**
@@ -1038,7 +1132,7 @@ object PolicyRuntime {
             publish()
             if (!wasPending) {
                 emitVoice(PolicyVoiceCue.GRANT_READY)
-                if (guardState == GuardStatus.ENFORCING) host?.bringHome()
+                if (guardState == GuardStatus.ENFORCING) requestBringHome()
             }
             return
         }
@@ -1067,7 +1161,7 @@ object PolicyRuntime {
         notifyPolicyChanged()
         if (session.state == SessionState.PENDING) {
             emitVoice(PolicyVoiceCue.GRANT_READY)
-            if (guardState == GuardStatus.ENFORCING) host?.bringHome()
+            if (guardState == GuardStatus.ENFORCING) requestBringHome()
         }
     }
 
@@ -1150,7 +1244,7 @@ object PolicyRuntime {
                 saveSession()
                 publish()
                 notifyPolicyChanged()
-                host()?.bringHome()
+                requestBringHome()
             }
         }
         return Result.success(Unit)
@@ -1205,9 +1299,17 @@ object PolicyRuntime {
                 syncDirty = false
                 val result = currentHost.fetchConfig(current.deviceNo)
                 result.onSuccess { snapshot ->
+                    onCloudMembers(snapshot)
                     onRemotePolicy(snapshot.remotePolicy)
                     onCloudConfig(snapshot.grant)
                 }.onFailure { Log.w(TAG, "config fetch failed", it) }
+                PolicyFlowTrace.event(
+                    "config.fetch",
+                    "ok" to result.isSuccess,
+                    "bound" to _state.value.bound,
+                    "member" to _state.value.cloudActiveMemberId,
+                    "error" to (result.exceptionOrNull()?.javaClass?.simpleName ?: "-"),
+                )
                 if (result.isSuccess) flushPendingSettlement()
                 success = result.isSuccess
             } while (syncDirty)
@@ -1379,7 +1481,7 @@ object PolicyRuntime {
             settleRecord(oldRecordId, oldDuration)
         }
         cue?.let(::emitVoice)
-        host?.bringHome()
+        requestBringHome()
     }
 
     private fun clearSessionFields() {
@@ -1556,6 +1658,10 @@ object PolicyRuntime {
             allowedPackages = if (studyActive) packages else allowedPackages,
             validUntil = validUntil,
             userIconUrl = userIconUrl,
+            cloudActiveMemberId = cloudActiveMemberId,
+            cloudActiveMemberName = cloudActiveMemberName,
+            cloudActiveMemberIcon = cloudActiveMemberIcon,
+            cloudMembers = cloudMembers,
             lockReason = lockReason,
             studyModeAvailable = packages.isNotEmpty(),
             studyModeActive = studyActive,

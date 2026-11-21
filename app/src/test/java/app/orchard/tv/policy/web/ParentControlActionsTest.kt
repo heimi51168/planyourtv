@@ -3,8 +3,10 @@ package app.orchard.tv.policy.web
 import android.os.PowerManager
 import app.orchard.tv.policy.LocalPolicyRuntime
 import app.orchard.tv.policy.PolicyModeCoordinator
+import app.orchard.tv.policy.UserConfigPinSettings
 import app.orchard.tv.quiz.QuizAccess
 import com.planyourtv.policy.GuardStatus
+import com.planyourtv.policy.LocalDayGroup
 import com.planyourtv.policy.LocalRules
 import com.planyourtv.policy.LocalTimeWindow
 import com.planyourtv.policy.PolicyMode
@@ -12,10 +14,12 @@ import com.planyourtv.policy.PolicySource
 import com.planyourtv.policy.SessionStartResult
 import com.planyourtv.policy.SessionState
 import com.planyourtv.policy.TvStore
+import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -39,9 +43,12 @@ class ParentControlActionsTest {
     private lateinit var app: android.app.Application
 
     private fun rules() = LocalRules(
-        weekdayWindows = listOf(LocalTimeWindow(0, 24 * 60)),
-        weekendWindows = listOf(LocalTimeWindow(0, 24 * 60)),
-        autoDailyLimitMinutes = 60,
+        dayGroups = LocalRules.fromLegacyWeekdayWeekend(
+            weekdayWindows = listOf(LocalTimeWindow(0, 24 * 60)),
+            weekendWindows = listOf(LocalTimeWindow(0, 24 * 60)),
+            weekdayLimitMinutes = 60,
+            weekendLimitMinutes = 60,
+        ),
         sessionLimitMinutes = 20,
         restMinutes = 5,
         allowedPackages = setOf(videoPackage),
@@ -60,6 +67,8 @@ class ParentControlActionsTest {
         ParentControlActions.resetForTest()
         ParentSensitiveAuth.resetForTest()
         QuizAccess.onPinReset()
+        UserConfigPinSettings.debugResetForTest()
+        UserConfigPinSettings.install(app)
     }
 
     @After
@@ -69,6 +78,7 @@ class ParentControlActionsTest {
         ParentControlActions.resetForTest()
         ParentSensitiveAuth.resetForTest()
         QuizAccess.onPinReset()
+        UserConfigPinSettings.debugResetForTest()
     }
 
     private fun body(action: String, requestId: String, block: JSONObject.() -> Unit = {}): JSONObject =
@@ -107,6 +117,59 @@ class ParentControlActionsTest {
         assertEquals(SessionState.ACTIVE, PolicyModeCoordinator.state.value.sessionState)
     }
 
+    private fun windowJson(start: Int = 0, end: Int = 24 * 60): JSONObject =
+        JSONObject().put("start", start).put("end", end)
+
+    private fun groupJson(
+        days: List<Int>,
+        studyLimit: Int? = null,
+        entertainmentLimit: Int? = 60,
+        studyWindows: List<JSONObject> = listOf(windowJson()),
+        entertainmentWindows: List<JSONObject> = listOf(windowJson()),
+    ): JSONObject = JSONObject()
+        .put("days", JSONArray(days))
+        .put("studyWindows", JSONArray(studyWindows))
+        .put("studyDailyLimitMinutes", studyLimit ?: JSONObject.NULL)
+        .put("entertainmentWindows", JSONArray(entertainmentWindows))
+        .put("entertainmentDailyLimitMinutes", entertainmentLimit ?: JSONObject.NULL)
+
+    private fun schemaFiveRules(
+        groups: JSONArray,
+        block: JSONObject.() -> Unit = {},
+    ): JSONObject = JSONObject()
+        .put("rulesContractVersion", ParentCenterActions.RULES_CONTRACT_VERSION)
+        .put("dayGroups", groups)
+        .put("sessionCapMinutes", 30)
+        // V5 sends both direct names; the server refuses a draft where they disagree.
+        .put("directSessionMinutes", 20)
+        .put("sessionLimitMinutes", 20)
+        .put("quizDailyLimitCount", 3)
+        .put("studyRewardDailyLimitCount", 3)
+        .put("directDailyFreeCount", 3)
+        .put("studyEarnStudyMinutes", 10)
+        .put("studyEarnRewardMinutes", 5)
+        .put("restMinutes", 5)
+        .put("sessionScreenOffBufferMinutes", 20)
+        .put("allApps", false)
+        .put("allowedPackages", JSONArray().put(videoPackage))
+        .put("studyPackages", JSONArray())
+        .put("unlimitedPackages", JSONArray())
+        .put("studyEarnPackages", JSONArray())
+        .apply(block)
+
+    private fun saveRules(
+        rules: JSONObject,
+        expectedRevision: Long = LocalPolicyRuntime.rulesEpoch,
+    ): ParentCenterActions.Outcome = ParentCenterActions.setRules(
+        JSONObject()
+            .put("expectedRulesRevision", expectedRevision)
+            .put("rules", rules),
+    )
+
+    private val defaultGroups: JSONArray = JSONArray()
+        .put(groupJson(listOf(1, 2, 3, 4, 5)))
+        .put(groupJson(listOf(6, 7), entertainmentLimit = 120))
+
     @Test
     fun requestValidationRejectsUnknownActionsAndBadIds() {
         val unknown = handle(body("REBOOT", "0123456789abcdef"))
@@ -132,25 +195,24 @@ class ParentControlActionsTest {
     }
 
     @Test
-    fun takeOverDuringTimingRequiresConfirmAndSkipsRest() {
+    fun takeOverDuringTimingAppliesImmediatelyAndSkipsRest() {
         startTimer()
-        val requestId = "take-over-timer-0001"
-        val sensitive = takeOverToken()
-        val first = handle(body("TAKE_OVER", requestId), sensitiveToken = sensitive)
-
-        assertEquals("CONFIRM_REQUIRED", first.result)
-        assertEquals("TAKE_OVER_TIMER", first.confirm?.reason)
-        assertNotNull(first.confirm?.token)
         assertEquals(SessionState.ACTIVE, LocalPolicyRuntime.state.value.sessionState)
 
-        // The confirmation challenge must not burn the single-use proof.
-        val applied = handle(
-            body("TAKE_OVER", requestId) {
-                put("confirmToken", first.confirm!!.token)
-            },
-            sensitiveToken = sensitive,
+        // V48: the parent PIN is the confirmation. The status hint must not promise a second
+        // dialog even while a timer is running.
+        val timerStatus = ParentControlActions.statusJson()
+        assertTrue(timerStatus.getJSONObject("timer").getBoolean("active"))
+        assertFalse(
+            timerStatus.getJSONObject("actions")
+                .getJSONObject("takeOver")
+                .getBoolean("requiresConfirm"),
         )
+
+        val requestId = "take-over-timer-0001"
+        val applied = handle(body("TAKE_OVER", requestId), sensitiveToken = takeOverToken())
         assertEquals("TAKE_OVER_APPLIED", applied.code)
+        assertNull(applied.confirm)
         assertEquals(GuardStatus.PARENT_OVERRIDE, LocalPolicyRuntime.state.value.guardState)
         assertEquals(SessionState.IDLE, LocalPolicyRuntime.state.value.sessionState)
         assertEquals(0L, LocalPolicyRuntime.state.value.restRemainingSeconds)
@@ -336,9 +398,35 @@ class ParentControlActionsTest {
         assertEquals("NO_TIMER", actions.getJSONObject("stopTimer").getString("reason"))
         assertTrue(actions.getJSONObject("startManual").has("reason"))
 
-        assertTrue(status.getJSONObject("timer").has("remainingSeconds"))
+        val timer = status.getJSONObject("timer")
+        assertTrue(timer.has("remainingSeconds"))
+        assertFalse(timer.getBoolean("outsidePlan"))
         assertTrue(status.getJSONObject("quiz").has("roundActive"))
-        assertTrue(status.getJSONObject("manualStart").has("minMinutes"))
+        val manual = status.getJSONObject("manualStart")
+        assertTrue(manual.has("minMinutes"))
+        assertTrue(manual.getBoolean("requiresPin"))
+        // V45: the timer sheet shows the configured scope, including the study reward only
+        // while that route is enabled.
+        val scope = manual.getJSONObject("scope")
+        assertEquals(1, scope.getInt("entertainmentCount"))
+        assertFalse(scope.getBoolean("entertainmentAll"))
+        assertEquals(0, scope.getInt("unlimitedCount"))
+        assertEquals(0, scope.getInt("studyRewardCount"))
+        assertFalse(scope.getBoolean("studyRewardIncluded"))
+    }
+
+    @Test
+    fun statusMarksAnOutOfPlanParentTimer() {
+        assertEquals(
+            SessionStartResult.Started,
+            LocalPolicyRuntime.startManualSession(10 * 60L, outsidePlan = true),
+        )
+        publishRuntime()
+
+        val status = ParentControlActions.statusJson()
+        val timer = status.getJSONObject("timer")
+        assertTrue(timer.getBoolean("active"))
+        assertTrue(timer.getBoolean("outsidePlan"))
     }
 
     @Test
@@ -376,5 +464,347 @@ class ParentControlActionsTest {
         assertEquals("PIN_LOCKED", locked.code)
         assertTrue(locked.retryAfterSeconds > 0L)
         assertNull(locked.confirm)
+    }
+
+    @Test
+    fun pinlessManualStartSkipsThePinGateAndKeepsAnExistingLockout() {
+        assertTrue(UserConfigPinSettings.setRequired(false))
+        assertFalse(
+            ParentControlActions.statusJson()
+                .getJSONObject("manualStart")
+                .getBoolean("requiresPin"),
+        )
+        // A lockout created by another phone must neither block a pinless start nor be cleared
+        // by it.
+        QuizAccess.lockSensitiveActionOut()
+        val result = handle(
+            body("START_MANUAL", "manual-pinless-0001") {
+                put("minutes", 20)
+            },
+        )
+        assertNotEquals("WRONG_PIN", result.code)
+        assertNotEquals("PIN_LOCKED", result.code)
+        assertTrue(QuizAccess.sensitiveActionLockedSeconds() > 0L)
+    }
+
+    @Test
+    fun rulesJsonPublishesEveryDayGroupAndTheUnlimitedCategory() {
+        val allDay = listOf(LocalTimeWindow(0, 24 * 60))
+        val schedule = LocalRules(
+            dayGroups = listOf(
+                LocalDayGroup(
+                    days = listOf(1, 2),
+                    studyWindows = allDay,
+                    studyDailyLimitMinutes = null,
+                    entertainmentWindows = listOf(LocalTimeWindow(600, 1200)),
+                    entertainmentDailyLimitMinutes = 30,
+                ),
+                LocalDayGroup(
+                    days = listOf(3, 4, 5),
+                    studyWindows = allDay,
+                    studyDailyLimitMinutes = 45,
+                    entertainmentWindows = allDay,
+                    entertainmentDailyLimitMinutes = 60,
+                ),
+                LocalDayGroup(
+                    days = listOf(6, 7),
+                    studyWindows = allDay,
+                    studyDailyLimitMinutes = 0,
+                    entertainmentWindows = emptyList(),
+                    entertainmentDailyLimitMinutes = null,
+                ),
+            ),
+            sessionLimitMinutes = 20,
+            restMinutes = 5,
+            allowedPackages = setOf(videoPackage, "com.example.free"),
+            unlimitedPackages = setOf("com.example.free"),
+        ).normalized()
+
+        val json = ParentCenterActions.rulesJson(schedule)
+
+        assertEquals(ParentCenterActions.RULES_CONTRACT_VERSION, json.getInt("rulesContractVersion"))
+        // The web page needs the stored switches and the V5 limit fields. Switches are
+        // independent: none of them implies pausing another route.
+        assertTrue(json.getBoolean("quizGateEnabled"))
+        assertTrue(json.getBoolean("studyEarnEnabled"))
+        assertFalse(json.getBoolean("directStartEnabled"))
+        assertEquals(30, json.getInt("sessionCapMinutes"))
+        assertEquals(20, json.getInt("sessionLimitMinutes"))
+        assertEquals(20, json.getInt("directSessionMinutes"))
+        assertEquals(3, json.getInt("quizDailyLimitCount"))
+        assertEquals(3, json.getInt("studyRewardDailyLimitCount"))
+        assertEquals(3, json.getInt("directDailyFreeCount"))
+        val groups = json.getJSONArray("dayGroups")
+        assertEquals(3, groups.length())
+        val firstDays = groups.getJSONObject(0).getJSONArray("days")
+        assertEquals(2, firstDays.length())
+        assertEquals(1, firstDays.getInt(0))
+        assertEquals(2, firstDays.getInt(1))
+        // null is the wire form of "unlimited"; 0 remains a finite, locked quota.
+        assertTrue(groups.getJSONObject(0).isNull("studyDailyLimitMinutes"))
+        assertEquals(30, groups.getJSONObject(0).getInt("entertainmentDailyLimitMinutes"))
+        assertEquals(45, groups.getJSONObject(1).getInt("studyDailyLimitMinutes"))
+        assertEquals(0, groups.getJSONObject(2).getInt("studyDailyLimitMinutes"))
+        assertTrue(groups.getJSONObject(2).isNull("entertainmentDailyLimitMinutes"))
+        assertEquals(0, groups.getJSONObject(2).getJSONArray("entertainmentWindows").length())
+
+        val unlimited = json.getJSONArray("unlimitedPackages")
+        assertEquals(1, unlimited.length())
+        assertEquals("com.example.free", unlimited.getString(0))
+        // The legacy weekday/weekend fields are projections of the Monday/Saturday groups.
+        assertEquals(600, json.getJSONArray("weekdayWindows").getJSONObject(0).getInt("start"))
+        assertEquals(30, json.getInt("autoDailyLimitMinutes"))
+        assertEquals(1440, json.getInt("weekendDailyLimitMinutes"))
+    }
+
+    @Test
+    fun independentRouteSwitchesAreSavedAndAnOldContractMustReload() {
+        val v5 = saveRules(
+            schemaFiveRules(defaultGroups)
+                .put("quizGateEnabled", false)
+                .put("studyEarnEnabled", false)
+                .put("directStartEnabled", true),
+        )
+        assertEquals("OK", v5.code)
+        val saved = LocalPolicyRuntime.currentRules!!
+        assertFalse(saved.quizGateEnabled)
+        assertFalse(saved.studyEarnEnabled)
+        assertTrue(saved.directStartEnabled)
+        // Turning direct on must not pause the other two entries in the stored rules.
+        assertEquals(3, saved.quizDailyLimitCount)
+        assertEquals(3, saved.studyRewardDailyLimitCount)
+
+        // A cached V4 page cannot express the route counts or the shared cap. The server asks
+        // for a reload instead of merging a partial rule set.
+        val v4 = saveRules(
+            schemaFiveRules(defaultGroups)
+                .put("rulesContractVersion", 4)
+                .put("restMinutes", 7),
+        )
+        assertEquals("RULES_CLIENT_OUTDATED", v4.code)
+        assertEquals(5, LocalPolicyRuntime.currentRules!!.restMinutes)
+    }
+
+    @Test
+    fun allThreeRoutesOffIsSavedWithoutFallback() {
+        val outcome = saveRules(
+            schemaFiveRules(defaultGroups)
+                .put("quizGateEnabled", false)
+                .put("studyEarnEnabled", false)
+                .put("directStartEnabled", false),
+        )
+
+        assertEquals("OK", outcome.code)
+        val saved = LocalPolicyRuntime.currentRules!!
+        assertFalse(saved.quizGateEnabled)
+        assertFalse(saved.studyEarnEnabled)
+        assertFalse(saved.directStartEnabled)
+        assertFalse(saved.hasUnlockRoute)
+    }
+
+    @Test
+    fun v5SavesValidateTheCapDirectDurationCountsAndStudyReward() {
+        val capTooLow = saveRules(schemaFiveRules(defaultGroups).put("sessionCapMinutes", 0))
+        assertEquals("RULES_INVALID_SESSION_CAP", capTooLow.code)
+        val capTooHigh = saveRules(schemaFiveRules(defaultGroups).put("sessionCapMinutes", 121))
+        assertEquals("RULES_INVALID_SESSION_CAP", capTooHigh.code)
+        val missingCap = saveRules(schemaFiveRules(defaultGroups).apply {
+            remove("sessionCapMinutes")
+        })
+        assertEquals("RULES_INVALID_SESSION_CAP", missingCap.code)
+
+        val directAboveCap = saveRules(
+            schemaFiveRules(defaultGroups)
+                .put("sessionCapMinutes", 10)
+                .put("directSessionMinutes", 15)
+                .put("sessionLimitMinutes", 15),
+        )
+        assertEquals("RULES_INVALID_DIRECT_SESSION", directAboveCap.code)
+        val aliasesDisagree = saveRules(
+            schemaFiveRules(defaultGroups)
+                .put("directSessionMinutes", 10)
+                .put("sessionLimitMinutes", 20),
+        )
+        assertEquals("RULES_INVALID_DIRECT_SESSION", aliasesDisagree.code)
+        val directTooShort = saveRules(
+            schemaFiveRules(defaultGroups)
+                .put("directSessionMinutes", 0)
+                .put("sessionLimitMinutes", 0),
+        )
+        assertEquals("RULES_INVALID_DIRECT_SESSION", directTooShort.code)
+        // 1 minute is the short-session/test floor for all three route durations.
+        val oneMinute = saveRules(
+            schemaFiveRules(defaultGroups)
+                .put("sessionCapMinutes", 1)
+                .put("directSessionMinutes", 1)
+                .put("sessionLimitMinutes", 1)
+                .put("studyEarnStudyMinutes", 1)
+                .put("studyEarnRewardMinutes", 1),
+        )
+        assertEquals("OK", oneMinute.code)
+        LocalPolicyRuntime.currentRules!!.let { saved ->
+            assertEquals(1, saved.sessionCapMinutes)
+            assertEquals(1, saved.sessionLimitMinutes)
+            assertEquals(1, saved.studyEarnStudyMinutes)
+            assertEquals(1, saved.studyEarnRewardMinutes)
+        }
+
+        val countTooHigh = saveRules(schemaFiveRules(defaultGroups).put("quizDailyLimitCount", 11))
+        assertEquals("RULES_INVALID_ROUTE_COUNTS", countTooHigh.code)
+        val countMissing = saveRules(schemaFiveRules(defaultGroups).apply {
+            remove("directDailyFreeCount")
+        })
+        assertEquals("RULES_INVALID_ROUTE_COUNTS", countMissing.code)
+
+        val rewardAboveCap = saveRules(
+            schemaFiveRules(defaultGroups)
+                .put("sessionCapMinutes", 20)
+                .put("studyEarnStudyMinutes", 60)
+                .put("studyEarnRewardMinutes", 25),
+        )
+        assertEquals("RULES_INVALID_STUDY_EARN", rewardAboveCap.code)
+        // X and Y are independent inputs; Y may exceed X as long as it fits the public cap.
+        val rewardAboveStudy = saveRules(
+            schemaFiveRules(defaultGroups)
+                .put("studyEarnStudyMinutes", 10)
+                .put("studyEarnRewardMinutes", 15),
+        )
+        assertEquals("OK", rewardAboveStudy.code)
+        assertEquals(15, LocalPolicyRuntime.currentRules!!.studyEarnRewardMinutes)
+
+        // Boundary values are accepted and stored unchanged.
+        val atBounds = saveRules(
+            schemaFiveRules(defaultGroups)
+                .put("sessionCapMinutes", 10)
+                .put("directSessionMinutes", 10)
+                .put("sessionLimitMinutes", 10)
+                .put("quizDailyLimitCount", 0)
+                .put("studyRewardDailyLimitCount", 10)
+                .put("directDailyFreeCount", 0)
+                .put("studyEarnStudyMinutes", 10)
+                .put("studyEarnRewardMinutes", 10),
+        )
+        assertEquals("OK", atBounds.code)
+        val saved = LocalPolicyRuntime.currentRules!!
+        assertEquals(10, saved.sessionCapMinutes)
+        assertEquals(10, saved.sessionLimitMinutes)
+        assertEquals(0, saved.quizDailyLimitCount)
+        assertEquals(10, saved.studyRewardDailyLimitCount)
+        assertEquals(0, saved.directDailyFreeCount)
+        assertEquals(10, saved.studyEarnRewardMinutes)
+    }
+
+    @Test
+    fun snapshotPublishesTheSessionCapAndTodaysRouteCounts() {
+        val snapshot = ParentCenterActions.snapshot(app)
+        val rules = snapshot.getJSONObject("rules")
+        assertEquals(5, rules.getInt("rulesContractVersion"))
+        assertEquals(30, rules.getInt("sessionCapMinutes"))
+        assertEquals(20, rules.getInt("directSessionMinutes"))
+        assertEquals(20, rules.getInt("sessionLimitMinutes"))
+        assertEquals(3, rules.getInt("directDailyFreeCount"))
+
+        val usage = snapshot.getJSONObject("usage")
+        assertEquals(30 * 60, usage.getInt("sessionCapSeconds"))
+        val counts = usage.getJSONObject("routeCounts")
+        assertTrue(counts.getString("date").isNotEmpty())
+        val quiz = counts.getJSONObject("quiz")
+        assertEquals(0, quiz.getInt("used"))
+        assertEquals(3, quiz.getInt("limit"))
+        assertEquals(3, quiz.getInt("remaining"))
+        val direct = counts.getJSONObject("directFree")
+        assertEquals(0, direct.getInt("used"))
+        assertEquals(3, direct.getInt("remaining"))
+        assertEquals(3, counts.getJSONObject("studyReward").getInt("remaining"))
+    }
+
+    @Test
+    fun aPageWithoutTheV5ContractMustReloadInsteadOfMerging() {
+        val missingVersion = saveRules(schemaFiveRules(defaultGroups).apply {
+            remove("rulesContractVersion")
+        })
+        assertEquals("RULES_CLIENT_OUTDATED", missingVersion.code)
+
+        val missingGroups = saveRules(schemaFiveRules(JSONArray()).apply {
+            remove("dayGroups")
+        })
+        assertEquals("RULES_CLIENT_OUTDATED", missingGroups.code)
+
+        val oldNumber = saveRules(schemaFiveRules(defaultGroups).put("rulesContractVersion", 2))
+        assertEquals("RULES_CLIENT_OUTDATED", oldNumber.code)
+        assertEquals(2, LocalPolicyRuntime.currentRules!!.dayGroups.size)
+    }
+
+    @Test
+    fun incompleteDayCoverageIsRejectedAsADayGroupError() {
+        val incomplete = JSONArray().put(groupJson(listOf(1, 2, 3, 4, 5)))
+
+        val outcome = saveRules(schemaFiveRules(incomplete))
+
+        assertFalse(outcome.ok)
+        assertEquals("RULES_INVALID_DAY_GROUPS", outcome.code)
+        // The previous schedule is untouched.
+        assertEquals(2, LocalPolicyRuntime.currentRules!!.dayGroups.size)
+    }
+
+    @Test
+    fun theUnlimitedCategoryCannotUseTheAllAppsSentinel() {
+        val outcome = saveRules(
+            schemaFiveRules(defaultGroups).put(
+                "unlimitedPackages",
+                JSONArray().put("all_valid_app"),
+            ),
+        )
+
+        assertFalse(outcome.ok)
+        assertEquals("RULES_INVALID_UNLIMITED_APPS", outcome.code)
+        assertTrue(LocalPolicyRuntime.currentRules!!.effectiveUnlimitedPackages.isEmpty())
+    }
+
+    @Test
+    fun aStaleRulesRevisionIsRejectedBeforeParsing() {
+        val stale = saveRules(
+            schemaFiveRules(defaultGroups),
+            expectedRevision = LocalPolicyRuntime.rulesEpoch - 1,
+        )
+        assertEquals("STATE_CHANGED", stale.code)
+
+        val missingRevision = ParentCenterActions.setRules(
+            JSONObject().put("rules", schemaFiveRules(defaultGroups)),
+        )
+        assertEquals("STATE_CHANGED", missingRevision.code)
+    }
+
+    @Test
+    fun aValidSaveAppliesCustomGroupsAndTheUnlimitedCategory() {
+        val groups = JSONArray()
+            .put(
+                groupJson(
+                    listOf(1, 2, 3, 4),
+                    studyLimit = 30,
+                    entertainmentLimit = 45,
+                    entertainmentWindows = listOf(windowJson(600, 1260)),
+                ),
+            )
+            .put(groupJson(listOf(5), studyLimit = null, entertainmentLimit = null))
+            .put(groupJson(listOf(6, 7), studyLimit = 60, entertainmentLimit = 0))
+
+        val outcome = saveRules(
+            schemaFiveRules(groups).put(
+                "unlimitedPackages",
+                JSONArray().put("com.example.free"),
+            ),
+        )
+
+        assertEquals("OK", outcome.code)
+        // The schedule changed, so the save is announced as a next-session snapshot.
+        assertEquals("SAVED_NEXT_SESSION", outcome.messageKey)
+        val saved = LocalPolicyRuntime.currentRules!!
+        assertEquals(3, saved.dayGroups.size)
+        assertEquals(listOf(1, 2, 3, 4), saved.dayGroups[0].days)
+        assertEquals(45, saved.entertainmentDailyLimitFor(2))
+        assertNull(saved.studyDailyLimitFor(5))
+        assertEquals(0, saved.entertainmentDailyLimitFor(6))
+        assertEquals(setOf("com.example.free"), saved.effectiveUnlimitedPackages)
     }
 }

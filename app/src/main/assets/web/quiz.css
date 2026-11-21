@@ -84,8 +84,139 @@ h1, h2, h3 { letter-spacing: -0.012em; }
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 16px;
-  padding: max(18px, env(safe-area-inset-top)) 0 14px;
+  gap: 10px;
+  padding: max(10px, env(safe-area-inset-top)) 0 10px;
+}
+
+/* V41: the member header mirrors a chat app's profile row — squared avatar on
+   the left, name over a muted subtitle. It names the member whose private
+   config the page edits and never switches the TV; that stays a separate
+   explicit action. */
+.subject-chip {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+  min-height: 52px;
+  margin-right: auto;
+  padding: 2px 8px 2px 0;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+}
+
+.subject-chip:active { background: var(--surface-2); }
+.subject-chip:disabled { cursor: default; opacity: 0.65; }
+
+.subject-avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 46px;
+  height: 46px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* The editing member is the member the TV is running. A solid green ring hugs the
+   circle without changing the avatar size; green is the available/active state. */
+.subject-avatar.is-tv-current {
+  box-shadow: 0 0 0 3px var(--ok);
+}
+
+.subject-avatar svg,
+.subject-avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.subject-chip-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.2;
+}
+
+.subject-chip-title {
+  max-width: 10em;
+  overflow: hidden;
+  font-size: 17px;
+  font-weight: 680;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.subject-chip-label {
+  max-width: 15em;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.subject-chip .chevron {
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  margin-left: -3px;
+  color: var(--muted);
+}
+
+.subject-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 12px 0;
+}
+
+.subject-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+}
+
+.subject-row[aria-selected="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.subject-row:disabled { cursor: default; }
+
+.subject-row .subject-avatar { width: 40px; height: 40px; border-radius: 50%; }
+
+.subject-row-main {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.subject-row-name { font-weight: 640; }
+
+.subject-row-sub {
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .eyebrow {
@@ -343,6 +474,8 @@ details summary:focus-visible {
   gap: 14px;
   margin-bottom: 12px;
 }
+/* Let long counts wrap instead of squeezing the action buttons into a column. */
+.section-head > div:first-child { flex: 1; min-width: 0; }
 .section-head p { margin: 3px 0 0; font-size: 13px; }
 .section-head p:empty { display: none; }
 
@@ -449,6 +582,56 @@ details summary:focus-visible {
   background: var(--tab-active-bg);
   color: var(--tab-active-ink);
   box-shadow: 0 2px 8px color-mix(in srgb, var(--tab-active-bg) 24%, transparent);
+}
+
+/* V41 bank subpages: public built-in, this member's AI, this member's
+   manual imports, and the state-only wrong book. */
+.bank-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+  margin-bottom: 12px;
+}
+.bank-tabs button {
+  min-width: 0;
+  min-height: 38px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 620;
+  white-space: nowrap;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+.bank-tabs button[aria-selected="true"] {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+#bankScopeSummary { margin: -4px 0 10px; }
+
+.bank-scope-actions {
+  margin: 0 0 12px;
+}
+.bank-scope-actions:empty { display: none; }
+
+.bank-tag-filter { margin-bottom: 10px; }
+
+.bank-tag-filter .choice-chip[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+.bank-wrong-remove {
+  margin-top: 10px;
 }
 
 .bank-list { display: grid; gap: 10px; }
@@ -883,20 +1066,11 @@ details.solution p {
 body.subpage-open {
   padding-bottom: calc(env(safe-area-inset-bottom) + 10px);
 }
-body.editor-open .top,
+/* V41: the member header sits above all four main tabs; only full-page
+   subpages (AI setup, bank maintenance, ...) hide it. */
 body.subpage-open .top,
 body.subpage-open .bottom-nav { display: none; }
-body.editor-open:not(.subpage-open) main { padding-top: max(18px, env(safe-area-inset-top)); }
 body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
-
-.home-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 2px 0 16px;
-}
-.home-head h1 { font-size: 27px; font-weight: 700; }
 
 .cfg-card {
   display: block;
@@ -1096,29 +1270,6 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
   color: var(--muted);
   font-size: 12px;
   line-height: 1.4;
-}
-
-.scope-mismatch-row {
-  margin: 8px 0 0;
-  padding: 9px 11px;
-  border-radius: 10px;
-  background: var(--surface-2);
-  color: var(--ink);
-  font-size: 13px;
-  line-height: 1.45;
-}
-.scope-mismatch-body {
-  margin: 12px 0 0;
-  color: var(--warn);
-  font-size: 13px;
-  font-weight: 560;
-  line-height: 1.5;
-}
-.scope-mismatch-note {
-  margin: 8px 0 0;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.45;
 }
 
 .toggle-row {
@@ -1345,6 +1496,9 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
 .level-add-card:hover:not(:disabled) {
   border-color: color-mix(in srgb, var(--accent) 34%, var(--line));
 }
+.level-add-card.ai:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 52%, var(--line));
+}
 .level-add-card.custom:hover:not(:disabled) {
   border-color: color-mix(in srgb, var(--select-border) 34%, var(--line));
 }
@@ -1371,6 +1525,10 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
   font-weight: 500;
   line-height: 1;
   transition: transform 0.15s ease;
+}
+.level-add-card.ai .level-add-plus {
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+  color: var(--accent);
 }
 .level-add-card.custom .level-add-plus {
   background: var(--select-soft);
@@ -1761,7 +1919,9 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
 .gen-prompt-head { margin: 0 0 6px; }
 .gen-prompt-head label { margin: 0; color: var(--ink); font-size: 13.5px; font-weight: 620; }
 
-#view-bank .section-head h2 { font-size: 22px; }
+/* V41: the bank's page title lives in the member header, so its content
+   starts with the counts line instead of another heading. */
+#view-bank .section-head { padding-top: 0; }
 #view-me .card h2 { font-size: 22px; }
 
 /* V23: lock-screen actions are compact rows; duration and PIN live in the dialogs. */
@@ -1826,7 +1986,6 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
 #manualDialog .field { margin: 14px 0 0; }
 
 @media (max-width: 420px) {
-  .home-head h1 { font-size: 25px; }
   .sticky-bar.split .btn { flex-basis: 150px; }
 }
 
@@ -1849,6 +2008,23 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
   gap: 6px;
 }
 .head-actions .btn { margin: 0; }
+
+/* V41: bank import shares the avatar's row at the top-right, DingTalk-style,
+   instead of taking a text button in the counts row. */
+.top-add {
+  display: grid;
+  place-items: center;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.top-add:active { filter: brightness(0.94); }
+.top-add svg { width: 20px; height: 20px; }
 
 .bank-badges {
   display: flex;
@@ -2017,6 +2193,19 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
 .import-target-badge.new { background: var(--accent-soft); color: var(--accent); }
 .import-target-badge.hidden { display: none; }
 
+.import-paste-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 13px 0 6px;
+}
+.import-paste-head > label {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+}
+.import-paste-clear { flex: none; }
 .file-btn {
   display: flex;
   align-items: center;
@@ -2311,60 +2500,74 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
   font-weight: 650;
   letter-spacing: 0.03em;
 }
-/* The draft lives on the answer-range page, so adding a source never pushes
-   another "add level" page. */
+/* The draft is its own subpage: the page header carries the title and the
+   sticky bar carries the save action, so the form itself needs no card. */
+#packageEditorPage .page-head h1 {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .package-draft-panel {
   display: grid;
   gap: 12px;
-  margin: 0 0 16px;
-  padding: 13px;
-  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line));
-  border-radius: 16px;
-  background: var(--surface);
-}
-.package-draft-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-.package-draft-heading {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 7px;
-  flex: 1;
-  min-width: 0;
-}
-.package-draft-heading h2 {
-  font-size: 17px;
-  font-weight: 700;
-  line-height: 1.3;
+  margin: 0;
 }
 .package-draft-name { margin: 0; }
 .package-draft-panel .package-sources-card { margin-top: 2px; }
+/* Five source kinds read as two pairs with the wrong-review row below:
+   preset, AI, manual import, the parent life bank, wrong. */
 .package-source-choices {
-  grid-template-columns: 1fr;
-  gap: 6px;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
   margin: 0;
 }
 .package-source-choices .level-add-card {
-  min-height: 52px;
-  padding: 8px 10px;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  grid-template-areas:
+    "plus copy"
+    "plus count";
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 2px;
+  min-height: 64px;
+  padding: 9px 10px;
   border-radius: 11px;
 }
 .package-source-choices .level-add-plus {
+  grid-area: plus;
   width: 26px;
   height: 26px;
   border-radius: 8px;
   font-size: 17px;
 }
-.package-source-choices .level-add-card.wrong { grid-column: auto; }
+.package-source-choices .level-add-copy {
+  grid-area: copy;
+  gap: 2px;
+}
+.package-source-choices .level-add-title { line-height: 1.2; }
+/* Two lines instead of a mid-sentence ellipsis: the split explanation is the
+   reason this picker exists, so it must stay readable in every language. */
+.package-source-choices .level-add-meta {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  white-space: normal;
+  line-height: 1.25;
+}
+.package-source-choices .level-add-count {
+  grid-area: count;
+  justify-self: start;
+  margin-left: 0;
+  align-self: start;
+  line-height: 1.2;
+}
+.package-source-choices .level-add-card.wrong { grid-column: 1 / -1; }
 .package-tag-field { margin: 2px 0 0; }
 .package-draft-panel > .available,
 .package-draft-panel > .error { margin: 0; }
-.package-draft-actions { margin-top: 2px; }
-.package-draft-actions .btn { width: 100%; }
 /* Configured sources shown under each saved level on the answer-range page. */
 .level-source-list {
   display: grid;

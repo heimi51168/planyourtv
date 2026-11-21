@@ -1,6 +1,8 @@
 package app.orchard.tv.quiz
 
 import android.content.Context
+import app.orchard.tv.policy.FamilyAvatarStore
+import app.orchard.tv.policy.FamilyHub
 import app.orchard.tv.policy.ManualSessionLimits
 import app.orchard.tv.policy.PolicyModeCoordinator
 import app.orchard.tv.policy.web.ParentWebCenter
@@ -9,11 +11,15 @@ import fi.iki.elonen.NanoHTTPD.IHTTPSession
 import fi.iki.elonen.NanoHTTPD.Method
 import fi.iki.elonen.NanoHTTPD.Response
 import org.json.JSONObject
+import com.planyourtv.policy.FamilyMember
+import com.planyourtv.policy.MemberStatus
 import com.planyourtv.policy.PolicyMode
+import com.planyourtv.policy.quiz.CourseOrigin
 import com.planyourtv.policy.quiz.QuizAnswerKind
 import com.planyourtv.policy.quiz.QuizAnswerScope
 import com.planyourtv.policy.quiz.QuizBankImport
 import com.planyourtv.policy.quiz.QuizCollection
+import com.planyourtv.policy.quiz.QuizConfig
 import com.planyourtv.policy.quiz.QuizConfigDocument
 import com.planyourtv.policy.quiz.QuizConfigDocumentCodec
 import com.planyourtv.policy.quiz.QuizCurriculum
@@ -26,6 +32,7 @@ import com.planyourtv.policy.quiz.QuizImportResult
 import com.planyourtv.policy.quiz.QuizItem
 import com.planyourtv.policy.quiz.QuizLevelPackage
 import com.planyourtv.policy.quiz.QuizPackageSource
+import com.planyourtv.policy.quiz.QuizPresetBank
 import com.planyourtv.policy.quiz.QuizSession
 import com.planyourtv.policy.quiz.QuizSessionCodec
 import com.planyourtv.policy.quiz.QuizSessionStatus
@@ -49,6 +56,9 @@ object QuizWebAdmin {
     /** The web level editor's shape; a cached older page saves through the legacy fields. */
     private const val LEVEL_MODEL = 2
     private const val MAX_LEVEL_COUNT_SCOPES = 64
+
+    /** V41 bank subpages. `wrong` is a state view, not a content source. */
+    private val BANK_SCOPES = setOf("builtin", "ai", "manual", "wrong")
 
     /** Device-capability failures share one 400 UNSUPPORTED contract. */
     private val CAPABILITY_ISSUE_CODES = setOf(
@@ -90,7 +100,7 @@ object QuizWebAdmin {
             session.method == Method.GET && path == "/api/quiz/status" -> {
                 json(Response.Status.OK, QuizWeb.statusJson())
             }
-            path.startsWith("/api/quiz/") -> api(session, path)
+            path.startsWith("/api/quiz/") -> api(context, session, path)
             else -> null
         }
     }
@@ -100,7 +110,7 @@ object QuizWebAdmin {
 
     private fun isQuizApiPath(path: String): Boolean = path.startsWith("/api/quiz/")
 
-    private fun api(session: IHTTPSession, path: String): Response {
+    private fun api(context: Context, session: IHTTPSession, path: String): Response {
         // NanoHTTPD 2.3.1 leaves a POST body on the keep-alive stream when the
         // handler never reads it, so the next request would start with "{}POST"
         // and fail with "HTTP verb {}POST unhandled". Read the body once per
@@ -118,6 +128,8 @@ object QuizWebAdmin {
                 session.method == Method.POST && path == "/api/quiz/admin/unlock" -> unlock(session)
                 session.method == Method.POST && path == "/api/quiz/admin/manual/start" -> manualStart(session)
                 session.method == Method.GET && path == "/api/quiz/admin/session" -> readSession(session)
+                session.method == Method.GET && path == "/api/quiz/admin/member/avatar" ->
+                    memberAvatar(context, session)
                 session.method == Method.GET && path == "/api/quiz/admin/units" -> readUnitCatalog(session)
                 session.method == Method.PUT && path == "/api/quiz/admin/session" -> putSession(session)
                 session.method == Method.DELETE && path == "/api/quiz/admin/session" -> deleteSession(session)
@@ -128,7 +140,17 @@ object QuizWebAdmin {
                 session.method == Method.GET && path == "/api/quiz/admin/bank" -> readBank(session)
                 session.method == Method.GET && path == "/api/quiz/admin/bank/facets" -> readBankFacets(session)
                 session.method == Method.POST && path == IMPORT_PATH -> importBank(session)
-                session.method == Method.POST && path == "/api/quiz/admin/bank/clear" -> clearBank(session)
+                session.method == Method.POST &&
+                    (path == "/api/quiz/admin/bank/clear" ||
+                        path == "/api/quiz/admin/wrong-book/clear") -> clearBank(session)
+                session.method == Method.GET && path == "/api/quiz/admin/collections" ->
+                    readCollections(session)
+                session.method == Method.POST && path == "/api/quiz/admin/collections" ->
+                    createCollection(session)
+                session.method == Method.PUT && path == "/api/quiz/admin/collections" ->
+                    renameCollection(session)
+                session.method == Method.DELETE && path == "/api/quiz/admin/collections" ->
+                    deleteCollection(session)
                 session.method == Method.GET && path == "/api/quiz/admin/cache" -> readCache(session)
                 session.method == Method.POST && path == "/api/quiz/admin/cache/clear" -> clearCache(session)
                 session.method == Method.POST && path == "/api/quiz/admin/cache/rebuild" -> rebuildCache(session)
@@ -294,10 +316,12 @@ object QuizWebAdmin {
 
     /**
      * One lock-screen manual session from the parent page. This is not the temporary
-     * unlock: it starts a timed session and therefore repeats the full lock-screen
-     * eligibility check, requires the parent PIN for every start, and shares the
-     * sensitive-action limiter with the unlock endpoint. The coordinator and runtime
-     * still perform the final atomic checks; this handler only maps typed results.
+     * unlock: it starts a timed session, requires the parent PIN for every start, and
+     * shares the sensitive-action limiter with the unlock endpoint. V45 treats it as an
+     * out-of-plan parent authorization: the plan's windows, quota, route counts and rest do
+     * not block it, but single-session, screen-on, study-mode and pause-cap boundaries still
+     * apply. The coordinator and runtime perform the final atomic checks; this handler only
+     * maps typed results.
      */
     private fun manualStart(session: IHTTPSession): Response {
         adminError(session)?.let { return it }
@@ -384,18 +408,61 @@ object QuizWebAdmin {
 
     private fun readSession(session: IHTTPSession): Response {
         adminError(session)?.let { return it }
+        val context = subjectContext(session) ?: return invalidSubject()
         // Entering the local settings page is a documented cloud->TV apply point.
         QuizConfigSync.refreshFromCloudAsync()
         val state = QuizRuntime.refresh()
         val current = state.session
-        // This page is LOCAL-only, so the active QCD is the only configuration
-        // source. An unreadable document yields the neutral default here and is
-        // reported explicitly below; the old keys are never read back.
-        val challengeConfig = state.defaultChallengeConfig
+        val editingUserId = context.editingUserId
+        val activeUserId = context.activeUserId
+        // Configuration, tags, packages and bank counts follow the phone's
+        // editing member. Execution fields (the session above, active scope
+        // availability) still describe the member the TV is running.
+        var documentUnreadable = state.documentUnreadable
+        var documentState = if (documentUnreadable) "UNREADABLE" else "OK"
+        var challengeConfig = state.defaultChallengeConfig
+        var packages = state.levelPackages
+        var levelPackagesUnreadable = state.levelPackagesUnreadable
+        if (editingUserId != null && !context.editingIsActive) {
+            when (val loaded = QuizConfigDocumentStore.localDocumentFor(editingUserId)) {
+                is QuizDocLoadResult.Ok -> {
+                    documentUnreadable = false
+                    documentState = "OK"
+                    challengeConfig = loaded.document.toLegacyConfig() ?: QuizConfig()
+                    when (val extension = QuizLevelPackageStore.read(loaded.document)) {
+                        is QuizLevelPackageStore.Extension.Present ->
+                            packages = extension.packages
+                        QuizLevelPackageStore.Extension.Absent ->
+                            packages = storedPackages(loaded.document, editingUserId)
+                        is QuizLevelPackageStore.Extension.Broken -> {
+                            packages = emptyList()
+                            levelPackagesUnreadable = true
+                        }
+                    }
+                }
+                is QuizDocLoadResult.Unreadable -> {
+                    val absent = loaded.errors.singleOrNull() == "quiz.doc.local:ABSENT"
+                    documentUnreadable = !absent
+                    documentState = if (absent) "ABSENT" else "UNREADABLE"
+                    challengeConfig = QuizConfig()
+                    packages = emptyList()
+                    levelPackagesUnreadable = false
+                }
+                QuizDocLoadResult.Storage ->
+                    return error(Response.Status.INTERNAL_ERROR, "STORAGE_ERROR")
+            }
+        }
         val body = JSONObject()
             .put("ok", true)
             .put("enabled", state.enabled)
-            .put("documentUnreadable", state.documentUnreadable)
+            .put("documentUnreadable", documentUnreadable)
+            .put("documentState", documentState)
+            .put("subjectUserId", editingUserId ?: JSONObject.NULL)
+            .put("editingUserId", editingUserId ?: JSONObject.NULL)
+            .put("activeUserId", activeUserId ?: JSONObject.NULL)
+            .put("members", activeMembersJson())
+            .put("privateCapacity", QuizQuestionCache.PRIVATE_CAPACITY)
+            .put("privateRemaining", QuizQuestionCache.remainingCapacity(editingUserId))
         if (current == null) {
             body.put("session", JSONObject.NULL)
         } else if (current.status in ACTIVE_STATUSES) {
@@ -412,11 +479,10 @@ object QuizWebAdmin {
         // Level packages are the only editable model. The legacy fields below
         // are a read-only projection for a page cached before V37; a save from
         // that page is rejected with LEVEL_MODEL_UPGRADED.
-        val packages = state.levelPackages
-        val projection = legacyLevelProjection(packages)
+        val projection = legacyLevelProjection(packages, editingUserId, activeUserId)
         body.put("levelModel", LEVEL_MODEL)
-        body.put("levelPackagesUnreadable", state.levelPackagesUnreadable)
-        body.put("levelPackages", levelPackagesJson(packages))
+        body.put("levelPackagesUnreadable", levelPackagesUnreadable)
+        body.put("levelPackages", levelPackagesJson(packages, editingUserId, activeUserId))
         body.put(
             "levelLimits",
             JSONObject()
@@ -432,41 +498,39 @@ object QuizWebAdmin {
             if (projection.answerScope == null) "bound" else "custom",
         )
         body.put("answerScopes", projection.answerScopes)
-        val collections = QuizCollectionStore.collections()
-        val countsByCollection = QuizQuestionCache.collectionCounts(QuizQuestionCache.LOCAL_SCOPE)
-            .associateBy { it.collectionId }
         body.put("customLevels", projection.customLevels)
         body.put("wrongLevel", projection.wrongLevel ?: JSONObject.NULL)
-        body.put(
-            "collections",
-            JSONArray().apply {
-                collections.forEach { collection ->
-                    val counts = countsByCollection[collection.id]?.counts
-                    put(
-                        JSONObject()
-                            .put("id", collection.id)
-                            .put("name", collection.name)
-                            .put("total", counts?.total ?: 0)
-                            .put(
-                                "unused",
-                                QuizQuestionCache.availableCollectionCount(collection.id),
-                            ),
-                    )
-                }
-            },
+        body.put("collections", collectionsJson(editingUserId, activeUserId, packages))
+        val sourceCounts = QuizQuestionCache.sourceCounts(
+            QuizQuestionCache.LOCAL_SCOPE,
+            subjectUserId = editingUserId,
         )
-        val sourceCounts = QuizQuestionCache.sourceCounts(QuizQuestionCache.LOCAL_SCOPE)
         body.put(
             "bankSourceCounts",
             JSONObject()
                 .put("course", sourceCounts.course)
                 .put("custom", sourceCounts.custom),
         )
+        val scopeCounts = QuizQuestionCache.ownerSourceCounts(
+            QuizQuestionCache.LOCAL_SCOPE,
+            subjectUserId = editingUserId,
+            activeSubjectUserId = activeUserId,
+        )
+        body.put(
+            "bankScopeCounts",
+            JSONObject()
+                .put("builtin", scopeCounts.builtin)
+                .put("ai", scopeCounts.ai)
+                .put("manual", scopeCounts.manual)
+                .put("wrong", scopeCounts.wrong),
+        )
         body.put(
             "answerScopeAvailable",
             QuizQuestionCache.availableCount(
                 QuizQuestionCache.LOCAL_SCOPE,
                 answerScope = projection.answerScope,
+                subjectUserId = editingUserId,
+                activeSubjectUserId = activeUserId,
             ),
         )
         body.put("engineConfig", QuizEngineConfig.from(challengeConfig).let {
@@ -480,12 +544,28 @@ object QuizWebAdmin {
         body.put("sourceConfig", QuizSessionStore.loadSourceConfig().encode())
         body.put("source", state.source.name)
         body.put("localBankActive", state.localBankActive)
-        body.put("bankState", state.bankState)
-        body.put("bank", bankCountsJson(state.bankCounts))
+        val bankCounts = QuizQuestionCache.bankCounts(
+            QuizQuestionCache.LOCAL_SCOPE,
+            subjectUserId = editingUserId,
+            activeSubjectUserId = activeUserId,
+        )
+        body.put(
+            "bankState",
+            editingBankState(
+                packages = packages,
+                documentUnreadable = documentUnreadable,
+                packagesUnreadable = levelPackagesUnreadable,
+                subjectUserId = editingUserId,
+                activeSubjectUserId = activeUserId,
+                nowMs = System.currentTimeMillis(),
+            ),
+        )
+        body.put("bank", bankCountsJson(bankCounts))
+        body.put("presetBank", presetBankJson(editingUserId, activeUserId))
         body.put("activeScopeAvailable", state.activeScopeAvailable)
         body.put("syncState", QuizSessionStore.loadSyncState().encode())
         body.put("cloudManaged", QuizConfigSync.isCloudManaged())
-        body.put("cache", legacyCacheJson(state.bankCounts))
+        body.put("cache", legacyCacheJson(bankCounts))
         body.put("bankCapacity", QuizQuestionCache.BANK_CAPACITY)
         return json(Response.Status.OK, body)
     }
@@ -498,10 +578,20 @@ object QuizWebAdmin {
     private fun levelSourceCounts(session: IHTTPSession): Response {
         adminError(session)?.let { return it }
         val body = jsonBody(session) ?: return error(Response.Status.BAD_REQUEST, "INVALID_JSON")
+        val context = subjectContext(session, body) ?: return invalidSubject()
         val array = body.optJSONArray("scopes")
             ?: return error(Response.Status.BAD_REQUEST, "INVALID_SCOPE")
         if (array.length() > MAX_LEVEL_COUNT_SCOPES) {
             return error(Response.Status.BAD_REQUEST, "INVALID_SCOPE")
+        }
+        // The draft source picks preset or AI before its scope exists, so the
+        // request carries one origin for every candidate scope. Missing means
+        // the pre-split combined behavior.
+        val origin = if (body.has("origin") && !body.isNull("origin")) {
+            CourseOrigin.fromWire(body.optString("origin", ""))
+                ?: return error(Response.Status.BAD_REQUEST, "INVALID_SCOPE")
+        } else {
+            CourseOrigin.ALL
         }
         val now = System.currentTimeMillis()
         val counts = JSONArray()
@@ -511,6 +601,9 @@ object QuizWebAdmin {
             val typeCounts = QuizQuestionCache.availableTypeCounts(
                 nowMs = now,
                 answerScope = scope,
+                subjectUserId = context.editingUserId,
+                activeSubjectUserId = context.activeUserId,
+                origin = origin,
             )
             counts.put(
                 JSONObject()
@@ -523,8 +616,15 @@ object QuizWebAdmin {
             Response.Status.OK,
             JSONObject()
                 .put("ok", true)
+                .put("subjectUserId", context.editingUserId ?: JSONObject.NULL)
                 .put("counts", counts)
-                .put("wrong", QuizQuestionCache.wrongReviewCount()),
+                .put(
+                    "wrong",
+                    QuizQuestionCache.wrongReviewCount(
+                        subjectUserId = context.editingUserId,
+                        activeSubjectUserId = context.activeUserId,
+                    ),
+                ),
         )
     }
 
@@ -551,6 +651,12 @@ object QuizWebAdmin {
     private fun putSession(session: IHTTPSession): Response {
         adminError(session)?.let { return it }
         val body = jsonBody(session) ?: return error(Response.Status.BAD_REQUEST, "INVALID_JSON")
+        val context = subjectContext(session, body) ?: return invalidSubject()
+        // This pre-V17 compatibility path writes the active challenge config;
+        // a sibling's document must be edited through the document endpoints.
+        if (!context.editingIsActive) {
+            return error(Response.Status.CONFLICT, "SWITCH_REQUIRED")
+        }
         val publish = body.optBoolean("publish", true)
         val sessionObject = body.optJSONObject("session") ?: return error(Response.Status.BAD_REQUEST, "INVALID_SESSION")
         val parsed = when (val decoded = QuizSessionCodec.decode(sessionObject.toString())) {
@@ -571,7 +677,12 @@ object QuizWebAdmin {
         }
         if (publish) QuizConfigSync.afterLocalEdit()
         val append = if (publish) {
-            QuizQuestionCache.appendLocalQuestions(parsed.id, parsed.items, now)
+            QuizQuestionCache.appendLocalQuestions(
+                parsed.id,
+                parsed.items,
+                now,
+                ownerUserId = context.editingUserId,
+            )
         } else {
             QuizQuestionCache.AppendResult()
         }
@@ -601,31 +712,57 @@ object QuizWebAdmin {
 
     private fun readBank(session: IHTTPSession): Response {
         adminError(session)?.let { return it }
+        val context = subjectContext(session) ?: return invalidSubject()
         val filter = session.parameters["filter"]?.firstOrNull().orEmpty()
             .takeIf { it in BANK_FILTERS } ?: "all"
+        val scope = session.parameters["scope"]?.firstOrNull()?.trim()?.lowercase(Locale.ROOT)
+            ?.takeIf { it.isNotEmpty() }
+        if (scope != null && scope !in BANK_SCOPES) {
+            return error(Response.Status.BAD_REQUEST, "INVALID_REQUEST")
+        }
         val offset = session.parameters["offset"]?.firstOrNull()?.toIntOrNull()
             ?.coerceIn(0, 100_000) ?: 0
         val limit = session.parameters["limit"]?.firstOrNull()?.toIntOrNull()
             ?.coerceIn(1, 100) ?: 50
-        val source = when (session.parameters["source"]?.firstOrNull()?.trim()?.lowercase()) {
-            null, "", "all" -> null
-            "course", "course_ai", "ai" -> QuizQuestionCache.BankSource.COURSE_AI
-            "custom" -> QuizQuestionCache.BankSource.CUSTOM
-            else -> return error(Response.Status.BAD_REQUEST, "INVALID_REQUEST")
+        val legacySource =
+            when (session.parameters["source"]?.firstOrNull()?.trim()?.lowercase()) {
+                null, "", "all" -> null
+                "course", "course_ai", "ai" -> QuizQuestionCache.BankSource.COURSE_AI
+                "custom" -> QuizQuestionCache.BankSource.CUSTOM
+                else -> return error(Response.Status.BAD_REQUEST, "INVALID_REQUEST")
+            }
+        val source = when (scope) {
+            "builtin" -> QuizQuestionCache.BankSource.BUILT_IN
+            "ai" -> QuizQuestionCache.BankSource.PRIVATE_AI
+            "manual" -> QuizQuestionCache.BankSource.CUSTOM
+            else -> legacySource
         }
         val collectionId = session.parameters["collectionId"]?.firstOrNull()
             ?.trim()?.takeIf { it.isNotEmpty() }
+        if (collectionId != null &&
+            QuizCollectionStore.find(collectionId, context.editingUserId) == null
+        ) {
+            return error(Response.Status.NOT_FOUND, "COLLECTION_NOT_FOUND")
+        }
+        // The wrong tab is a state view over every source, never a content
+        // filter. The built-in tab hides private rows even for the viewer.
+        val effectiveFilter = if (scope == "wrong" && filter == "all") "wrong" else filter
+        val publicOnly = scope == "builtin"
         val now = System.currentTimeMillis()
         val rows = QuizQuestionCache.listBank(
             QuizQuestionCache.LOCAL_SCOPE,
-            filter,
+            effectiveFilter,
             offset,
             limit,
             now,
             source = source,
             collectionId = collectionId,
+            subjectUserId = context.editingUserId,
+            publicOnly = publicOnly,
+            activeSubjectUserId = context.activeUserId,
         )
-        val tagNames = QuizCollectionStore.collections().associate { it.id to it.name }
+        val tagNames = QuizCollectionStore.collections(context.editingUserId)
+            .associate { it.id to it.name }
         val items = JSONArray()
         rows.forEach { row ->
             val question = row.question
@@ -637,6 +774,14 @@ object QuizWebAdmin {
                     .put(
                         "collectionName",
                         row.collectionId?.let { tagNames[it] } ?: JSONObject.NULL,
+                    )
+                    .put(
+                        "scopeSource",
+                        when {
+                            row.ownerUserId == null && row.collectionId == null -> "builtin"
+                            row.ownerUserId != null && row.collectionId == null -> "ai"
+                            else -> "manual"
+                        },
                     )
                     .put("prompt", question.prompt)
                     .put("options", JSONArray(question.options))
@@ -679,23 +824,56 @@ object QuizWebAdmin {
                     .put("receivedAt", row.receivedAt),
             )
         }
-        val counts = QuizQuestionCache.bankCounts(QuizQuestionCache.LOCAL_SCOPE, now)
+        val counts = QuizQuestionCache.bankCounts(
+            QuizQuestionCache.LOCAL_SCOPE,
+            now,
+            subjectUserId = context.editingUserId,
+            activeSubjectUserId = context.activeUserId,
+            source = source,
+            collectionId = collectionId,
+        )
+        val scopeCounts = QuizQuestionCache.ownerSourceCounts(
+            QuizQuestionCache.LOCAL_SCOPE,
+            now,
+            subjectUserId = context.editingUserId,
+            activeSubjectUserId = context.activeUserId,
+        )
         return json(
             Response.Status.OK,
             JSONObject()
                 .put("ok", true)
-                .put("filter", filter)
+                .put("filter", effectiveFilter)
+                .put("scope", scope ?: JSONObject.NULL)
+                .put("subjectUserId", context.editingUserId ?: JSONObject.NULL)
+                .put("activeUserId", context.activeUserId ?: JSONObject.NULL)
                 .put("offset", offset)
                 .put("limit", limit)
                 .put("items", items)
                 .put("counts", bankCountsJson(counts))
                 .put(
+                    "scopeCounts",
+                    JSONObject()
+                        .put("builtin", scopeCounts.builtin)
+                        .put("ai", scopeCounts.ai)
+                        .put("manual", scopeCounts.manual)
+                        .put("wrong", scopeCounts.wrong),
+                )
+                .put(
                     "sourceCounts",
-                    QuizQuestionCache.sourceCounts(QuizQuestionCache.LOCAL_SCOPE).let {
+                    QuizQuestionCache.sourceCounts(
+                        QuizQuestionCache.LOCAL_SCOPE,
+                        subjectUserId = context.editingUserId,
+                        publicOnly = publicOnly,
+                    ).let {
                         JSONObject().put("course", it.course).put("custom", it.custom)
                     },
                 )
-                .put("capacity", QuizQuestionCache.BANK_CAPACITY),
+                .put("capacity", QuizQuestionCache.BANK_CAPACITY)
+                .put("privateCapacity", QuizQuestionCache.PRIVATE_CAPACITY)
+                .put(
+                    "privateRemaining",
+                    QuizQuestionCache.remainingCapacity(context.editingUserId),
+                ),
         )
     }
 
@@ -709,6 +887,12 @@ object QuizWebAdmin {
      */
     private fun readBankFacets(session: IHTTPSession): Response {
         adminError(session)?.let { return it }
+        val context = subjectContext(session) ?: return invalidSubject()
+        val scope = session.parameters["scope"]?.firstOrNull()?.trim()?.lowercase(Locale.ROOT)
+            ?.takeIf { it.isNotEmpty() }
+        if (scope != null && scope !in BANK_SCOPES) {
+            return error(Response.Status.BAD_REQUEST, "INVALID_REQUEST")
+        }
         fun param(name: String): String? =
             session.parameters[name]?.firstOrNull()?.trim()?.takeIf { it.isNotEmpty() }
 
@@ -764,11 +948,24 @@ object QuizWebAdmin {
             QuizAnswerKind.fromWire(raw)?.wire
                 ?: return error(Response.Status.BAD_REQUEST, "INVALID_REQUEST")
         }
+        // The level source editor asks for one provenance bucket so its grade
+        // and subject chips only offer branches that bucket can fill. The bank
+        // tab omits it and keeps the combined view.
+        val origin = param("origin")?.let { raw ->
+            CourseOrigin.fromWire(raw)
+                ?: return error(Response.Status.BAD_REQUEST, "INVALID_REQUEST")
+        } ?: CourseOrigin.ALL
         val filter = FacetFilters(
             grade, semester, subject, textbook, topic, difficulty, answerKind,
         )
         val now = System.currentTimeMillis()
-        val snapshot = QuizQuestionCache.facetSnapshot(QuizQuestionCache.LOCAL_SCOPE, now)
+        val snapshot = QuizQuestionCache.facetSnapshot(
+            QuizQuestionCache.LOCAL_SCOPE,
+            now,
+            subjectUserId = context.editingUserId,
+            publicOnly = scope == "builtin",
+            origin = origin,
+        )
         val scopedRows = snapshot.groups.mapNotNull(::facetRow)
         val scoped = scopedRows.sumOf { it.count }
         val matched = scopedRows.filter { it.matches(filter) }.sumOf { it.count }
@@ -779,6 +976,7 @@ object QuizWebAdmin {
             Response.Status.OK,
             JSONObject()
                 .put("ok", true)
+                .put("subjectUserId", context.editingUserId ?: JSONObject.NULL)
                 .put("total", snapshot.total)
                 .put("scoped", scoped)
                 .put("noScope", snapshot.total - scoped)
@@ -965,6 +1163,7 @@ object QuizWebAdmin {
             return error(Response.Status.CONFLICT, "SESSION_RUNNING")
         }
         val body = jsonBody(session) ?: return error(Response.Status.BAD_REQUEST, "INVALID_JSON")
+        val context = subjectContext(session, body) ?: return invalidSubject()
         val batchMode = body.optBoolean("batchMode", false)
         val collectionId = body.optString("collectionId", "").trim()
         val newCollectionName = body.optString("newCollectionName", "").trim()
@@ -1012,7 +1211,12 @@ object QuizWebAdmin {
             return error(Response.Status.INTERNAL_ERROR, "CACHE_UNAVAILABLE")
         }
 
-        val existing = if (collectionId.isNotEmpty()) QuizCollectionStore.find(collectionId) else null
+        val editingUserId = context.editingUserId
+        val existing = if (collectionId.isNotEmpty()) {
+            QuizCollectionStore.find(collectionId, editingUserId)
+        } else {
+            null
+        }
         if (collectionId.isNotEmpty() && existing == null) {
             return error(Response.Status.NOT_FOUND, "COLLECTION_NOT_FOUND")
         }
@@ -1020,20 +1224,27 @@ object QuizWebAdmin {
         val collection = existing ?: run {
             val cleanName = QuizCollection.normalizeName(newCollectionName)
                 ?: return error(Response.Status.BAD_REQUEST, "INVALID_COLLECTION_NAME")
-            if (QuizCollectionStore.nameExists(cleanName)) {
+            if (QuizCollectionStore.nameExists(cleanName, subjectUserId = editingUserId)) {
                 return error(Response.Status.CONFLICT, "COLLECTION_EXISTS")
             }
-            if (QuizCollectionStore.collections().size >= QuizCollection.MAX_COLLECTIONS) {
+            if (QuizCollectionStore.collections(editingUserId).size >=
+                QuizCollection.MAX_COLLECTIONS
+            ) {
                 return error(Response.Status.CONFLICT, "COLLECTION_LIMIT")
             }
             if (dryRun) {
                 QuizCollection.create(cleanName)
                     ?: return error(Response.Status.BAD_REQUEST, "INVALID_COLLECTION_NAME")
             } else {
-                QuizCollectionStore.addCollection(cleanName)?.also { created = it }
+                QuizCollectionStore.addCollection(cleanName, editingUserId)
+                    ?.also { created = it }
                     ?: return error(
                         Response.Status.CONFLICT,
-                        if (QuizCollectionStore.nameExists(cleanName)) {
+                        if (QuizCollectionStore.nameExists(
+                                cleanName,
+                                subjectUserId = editingUserId,
+                            )
+                        ) {
                             "COLLECTION_EXISTS"
                         } else {
                             "COLLECTION_LIMIT"
@@ -1042,8 +1253,15 @@ object QuizWebAdmin {
             }
         }
 
+        // Capacity, dedupe and owner all follow the editing member; an active
+        // sibling's private rows never count as duplicates or free slots.
+        val privateRemaining = QuizQuestionCache.remainingCapacity(editingUserId)
         if (dryRun) {
-            val plan = QuizQuestionCache.previewLocalImport(collection.id, items)
+            val plan = QuizQuestionCache.previewLocalImport(
+                collection.id,
+                items,
+                ownerUserId = editingUserId,
+            )
             val canImport = plan.rejected == 0 &&
                 plan.wouldAppend > 0 &&
                 plan.wouldAppend <= plan.remaining
@@ -1052,6 +1270,7 @@ object QuizWebAdmin {
                 JSONObject()
                     .put("ok", true)
                     .put("dryRun", true)
+                    .put("subjectUserId", editingUserId ?: JSONObject.NULL)
                     .put("collection", collectionJson(collection))
                     .put("total", plan.total)
                     .put("fileDuplicates", plan.fileDuplicates)
@@ -1061,6 +1280,8 @@ object QuizWebAdmin {
                     .put("wouldAppend", plan.wouldAppend)
                     .put("capacity", QuizQuestionCache.BANK_CAPACITY)
                     .put("remaining", plan.remaining)
+                    .put("privateCapacity", QuizQuestionCache.PRIVATE_CAPACITY)
+                    .put("privateRemaining", privateRemaining)
                     .put("canImport", canImport)
                     .put("preview", importPreviewJson(plan.preview)),
             )
@@ -1070,9 +1291,10 @@ object QuizWebAdmin {
             collection.id,
             "import-" + UUID.randomUUID().toString().replace("-", "").take(16),
             items,
+            ownerUserId = editingUserId,
         )
         if (result.storageError || result.rejected > 0 || result.capacityReached) {
-            created?.let { QuizCollectionStore.removeCollection(it.id) }
+            created?.let { QuizCollectionStore.removeCollection(it.id, editingUserId) }
             return when {
                 result.storageError ->
                     error(Response.Status.INTERNAL_ERROR, "CACHE_UNAVAILABLE")
@@ -1090,6 +1312,7 @@ object QuizWebAdmin {
         val response = JSONObject()
             .put("ok", true)
             .put("dryRun", false)
+            .put("subjectUserId", editingUserId ?: JSONObject.NULL)
             .put("collection", collectionJson(collection))
             .put("appended", result.appended)
             .put("fileDuplicates", result.fileDuplicates)
@@ -1098,17 +1321,29 @@ object QuizWebAdmin {
             .put("rejected", result.rejected)
             .put("capacity", QuizQuestionCache.BANK_CAPACITY)
             .put("remaining", result.remaining)
+            .put("privateCapacity", QuizQuestionCache.PRIVATE_CAPACITY)
+            .put("privateRemaining", QuizQuestionCache.remainingCapacity(editingUserId))
         // A batched import refreshes the whole status once at the end. Counting
         // every tag and source after each 200-row batch would multiply the
         // same work by the number of batches.
         if (!batchMode) {
-            val state = QuizRuntime.refresh()
-            val collectionCounts = QuizQuestionCache.collectionCounts(QuizQuestionCache.LOCAL_SCOPE)
-                .firstOrNull { it.collectionId == collection.id }?.counts
+            val collectionCounts = QuizQuestionCache.collectionCounts(
+                QuizQuestionCache.LOCAL_SCOPE,
+                subjectUserId = editingUserId,
+                activeSubjectUserId = context.activeUserId,
+            ).firstOrNull { it.collectionId == collection.id }?.counts
                 ?: QuizQuestionCache.BankCounts()
-            val sourceCounts = QuizQuestionCache.sourceCounts(QuizQuestionCache.LOCAL_SCOPE)
+            val sourceCounts = QuizQuestionCache.sourceCounts(
+                QuizQuestionCache.LOCAL_SCOPE,
+                subjectUserId = editingUserId,
+            )
+            val counts = QuizQuestionCache.bankCounts(
+                QuizQuestionCache.LOCAL_SCOPE,
+                subjectUserId = editingUserId,
+                activeSubjectUserId = context.activeUserId,
+            )
             response
-                .put("counts", bankCountsJson(state.bankCounts))
+                .put("counts", bankCountsJson(counts))
                 .put(
                     "sourceCounts",
                     JSONObject()
@@ -1154,6 +1389,122 @@ object QuizWebAdmin {
     private fun collectionJson(collection: QuizCollection): JSONObject =
         JSONObject().put("id", collection.id).put("name", collection.name)
 
+    private fun readCollections(session: IHTTPSession): Response {
+        adminError(session)?.let { return it }
+        val context = subjectContext(session) ?: return invalidSubject()
+        val packages = levelPackagesFor(context.editingUserId)
+        return json(
+            Response.Status.OK,
+            JSONObject()
+                .put("ok", true)
+                .put("subjectUserId", context.editingUserId ?: JSONObject.NULL)
+                .put("activeUserId", context.activeUserId ?: JSONObject.NULL)
+                .put("maxCollections", QuizCollection.MAX_COLLECTIONS)
+                .put(
+                    "collections",
+                    collectionsJson(context.editingUserId, context.activeUserId, packages),
+                ),
+        )
+    }
+
+    private fun createCollection(session: IHTTPSession): Response {
+        adminError(session)?.let { return it }
+        val body = jsonBody(session) ?: return error(Response.Status.BAD_REQUEST, "INVALID_JSON")
+        val context = subjectContext(session, body) ?: return invalidSubject()
+        val subject = context.editingUserId
+        val name = QuizCollection.normalizeName(body.optString("name", ""))
+            ?: return error(Response.Status.BAD_REQUEST, "INVALID_COLLECTION_NAME")
+        if (QuizCollectionStore.nameExists(name, subjectUserId = subject)) {
+            return error(Response.Status.CONFLICT, "COLLECTION_EXISTS")
+        }
+        if (QuizCollectionStore.collections(subject).size >= QuizCollection.MAX_COLLECTIONS) {
+            return error(Response.Status.CONFLICT, "COLLECTION_LIMIT")
+        }
+        val created = QuizCollectionStore.addCollection(name, subject)
+            ?: return error(
+                Response.Status.CONFLICT,
+                if (QuizCollectionStore.nameExists(name, subjectUserId = subject)) {
+                    "COLLECTION_EXISTS"
+                } else {
+                    "COLLECTION_LIMIT"
+                },
+            )
+        return json(
+            Response.Status.OK,
+            JSONObject()
+                .put("ok", true)
+                .put("subjectUserId", subject ?: JSONObject.NULL)
+                .put("collection", collectionJson(created))
+                .put("maxCollections", QuizCollection.MAX_COLLECTIONS),
+        )
+    }
+
+    private fun renameCollection(session: IHTTPSession): Response {
+        adminError(session)?.let { return it }
+        val body = jsonBody(session) ?: return error(Response.Status.BAD_REQUEST, "INVALID_JSON")
+        val context = subjectContext(session, body) ?: return invalidSubject()
+        val subject = context.editingUserId
+        val id = body.optString("id", "").trim().takeIf { it.isNotEmpty() }
+            ?: return error(Response.Status.BAD_REQUEST, "INVALID_REQUEST")
+        if (QuizCollectionStore.find(id, subject) == null) {
+            return error(Response.Status.NOT_FOUND, "COLLECTION_NOT_FOUND")
+        }
+        val name = QuizCollection.normalizeName(body.optString("name", ""))
+            ?: return error(Response.Status.BAD_REQUEST, "INVALID_COLLECTION_NAME")
+        if (QuizCollectionStore.nameExists(name, excludingId = id, subjectUserId = subject)) {
+            return error(Response.Status.CONFLICT, "COLLECTION_EXISTS")
+        }
+        val renamed = QuizCollectionStore.renameCollection(id, name, subject)
+            ?: return error(Response.Status.CONFLICT, "COLLECTION_EXISTS")
+        return json(
+            Response.Status.OK,
+            JSONObject()
+                .put("ok", true)
+                .put("subjectUserId", subject ?: JSONObject.NULL)
+                .put("collection", collectionJson(renamed)),
+        )
+    }
+
+    private fun deleteCollection(session: IHTTPSession): Response {
+        adminError(session)?.let { return it }
+        val body = jsonBody(session)
+        val context = subjectContext(session, body) ?: return invalidSubject()
+        val subject = context.editingUserId
+        val id = body?.optString("id", "")?.trim()?.takeIf { it.isNotEmpty() }
+            ?: session.parameters["id"]?.firstOrNull()?.trim()?.takeIf { it.isNotEmpty() }
+            ?: return error(Response.Status.BAD_REQUEST, "INVALID_REQUEST")
+        QuizCollectionStore.find(id, subject)
+            ?: return error(Response.Status.NOT_FOUND, "COLLECTION_NOT_FOUND")
+        val usedByPackage = levelPackagesFor(subject).any { levelPackage ->
+            levelPackage.sources.any {
+                it is QuizPackageSource.Collection && it.collectionId == id
+            }
+        }
+        val usedByLegacyLevel = QuizCollectionStore.customLevels(subject)
+            .any { it.collectionId == id }
+        if (usedByPackage || usedByLegacyLevel) {
+            return error(Response.Status.CONFLICT, "COLLECTION_IN_USE")
+        }
+        val counts = QuizQuestionCache.collectionCounts(
+            QuizQuestionCache.LOCAL_SCOPE,
+            subjectUserId = subject,
+            activeSubjectUserId = context.activeUserId,
+        ).firstOrNull { it.collectionId == id }?.counts
+        if (counts != null && counts.total > 0) {
+            return error(Response.Status.CONFLICT, "COLLECTION_NOT_EMPTY")
+        }
+        if (!QuizCollectionStore.removeCollection(id, subject)) {
+            return error(Response.Status.CONFLICT, "COLLECTION_IN_USE")
+        }
+        return json(
+            Response.Status.OK,
+            JSONObject()
+                .put("ok", true)
+                .put("subjectUserId", subject ?: JSONObject.NULL)
+                .put("id", id),
+        )
+    }
+
     private fun importPreviewJson(items: List<QuizItem>): JSONArray = JSONArray().apply {
         items.take(20).forEachIndexed { index, item ->
             put(
@@ -1174,53 +1525,217 @@ object QuizWebAdmin {
         }
     }
 
+    /**
+     * V41 destructive actions. Content deletion is always narrowed to one
+     * owner scope: public built-in rows, the editing member's AI rows, or one
+     * of the editing member's tags. The wrong book is a state-only reset and
+     * may optionally name one `cacheId`.
+     */
     private fun clearBank(session: IHTTPSession): Response {
         adminError(session)?.let { return it }
         if (QuizRuntime.refresh().session?.status in ACTIVE_STATUSES) {
             return error(Response.Status.CONFLICT, "SESSION_RUNNING")
         }
         val body = jsonBody(session) ?: return error(Response.Status.BAD_REQUEST, "INVALID_JSON")
-        val mode = when (body.optString("mode", "unused")) {
+        val context = subjectContext(session, body) ?: return invalidSubject()
+        val editingUserId = context.editingUserId
+        val activeUserId = context.activeUserId
+        val wrongBook = session.uri.endsWith("/wrong-book/clear")
+        val scope = body.optString("scope", "").trim().lowercase(Locale.ROOT)
+            .takeIf { it.isNotEmpty() }
+        if (scope != null && scope !in BANK_SCOPES) {
+            return error(Response.Status.BAD_REQUEST, "INVALID_REQUEST")
+        }
+        val cacheId = body.optString("cacheId", "").trim().takeIf { it.isNotEmpty() }
+        if (cacheId != null) {
+            if (!wrongBook && body.optString("mode", "") != "wrong") {
+                return error(Response.Status.BAD_REQUEST, "INVALID_REQUEST")
+            }
+            if (!QuizQuestionCache.isVisibleContent(cacheId, subjectUserId = editingUserId)) {
+                return error(Response.Status.NOT_FOUND, "NOT_FOUND")
+            }
+            if (!QuizQuestionCache.clearWrongState(
+                    cacheId,
+                    subjectUserId = editingUserId,
+                    activeSubjectUserId = activeUserId,
+                )
+            ) {
+                return error(Response.Status.INTERNAL_ERROR, "CACHE_UNAVAILABLE")
+            }
+            return clearResponse(context, null)
+        }
+        if (scope == "wrong" || wrongBook) {
+            if (wrongBook && scope != null) {
+                return error(Response.Status.BAD_REQUEST, "INVALID_REQUEST")
+            }
+            val mode = body.optString("mode", "wrong")
+            if (mode != "wrong") return error(Response.Status.BAD_REQUEST, "INVALID_REQUEST")
+            if (!QuizQuestionCache.clearBank(
+                    QuizQuestionCache.LOCAL_SCOPE,
+                    QuizQuestionCache.ClearMode.WRONG,
+                    source = QuizQuestionCache.BankSource.ALL,
+                    subjectUserId = editingUserId,
+                    activeSubjectUserId = activeUserId,
+                )
+            ) {
+                return error(Response.Status.INTERNAL_ERROR, "CACHE_UNAVAILABLE")
+            }
+            return clearResponse(context, "wrong")
+        }
+        // The built-in bank is public content: only a whole clear is allowed,
+        // and it can never be narrowed by one child's answer state.
+        if (scope == "builtin") {
+            val mode = body.optString("mode", "all").trim().lowercase(Locale.ROOT)
+            if (mode != "all") return error(Response.Status.BAD_REQUEST, "INVALID_REQUEST")
+            if (!QuizQuestionCache.clearBank(
+                    QuizQuestionCache.LOCAL_SCOPE,
+                    QuizQuestionCache.ClearMode.ALL,
+                    source = QuizQuestionCache.BankSource.BUILT_IN,
+                    subjectUserId = editingUserId,
+                    publicOnly = true,
+                    activeSubjectUserId = activeUserId,
+                )
+            ) {
+                return error(Response.Status.INTERNAL_ERROR, "CACHE_UNAVAILABLE")
+            }
+            return clearResponse(context, "builtin")
+        }
+        val legacySource = body.optString("source", "").trim().lowercase(Locale.ROOT)
+        val source = when (scope) {
+            "ai" -> QuizQuestionCache.BankSource.PRIVATE_AI
+            "manual" -> QuizQuestionCache.BankSource.CUSTOM
+            else -> when (legacySource) {
+                "course", "course_ai", "ai" -> if (editingUserId == null) {
+                    QuizQuestionCache.BankSource.COURSE_AI
+                } else {
+                    QuizQuestionCache.BankSource.PRIVATE_AI
+                }
+                "custom" -> QuizQuestionCache.BankSource.CUSTOM
+                "all" -> return error(Response.Status.BAD_REQUEST, "SCOPE_REQUIRED")
+                "" -> if (editingUserId == null) {
+                    QuizQuestionCache.BankSource.COURSE_AI
+                } else {
+                    QuizQuestionCache.BankSource.PRIVATE_AI
+                }
+                else -> return error(Response.Status.BAD_REQUEST, "INVALID_REQUEST")
+            }
+        }
+        val modeValue = body.optString("mode", "unused")
+        val mode = when (modeValue) {
             "unused" -> QuizQuestionCache.ClearMode.UNUSED
             "answered" -> QuizQuestionCache.ClearMode.ANSWERED
             "correct" -> QuizQuestionCache.ClearMode.CORRECT
-            "wrong" -> QuizQuestionCache.ClearMode.WRONG
             "all" -> QuizQuestionCache.ClearMode.ALL
             else -> return error(Response.Status.BAD_REQUEST, "INVALID_REQUEST")
         }
-        // The default must stay the AI/seed namespace so a cached page or a
-        // habitual cleanup can never delete imported tag rows.
-        val source = when (body.optString("source", "course").trim().lowercase(Locale.ROOT)) {
-            "course", "course_ai", "ai" -> QuizQuestionCache.BankSource.COURSE_AI
-            "custom" -> QuizQuestionCache.BankSource.CUSTOM
-            "all" -> QuizQuestionCache.BankSource.ALL
-            else -> return error(Response.Status.BAD_REQUEST, "INVALID_REQUEST")
-        }
         val collectionId = body.optString("collectionId", "").trim().takeIf { it.isNotEmpty() }
+        if (collectionId != null &&
+            QuizCollectionStore.find(collectionId, editingUserId) == null
+        ) {
+            return error(Response.Status.NOT_FOUND, "COLLECTION_NOT_FOUND")
+        }
+        // A family with no roster is the pre-V41 single-member TV; there the
+        // legacy namespace and its old clear semantics still apply.
+        val legacy = editingUserId == null
         if (!QuizQuestionCache.clearBank(
                 QuizQuestionCache.LOCAL_SCOPE,
                 mode,
-                source = source,
+                source = if (legacy && legacySource == "all") {
+                    QuizQuestionCache.BankSource.ALL
+                } else {
+                    source
+                },
                 collectionId = collectionId,
+                subjectUserId = editingUserId,
+                activeSubjectUserId = activeUserId,
+                exactOwner = !legacy,
             )
         ) {
             return error(Response.Status.INTERNAL_ERROR, "CACHE_UNAVAILABLE")
         }
-        val state = QuizRuntime.refresh()
-        val sourceCounts = QuizQuestionCache.sourceCounts(QuizQuestionCache.LOCAL_SCOPE)
+        return clearResponse(context, scope ?: "legacy")
+    }
+
+    private fun clearResponse(
+        context: SubjectContext,
+        scope: String?,
+    ): Response {
+        val editingUserId = context.editingUserId
+        val activeUserId = context.activeUserId
+        val state = if (context.editingIsActive) QuizRuntime.refresh() else null
+        val counts = state?.bankCounts ?: QuizQuestionCache.bankCounts(
+            QuizQuestionCache.LOCAL_SCOPE,
+            subjectUserId = editingUserId,
+            activeSubjectUserId = activeUserId,
+        )
+        val sourceCounts = QuizQuestionCache.sourceCounts(
+            QuizQuestionCache.LOCAL_SCOPE,
+            subjectUserId = editingUserId,
+        )
+        val scopeCounts = QuizQuestionCache.ownerSourceCounts(
+            QuizQuestionCache.LOCAL_SCOPE,
+            subjectUserId = editingUserId,
+            activeSubjectUserId = activeUserId,
+        )
+        val bankState = state?.bankState ?: editingBankState(
+            packages = levelPackagesFor(editingUserId),
+            documentUnreadable = false,
+            packagesUnreadable = false,
+            subjectUserId = editingUserId,
+            activeSubjectUserId = activeUserId,
+            nowMs = System.currentTimeMillis(),
+        )
         return json(
             Response.Status.OK,
             JSONObject()
                 .put("ok", true)
-                .put("counts", bankCountsJson(state.bankCounts))
+                .put("scope", scope ?: JSONObject.NULL)
+                .put("subjectUserId", editingUserId ?: JSONObject.NULL)
+                .put("activeUserId", activeUserId ?: JSONObject.NULL)
+                .put("counts", bankCountsJson(counts))
                 .put(
                     "sourceCounts",
                     JSONObject()
                         .put("course", sourceCounts.course)
                         .put("custom", sourceCounts.custom),
                 )
-                .put("bankState", state.bankState),
+                .put(
+                    "scopeCounts",
+                    JSONObject()
+                        .put("builtin", scopeCounts.builtin)
+                        .put("ai", scopeCounts.ai)
+                        .put("manual", scopeCounts.manual)
+                        .put("wrong", scopeCounts.wrong),
+                )
+                .put("privateCapacity", QuizQuestionCache.PRIVATE_CAPACITY)
+                .put(
+                    "privateRemaining",
+                    QuizQuestionCache.remainingCapacity(editingUserId),
+                )
+                .put("bankState", bankState)
+                .put("presetBank", presetBankJson(editingUserId, activeUserId)),
         )
+    }
+
+    /**
+     * Stock of the bundled, non-curriculum bank. It lives outside the course
+     * scopes, so the page needs its own count instead of the builtin tab total
+     * (which also contains curriculum rows).
+     */
+    private fun presetBankJson(
+        subjectUserId: String?,
+        activeSubjectUserId: String?,
+    ): JSONObject {
+        val counts = QuizQuestionCache.bankCounts(
+            QuizQuestionCache.LOCAL_SCOPE,
+            subjectUserId = subjectUserId,
+            activeSubjectUserId = activeSubjectUserId,
+            presetBank = QuizPresetBank.PARENT_LIFE,
+        )
+        return JSONObject()
+            .put("bankId", QuizPresetBank.PARENT_LIFE.wire)
+            .put("total", counts.total)
+            .put("available", counts.unused)
     }
 
     private fun readCache(session: IHTTPSession): Response {
@@ -1233,7 +1748,28 @@ object QuizWebAdmin {
         if (QuizRuntime.refresh().session?.status in ACTIVE_STATUSES) {
             return error(Response.Status.CONFLICT, "SESSION_RUNNING")
         }
-        if (!QuizQuestionCache.clearBank(QuizQuestionCache.LOCAL_SCOPE, QuizQuestionCache.ClearMode.UNUSED)) {
+        // The legacy "unused" sweep used to delete every untagged row,
+        // including public seeds and a sibling's AI questions. Under V41 it
+        // only touches the active member's own AI content.
+        val family = FamilyHub.state.value
+        val owner = family.activeUserId.takeIf { family.ready }
+        val cleared = if (owner == null) {
+            QuizQuestionCache.clearBank(
+                QuizQuestionCache.LOCAL_SCOPE,
+                QuizQuestionCache.ClearMode.UNUSED,
+                source = QuizQuestionCache.BankSource.COURSE_AI,
+            )
+        } else {
+            QuizQuestionCache.clearBank(
+                QuizQuestionCache.LOCAL_SCOPE,
+                QuizQuestionCache.ClearMode.UNUSED,
+                source = QuizQuestionCache.BankSource.PRIVATE_AI,
+                subjectUserId = owner,
+                activeSubjectUserId = owner,
+                exactOwner = true,
+            )
+        }
+        if (!cleared) {
             return error(Response.Status.INTERNAL_ERROR, "CACHE_UNAVAILABLE")
         }
         return json(Response.Status.OK, cacheJson())
@@ -1282,6 +1818,8 @@ object QuizWebAdmin {
         // Challenge rules are editable even on a bound TV: they are uploaded by
         // afterLocalEdit and the backend normalizes the source to CLOUD.
         val body = jsonBody(session) ?: return error(Response.Status.BAD_REQUEST, "INVALID_JSON")
+        val context = subjectContext(session, body) ?: return invalidSubject()
+        val editingUserId = context.editingUserId
         val configObject = body.optJSONObject("config")
             ?: return error(Response.Status.BAD_REQUEST, "INVALID_CONFIG")
         val config = QuizSessionCodec.decodeConfig(configObject)
@@ -1302,7 +1840,12 @@ object QuizWebAdmin {
             !body.has("levelPackages") -> null
             // An explicit null clears every level, matching the old sections.
             body.isNull("levelPackages") -> emptyList()
-            else -> when (val parsed = parseLevelPackages(body.optJSONArray("levelPackages"))) {
+            else -> when (
+                val parsed = parseLevelPackages(
+                    body.optJSONArray("levelPackages"),
+                    editingUserId,
+                )
+            ) {
                 is LevelPackagesResult.Ok -> parsed.packages
                 is LevelPackagesResult.Invalid ->
                     return error(Response.Status.BAD_REQUEST, parsed.code, parsed.detail)
@@ -1316,9 +1859,16 @@ object QuizWebAdmin {
         ) {
             return error(Response.Status.CONFLICT, "CLOUD_JUNIOR_UNSUPPORTED")
         }
-        // Phase 1 adapter: the old form edits the active QCD's default profile
-        // and rules. Everything it cannot express survives the save.
-        val current = when (val loaded = QuizConfigDocumentStore.ensureLocalDocument()) {
+        // Phase 1 adapter: the old form edits the selected member's QCD in
+        // place. The active child's document is only touched when that member
+        // is the one being edited.
+        val current = when (
+            val loaded = if (context.editingIsActive) {
+                QuizConfigDocumentStore.ensureLocalDocument()
+            } else {
+                documentForEditing(editingUserId!!)
+            }
+        ) {
             is QuizDocLoadResult.Ok -> loaded.document
             is QuizDocLoadResult.Unreadable -> return error(
                 Response.Status.CONFLICT,
@@ -1367,12 +1917,20 @@ object QuizWebAdmin {
         // A package save does not touch the legacy scope store, so compare the
         // package-derived first course scope before and after this edit.
         val previousScopeSignature = if (packages != null) {
-            firstCourseScope(storedPackages(current))?.signature()
+            firstCourseScope(storedPackages(current, editingUserId))?.signature()
         } else {
             null
         }
         // One write: rules, default profile and packages land in the same revision.
-        val saved = when (val result = QuizConfigDocumentStore.saveLocal(next, current.revision)) {
+        val saved = when (
+            val result = if (context.editingIsActive) {
+                QuizConfigDocumentStore.saveLocal(next, current.revision)
+            } else {
+                // editingIsActive is false only for a named sibling, so this
+                // context always carries an editing member here.
+                QuizConfigDocumentStore.saveLocalFor(editingUserId!!, next, current.revision)
+            }
+        ) {
             is QuizDocSaveResult.Ok -> result.document
             is QuizDocSaveResult.Conflict -> return error(
                 Response.Status.CONFLICT,
@@ -1384,23 +1942,46 @@ object QuizWebAdmin {
                 "STORAGE_ERROR",
             )
         }
-        QuizConfigSync.afterLocalEdit()
         val effectiveConfig = saved.toLegacyConfig()
             ?: return error(Response.Status.INTERNAL_ERROR, "DOCUMENT_PROJECTION_FAILED")
-        val effectivePackages = if (packages != null) packages else storedPackages(saved)
-        val projection = legacyLevelProjection(effectivePackages)
-        if (previousScopeSignature != null &&
-            previousScopeSignature != firstCourseScope(effectivePackages)?.signature()
-        ) {
-            QuizConfigSync.afterLocalScopeChange()
+        val effectivePackages = if (packages != null) {
+            packages
+        } else {
+            storedPackages(saved, editingUserId)
         }
+        // Cloud sync and the TV state belong to the active child. A sibling's
+        // document is written directly and picked up when that child is
+        // switched on the TV, never pushed as the active document.
+        if (context.editingIsActive) {
+            QuizConfigSync.afterLocalEdit()
+            if (previousScopeSignature != null &&
+                previousScopeSignature != firstCourseScope(effectivePackages)?.signature()
+            ) {
+                QuizConfigSync.afterLocalScopeChange()
+            }
+        }
+        val projection = legacyLevelProjection(
+            effectivePackages,
+            editingUserId,
+            context.activeUserId,
+        )
         return json(
             Response.Status.OK,
             JSONObject()
                 .put("ok", true)
+                .put("subjectUserId", editingUserId ?: JSONObject.NULL)
+                .put("activeUserId", context.activeUserId ?: JSONObject.NULL)
+                .put("editingIsActive", context.editingIsActive)
                 .put("config", QuizSessionCodec.encodeConfig(effectiveConfig))
                 .put("levelModel", LEVEL_MODEL)
-                .put("levelPackages", levelPackagesJson(effectivePackages))
+                .put(
+                    "levelPackages",
+                    levelPackagesJson(
+                        effectivePackages,
+                        editingUserId,
+                        context.activeUserId,
+                    ),
+                )
                 .put("levelPackagesUnreadable", false)
                 .put("answerScope", projection.answerScope?.encode() ?: JSONObject.NULL)
                 .put(
@@ -1415,6 +1996,8 @@ object QuizWebAdmin {
                     QuizQuestionCache.availableCount(
                         QuizQuestionCache.LOCAL_SCOPE,
                         answerScope = projection.answerScope,
+                        subjectUserId = editingUserId,
+                        activeSubjectUserId = context.activeUserId,
                     ),
                 )
                 .put("syncState", QuizSessionStore.loadSyncState().encode()),
@@ -1427,18 +2010,39 @@ object QuizWebAdmin {
      */
     private fun readConfigDocument(session: IHTTPSession): Response {
         adminError(session)?.let { return it }
-        return when (val loaded = QuizConfigDocumentStore.ensureLocalDocument()) {
+        val context = subjectContext(session) ?: return invalidSubject()
+        val editingUserId = context.editingUserId
+        val loaded = if (context.editingIsActive) {
+            QuizConfigDocumentStore.ensureLocalDocument()
+        } else {
+            QuizConfigDocumentStore.localDocumentFor(editingUserId!!)
+        }
+        return when (loaded) {
             is QuizDocLoadResult.Ok ->
-                json(Response.Status.OK, documentJson(loaded.document).put("docState", "OK"))
+                json(
+                    Response.Status.OK,
+                    documentJson(loaded.document)
+                        .put("docState", "OK")
+                        .put("subjectUserId", editingUserId ?: JSONObject.NULL)
+                        .put("activeUserId", context.activeUserId ?: JSONObject.NULL),
+                )
             is QuizDocLoadResult.Unreadable -> {
+                val absent = !context.editingIsActive &&
+                    loaded.errors.singleOrNull() == "quiz.doc.local:ABSENT"
                 val migrationInvalid = loaded.errors.any { it.startsWith("legacyConfig:") }
                 json(
                     Response.Status.OK,
                     JSONObject()
                         .put("ok", true)
+                        .put("subjectUserId", editingUserId ?: JSONObject.NULL)
+                        .put("activeUserId", context.activeUserId ?: JSONObject.NULL)
                         .put(
                             "docState",
-                            if (migrationInvalid) "MIGRATION_INVALID" else "UNREADABLE",
+                            when {
+                                absent -> "ABSENT"
+                                migrationInvalid -> "MIGRATION_INVALID"
+                                else -> "UNREADABLE"
+                            },
                         )
                         .put("document", JSONObject.NULL)
                         .put("issues", JSONArray(loaded.errors)),
@@ -1456,6 +2060,8 @@ object QuizWebAdmin {
     private fun saveConfigDocument(session: IHTTPSession): Response {
         adminError(session)?.let { return it }
         val body = jsonBody(session) ?: return error(Response.Status.BAD_REQUEST, "INVALID_JSON")
+        val context = subjectContext(session, body) ?: return invalidSubject()
+        val editingUserId = context.editingUserId
         val documentObject = body.optJSONObject("document")
             ?: return error(Response.Status.BAD_REQUEST, "INVALID_DOCUMENT")
         val baseRevision = if (body.has("baseRevision") && !body.isNull("baseRevision")) {
@@ -1479,11 +2085,26 @@ object QuizWebAdmin {
                 issues,
             )
         }
-        return when (val saved = QuizConfigDocumentStore.saveLocal(document, baseRevision)) {
+        val result = if (context.editingIsActive) {
+            QuizConfigDocumentStore.saveLocal(document, baseRevision)
+        } else {
+            QuizConfigDocumentStore.saveLocalFor(editingUserId!!, document, baseRevision)
+        }
+        return when (val saved = result) {
             is QuizDocSaveResult.Ok -> {
-                QuizConfigSync.afterLocalEdit()
-                QuizRuntime.refresh()
-                json(Response.Status.OK, documentJson(saved.document).put("docState", "OK"))
+                // A sibling's document is only written; it must not become the
+                // active/cloud document until the TV switches to that child.
+                if (context.editingIsActive) {
+                    QuizConfigSync.afterLocalEdit()
+                    QuizRuntime.refresh()
+                }
+                json(
+                    Response.Status.OK,
+                    documentJson(saved.document)
+                        .put("docState", "OK")
+                        .put("subjectUserId", editingUserId ?: JSONObject.NULL)
+                        .put("activeUserId", context.activeUserId ?: JSONObject.NULL),
+                )
             }
             is QuizDocSaveResult.Conflict -> json(
                 Response.Status.CONFLICT,
@@ -1685,28 +2306,47 @@ object QuizWebAdmin {
 
     private fun readGenerationPrefs(session: IHTTPSession): Response {
         adminError(session)?.let { return it }
-        val prefs = QuizSessionStore.loadGenerationPrefs()
+        val context = subjectContext(session) ?: return invalidSubject()
+        val prefs = if (context.editingUserId == null) {
+            QuizSessionStore.loadGenerationPrefs()
+        } else {
+            QuizSessionStore.loadGenerationPrefsFor(context.editingUserId)
+        }
         return json(
             Response.Status.OK,
-            JSONObject().put("ok", true).put("prefs", prefs ?: JSONObject.NULL),
+            JSONObject()
+                .put("ok", true)
+                .put("subjectUserId", context.editingUserId ?: JSONObject.NULL)
+                .put("prefs", prefs ?: JSONObject.NULL),
         )
     }
 
     private fun saveGenerationPrefs(session: IHTTPSession): Response {
         adminError(session)?.let { return it }
         val body = jsonBody(session) ?: return error(Response.Status.BAD_REQUEST, "INVALID_JSON")
+        val context = subjectContext(session, body) ?: return invalidSubject()
         val prefs = QuizGeneration.parsePreferences(body)
             ?: return error(Response.Status.BAD_REQUEST, "INVALID_REQUEST")
         val gradeNo = QuizCurriculum.current()?.gradeNoForCode(prefs.optString("grade", ""))
         if (isCloudJuniorBlocked(gradeNo)) {
             return error(Response.Status.CONFLICT, "CLOUD_JUNIOR_UNSUPPORTED")
         }
-        if (!QuizSessionStore.saveGenerationPrefs(prefs)) {
+        val saved = if (context.editingUserId == null) {
+            QuizSessionStore.saveGenerationPrefs(prefs)
+        } else {
+            QuizSessionStore.saveGenerationPrefsFor(context.editingUserId, prefs)
+        }
+        if (!saved) {
             return error(Response.Status.INTERNAL_ERROR, "STORAGE_ERROR")
         }
         // Levels are a frozen parent-designed list now; changing the generation
         // settings no longer moves the answer scope.
-        return json(Response.Status.OK, JSONObject().put("ok", true))
+        return json(
+            Response.Status.OK,
+            JSONObject()
+                .put("ok", true)
+                .put("subjectUserId", context.editingUserId ?: JSONObject.NULL),
+        )
     }
 
     private fun startGeneration(session: IHTTPSession): Response {
@@ -1714,6 +2354,7 @@ object QuizWebAdmin {
         if (!QuizCrypto.isEncrypted) return error(Response.Status.CONFLICT, "AI_UNSUPPORTED")
         if (!QuizSessionStore.consentAccepted()) return error(Response.Status.CONFLICT, "CONSENT_REQUIRED")
         val body = jsonBody(session) ?: return error(Response.Status.BAD_REQUEST, "INVALID_JSON")
+        val context = subjectContext(session, body) ?: return invalidSubject()
         val request = when (val parsed = QuizGeneration.parseRequest(body)) {
             is QuizGeneration.ParseResult.Ok -> parsed.request
             is QuizGeneration.ParseResult.Invalid -> return invalidRequest(parsed.fields)
@@ -1721,11 +2362,18 @@ object QuizWebAdmin {
         if (isCloudJuniorBlocked(request.gradeNo)) {
             return generationFailure("CLOUD_JUNIOR_UNSUPPORTED")
         }
-        return when (val started = QuizGeneration.start(adminToken(session), request)) {
+        return when (
+            val started = QuizGeneration.start(
+                adminToken(session),
+                request,
+                context.editingUserId,
+            )
+        ) {
             is QuizGeneration.StartResult.Started -> json(
                 Response.Status.OK,
                 JSONObject()
                     .put("ok", true)
+                    .put("subjectUserId", context.editingUserId ?: JSONObject.NULL)
                     .put("jobId", started.jobId)
                     .put("batchId", started.jobId)
                     .put("target", request.targetCount)
@@ -1737,21 +2385,28 @@ object QuizWebAdmin {
 
     private fun generationStatus(session: IHTTPSession): Response {
         adminError(session)?.let { return it }
+        val context = subjectContext(session) ?: return invalidSubject()
         val jobId = session.parameters["jobId"]?.firstOrNull().orEmpty()
         if (!JOB_ID_RE.matches(jobId)) return error(Response.Status.BAD_REQUEST, "INVALID_JOB")
-        return when (val result = QuizGeneration.poll(adminToken(session), jobId)) {
+        return when (
+            val result = QuizGeneration.poll(
+                adminToken(session),
+                jobId,
+                context.editingUserId,
+            )
+        ) {
             is QuizGeneration.PollResult.Running -> json(
                 Response.Status.OK,
-                generationJson("running", result.progress, jobId),
+                generationJson("running", result.progress, jobId, context.editingUserId),
             )
             is QuizGeneration.PollResult.Ready -> json(
                 Response.Status.OK,
-                generationJson("ready", result.progress, jobId)
+                generationJson("ready", result.progress, jobId, context.editingUserId)
                     .put("batch", stagedBatchJson(result.batch)),
             )
             is QuizGeneration.PollResult.Failed -> json(
                 Response.Status.OK,
-                generationJson("failed", result.progress, jobId)
+                generationJson("failed", result.progress, jobId, context.editingUserId)
                     .put("error", result.errorCode)
                     .put("batch", stagedBatchJson(result.batch)),
             )
@@ -1763,18 +2418,25 @@ object QuizWebAdmin {
     private fun cancelGeneration(session: IHTTPSession): Response {
         adminError(session)?.let { return it }
         val body = jsonBody(session) ?: return error(Response.Status.BAD_REQUEST, "INVALID_JSON")
+        val context = subjectContext(session, body) ?: return invalidSubject()
         val jobId = body.optString("jobId", "")
         if (!JOB_ID_RE.matches(jobId)) return error(Response.Status.BAD_REQUEST, "INVALID_JOB")
-        if (!QuizGeneration.cancel(adminToken(session), jobId)) {
+        if (!QuizGeneration.cancel(adminToken(session), jobId, context.editingUserId)) {
             return error(Response.Status.NOT_FOUND, "JOB_LOST")
         }
-        return json(Response.Status.OK, JSONObject().put("ok", true))
+        return json(
+            Response.Status.OK,
+            JSONObject()
+                .put("ok", true)
+                .put("subjectUserId", context.editingUserId ?: JSONObject.NULL),
+        )
     }
 
     /** Commits only the rows the parent selected on the review page. */
     private fun addGeneration(session: IHTTPSession): Response {
         adminError(session)?.let { return it }
         val body = jsonBody(session) ?: return error(Response.Status.BAD_REQUEST, "INVALID_JSON")
+        val context = subjectContext(session, body) ?: return invalidSubject()
         val jobId = body.optString("jobId", body.optString("batchId", ""))
         if (!JOB_ID_RE.matches(jobId)) return error(Response.Status.BAD_REQUEST, "INVALID_JOB")
         val array = body.optJSONArray("indexes")
@@ -1792,19 +2454,46 @@ object QuizWebAdmin {
             }
             indexes += index
         }
-        return when (val result = QuizGeneration.add(adminToken(session), jobId, indexes)) {
+        return when (
+            val result = QuizGeneration.add(
+                adminToken(session),
+                jobId,
+                indexes,
+                context.editingUserId,
+            )
+        ) {
             is QuizGeneration.CommitResult.Ok -> {
-                val state = QuizRuntime.refresh()
+                // A sibling's generation only commits rows for that member; the
+                // TV runtime still runs the active child, so refresh it only
+                // when the edited member is the one on screen.
+                val state = if (context.editingIsActive) QuizRuntime.refresh() else null
+                val counts = QuizQuestionCache.bankCounts(
+                    QuizQuestionCache.LOCAL_SCOPE,
+                    subjectUserId = context.editingUserId,
+                    activeSubjectUserId = context.activeUserId,
+                )
+                val packages = levelPackagesFor(context.editingUserId)
                 json(
                     Response.Status.OK,
                     JSONObject()
                         .put("ok", true)
+                        .put("subjectUserId", context.editingUserId ?: JSONObject.NULL)
                         .put("appended", result.appended)
                         .put("duplicates", result.duplicates)
                         .put("rejected", result.rejected)
                         .put("capacityReached", result.capacityReached)
-                        .put("counts", bankCountsJson(state.bankCounts))
-                        .put("bankState", state.bankState),
+                        .put("counts", bankCountsJson(counts))
+                        .put(
+                            "bankState",
+                            state?.bankState ?: editingBankState(
+                                packages = packages,
+                                documentUnreadable = false,
+                                packagesUnreadable = false,
+                                subjectUserId = context.editingUserId,
+                                activeSubjectUserId = context.activeUserId,
+                                nowMs = System.currentTimeMillis(),
+                            ),
+                        ),
                 )
             }
             QuizGeneration.CommitResult.Lost -> error(Response.Status.NOT_FOUND, "JOB_LOST")
@@ -1817,12 +2506,18 @@ object QuizWebAdmin {
     private fun discardGeneration(session: IHTTPSession): Response {
         adminError(session)?.let { return it }
         val body = jsonBody(session) ?: return error(Response.Status.BAD_REQUEST, "INVALID_JSON")
+        val context = subjectContext(session, body) ?: return invalidSubject()
         val jobId = body.optString("jobId", body.optString("batchId", ""))
         if (!JOB_ID_RE.matches(jobId)) return error(Response.Status.BAD_REQUEST, "INVALID_JOB")
-        if (!QuizGeneration.discard(adminToken(session), jobId)) {
+        if (!QuizGeneration.discard(adminToken(session), jobId, context.editingUserId)) {
             return error(Response.Status.NOT_FOUND, "JOB_LOST")
         }
-        return json(Response.Status.OK, JSONObject().put("ok", true))
+        return json(
+            Response.Status.OK,
+            JSONObject()
+                .put("ok", true)
+                .put("subjectUserId", context.editingUserId ?: JSONObject.NULL),
+        )
     }
 
     private fun normalizeKey(value: String): String? {
@@ -1874,10 +2569,12 @@ object QuizWebAdmin {
         state: String,
         progress: QuizGeneration.Progress,
         jobId: String,
+        subjectUserId: String?,
     ): JSONObject =
         JSONObject()
             .put("ok", true)
             .put("state", state)
+            .put("subjectUserId", subjectUserId ?: JSONObject.NULL)
             .put("jobId", jobId)
             .put("batchId", jobId)
             .put("target", progress.target)
@@ -1928,6 +2625,174 @@ object QuizWebAdmin {
             }
         }
 
+    /**
+     * V41 separates the member the phone edits ([editingUserId]) from the
+     * member the TV runs ([activeUserId]). Every user-level endpoint accepts
+     * `subjectUserId` in the query (GET) or JSON body (mutations); an unknown or
+     * disabled member is a hard 400 instead of silently falling back to the
+     * active child.
+     */
+    private data class SubjectContext(
+        val editingUserId: String?,
+        val activeUserId: String?,
+    ) {
+        val editingIsActive: Boolean
+            get() = editingUserId == null ||
+                activeUserId == null ||
+                editingUserId == activeUserId
+    }
+
+    private fun subjectContext(
+        session: IHTTPSession,
+        body: JSONObject? = null,
+    ): SubjectContext? {
+        val requested = body?.optString("subjectUserId", "")
+            ?.trim()?.takeIf { it.isNotEmpty() }
+            ?: session.parameters["subjectUserId"]?.firstOrNull()
+                ?.trim()?.takeIf { it.isNotEmpty() }
+        val family = FamilyHub.state.value
+        if (!family.ready) return if (requested == null) SubjectContext(null, null) else null
+        val active = family.activeUserId.takeIf { it.isNotBlank() }
+        val target = requested ?: active
+        val valid = target == null || family.members.any {
+            it.userId == target && it.status == MemberStatus.ACTIVE
+        }
+        return if (valid) SubjectContext(target, active) else null
+    }
+
+    private fun invalidSubject(): Response =
+        error(Response.Status.BAD_REQUEST, "INVALID_SUBJECT")
+
+    /**
+     * Uploaded avatar for the quiz page's member header/picker.
+     *
+     * The parent center serves `/api/parent/avatar` behind its editor lease; the quiz page
+     * has a quiz-admin session instead. Only ACTIVE members are served, matching the roster
+     * the page receives. Bytes are the same normalized JPEG stored by FamilyAvatarStore.
+     */
+    private fun memberAvatar(context: Context, session: IHTTPSession): Response {
+        adminError(session)?.let { return it }
+        val userId = session.parameters["userId"]?.firstOrNull().orEmpty()
+        val member = FamilyHub.state.value.members.firstOrNull {
+            it.userId == userId && it.status == MemberStatus.ACTIVE
+        } ?: return error(Response.Status.NOT_FOUND, "SUBJECT_NOT_FOUND")
+        val bytes = FamilyAvatarStore.read(context, member)
+            ?: return error(Response.Status.NOT_FOUND, "SUBJECT_AVATAR_NOT_FOUND")
+        return NanoHTTPD.newFixedLengthResponse(
+            Response.Status.OK,
+            "image/jpeg",
+            java.io.ByteArrayInputStream(bytes),
+            bytes.size.toLong(),
+        ).apply {
+            addHeader("Cache-Control", "no-store")
+        }
+    }
+
+    private fun activeMembersJson(): JSONArray = JSONArray().apply {
+        val family = FamilyHub.state.value
+        if (!family.ready) return@apply
+        family.activeMembers.forEach { put(memberJson(it, family)) }
+    }
+
+    private fun memberJson(member: FamilyMember, family: FamilyHub.UiState): JSONObject {
+        val avatarUrl = member.avatarImage?.let { path ->
+            "/api/parent/avatar?userId=" + member.userId +
+                "&rev=" + member.avatarRevision +
+                "&name=" + path.substringAfterLast('/')
+        }
+        return JSONObject()
+            .put("userId", member.userId)
+            .put("name", member.displayName)
+            .put("avatarPreset", member.avatarPreset)
+            .put("avatarRevision", member.avatarRevision)
+            .put("avatarUrl", avatarUrl ?: JSONObject.NULL)
+            // Optional study scope. Null means every grade / every semester; the quiz page
+            // uses this as the default and hides the values that cannot apply.
+            .put("grade", member.grade ?: JSONObject.NULL)
+            .put("semester", member.semester ?: JSONObject.NULL)
+            .put("isDefault", member.userId == family.defaultUserId)
+            .put("isActive", member.userId == family.activeUserId)
+    }
+
+    private fun collectionsJson(
+        subjectUserId: String?,
+        activeSubjectUserId: String?,
+        packages: List<QuizLevelPackage>,
+    ): JSONArray {
+        val counts = QuizQuestionCache.collectionCounts(
+            QuizQuestionCache.LOCAL_SCOPE,
+            subjectUserId = subjectUserId,
+            activeSubjectUserId = activeSubjectUserId,
+        ).associateBy { it.collectionId }
+        val usedTags = packages.asSequence()
+            .flatMap { it.sources.asSequence() }
+            .filterIsInstance<QuizPackageSource.Collection>()
+            .mapTo(HashSet()) { it.collectionId }
+        return JSONArray().apply {
+            QuizCollectionStore.collections(subjectUserId).forEach { collection ->
+                val tagCounts = counts[collection.id]?.counts ?: QuizQuestionCache.BankCounts()
+                put(
+                    JSONObject()
+                        .put("id", collection.id)
+                        .put("name", collection.name)
+                        .put("total", tagCounts.total)
+                        .put("unused", tagCounts.unused)
+                        .put("inUse", collection.id in usedTags),
+                )
+            }
+        }
+    }
+
+    private fun editingBankState(
+        packages: List<QuizLevelPackage>,
+        documentUnreadable: Boolean,
+        packagesUnreadable: Boolean,
+        subjectUserId: String?,
+        activeSubjectUserId: String?,
+        nowMs: Long,
+    ): String {
+        if (documentUnreadable || packagesUnreadable) return "blocked"
+        val enabled = packages.filter { it.enabled }
+        if (packages.isNotEmpty() && enabled.isEmpty()) return "paused"
+        val playable = enabled.maxOfOrNull {
+            QuizQuestionCache.packageAvailability(
+                it,
+                nowMs,
+                subjectUserId = subjectUserId,
+                activeSubjectUserId = activeSubjectUserId,
+            ).available
+        } ?: 0
+        return if (playable > 0) "ready" else "empty"
+    }
+
+    /**
+     * A sibling's QCD. V41 members created before this change may still lack
+     * one; the first edit provisions a clean document in that member's own
+     * namespace instead of cloning the active child's legacy state.
+     */
+    private fun documentForEditing(userId: String): QuizDocLoadResult {
+        val loaded = QuizConfigDocumentStore.localDocumentFor(userId)
+        if (loaded is QuizDocLoadResult.Unreadable &&
+            loaded.errors.singleOrNull() == "quiz.doc.local:ABSENT"
+        ) {
+            if (QuizConfigDocumentStore.provisionLocalDocument(userId, null)) {
+                return QuizConfigDocumentStore.localDocumentFor(userId)
+            }
+        }
+        return loaded
+    }
+
+    /** Packages of the member being edited, for endpoints that do not load a session. */
+    private fun levelPackagesFor(userId: String?): List<QuizLevelPackage> {
+        val document = if (userId.isNullOrBlank()) {
+            QuizConfigDocumentStore.localDocument()
+        } else {
+            (QuizConfigDocumentStore.localDocumentFor(userId) as? QuizDocLoadResult.Ok)
+                ?.document
+        } ?: return emptyList()
+        return storedPackages(document, userId)
+    }
+
     private fun bankCountsJson(counts: QuizQuestionCache.BankCounts): JSONObject =
         JSONObject()
             .put("total", counts.total)
@@ -1944,11 +2809,20 @@ object QuizWebAdmin {
      * before a child picks a package the bank cannot fill, and the source
      * picker shows the single/multiple split before a parent adds a course.
      */
-    private fun levelPackagesJson(packages: List<QuizLevelPackage>): JSONArray {
+    private fun levelPackagesJson(
+        packages: List<QuizLevelPackage>,
+        subjectUserId: String?,
+        activeSubjectUserId: String?,
+    ): JSONArray {
         val now = System.currentTimeMillis()
         return JSONArray().apply {
             packages.forEach { levelPackage ->
-                val availability = QuizQuestionCache.packageAvailability(levelPackage, now)
+                val availability = QuizQuestionCache.packageAvailability(
+                    levelPackage,
+                    now,
+                    subjectUserId = subjectUserId,
+                    activeSubjectUserId = activeSubjectUserId,
+                )
                 put(
                     JSONObject()
                         .put("id", levelPackage.id)
@@ -1963,6 +2837,8 @@ object QuizWebAdmin {
                                         packageSourceJson(
                                             source,
                                             availability.sourceCounts.getOrElse(index) { 0 },
+                                            subjectUserId,
+                                            activeSubjectUserId,
                                         ),
                                     )
                                 }
@@ -1973,16 +2849,25 @@ object QuizWebAdmin {
         }
     }
 
-    private fun packageSourceJson(source: QuizPackageSource, available: Int): JSONObject =
+    private fun packageSourceJson(
+        source: QuizPackageSource,
+        available: Int,
+        subjectUserId: String?,
+        activeSubjectUserId: String?,
+    ): JSONObject =
         when (source) {
             is QuizPackageSource.Course -> {
                 val typeCounts = QuizQuestionCache.availableTypeCounts(
                     answerScope = source.scope,
+                    subjectUserId = subjectUserId,
+                    activeSubjectUserId = activeSubjectUserId,
+                    origin = source.origin,
                 )
                 JSONObject()
                     .put("type", "course")
                     .put("scope", source.scope.encode())
                     .put("answerKind", source.answerKind.wire)
+                    .put("origin", source.origin.wire)
                     .put("available", available)
                     .put(
                         "typeCounts",
@@ -1995,8 +2880,24 @@ object QuizWebAdmin {
             is QuizPackageSource.Collection -> JSONObject()
                 .put("type", "collection")
                 .put("collectionId", source.collectionId)
-                .put("collectionName", QuizCollectionStore.tagName(source.collectionId))
+                .put(
+                    "collectionName",
+                    QuizCollectionStore.tagName(source.collectionId, subjectUserId),
+                )
                 .put("available", available)
+            is QuizPackageSource.Preset -> {
+                val counts = QuizQuestionCache.bankCounts(
+                    QuizQuestionCache.LOCAL_SCOPE,
+                    subjectUserId = subjectUserId,
+                    activeSubjectUserId = activeSubjectUserId,
+                    presetBank = source.bank,
+                )
+                JSONObject()
+                    .put("type", "preset")
+                    .put("bankId", source.bank.wire)
+                    .put("available", available)
+                    .put("total", counts.total)
+            }
             QuizPackageSource.WrongReview -> JSONObject()
                 .put("type", "wrong")
                 .put("available", available)
@@ -2012,12 +2913,15 @@ object QuizWebAdmin {
      * missing id is assigned by [QuizLevelPackage.parse]; any other malformed
      * row rejects the whole save instead of dropping part of a parent's list.
      */
-    private fun parseLevelPackages(raw: JSONArray?): LevelPackagesResult {
+    private fun parseLevelPackages(
+        raw: JSONArray?,
+        subjectUserId: String?,
+    ): LevelPackagesResult {
         if (raw == null) return LevelPackagesResult.Invalid("INVALID_LEVEL_PACKAGES")
         if (raw.length() > QuizLevelPackage.MAX_LEVELS) {
             return LevelPackagesResult.Invalid("TOO_MANY_LEVELS")
         }
-        val knownTags = QuizCollectionStore.collections().mapTo(HashSet()) { it.id }
+        val knownTags = QuizCollectionStore.collections(subjectUserId).mapTo(HashSet()) { it.id }
         val packages = ArrayList<QuizLevelPackage>(raw.length())
         val ids = HashSet<String>(raw.length())
         for (index in 0 until raw.length()) {
@@ -2067,15 +2971,26 @@ object QuizWebAdmin {
      * in memory for comparisons; this never writes, so a rules-only save stays
      * a single revision.
      */
-    private fun storedPackages(document: QuizConfigDocument): List<QuizLevelPackage> =
+    private fun storedPackages(
+        document: QuizConfigDocument,
+        subjectUserId: String?,
+    ): List<QuizLevelPackage> =
         when (val extension = QuizLevelPackageStore.read(document)) {
             is QuizLevelPackageStore.Extension.Present -> extension.packages
             QuizLevelPackageStore.Extension.Absent -> QuizLevelPackageStore.migrate(
                 courseLevels = document.localLevels().orEmpty(),
-                customLevels = QuizCollectionStore.customLevels(),
-                wrongLevel = QuizWrongReviewLevelStore.level(),
+                customLevels = QuizCollectionStore.customLevels(subjectUserId),
+                wrongLevel = wrongLevelFor(subjectUserId),
             )
             is QuizLevelPackageStore.Extension.Broken -> emptyList()
+        }
+
+    private fun wrongLevelFor(subjectUserId: String?)
+        : com.planyourtv.policy.quiz.QuizWrongReviewLevel? =
+        if (subjectUserId.isNullOrBlank()) {
+            QuizWrongReviewLevelStore.level()
+        } else {
+            QuizWrongReviewLevelStore.levelFor(subjectUserId)
         }
 
     private data class LegacyLevelProjection(
@@ -2093,6 +3008,8 @@ object QuizWebAdmin {
      */
     private fun legacyLevelProjection(
         packages: List<QuizLevelPackage>,
+        subjectUserId: String?,
+        activeSubjectUserId: String?,
     ): LegacyLevelProjection {
         val answerScopes = JSONArray()
         val customLevels = JSONArray()
@@ -2114,6 +3031,8 @@ object QuizWebAdmin {
                                 QuizQuestionCache.LOCAL_SCOPE,
                                 answerScope = only.scope,
                                 answerKind = only.answerKind,
+                                subjectUserId = subjectUserId,
+                                activeSubjectUserId = activeSubjectUserId,
                             ),
                         ),
                 )
@@ -2122,18 +3041,34 @@ object QuizWebAdmin {
                         .put("id", levelPackage.id)
                         .put("name", levelPackage.name)
                         .put("collectionId", only.collectionId)
-                        .put("collectionName", QuizCollectionStore.tagName(only.collectionId))
+                        .put(
+                            "collectionName",
+                            QuizCollectionStore.tagName(only.collectionId, subjectUserId),
+                        )
                         .put(
                             "available",
-                            QuizQuestionCache.availableCollectionCount(only.collectionId),
+                            QuizQuestionCache.availableCollectionCount(
+                                only.collectionId,
+                                subjectUserId = subjectUserId,
+                                activeSubjectUserId = activeSubjectUserId,
+                            ),
                         ),
                 )
                 QuizPackageSource.WrongReview -> if (wrongLevel == null) {
                     wrongLevel = JSONObject()
                         .put("id", levelPackage.id)
                         .put("name", levelPackage.name)
-                        .put("available", QuizQuestionCache.wrongReviewCount())
+                        .put(
+                            "available",
+                            QuizQuestionCache.wrongReviewCount(
+                                subjectUserId = subjectUserId,
+                                activeSubjectUserId = activeSubjectUserId,
+                            ),
+                        )
                 }
+                // The pre-V37 page has no concept of a bundled non-curriculum
+                // bank, so it only sees the level name.
+                is QuizPackageSource.Preset -> Unit
                 null -> Unit
             }
         }

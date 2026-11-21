@@ -245,6 +245,7 @@ private fun levelSummary(level: QuizRuntime.LevelState?): String =
         level.packageSourceCount > 1 ->
             stringResource(R.string.policy_quiz_scope_mixed_level, level.packageSourceCount)
         level.wrongReview -> stringResource(R.string.policy_quiz_scope_wrong_review)
+        level.presetBank != null -> stringResource(R.string.policy_quiz_scope_preset_life)
         level.isCustom -> stringResource(R.string.policy_quiz_scope_custom_tag, level.tagName)
         else -> scopeSummary(level.scope)
     }

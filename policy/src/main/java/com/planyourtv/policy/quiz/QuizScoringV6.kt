@@ -22,10 +22,17 @@ data class QuizScoreV6(
  * exactly the same payout as the v5 engine did.
  */
 object QuizScoringV6 {
+    /**
+     * @param applyCap whether the profile's per-round reward cap applies. Local rounds pass
+     * false because the day's quota already limits entertainment; hosted rounds keep the
+     * server-agreed cap. Even an uncapped local round stays inside the document's absolute
+     * sanity bound so the stored session remains decodable.
+     */
     fun score(
         items: List<QuizItem>,
         submissions: List<QuizSubmission>,
         profile: QuizRewardProfile,
+        applyCap: Boolean = true,
     ): QuizScoreV6 {
         val byId = items.associateBy { it.questionId }
         var correctCount = 0
@@ -42,7 +49,11 @@ object QuizScoringV6 {
             }
         }
         val net = (gross - penalty).coerceAtLeast(0)
-        val capped = min(net, profile.maxEarnedSeconds)
+        val capped = if (applyCap) {
+            min(net, profile.maxEarnedSeconds)
+        } else {
+            min(net, QUIZ_DOC_MAX_MAX_EARNED_SECONDS)
+        }
         val threshold = profile.minUnlockSeconds
         val reached = threshold == 0 || capped >= threshold
         return QuizScoreV6(

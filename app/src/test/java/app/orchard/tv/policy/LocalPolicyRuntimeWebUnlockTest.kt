@@ -29,15 +29,21 @@ import org.robolectric.Shadows.shadowOf
 class LocalPolicyRuntimeWebUnlockTest {
     private val pin = "246810"
     private val videoPackage = "com.example.video"
+    private val studyPackage = "com.example.study"
     private lateinit var app: android.app.Application
 
     private fun rules() = LocalRules(
-        weekdayWindows = listOf(LocalTimeWindow(0, 24 * 60)),
-        weekendWindows = listOf(LocalTimeWindow(0, 24 * 60)),
-        autoDailyLimitMinutes = 60,
+        dayGroups = LocalRules.fromLegacyWeekdayWeekend(
+            weekdayWindows = listOf(LocalTimeWindow(0, 24 * 60)),
+            weekendWindows = listOf(LocalTimeWindow(0, 24 * 60)),
+            weekdayLimitMinutes = 60,
+            weekendLimitMinutes = 60,
+        ),
         sessionLimitMinutes = 20,
         restMinutes = 0,
         allowedPackages = setOf(videoPackage),
+        // Study mode needs a study scope; the master switch stays on by default.
+        studyPackages = setOf(studyPackage),
     )
 
     private fun state() = LocalPolicyRuntime.state.value
@@ -72,16 +78,10 @@ class LocalPolicyRuntimeWebUnlockTest {
     }
 
     @Test
-    fun enteringLocalModeForcesManualWithoutLosingTheStoredAutoRules() {
-        assertTrue(LocalPolicyRuntime.setActivation(Activation.AUTO))
-        assertEquals(Activation.AUTO, state().activation)
-
-        assertTrue(LocalPolicyRuntime.ensureLocalManualActivation())
+    fun theLocalRuntimeAlwaysRunsInManualMode() {
+        // Automatic activation no longer exists locally; web control must see the manual state.
         assertEquals(Activation.MANUAL, state().activation)
-        // The automatic rule set is still stored; only the active switch moved.
-        assertNotNull(LocalPolicyRuntime.currentRuleSets?.rulesFor(
-            Activation.AUTO,
-        ))
+        assertNotNull(LocalPolicyRuntime.currentRuleSets)
     }
 
     @Test

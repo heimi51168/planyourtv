@@ -1,9 +1,13 @@
 package app.orchard.tv.policy
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.os.PowerManager
 import android.util.Log
+import android.widget.Toast
 import app.orchard.tv.BuildConfig
+import app.orchard.tv.R
 import app.orchard.tv.guard.HomeGuardService
 import app.orchard.tv.policy.web.ParentWebAccess
 import app.orchard.tv.policy.web.ParentWebCenter
@@ -19,7 +23,7 @@ import com.planyourtv.policy.LocalPin
 import com.planyourtv.policy.LocalRuleSets
 import com.planyourtv.policy.LocalRules
 import com.planyourtv.policy.LocalRulesError
-import com.planyourtv.policy.LockReason
+import com.planyourtv.policy.ManualTimerScope
 import com.planyourtv.policy.ParentAuthSession
 import com.planyourtv.policy.PinResult
 import com.planyourtv.policy.PolicyFlowTrace
@@ -33,7 +37,6 @@ import com.planyourtv.policy.PolicyUiState
 import com.planyourtv.policy.RejectReason
 import com.planyourtv.policy.SessionStartResult
 import com.planyourtv.policy.PolicyVoiceBus
-import com.planyourtv.policy.RemoteActivationAnnouncer
 import com.planyourtv.policy.RemoteHandoffState
 import com.planyourtv.policy.RemoteModeAnnouncer
 import com.planyourtv.policy.RemotePolicy
@@ -47,8 +50,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Owns the NONE/LOCAL/CLOUD choice and makes sure at most one engine is active. NONE is a real
@@ -110,11 +116,12 @@ object PolicyModeCoordinator {
         SCREEN_OFF,
         NOT_ON_LOCK_SCREEN,
         DEFAULT_PIN,
-        AUTO_MODE,
         RESTING,
         OUTSIDE_WINDOW,
         DAILY_LIMIT,
         NO_TIMED_APPS,
+        /** The manual scope has only unlimited apps, so a countdown would be meaningless. */
+        ONLY_UNLIMITED,
         STATE_CHANGED,
     }
 
@@ -134,6 +141,12 @@ object PolicyModeCoordinator {
         data class PinInvalid(val locked: Boolean) : WebManualStartResult
     }
 
+    /**
+     * Outcome of the garden's remote single session. [message] is shown to the parent verbatim
+     * in the orchard page, so it must always be human text.
+     */
+    data class RemoteSingleSessionResult(val ok: Boolean, val message: String)
+
     /** Result of the one-time local-to-cloud rule handoff. */
     sealed interface HandoffResult {
         data object Success : HandoffResult
@@ -146,6 +159,28 @@ object PolicyModeCoordinator {
 
     private const val TAG = "PolicyMode"
     private const val MODE_HEARTBEAT_MS = 5 * 60_000L
+
+    /**
+     * Garden "single session" bounds; mirrors the orchard page (1–180 minutes).
+     * 2026-11-21: minimum lowered from 5 to 1 so parents can run quick end-to-end tests.
+     */
+    private const val SINGLE_SESSION_MIN_MINUTES = 1
+    private const val SINGLE_SESSION_MAX_MINUTES = 180
+
+    /**
+     * A remote timer first aligns the TV's cloud active member, so the wait covers one config
+     * fetch plus a possible second fetch when the switch landed mid-request.
+     */
+    private const val SINGLE_SESSION_SYNC_TIMEOUT_MS = 10_000L
+    private const val SINGLE_SESSION_SYNC_POLL_MS = 250L
+
+    /**
+     * 2026-11-19: QR binding reports this TV's own device state only. It no longer uploads
+     * the local rules or the parent password; the cloud config and the local config stay
+     * independent. The handoff implementation below is kept intact as a rollback path, but
+     * it must not be invoked while this is false.
+     */
+    const val LOCAL_RULES_UPLOAD_ENABLED = false
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var context: Context? = null
@@ -168,8 +203,6 @@ object PolicyModeCoordinator {
     private val handoffInFlight = java.util.concurrent.atomic.AtomicBoolean(false)
     /** Speaks only after the first observed cloud mode, so startup stays quiet. */
     private val remoteModeAnnouncer = RemoteModeAnnouncer()
-    /** Same baseline rule for the phone's AUTO ↔ MANUAL switch. */
-    private val remoteActivationAnnouncer = RemoteActivationAnnouncer()
 
     private val _state = MutableStateFlow(PolicyUiState(mode = PolicyMode.NONE, loaded = false))
     val state: StateFlow<PolicyUiState> = _state.asStateFlow()
@@ -269,7 +302,6 @@ object PolicyModeCoordinator {
                     LocalPolicyRuntime.setSource(PolicySource.LOCAL)
                     // Do not reset the guard here: initialize() has already restored a
                     // parent override or study lease that still has live evidence.
-                    LocalPolicyRuntime.ensureLocalManualActivation()
                     LocalPolicyRuntime.activate()
                 }
                 PolicyMode.CLOUD -> {
@@ -354,8 +386,43 @@ object PolicyModeCoordinator {
         }
         scope.launch {
             PolicyRuntime.remotePolicy.collect { remote ->
-                if (mode == PolicyMode.CLOUD) applyRemotePolicyMode(remote)
+                if (mode == PolicyMode.CLOUD) {
+                    applyRemotePolicyMode(remote)
+                    // 入口展示是设备级字段（2026-11-21），单独改它不会改规则版本，也不会经过
+                    // applyRemoteRule 的状态回写；这里重算一次 UiState，让信号源入口立即跟随。
+                    // 值相等时 StateFlow 不发射，不会造成额外重组。
+                    _state.value = currentEngineState()
+                }
             }
+        }
+        // 设备级「入口展示 → 答题闯关」（2026-11-21）：入口可见性由 QuizRuntime 合成到锁屏，
+        // 单独改这一项不会改规则版本，因此在这里显式让它重算一次；刷新在后台协程执行，
+        // 不阻塞主线程。首次发射也刷新一次：进程重启后磁盘里的快照可能已经把入口关掉，
+        // 不能只等下一次变化。null（旧后端）→ 值 的变化同样触发（后端升级路径）。
+        scope.launch {
+            PolicyRuntime.remotePolicy
+                .map { it?.quizEntryVisible }
+                .distinctUntilChanged()
+                .collect { QuizRuntime.refresh() }
+        }
+        // Hosted state is partitioned per garden member. A switch can arrive through the config
+        // poll without any rule change, so the executor must re-scope on the member id itself —
+        // otherwise the outgoing child's ledger and rest cursor stay in memory and the new child
+        // inherits them (2026-11-21: 佳奇's 6-minute rest followed the switch to another user).
+        scope.launch {
+            PolicyRuntime.state
+                .map { it.cloudActiveMemberId }
+                .distinctUntilChanged()
+                .collect { member ->
+                    if (mode != PolicyMode.CLOUD) return@collect
+                    // 题库跟着当前用户切换（2026-11-21）：先让锁屏/答题页立刻反映「切换中」，
+                    // 再强制重同步 QCD——同步内部会按 memberId 重新 select QB 孩子并激活新文档。
+                    // 首次发射也执行：进程重启后磁盘 active 文档可能属于上一个用户。
+                    QuizRuntime.refresh()
+                    QuizConfigDocumentSync.requestSync(force = true)
+                    if (!LocalPolicyRuntime.isHostedExecutionLoaded()) return@collect
+                    if (LocalPolicyRuntime.ensureHostedSubject(member ?: 0L)) publishCurrent()
+                }
         }
         // The REST grant poll is a delivery path equal to the MQTT command. In hosted mode it
         // must arm the local confirm gate, never the legacy PENDING session.
@@ -426,6 +493,8 @@ object PolicyModeCoordinator {
             dailyUsedSeconds = local.dailyUsedSeconds,
             dailyLimitSeconds = local.dailyLimitSeconds,
             sessionLimitSeconds = local.sessionLimitSeconds,
+            sessionCapSeconds = local.sessionCapSeconds,
+            unlockRoutePlan = local.unlockRoutePlan,
             nextWindowLabel = local.nextWindowLabel,
             todayWindowsLabel = local.todayWindowsLabel,
             windowRemainingSeconds = local.windowRemainingSeconds,
@@ -442,14 +511,24 @@ object PolicyModeCoordinator {
         cloudNeedsGrant = state.bound && state.sessionState == SessionState.IDLE,
     )
 
-    private fun currentEngineState(): PolicyUiState = when (mode) {
-        PolicyMode.CLOUD -> if (ruleGuardActive) {
-            ruleCloudState(PolicyRuntime.state.value)
-        } else {
-            cloudState(PolicyRuntime.state.value)
+    private fun currentEngineState(): PolicyUiState {
+        val base = when (mode) {
+            PolicyMode.CLOUD -> if (ruleGuardActive) {
+                ruleCloudState(PolicyRuntime.state.value)
+            } else {
+                cloudState(PolicyRuntime.state.value)
+            }
+            PolicyMode.LOCAL -> LocalPolicyRuntime.state.value.copy(mode = PolicyMode.LOCAL)
+            PolicyMode.NONE -> noneState()
         }
-        PolicyMode.LOCAL -> LocalPolicyRuntime.state.value.copy(mode = PolicyMode.LOCAL)
-        PolicyMode.NONE -> noneState()
+        if (mode != PolicyMode.CLOUD) return base
+        // 入口展示（2026-11-21）：设备级云端开关。字段缺失（旧后端）按「显示」保持历史行为。
+        // 放进 UiState 是为了让只改这一项、规则版本没变的刷新也能触发界面重组。
+        val remote = PolicyRuntime.remotePolicy.value
+        return base.copy(
+            sourceEntryVisible = remote?.sourceEntryVisible ?: true,
+            quizEntryVisible = remote?.quizEntryVisible ?: true,
+        )
     }
 
     /**
@@ -468,11 +547,18 @@ object PolicyModeCoordinator {
             studyModeAvailable = local.studyModeAvailable,
             studyModeActive = local.studyModeActive,
             studyPackages = local.studyPackages,
-            autoReady = local.autoReady,
+            studyEarnPackages = local.studyEarnPackages,
+            studyEarnStudyMinutes = local.studyEarnStudyMinutes,
+            studyEarnRewardMinutes = local.studyEarnRewardMinutes,
+            quizGateEnabled = local.quizGateEnabled,
+            studyEarnEnabled = local.studyEarnEnabled,
+            directStartEnabled = local.directStartEnabled,
+            unlockRoutePlan = local.unlockRoutePlan,
             noTimedApps = local.noTimedApps,
             totalSeconds = local.totalSeconds,
             remainingSeconds = local.remainingSeconds,
             effectiveRemainingSeconds = local.effectiveRemainingSeconds,
+            activeSessionOutsidePlan = local.activeSessionOutsidePlan,
             // The armed grant's "valid until" label comes from the local pending object; the
             // legacy field is identity-only in hosted mode.
             validUntil = local.validUntil,
@@ -488,6 +574,7 @@ object PolicyModeCoordinator {
             dailyUsedSeconds = local.dailyUsedSeconds,
             dailyLimitSeconds = local.dailyLimitSeconds,
             sessionLimitSeconds = local.sessionLimitSeconds,
+            sessionCapSeconds = local.sessionCapSeconds,
             configuredRestMinutes = local.configuredRestMinutes,
             configuredBufferMinutes = local.configuredBufferMinutes,
             nextWindowLabel = local.nextWindowLabel,
@@ -501,6 +588,9 @@ object PolicyModeCoordinator {
             // latest synced rules must apply to a session that is already running.
             accessMode = local.accessMode,
             allowedPackages = local.allowedPackages,
+            // 2026-11-21: the lock screen docks render unlimited tiles from this set. Omitting
+            // it here silently dropped the cloud-projected "无限制应用" (for example 央视频).
+            unlimitedPackages = local.unlimitedPackages,
         )
     }
 
@@ -559,8 +649,16 @@ object PolicyModeCoordinator {
             PolicyGuardChoice.PendingLocalRule -> {
                 // Migration is not complete: keep counting with the TV's own rules, but do not
                 // attach the cloud usage outbox yet.
-                LocalPolicyRuntime.setSource(PolicySource.LOCAL)
-                RuleUsageReporter.stop()
+                if (LocalPolicyRuntime.isHostedExecutionLoaded()) {
+                    // A hosted session is already running, so a PENDING handoff is stale (the
+                    // migration had completed). Flipping the source here would checkpoint the
+                    // hosted usage into the local partition; keep the hosted executor until a
+                    // complete document replaces the template.
+                    Log.w(TAG, "policy regressed to PENDING while hosted execution is loaded; keeping hosted session")
+                } else {
+                    LocalPolicyRuntime.setSource(PolicySource.LOCAL)
+                    RuleUsageReporter.stop()
+                }
             }
         }
 
@@ -601,19 +699,6 @@ object PolicyModeCoordinator {
     }
 
     /**
-     * Both SetActivation and the config pull that follows a phone edit flow through here. The
-     * announcer speaks only on a real AUTO ↔ MANUAL transition after the first observed value.
-     */
-    private fun announceRemoteActivation(activation: Activation) {
-        val cue = remoteActivationAnnouncer.observe(
-            activation = activation,
-            active = mode == PolicyMode.CLOUD,
-        ) ?: return
-        presentRemoteChangeOnPanel()
-        PolicyVoiceBus.emit(cue)
-    }
-
-    /**
      * An idle TV keeps presenting the frame from before a remote edit, so the new badge, actions
      * and rule details are not seen until a key arrives; see PolicyPanelRefresh for the evidence
      * and the BACK-plus-redraw nudge.
@@ -625,47 +710,81 @@ object PolicyModeCoordinator {
 
     /** Applies a DONE/RULE template. The running session keeps its old plan. */
     private fun applyRemoteRule(remote: RemotePolicy): Boolean {
-        LocalPolicyRuntime.setSource(PolicySource.HOSTED)
-        // Old backends only carry one set; mirror it explicitly into both local sets. New
-        // backends apply both and let the runtime decide whether the running session or only
-        // the inactive set changed.
-        val incomingSets = remote.ruleSets ?: LocalRuleSets.mirrorSingleSet(remote.rules)
+        // Old backends only carry one set; treat it as the manual set. The member mask decides
+        // which of the fields the cloud actually projected for the active orchard member.
+        val incomingSets = (remote.ruleSets ?: LocalRuleSets.from(remote.rules))
+            .preservingDeviceFieldsFrom(
+                LocalPolicyRuntime.currentRuleSets,
+                remote.memberScopedFields,
+            )
+        // The first rule after entering CLOUD must switch to the hosted execution partition.
+        // Mutating the template alone would keep counting in whatever ledger the previous mode
+        // left in memory, and the next checkpoint would persist it under the hosted keys.
+        val enteringPartition = !LocalPolicyRuntime.isHostedExecutionLoaded()
+        val activeMemberId = PolicyRuntime.state.value.cloudActiveMemberId ?: 0L
+        // Member switches that re-project rules must not apply the new template on top of the
+        // outgoing member's partition; adopt the new scope first (settles the old session).
+        if (!enteringPartition && activeMemberId > 0L) {
+            LocalPolicyRuntime.ensureHostedSubject(activeMemberId)
+        }
         val rulesChanged = appliedRemoteVersion != remote.configVersion ||
-            LocalPolicyRuntime.currentRules != remote.rules ||
             LocalPolicyRuntime.currentRuleSets != incomingSets
-        if (rulesChanged) {
+        if (rulesChanged || enteringPartition) {
+            // One line per real snapshot change (config polls repeat the same version): which
+            // member mask arrived and what the TV will actually enforce. This is the first
+            // place to look when a parent edit does not reach the desktop.
+            val mask = remote.memberScopedFields
+            // Study X/Y live on the materialized rules, not on the rule-set value object.
+            val materialized = incomingSets.rules()
+            PolicyFlowTrace.event(
+                "remote.rules.apply",
+                "version" to remote.configVersion,
+                "enteringHosted" to enteringPartition,
+                "changed" to rulesChanged,
+                "mask" to (mask?.joinToString(",") ?: "LEGACY_ALL_LOCAL"),
+                "allowed" to incomingSets.shared.allowedPackages.size,
+                "study" to incomingSets.shared.studyPackages.size,
+                "unlimited" to incomingSets.shared.unlimitedPackages.size,
+                "earn" to incomingSets.shared.studyEarnPackages.size,
+                "dayGroups" to incomingSets.manual.dayGroups.size,
+                "cap" to incomingSets.manual.sessionCapMinutes,
+                "direct" to incomingSets.manual.directStartEnabled,
+                "quiz" to incomingSets.manual.quizGateEnabled,
+                "studyMin" to materialized.studyEarnStudyMinutes,
+                "rewardMin" to materialized.studyEarnRewardMinutes,
+                "usable" to incomingSets.isUsable,
+                // 设备级入口展示（2026-11-21）；LEGACY = 旧后端未投影，电视保持历史组合。
+                "sourceEntry" to (remote.sourceEntryVisible?.toString() ?: "LEGACY"),
+                "quizEntry" to (remote.quizEntryVisible?.toString() ?: "LEGACY"),
+            )
+        }
+        if (enteringPartition) {
+            // A session running under the TV's own rules must not migrate into the cloud
+            // partition; settle it into the local ledger before the executor switches.
+            LocalPolicyRuntime.endSessionForSwitch()
+            if (!LocalPolicyRuntime.enterHostedMode(incomingSets, remote.configVersion, activeMemberId)) {
+                PolicyFlowTrace.event(
+                    "remote.rules.reject",
+                    "stage" to "enterHosted",
+                    "version" to remote.configVersion,
+                    "usable" to incomingSets.isUsable,
+                )
+                return false
+            }
+        } else if (rulesChanged) {
             if (!LocalPolicyRuntime.setRuleSetsWithVersion(incomingSets, remote.configVersion)) {
+                PolicyFlowTrace.event(
+                    "remote.rules.reject",
+                    "stage" to "setRuleSets",
+                    "version" to remote.configVersion,
+                    "usable" to incomingSets.isUsable,
+                )
                 return false
             }
         }
-        // Activation is cached beside the rules, never mixed into them. Applying the same value
-        // is a no-op; a real AUTO ↔ MANUAL switch ends the running segment first (V11).
-        val activationBefore = LocalPolicyRuntime.state.value.activation
-        val activationApplied = activationBefore != remote.activation &&
-            LocalPolicyRuntime.setActivation(remote.activation)
-        // The local state flow normally refreshes the UI through its collector on the main
-        // looper. That collector can lag behind the voice cue on a busy TV, which leaves the
-        // lock screen on the old AUTO/MANUAL badge after the switch was already announced.
-        // Publish the derived UI state here so the badge and the cue change together.
         _state.value = currentEngineState()
-        PolicyFlowTrace.event(
-            "remote.activation.apply",
-            "via" to "config",
-            "version" to remote.configVersion,
-            "before" to activationBefore,
-            "remote" to remote.activation,
-            "localAfter" to LocalPolicyRuntime.state.value.activation,
-            "uiAfter" to _state.value.activation,
-            "applied" to activationApplied,
-        )
-        // The phone's switch may arrive only through this config pull. Observe the activation
-        // that was actually applied (not the remote copy) so a refused apply never speaks, and
-        // the first observed value still primes the announcer silently.
-        announceRemoteActivation(LocalPolicyRuntime.state.value.activation)
-        // A rule edit changes the lock screen's detail rows even when the activation did not
-        // move; wake that idle panel too. The object drops this when the activation path just
-        // nudged, so one config apply still produces one BACK.
-        if (rulesChanged) presentRemoteChangeOnPanel()
+        // A rule edit changes the lock screen's detail rows; wake that idle panel.
+        if (rulesChanged || enteringPartition) presentRemoteChangeOnPanel()
         appliedRemoteMode = RemotePolicyMode.RULE
         appliedRemoteVersion = remote.configVersion
         RuleUsageReporter.start(PolicyRuntime.state.value.deviceNo)
@@ -753,6 +872,20 @@ object PolicyModeCoordinator {
 
     fun isNone(): Boolean = mode == PolicyMode.NONE
 
+    /**
+     * Whether a policy may exist even though [state] has not finished loading. The guard's
+     * revival gate must not read the initial `mode = NONE, loaded = false` as "no policy":
+     * that would let an automatic revival silence the lock screen. On a fresh install with a
+     * ready store and no stored mode this is false, so the gate keeps its ordinary behaviour.
+     */
+    fun policyMayExist(): Boolean {
+        if (mode != PolicyMode.NONE) return true
+        val stored = PolicyModeStore.load()
+        if (stored != null) return stored != PolicyMode.NONE
+        // Credential storage not open, or an old CLOUD install whose mode key was never written.
+        return !TvStore.isReady || PolicyRuntime.hasStoredCloudIdentity()
+    }
+
     fun isLockScreen(): Boolean = when (mode) {
         PolicyMode.CLOUD -> if (ruleGuardActive) {
             LocalPolicyRuntime.isLockScreen() || LocalPolicyRuntime.isSetupRequired
@@ -824,13 +957,22 @@ object PolicyModeCoordinator {
     private fun sourceEntryGate(sourceId: String): Boolean = when (mode) {
         // The switch lives in the child-mode rules; with child mode off there is nothing to hide.
         PolicyMode.NONE -> true
-        PolicyMode.CLOUD -> if (ruleGuardActive) {
-            SourceEntrySettings.isVisible() && localSourceEntryAllowed()
-        } else {
-            SourceEntrySettings.isVisible() && PolicyRuntime.allowsSource(sourceId)
+        PolicyMode.CLOUD -> {
+            val rulesAllow = if (ruleGuardActive) {
+                localSourceEntryAllowed()
+            } else {
+                PolicyRuntime.allowsSource(sourceId)
+            }
+            // 设备级「入口展示 → 信号源」（2026-11-21）：云端开关与电视本机开关取交集，
+            // 任一关闭即隐藏。null = 旧后端未投影该字段，保持本机开关 × 规则闸门的历史组合。
+            SourceEntrySettings.isVisible() && cloudSourceEntryVisible() && rulesAllow
         }
         PolicyMode.LOCAL -> SourceEntrySettings.isVisible() && localSourceEntryAllowed()
     }
+
+    /** 云端入口展示（信号源）；null（旧后端）按显示处理，显式 false 才隐藏。 */
+    private fun cloudSourceEntryVisible(): Boolean =
+        PolicyRuntime.remotePolicy.value?.sourceEntryVisible != false
 
     private fun localSourceEntryAllowed(): Boolean {
         val local = LocalPolicyRuntime.state.value
@@ -884,6 +1026,15 @@ object PolicyModeCoordinator {
     /** True while the bound hosted rule mirror owns execution; remote commands target it. */
     fun isHostedRuleActive(): Boolean = mode == PolicyMode.CLOUD && ruleGuardActive
 
+    /**
+     * Hosted rule guard with its execution partition loaded. The child unlock routes
+     * (direct/quiz/study) run on the same local planner as LOCAL mode; only this combination
+     * may use them, never the legacy CLOUD redemption engine.
+     */
+    private fun hostedRuleGuardActive(): Boolean =
+        mode == PolicyMode.CLOUD && ruleGuardActive &&
+            LocalPolicyRuntime.state.value.source == PolicySource.HOSTED
+
     fun isTemporaryUnlocked(): Boolean = state.value.guardState == GuardStatus.PARENT_OVERRIDE
 
     /** Used by the parent center only for the "default PIN, please change" hint. */
@@ -923,7 +1074,7 @@ object PolicyModeCoordinator {
         if (!PolicyRuntime.needsLocalPinSetup()) return null
         if (PolicyRuntime.isDefaultPinValue(pin)) return null
         val rules = LocalPolicyRuntime.currentRules?.takeIf { it.isUsable }
-            ?: LocalRules.defaultsFor(LocalPolicyRuntime.state.value.activation)
+            ?: LocalRules.DEFAULTS
         val code = LocalPolicyRuntime.completeSetup(pin, rules, recoveryCode) ?: return null
         // completeSetup writes through TvPinStore, which also updates the cloud copy; refresh
         // its cached pinConfigured so a later mode switch sees the same logical PIN.
@@ -1045,11 +1196,13 @@ object PolicyModeCoordinator {
     }
 
     /**
-     * Lock state for the page's single-use action. This mirrors the lock-screen manual start,
-     * not the temporary unlock: the TV must be in manual mode, showing the lock surface, and
-     * waiting for the parent, with no rest, session, study mode or quiz in progress. The page
-     * only draws the button from this snapshot; [startManualFromWeb] repeats every check after
-     * the PIN and the runtime repeats the policy checks atomically.
+     * Lock state for the page's single-use action. V45 makes this a parent authorization that
+     * runs outside the child plan: rest, a closed window, an exhausted daily quota and an empty
+     * timed plan do not block it. The TV must still be in local child mode, showing the lock
+     * surface, with no session, study round, study mode or quiz in progress, and the manual app
+     * scope must contain at least one timed app. The page only draws the button from this
+     * snapshot; [startManualFromWeb] repeats every check after the PIN and the runtime repeats
+     * the policy checks atomically.
      */
     @Synchronized
     fun webManualStartStatus(): WebManualStartStatus {
@@ -1073,9 +1226,6 @@ object PolicyModeCoordinator {
         if (ui.guardState != GuardStatus.ENFORCING) {
             return WebManualStartStatus(false, WebManualStartReason.NOT_READY)
         }
-        if (ui.activation != Activation.MANUAL) {
-            return WebManualStartStatus(false, WebManualStartReason.AUTO_MODE)
-        }
         if (ui.sessionState == SessionState.ACTIVE) {
             return WebManualStartStatus(
                 eligible = false,
@@ -1086,24 +1236,24 @@ object PolicyModeCoordinator {
         if (ui.sessionState == SessionState.PENDING) {
             return WebManualStartStatus(false, WebManualStartReason.SESSION_PENDING)
         }
-        if (ui.lockReason == LockReason.RESTING) {
+        // A focus round occupies the same single-session slot but keeps the guard ENFORCING.
+        if (ui.studyRound != null) {
+            return WebManualStartStatus(false, WebManualStartReason.SESSION_ACTIVE)
+        }
+        // V45: the manual timer is a deliberate out-of-plan authorization. Rest, a closed
+        // window, an exhausted daily quota and an empty timed plan must not block it. Only the
+        // manual app scope and the live surface checks remain; the runtime repeats them.
+        val manualScope = manualTimerScope()
+            ?: return WebManualStartStatus(false, WebManualStartReason.NOT_READY)
+        if (!manualScope.hasTimedApps) {
             return WebManualStartStatus(
                 eligible = false,
-                reason = WebManualStartReason.RESTING,
-                restRemainingSeconds = ui.restRemainingSeconds,
+                reason = if (manualScope.hasApps) {
+                    WebManualStartReason.ONLY_UNLIMITED
+                } else {
+                    WebManualStartReason.NO_TIMED_APPS
+                },
             )
-        }
-        if (ui.lockReason == LockReason.OUTSIDE_WINDOW) {
-            return WebManualStartStatus(false, WebManualStartReason.OUTSIDE_WINDOW)
-        }
-        if (ui.lockReason == LockReason.TIME_UP) {
-            return WebManualStartStatus(false, WebManualStartReason.DAILY_LIMIT)
-        }
-        if (ui.noTimedApps || ui.lockReason == LockReason.NO_TIMED_APPS) {
-            return WebManualStartStatus(false, WebManualStartReason.NO_TIMED_APPS)
-        }
-        if (ui.lockReason != LockReason.MANUAL_WAITING) {
-            return WebManualStartStatus(false, WebManualStartReason.STATE_CHANGED)
         }
         if (!screenInteractive()) {
             return WebManualStartStatus(false, WebManualStartReason.SCREEN_OFF)
@@ -1121,29 +1271,47 @@ object PolicyModeCoordinator {
     }
 
     /**
-     * The page's single-use action. It requires the parent PIN every time; the remembered admin
-     * token only authenticates the page, never the start. The PIN is checked before and the
-     * whole state is checked again afterwards, so a session, rest, mode switch or quiz that
-     * begins during the (slow) credential check cannot be bypassed. The final start still goes
-     * through the same local manual path as the lock screen.
+     * App counts for the parent timer sheet: configured entertainment, unlimited, and — only
+     * while the study-reward feature is on — every selected study app. Null when no usable
+     * local rules exist yet.
+     */
+    fun manualTimerScope(): ManualTimerScope? = LocalPolicyRuntime.manualTimerScope()
+
+    /**
+     * The page's single-use action. By default it requires the parent PIN every time; the
+     * remembered admin token only authenticates the page, never the start. The PIN is checked
+     * before and the whole state is checked again afterwards, so a session, rest, mode switch
+     * or quiz that begins during the (slow) credential check cannot be bypassed. The final
+     * start still goes through the same local manual path as the lock screen.
+     *
+     * [requirePin] is false only when the parent deliberately turned off the web
+     * user-configuration PIN prompts. The page-login/editor checks and every state check stay
+     * in place; the quiz page's own start route keeps the default true.
      */
     @Synchronized
-    fun startManualFromWeb(pin: String, minutes: Int): WebManualStartResult {
+    fun startManualFromWeb(
+        pin: String,
+        minutes: Int,
+        requirePin: Boolean = true,
+    ): WebManualStartResult {
         if (!ManualSessionLimits.isValid(minutes)) {
             return WebManualStartResult.InvalidDuration
         }
-        if (!LocalPin.isValid(pin)) {
+        if (requirePin && !LocalPin.isValid(pin)) {
             return WebManualStartResult.PinInvalid(locked = false)
         }
         val before = webManualStartStatus()
         if (!before.eligible) return WebManualStartResult.Rejected(before.reason)
-        when (verifyPin(pin)) {
-            PinResult.OK -> Unit
-            PinResult.LOCKED_OUT -> return WebManualStartResult.PinInvalid(locked = true)
-            PinResult.WRONG, PinResult.NOT_SET -> return WebManualStartResult.PinInvalid(locked = false)
-        }
-        if (isDefaultPinValue(pin)) {
-            return WebManualStartResult.Rejected(WebManualStartReason.DEFAULT_PIN)
+        if (requirePin) {
+            when (verifyPin(pin)) {
+                PinResult.OK -> Unit
+                PinResult.LOCKED_OUT -> return WebManualStartResult.PinInvalid(locked = true)
+                PinResult.WRONG, PinResult.NOT_SET ->
+                    return WebManualStartResult.PinInvalid(locked = false)
+            }
+            if (isDefaultPinValue(pin)) {
+                return WebManualStartResult.Rejected(WebManualStartReason.DEFAULT_PIN)
+            }
         }
         val after = webManualStartStatus()
         if (!after.eligible) return WebManualStartResult.Rejected(after.reason)
@@ -1156,6 +1324,7 @@ object PolicyModeCoordinator {
         return when (val started = startLocalManualSession(
             durationSeconds = minutes * 60L,
             allowHostedRule = true,
+            outsidePlan = true,
         )) {
             SessionStartResult.Started -> {
                 publishCurrent()
@@ -1178,10 +1347,10 @@ object PolicyModeCoordinator {
     private fun webManualReasonFor(reason: RejectReason): WebManualStartReason = when (reason) {
         RejectReason.GUARD_DISABLED -> WebManualStartReason.NOT_READY
         RejectReason.HOSTED_MANUAL_REMOTE_ONLY -> WebManualStartReason.NOT_LOCAL
-        RejectReason.ACTIVATION_MISMATCH -> WebManualStartReason.AUTO_MODE
         RejectReason.STALE_EPOCH, RejectReason.STALE_VERSION,
         RejectReason.EXPIRED, RejectReason.INVALID_COMMAND,
-        RejectReason.INVALID_SCOPE -> WebManualStartReason.STATE_CHANGED
+        RejectReason.INVALID_SCOPE, RejectReason.ROUTE_LIMIT ->
+            WebManualStartReason.STATE_CHANGED
         RejectReason.PARENT_OVERRIDE -> WebManualStartReason.ALREADY_UNLOCKED
         RejectReason.BUSY -> WebManualStartReason.SESSION_ACTIVE
         RejectReason.RESTING -> WebManualStartReason.RESTING
@@ -1244,15 +1413,110 @@ object PolicyModeCoordinator {
         else -> SessionStartResult.Rejected(RejectReason.GUARD_DISABLED)
     }
 
-    /** AUTO_READY "开始计时" on the lock screen. Manual mode rejects this path. */
-    fun startAutoSession(): SessionStartResult = when (mode) {
-        PolicyMode.CLOUD -> if (ruleGuardActive) {
-            LocalPolicyRuntime.startAutoSession()
-        } else {
-            SessionStartResult.Rejected(RejectReason.GUARD_DISABLED)
+    /**
+     * Focus-study entry. [targetPackage] is the entertainment app the child tapped in the
+     * unlock-choice route, or null for the direct study tile. It never starts an entertainment
+     * session; the runtime starts the reward session only after the round ends.
+     *
+     * 2026-11-21: hosted rule guard runs the same route as LOCAL mode because the cloud
+     * projection carries the parent's complete member configuration. The legacy CLOUD
+     * redemption engine still rejects it.
+     */
+    fun startStudyRound(
+        studyPackage: String,
+        targetPackage: String?,
+        fromStudyMode: Boolean = false,
+    ): SessionStartResult {
+        if (mode != PolicyMode.LOCAL && !hostedRuleGuardActive()) {
+            PolicyFlowTrace.event(
+                "study.round.reject",
+                "reason" to RejectReason.INVALID_COMMAND,
+                "mode" to mode,
+                "source" to LocalPolicyRuntime.state.value.source,
+                "ruleGuard" to ruleGuardActive,
+            )
+            return SessionStartResult.Rejected(RejectReason.INVALID_COMMAND)
         }
-        PolicyMode.LOCAL -> LocalPolicyRuntime.startAutoSession()
-        PolicyMode.NONE -> SessionStartResult.Rejected(RejectReason.GUARD_DISABLED)
+        val result = LocalPolicyRuntime.startStudyRound(
+            studyPackage = studyPackage,
+            targetPackage = targetPackage,
+            fromStudyMode = fromStudyMode,
+        )
+        PolicyFlowTrace.event(
+            "study.round.entry",
+            "study" to studyPackage,
+            "target" to (targetPackage ?: "-"),
+            "fromStudyMode" to fromStudyMode,
+            "result" to result,
+        )
+        publishCurrent()
+        return result
+    }
+
+    /**
+     * A study launcher tile: the admission starts a timed round and leaves the launcher only
+     * when it succeeds. MainActivity calls this before opening the app, so a closed study
+     * window or an exhausted study quota cannot open an untimed app.
+     */
+    fun startStudyFromStudyMode(studyPackage: String): SessionStartResult =
+        startStudyRound(studyPackage, targetPackage = null, fromStudyMode = true)
+
+    /** Foreground reporting from the Home guard, used to pause/resume around unlimited apps. */
+    fun onForegroundChanged(packageName: String) {
+        if (packageName.isBlank()) return
+        when (mode) {
+            PolicyMode.LOCAL -> LocalPolicyRuntime.onForegroundChanged(packageName)
+            PolicyMode.CLOUD -> if (ruleGuardActive) {
+                LocalPolicyRuntime.onForegroundChanged(packageName)
+            }
+            PolicyMode.NONE -> Unit
+        }
+    }
+
+    /**
+     * Freezes a running focus round. Aerial coming back to the front, screen off and a launch the
+     * study app never covered all call this; only 继续学习 resumes it.
+     */
+    fun pauseStudyRound(reason: String): Boolean {
+        if (mode != PolicyMode.LOCAL && !hostedRuleGuardActive()) return false
+        val paused = LocalPolicyRuntime.pauseStudyRound(reason)
+        if (paused) {
+            PolicyFlowTrace.event("study.round.pause.entry", "reason" to reason, "mode" to mode)
+            publishCurrent()
+        }
+        return paused
+    }
+
+    /** Child-confirmed resume from the focus desktop. Re-checks the window and quota. */
+    fun resumeStudyRound(): SessionStartResult {
+        if (mode != PolicyMode.LOCAL && !hostedRuleGuardActive()) {
+            PolicyFlowTrace.event(
+                "study.round.resume.reject",
+                "reason" to RejectReason.INVALID_COMMAND,
+                "mode" to mode,
+                "source" to LocalPolicyRuntime.state.value.source,
+            )
+            return SessionStartResult.Rejected(RejectReason.INVALID_COMMAND)
+        }
+        val result = LocalPolicyRuntime.resumeStudyRound()
+        PolicyFlowTrace.event("study.round.resume.entry", "result" to result)
+        publishCurrent()
+        return result
+    }
+
+    /** Leaves a focus round without a reward. Idempotent. */
+    fun cancelStudyRound(reason: String, bringHome: Boolean = false): Boolean {
+        if (mode != PolicyMode.LOCAL && !hostedRuleGuardActive()) return false
+        val canceled = LocalPolicyRuntime.cancelStudyRound(reason, bringHome)
+        if (canceled) {
+            PolicyFlowTrace.event(
+                "study.round.cancel.entry",
+                "reason" to reason,
+                "bringHome" to bringHome,
+            )
+            publishCurrent()
+        }
+        return canceled
     }
 
     /**
@@ -1260,18 +1524,231 @@ object PolicyModeCoordinator {
      * [allowHostedRule] is set by the lock-screen picker and the local parent web page: the
      * V10 hosted rule guard accepts a local start in manual mode, while legacy boundaries
      * (REDEEM, migration and quiz rewards) keep the old local-only behaviour.
+     *
+     * [outsidePlan] is V45's parent Web timer: a plan-exempt authorization that uses the manual
+     * app scope and never writes the daily ledger, route counts or rest. The TV lock-screen
+     * picker keeps the in-plan default.
      */
     fun startLocalManualSession(
         durationSeconds: Long,
         expiresAtEpochMs: Long? = null,
         allowHostedRule: Boolean = false,
+        outsidePlan: Boolean = false,
     ): SessionStartResult = when {
         mode == PolicyMode.LOCAL ->
-            LocalPolicyRuntime.startManualSession(durationSeconds, expiresAtEpochMs)
+            LocalPolicyRuntime.startManualSession(durationSeconds, expiresAtEpochMs, outsidePlan)
         mode == PolicyMode.CLOUD && allowHostedRule && ruleGuardActive &&
             LocalPolicyRuntime.state.value.source == PolicySource.HOSTED ->
-            LocalPolicyRuntime.startManualSession(durationSeconds, expiresAtEpochMs)
+            LocalPolicyRuntime.startManualSession(durationSeconds, expiresAtEpochMs, outsidePlan)
         else -> SessionStartResult.Rejected(RejectReason.HOSTED_MANUAL_REMOTE_ONLY)
+    }
+
+    /**
+     * Garden "single session" (2026-11-21). The orchard page replaces the TV's own parent Web
+     * timer, so this aligns the cloud active member with the selected child and then calls
+     * [startLocalManualSession] — the exact runtime entry the TV picker and the parent Web page
+     * use. There is no second execution chain: the cloud only supplies the member and duration.
+     *
+     * <p>Runs off the MQTT callback thread (the caller launches a coroutine) because the member
+     * switch needs HTTP and a config fetch.
+     */
+    suspend fun startRemoteSingleSession(
+        durationMinutes: Int,
+        memberId: Long,
+    ): RemoteSingleSessionResult {
+        if (durationMinutes < SINGLE_SESSION_MIN_MINUTES ||
+            durationMinutes > SINGLE_SESSION_MAX_MINUTES
+        ) {
+            return remoteSingleSessionRejected("duration", "minutes" to durationMinutes)
+        }
+        if (memberId <= 0L) {
+            return remoteSingleSessionRejected("member")
+        }
+        if (!hostedRuleGuardActive()) {
+            PolicyFlowTrace.event(
+                "remote.single.reject",
+                "reason" to "notHosted",
+                "minutes" to durationMinutes,
+                "memberId" to memberId,
+                "mode" to mode,
+                "source" to LocalPolicyRuntime.state.value.source,
+                "ruleGuard" to ruleGuardActive,
+                "activation" to LocalPolicyRuntime.state.value.activation,
+            )
+            // The garden projection only reaches the TV in hosted rule mode; LOCAL mode has its
+            // own identity model, so a member-scoped timer must not be guessed into it.
+            return RemoteSingleSessionResult(
+                false,
+                "电视当前不是云端托管模式，请在电视上切换到云端模式后再试",
+            )
+        }
+        val before = PolicyRuntime.state.value
+        if (before.deviceNo.isBlank()) {
+            return remoteSingleSessionRejected("unbound")
+        }
+        if (before.cloudActiveMemberId != memberId) {
+            val switched = PolicyCloud.switchActiveMember(before.deviceNo, memberId)
+            if (switched.isFailure) {
+                val error = switched.exceptionOrNull()
+                PolicyFlowTrace.event(
+                    "remote.single.reject",
+                    "reason" to "switchMember",
+                    "memberId" to memberId,
+                    "detail" to (error?.let { PolicyCloud.errorDetail(it) } ?: "-"),
+                )
+                val message = error?.let { PolicyCloud.businessMessage(it) }
+                    ?: "切换电视当前用户失败，请稍后重试"
+                return RemoteSingleSessionResult(false, message)
+            }
+            PolicyRuntime.requestSync()
+        }
+        // Also when the member already matches, the last projection may belong to a switch the
+        // TV just made locally (cloudActiveMemberId updates before the rule fetch completes).
+        // Starting with the previous child's scope would grant the wrong apps, so wait for the
+        // rule set this snapshot will install; an applied snapshot passes immediately.
+        val aligned = withTimeoutOrNull(SINGLE_SESSION_SYNC_TIMEOUT_MS) {
+            while (PolicyRuntime.state.value.cloudActiveMemberId != memberId) {
+                delay(SINGLE_SESSION_SYNC_POLL_MS)
+                // A switch that landed while a fetch was in flight needs one more pull.
+                PolicyRuntime.requestSync()
+            }
+            // onCloudMembers is published before onRemotePolicy; wait for the projected rule
+            // set too, so the timer starts with this child's app scope, not the previous one.
+            var expected = expectedRemoteRuleSets()
+            while (expected != null && LocalPolicyRuntime.currentRuleSets != expected) {
+                delay(SINGLE_SESSION_SYNC_POLL_MS)
+                PolicyRuntime.requestSync()
+                expected = expectedRemoteRuleSets()
+            }
+            true
+        } ?: false
+        if (!aligned) {
+            PolicyFlowTrace.event(
+                "remote.single.reject",
+                "reason" to "syncTimeout",
+                "memberId" to memberId,
+                "active" to PolicyRuntime.state.value.cloudActiveMemberId,
+            )
+            return RemoteSingleSessionResult(false, "电视还没同步到这个用户的配置，请稍后重试")
+        }
+        val seconds = durationMinutes.toLong() * 60L
+        // outsidePlan = the same plan-exempt parent timer as the TV picker / local Web page.
+        val result = startLocalManualSession(
+            durationSeconds = seconds,
+            allowHostedRule = true,
+            outsidePlan = true,
+        )
+        val ok = result !is SessionStartResult.Rejected
+        PolicyFlowTrace.event(
+            "remote.single.result",
+            "minutes" to durationMinutes,
+            "memberId" to memberId,
+            "result" to result,
+            "ok" to ok,
+        )
+        if (ok) publishCurrent()
+        return when (result) {
+            SessionStartResult.Started ->
+                RemoteSingleSessionResult(true, "已在电视上开始 $durationMinutes 分钟计时")
+            SessionStartResult.Pending ->
+                RemoteSingleSessionResult(true, "已发送到电视，请在电视上确认开始")
+            is SessionStartResult.Rejected ->
+                RemoteSingleSessionResult(false, remoteSingleSessionRejectMessage(result.reason))
+        }
+    }
+
+    /** The rule set the remote collector will install for the current snapshot. */
+    private fun expectedRemoteRuleSets(): LocalRuleSets? {
+        val remote = PolicyRuntime.remotePolicy.value ?: return null
+        return (remote.ruleSets ?: LocalRuleSets.from(remote.rules))
+            .preservingDeviceFieldsFrom(
+                LocalPolicyRuntime.currentRuleSets,
+                remote.memberScopedFields,
+            )
+    }
+
+    private fun remoteSingleSessionRejected(
+        reason: String,
+        vararg extras: Pair<String, Any?>,
+    ): RemoteSingleSessionResult {
+        PolicyFlowTrace.event("remote.single.reject", "reason" to reason, *extras)
+        return RemoteSingleSessionResult(
+            false,
+            when (reason) {
+                "duration" -> "单次计时需要在 1-180 分钟之间"
+                "member" -> "请先选择要计时的用户"
+                "unbound" -> "电视还没有绑定家庭，请先在果园里完成绑定"
+                else -> "电视当前无法开始计时"
+            },
+        )
+    }
+
+    /** Human text for every admission result; the orchard page shows it without changes. */
+    private fun remoteSingleSessionRejectMessage(reason: RejectReason): String = when (reason) {
+        RejectReason.GUARD_DISABLED -> "电视的儿童模式当前没有运行，请先在电视上进入儿童模式"
+        RejectReason.BUSY -> "电视正在使用中，等当前计时结束后再试"
+        RejectReason.SCREEN_OFF -> "电视屏幕已关闭，请点亮电视后再试"
+        RejectReason.PARENT_OVERRIDE -> "电视当前处于家长临时解锁状态，请结束后再试"
+        RejectReason.RESTING -> "电视还在休息时间，暂时不能开始计时"
+        RejectReason.OUTSIDE_WINDOW -> "当前不在可用时段，暂时不能开始计时"
+        RejectReason.DAILY_LIMIT -> "今天的娱乐额度已经用完了"
+        RejectReason.ROUTE_LIMIT -> "今天的解锁次数已经用完了"
+        RejectReason.EXPIRED -> "这次计时请求已经过期，请重试"
+        RejectReason.STALE_EPOCH, RejectReason.STALE_VERSION ->
+            "电视上的配置刚刚更新过，请重试"
+        RejectReason.NO_TIMED_APPS, RejectReason.INVALID_SCOPE ->
+            "这台电视上没有可计时的娱乐应用，请先在配置里添加"
+        RejectReason.HOSTED_MANUAL_REMOTE_ONLY -> "电视当前不允许远程计时"
+        RejectReason.INVALID_COMMAND -> "电视当前配置不允许开始计时"
+    }
+
+    /**
+     * Child-started direct session. The hosted rule guard runs the same route: the cloud
+     * projection carries the parent's direct-start switch, watch duration and daily count.
+     * The legacy CLOUD redemption engine keeps rejecting it.
+     */
+    fun startLocalDirectSession(): SessionStartResult {
+        if (mode != PolicyMode.LOCAL && !hostedRuleGuardActive()) {
+            PolicyFlowTrace.event(
+                "session.direct.reject",
+                "reason" to RejectReason.INVALID_COMMAND,
+                "mode" to mode,
+                "source" to LocalPolicyRuntime.state.value.source,
+            )
+            return SessionStartResult.Rejected(RejectReason.INVALID_COMMAND)
+        }
+        val result = LocalPolicyRuntime.startDirectSession()
+        PolicyFlowTrace.event("session.direct.entry", "mode" to mode, "result" to result)
+        if (result !is SessionStartResult.Rejected) publishCurrent()
+        return result
+    }
+
+    /**
+     * V44 child quiz route. The report shows [localQuizGrantSeconds]; this start repeats the
+     * same planner calculation inside the runtime, so the count/cap/quota can never be bypassed
+     * by the UI. Hosted rules use the same route; the legacy CLOUD redemption engine keeps the
+     * historical manual path unchanged.
+     */
+    fun startLocalQuizSession(earnedSeconds: Long): SessionStartResult = when {
+        mode == PolicyMode.LOCAL || hostedRuleGuardActive() -> {
+            val result = LocalPolicyRuntime.startQuizRewardSession(earnedSeconds)
+            PolicyFlowTrace.event(
+                "session.quiz.entry",
+                "earned" to earnedSeconds,
+                "mode" to mode,
+                "result" to result,
+            )
+            if (result !is SessionStartResult.Rejected) publishCurrent()
+            result
+        }
+        else -> startLocalManualSession(earnedSeconds)
+    }
+
+    /** The exact quiz grant the report must display, in seconds; null outside rule modes. */
+    fun localQuizGrantSeconds(earnedSeconds: Long): Long? = when {
+        mode == PolicyMode.LOCAL || hostedRuleGuardActive() ->
+            LocalPolicyRuntime.quizGrantSeconds(earnedSeconds)
+        else -> null
     }
 
     /**
@@ -1311,27 +1788,10 @@ object PolicyModeCoordinator {
         return canceled
     }
 
-    /** Local parent-center automatic/manual switch. Hosted config is edited on the phone. */
-    fun setLocalActivation(activation: Activation): Boolean {
-        if (mode != PolicyMode.LOCAL) return false
-        if (LocalPolicyRuntime.state.value.source != PolicySource.LOCAL) return false
-        val previous = LocalPolicyRuntime.state.value.activation
-        if (previous == activation) {
-            LocalPolicyRuntime.setActivation(activation)
-            publishCurrent()
-            return true
-        }
-        val changed = LocalPolicyRuntime.setActivation(activation)
-        if (!changed) return false
-        // AUTO and MANUAL now own independent time-rule sets. Switching swaps which set the
-        // executor runs; it must not rewrite the rest (or any other value) of either set.
-        publishCurrent()
-        return true
-    }
-
     /**
-     * Hosted SetActivation. Both the config version and the policy epoch must match so an old
-     * command cannot flip the mode after a rule edit or a previous switch.
+     * Hosted SetActivation. Execution is manual-only now, so the command is accepted only when
+     * it still matches the current config version and policy epoch. An AUTO command never
+     * reaches here: MQTT parsing rejects it.
      */
     fun applyRemoteActivation(
         activation: Activation,
@@ -1342,25 +1802,13 @@ object PolicyModeCoordinator {
         val remote = PolicyRuntime.remotePolicy.value ?: return false
         if (expectedVersion != remote.configVersion) return false
         if (expectedEpoch != LocalPolicyRuntime.state.value.policyEpoch) return false
-        val activationBefore = LocalPolicyRuntime.state.value.activation
-        val changed = LocalPolicyRuntime.setActivation(activation)
-        if (changed) {
-            // Keep the cached hosted mirror on the same activation. Without this, the next
-            // config emission would look like an older phone value and flip the TV back.
-            PolicyRuntime.onRemotePolicy(remote.copy(activation = activation))
-            publishCurrent()
-            PolicyFlowTrace.event(
-                "remote.activation.apply",
-                "via" to "command",
-                "version" to expectedVersion,
-                "before" to activationBefore,
-                "remote" to activation,
-                "localAfter" to LocalPolicyRuntime.state.value.activation,
-                "uiAfter" to _state.value.activation,
-            )
-            announceRemoteActivation(activation)
-        }
-        return changed
+        PolicyFlowTrace.event(
+            "remote.activation.apply",
+            "via" to "command",
+            "version" to expectedVersion,
+            "activation" to activation,
+        )
+        return true
     }
 
     /** Hosted StopSession: either a running segment or a grant still waiting for the child. */
@@ -1565,11 +2013,7 @@ object PolicyModeCoordinator {
                         PolicyMode.LOCAL -> {
                             mode = PolicyMode.LOCAL
                             PolicyModeStore.save(mode)
-                            ensureLocalRules()
-                            LocalPolicyRuntime.setSource(PolicySource.LOCAL)
-                            LocalPolicyRuntime.resetGuardForModeSwitch()
-                            LocalPolicyRuntime.ensureLocalManualActivation()
-                            LocalPolicyRuntime.activate()
+                            activateLocalFromStorage()
                         }
                         PolicyMode.CLOUD -> Unit
                     }
@@ -1602,11 +2046,7 @@ object PolicyModeCoordinator {
                     PolicyMode.LOCAL -> {
                         mode = PolicyMode.LOCAL
                         PolicyModeStore.save(mode)
-                        ensureLocalRules()
-                        LocalPolicyRuntime.setSource(PolicySource.LOCAL)
-                        LocalPolicyRuntime.resetGuardForModeSwitch()
-                        LocalPolicyRuntime.ensureLocalManualActivation()
-                        LocalPolicyRuntime.activate()
+                        activateLocalFromStorage()
                     }
                     PolicyMode.CLOUD -> {
                         mode = PolicyMode.CLOUD
@@ -1628,9 +2068,24 @@ object PolicyModeCoordinator {
     private fun ensureLocalRules() {
         if (LocalPolicyRuntime.currentRules?.isUsable != true) {
             LocalPolicyRuntime.setRules(
-                LocalRules.defaultsFor(LocalPolicyRuntime.state.value.activation),
+                LocalRules.DEFAULTS,
             )
         }
+    }
+
+    /**
+     * (Re)attaches the LOCAL child-mode engine. Leaving the cloud partition must reload the
+     * local rules/ledger from disk instead of activating whatever the hosted executor left in
+     * memory; otherwise the first tick would count against the cloud session under local rules.
+     * When the source is already LOCAL the in-memory state is kept (setup and test flows).
+     */
+    private fun activateLocalFromStorage(resetGuard: Boolean = true) {
+        val leavingHosted = LocalPolicyRuntime.state.value.source != PolicySource.LOCAL
+        LocalPolicyRuntime.setSource(PolicySource.LOCAL)
+        if (leavingHosted) LocalPolicyRuntime.reloadActiveSubject()
+        ensureLocalRules()
+        if (resetGuard) LocalPolicyRuntime.resetGuardForModeSwitch()
+        LocalPolicyRuntime.activate()
     }
 
     private fun activateCloud(): Boolean {
@@ -1713,7 +2168,8 @@ object PolicyModeCoordinator {
     /**
      * A parent just confirmed the scan binding. Binding success is itself the mode decision:
      * force CLOUD (even if the screen was reached from NONE), keep the guard RUNNING and report
-     * the mode. This is the one-step flow; a later Back must not undo it.
+     * the mode and device status immediately. This is the one-step flow; a later Back must not
+     * undo it. Only status is reported: the local rules and parent password stay on the TV.
      */
     @Synchronized
     fun confirmCloudBinding() {
@@ -1753,14 +2209,15 @@ object PolicyModeCoordinator {
     }
 
     /**
-     * One-time handoff from the local rules to the cloud. Remote management is gated by the
-     * privacy notice, not by the local parent PIN, so the PIN is optional here: when the parent
-     * center already verified one, it is uploaded so the phone keeps the same password; when it
-     * did not, only the rules are handed off and the cloud password is left untouched. Password
-     * and rules are separate requests by contract; a password failure aborts the handoff so the
-     * cloud never ends up done with a different PIN. The call is idempotent on the backend.
+     * Legacy one-time handoff from the local rules to the cloud.
+     *
+     * 2026-11-19: binding no longer uploads local data, so this returns [HandoffResult.NotNeeded]
+     * and never touches local rules or the parent password. Remote binding only reports device
+     * status; the cloud and local configurations are independent. The implementation stays for
+     * a controlled rollback via [LOCAL_RULES_UPLOAD_ENABLED].
      */
     suspend fun completeHandoff(pin: String = ""): HandoffResult {
+        if (!LOCAL_RULES_UPLOAD_ENABLED) return HandoffResult.NotNeeded
         val cloud = PolicyRuntime.state.value
         if (mode != PolicyMode.CLOUD || !cloud.bound) {
             return HandoffResult.Failed("device is not bound")
@@ -1864,7 +2321,7 @@ object PolicyModeCoordinator {
         // available while bound, but an old tab may still hold a login; revoke it.
         invalidateWebSessions("cloud_unbound")
         parentAuth.clear()
-        Log.i(TAG, "cloud unbound from backend; returning to LOCAL")
+        Log.i(TAG, "cloud unbound from backend; child mode is turned off")
         stopRuleGuard()
         RuleUsageReporter.clear()
         // This queues one final usage report for an ACTIVE record; it is not awaited.
@@ -1873,17 +2330,29 @@ object PolicyModeCoordinator {
         // Do not delete the local question cache: it is this TV's own content. Only the cloud
         // source selection and any pending upload belong to the removed family.
         QuizConfigSync.onUnbound()
-        // V29: an unbind returns to LOCAL, never NONE. Child mode stays on and the local
-        // guard picks up the rules that were mirrored before binding.
-        mode = PolicyMode.LOCAL
+        // The cloud family owned the guard. Switching straight into the TV's own child mode
+        // would start limiting apps under a plan nobody just confirmed on this TV, so an
+        // unbind leaves it unguarded (NONE). The local rules and ledger stay on disk; the
+        // parent turns child mode back on manually from the local parent center.
+        mode = PolicyMode.NONE
         PolicyModeStore.save(mode)
-        ensureLocalRules()
-        LocalPolicyRuntime.setSource(PolicySource.LOCAL)
-        LocalPolicyRuntime.resetGuardForModeSwitch()
-        LocalPolicyRuntime.ensureLocalManualActivation()
-        LocalPolicyRuntime.activate()
+        // Deactivate before dropping the source: a pending cloud grant must be discarded into
+        // the hosted partition, not checkpointed into the local one on the way out.
+        LocalPolicyRuntime.deactivate()
+        LocalPolicyRuntime.setSource(PolicySource.NONE)
+        // The removed family's usage/guard/study state must not come back on a later rebind.
+        LocalPolicyRuntime.clearHostedExecution()
         publishModeChange()
+        notifyCloudUnboundChildModeOff()
         return true
+    }
+
+    /** Unbinding is visible on the TV; say that limits stopped instead of changing silently. */
+    private fun notifyCloudUnboundChildModeOff() {
+        val app = context ?: return
+        Handler(Looper.getMainLooper()).post {
+            Toast.makeText(app, R.string.cloud_unbound_child_mode_off, Toast.LENGTH_LONG).show()
+        }
     }
 
     /** Back/"bind later" on the remote-mode binding screen: remote guard needs a binding. */
@@ -1899,11 +2368,10 @@ object PolicyModeCoordinator {
         PolicyRuntime.setCloudActive(false)
         mode = PolicyMode.LOCAL
         PolicyModeStore.save(mode)
-        ensureLocalRules()
-        LocalPolicyRuntime.setSource(PolicySource.LOCAL)
-        LocalPolicyRuntime.resetGuardForModeSwitch()
-        LocalPolicyRuntime.ensureLocalManualActivation()
-        LocalPolicyRuntime.activate()
+        // Backing out of the binding screen never ran a cloud session: restore the local child
+        // mode that was running before it, from disk, instead of adopting hosted leftovers.
+        LocalPolicyRuntime.clearHostedExecution()
+        activateLocalFromStorage()
         publishModeChange()
     }
 
@@ -1917,9 +2385,9 @@ object PolicyModeCoordinator {
             }
             PolicyMode.LOCAL -> {
                 PolicyRuntime.setCloudActive(false)
-                LocalPolicyRuntime.setSource(PolicySource.LOCAL)
-                LocalPolicyRuntime.ensureLocalManualActivation()
-                LocalPolicyRuntime.activate()
+                // The debug switch mirrors a real manual start, but never resets an override
+                // the harness is about to exercise.
+                activateLocalFromStorage(resetGuard = false)
             }
             PolicyMode.CLOUD -> {
                 LocalPolicyRuntime.deactivate()

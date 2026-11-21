@@ -7,6 +7,7 @@ import com.planyourtv.policy.quiz.QuizConfigDocument
 import com.planyourtv.policy.quiz.QuizLevel
 import com.planyourtv.policy.quiz.QuizLevelPackage
 import com.planyourtv.policy.quiz.QuizPackageSource
+import com.planyourtv.policy.quiz.QuizPresetBank
 import com.planyourtv.policy.quiz.QuizTypeFilter
 import com.planyourtv.policy.quiz.QuizWrongReviewLevel
 import org.json.JSONArray
@@ -156,7 +157,69 @@ class QuizLevelPackageStoreTest {
         assertFalse(read.overLimit)
     }
 
-    private fun documentWithPackages(packages: List<QuizLevelPackage>): QuizConfigDocument =
+    @Test
+fun presetSourceIsWrittenAtVersionThreeAndReadBack() {
+    val preset = QuizLevelPackage(
+        id = "lvl-life",
+        name = "生活常识",
+        sources = listOf(QuizPackageSource.Preset(QuizPresetBank.PARENT_LIFE)),
+    )
+    val saved = QuizLevelPackageStore.withPackages(document(), listOf(preset))
+    val marker = saved.extensions.getJSONObject("local").getJSONObject("levelPackages")
+    assertEquals(3, marker.getInt("version"))
+    assertEquals(
+        "parent-life",
+        marker.getJSONArray("levels").getJSONObject(0)
+            .getJSONArray("sources").getJSONObject(0).getString("bankId"),
+    )
+    val read = QuizLevelPackageStore.read(saved)
+    assertTrue(read is QuizLevelPackageStore.Extension.Present)
+    assertEquals(
+        listOf(preset),
+        (read as QuizLevelPackageStore.Extension.Present).packages,
+    )
+}
+
+@Test
+fun versionTwoDocumentsStayReadable() {
+    val v2 = documentWithMarker(
+        JSONObject().put("version", 2).put(
+            "levels",
+            JSONArray().put(
+                JSONObject()
+                    .put("id", "lvl-a")
+                    .put("sources", JSONArray().put(JSONObject().put("type", "wrong"))),
+            ),
+        ),
+    )
+    val read = QuizLevelPackageStore.read(v2)
+    assertTrue(read is QuizLevelPackageStore.Extension.Present)
+    assertEquals(1, (read as QuizLevelPackageStore.Extension.Present).packages.size)
+}
+
+@Test
+fun unknownPresetBankFailsClosed() {
+    val broken = documentWithMarker(
+        JSONObject().put("version", 3).put(
+            "levels",
+            JSONArray().put(
+                JSONObject()
+                    .put("id", "lvl-a")
+                    .put(
+                        "sources",
+                        JSONArray().put(
+                            JSONObject().put("type", "preset").put("bankId", "unknown-bank"),
+                        ),
+                    ),
+            ),
+        ),
+    )
+    assertTrue(
+        QuizLevelPackageStore.read(broken) is QuizLevelPackageStore.Extension.Broken,
+    )
+}
+
+private fun documentWithPackages(packages: List<QuizLevelPackage>): QuizConfigDocument =
         QuizLevelPackageStore.withPackages(document(), packages)
 
     private fun documentWithMarker(marker: JSONObject): QuizConfigDocument {

@@ -12,6 +12,7 @@ import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
 import app.orchard.tv.policy.PolicyVoicePlayer
+import app.orchard.tv.policy.QuizAudioGate
 import com.planyourtv.policy.quiz.QuizItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -234,6 +235,9 @@ object QuizSpeechPlayer {
     }
 
     private fun requestFocus(context: Context) {
+        // The round gate already holds a stronger focus. A second request would replace it
+        // (and abandoning it at the end of the utterance would leave the round unprotected).
+        if (QuizAudioGate.isActive()) return
         val manager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)

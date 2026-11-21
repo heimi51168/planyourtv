@@ -115,6 +115,28 @@ class QuizScoringV6Test {
     }
 
     @Test
+    fun localRoundsSkipTheConfiguredCapButKeepTheDocumentBound() {
+        val uncapped = QuizScoringV6.score(
+            items = List(4) { item("hard", id = "hard-$it") },
+            submissions = List(4) { answer("hard-$it", correct = true) },
+            profile = profile,
+            applyCap = false,
+        )
+        assertEquals(1200, uncapped.grossSeconds)
+        assertEquals(1200, uncapped.cappedSeconds)
+        assertEquals(1200, uncapped.earnedSeconds)
+
+        val bound = QuizScoringV6.score(
+            items = List(40) { item("hard", id = "many-$it") },
+            submissions = List(40) { answer("many-$it", correct = true) },
+            profile = profile,
+            applyCap = false,
+        )
+        assertEquals(12000, bound.grossSeconds)
+        assertEquals(QUIZ_DOC_MAX_MAX_EARNED_SECONDS, bound.cappedSeconds)
+    }
+
+    @Test
     fun aZeroThresholdAlwaysUnlocks() {
         val score = QuizScoringV6.score(
             items = listOf(item("easy")),

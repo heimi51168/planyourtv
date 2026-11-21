@@ -86,11 +86,17 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import app.orchard.tv.R
 import app.orchard.tv.apps.AppEntry
 import app.orchard.tv.quiz.CloudQuizPreparer
 import app.orchard.tv.quiz.QuizChallenge
 import app.orchard.tv.quiz.QuizConfigDocumentSync
+import app.orchard.tv.policy.FamilyHub
+import app.orchard.tv.policy.PolicyModeCoordinator
+import app.orchard.tv.policy.QuizAudioGate
 import app.orchard.tv.policy.media.PolicyVideoLibrary
 import app.orchard.tv.quiz.QuizRecovery
 import app.orchard.tv.quiz.QuizResultTone
@@ -278,11 +284,14 @@ fun PolicyQuizScreen(
             state.sessionState != "none" || !state.enabled -> QuizSetupScreen(
                 onClose = ::closeCleanly,
             )
-            state.bankState == "ready" -> QuizBankStartScreen(
+            // An empty or short bank still opens the level picker: the page already carries the
+            // level list, the scan hint and the parent's QR, and the availability check waits
+            // for the child's own start press instead of a separate full-screen notice.
+            state.bankState == "blocked" || state.bankState == "paused" -> QuizBankEmptyScreen(
                 state = state,
                 onClose = ::closeCleanly,
             )
-            else -> QuizBankEmptyScreen(
+            else -> QuizBankStartScreen(
                 state = state,
                 onClose = ::closeCleanly,
             )
@@ -544,10 +553,13 @@ private fun QuizStartShell(
     val focus = remember { FocusRequester() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    // Resolve once per entry: a film selected in the parent center applies to the next
-    // quiz entry, never half-way through this screen. Null means Aerial's default
-    // wallpaper, which is also the out-of-the-box state.
-    val introSource = remember(context) { PolicyVideoLibrary.quizSource(context) }
+    // Resolve once per entry and per child: a film selected in the parent center applies to the
+    // next quiz entry, never half-way through this screen, and each member keeps their own
+    // intro. Null means Aerial's default wallpaper, which is also the out-of-the-box state.
+    val activeChild by FamilyHub.state.collectAsState()
+    val introSource = remember(context, activeChild.activeUserId) {
+        PolicyVideoLibrary.quizSource(context)
+    }
 
     fun reveal(byKey: Int?) {
         if (revealed || leaving) return
@@ -765,9 +777,10 @@ private const val PRESS_RELEASE_GUARD_MS = 700L
 private const val INTRO_END_BEAT_MS = 200L
 
 /**
- * Unbound start face. The local bank is already populated, so the child sees
- * the same round summary as the cloud start and the parent keeps a small QR to
- * add more questions between rounds.
+ * Unbound start face. The child sees the same round summary as the cloud start and the parent
+ * keeps a small QR to add more questions between rounds. An empty or short bank stays on this
+ * face too: the level list (or the missing-level hint) and the QR are already here, so there is
+ * no separate scan screen and the availability check runs only on the child's start press.
  */
 @Composable
 private fun QuizBankStartScreen(
@@ -910,21 +923,32 @@ private fun QuizBankStartScreen(
             QuizScoringRules(config = config, roundCount = roundCount)
             Spacer(Modifier.height(10.dp))
             QuizLevelWheel(levels = levels, selectedIndex = selectedIndex)
-            Spacer(Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                GlyphIcon(Glyph.Home, Palette.SecondaryLabel, 15.dp)
-                Spacer(Modifier.width(7.dp))
+            if (levels.isEmpty()) {
+                // The wheel already says no level is set; the parent's next step is scanning the
+                // QR below, so the hint sits directly under the level box.
+                Spacer(Modifier.height(4.dp))
                 BasicText(
-                    stringResource(
-                        if (selected?.wrongReview == true) {
-                            R.string.policy_quiz_wrong_stock
-                        } else {
-                            R.string.policy_quiz_bank_stock
-                        },
-                        selected?.available ?: 0,
-                    ),
-                    style = Type.Caption.copy(color = Palette.SecondaryLabel),
+                    stringResource(R.string.policy_quiz_level_empty_hint),
+                    style = Type.Caption.copy(color = Palette.Orange),
+                    modifier = Modifier.widthIn(max = 404.dp),
                 )
+            } else {
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    GlyphIcon(Glyph.Home, Palette.SecondaryLabel, 15.dp)
+                    Spacer(Modifier.width(7.dp))
+                    BasicText(
+                        stringResource(
+                            if (selected?.wrongReview == true) {
+                                R.string.policy_quiz_wrong_stock
+                            } else {
+                                R.string.policy_quiz_bank_stock
+                            },
+                            selected?.available ?: 0,
+                        ),
+                        style = Type.Caption.copy(color = Palette.SecondaryLabel),
+                    )
+                }
             }
             selected?.takeIf { it.available < config.pullCount }?.let {
                 Spacer(Modifier.height(4.dp))
@@ -974,9 +998,10 @@ private fun QuizBankStartScreen(
 }
 
 /**
- * Unbound empty/short bank face. It is a parent hand-off: the large QR is the
- * only action that can unblock the child, and the screen keeps refreshing so it
- * turns into the start face as soon as the page appends enough questions.
+ * Unbound blocked/paused face: the local bank itself is unreadable or every level is paused, so
+ * the large QR and the refresh action are the only useful controls. A merely empty or short bank
+ * stays on the start face with its inline hint instead of opening this screen, and it keeps
+ * refreshing there.
  */
 @Composable
 private fun QuizBankEmptyScreen(
@@ -1496,11 +1521,7 @@ private fun QuizScoringRules(
             )
             Spacer(Modifier.height(4.dp))
             BasicText(
-                stringResource(
-                    R.string.policy_quiz_rules_limits_duration,
-                    threshold,
-                    durationText(profile.maxEarnedSeconds),
-                ),
+                stringResource(R.string.policy_quiz_rules_unlock, threshold),
                 style = Type.Caption.copy(color = Palette.SecondaryLabel),
             )
         } else {
@@ -1527,11 +1548,7 @@ private fun QuizScoringRules(
             )
             Spacer(Modifier.height(4.dp))
             BasicText(
-                stringResource(
-                    R.string.policy_quiz_rules_limits,
-                    threshold,
-                    config.maxEarnedMinutes,
-                ),
+                stringResource(R.string.policy_quiz_rules_unlock, threshold),
                 style = Type.Caption.copy(color = Palette.SecondaryLabel),
             )
         }
@@ -1648,6 +1665,42 @@ private fun QuizRoundScreen(
     onReward: (QuizReward) -> Unit,
 ) {
     val run = session.run ?: return
+    val context = LocalContext.current
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    // The round owns the speakers from its first question until it leaves this face. The gate
+    // keeps background players paused for the whole round, including the wait between questions,
+    // and is released before the report film so that film's own soundtrack can play.
+    DisposableEffect(lifecycle, context) {
+        var held = false
+
+        fun hold() {
+            if (!held) {
+                QuizAudioGate.acquire(context)
+                held = true
+            }
+        }
+
+        fun release() {
+            if (held) {
+                QuizAudioGate.release()
+                held = false
+            }
+        }
+
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> hold()
+                Lifecycle.Event.ON_STOP -> release()
+                else -> Unit
+            }
+        }
+        lifecycle.addObserver(observer)
+        if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) hold()
+        onDispose {
+            lifecycle.removeObserver(observer)
+            release()
+        }
+    }
     // Only local v5 rounds use the difficulty table. Hosted rounds remain
     // backend-authoritative and keep the old single-rate presentation.
     val difficultyScoring = session.originSchemaVersion >= 5 &&
@@ -2192,15 +2245,17 @@ private fun QuizReviewScreen(
     // falls back to the same v5 engine its settlement used.
     val difficultyScoring = session.originSchemaVersion >= 5 &&
         !QuizChallenge.isCloudSession(session)
+    // This branch only renders local rounds; the per-round reward cap does not apply to
+    // them, matching the settlement path. The day's quota limits the actual session.
     val scoreV6 = if (difficultyScoring && session.originSchemaVersion >= 6) {
         session.rewardProfile?.let {
-            QuizScoringV6.score(session.items, run.submissions, it)
+            QuizScoringV6.score(session.items, run.submissions, it, applyCap = false)
         }
     } else {
         null
     }
     val score = if (difficultyScoring && scoreV6 == null) {
-        QuizScoring.score(session.items, run.submissions, session.config)
+        QuizScoring.score(session.items, run.submissions, session.config, applyCap = false)
     } else {
         null
     }
@@ -2208,14 +2263,31 @@ private fun QuizReviewScreen(
     // unlock threshold the round pays 0 but still has a score to show (for
     // example a 10-minute threshold with a 5-minute net score). Hosted rounds
     // have no local score, so they fall back to the backend's earned minutes.
-    val scoreMinutes = score?.cappedMinutes ?: run.earnedMinutes
+    // V44: a local report must show exactly what the session will receive, so
+    // the same planner that admits the start clamps the displayed value.
+    val rawEarnedSeconds = when {
+        scoreV6 != null -> scoreV6.earnedSeconds
+        score != null -> score.earnedMinutes * 60
+        else -> if (run.earnedSeconds > 0) run.earnedSeconds else run.earnedMinutes * 60
+    }
+    val localGrantedSeconds = if (difficultyScoring) {
+        PolicyModeCoordinator.localQuizGrantSeconds(rawEarnedSeconds.toLong())?.toInt()
+    } else {
+        null
+    }
+    val scoreMinutes = localGrantedSeconds?.let { it / 60 }
+        ?: score?.cappedMinutes
+        ?: run.earnedMinutes
     val scoreUnlocked = when {
         scoreV6 != null -> scoreV6.unlockReached
         score != null -> score.unlockReached
         else -> run.earnedMinutes > 0
-    }
+    } && (localGrantedSeconds == null || localGrantedSeconds > 0)
     val scoreColor = if (
-        QuizResultTone.isGold(scoreV6?.cappedSeconds ?: scoreMinutes, scoreUnlocked)
+        QuizResultTone.isGold(
+            localGrantedSeconds ?: scoreV6?.cappedSeconds ?: scoreMinutes,
+            scoreUnlocked,
+        )
     ) {
         QuizGold
     } else {
@@ -2236,7 +2308,8 @@ private fun QuizReviewScreen(
     var localError by remember { mutableStateOf<String?>(null) }
     var serverError by remember { mutableStateOf<String?>(null) }
     val ready = !busy && !starting && !failed
-    val unlocked = run.earnedMinutes > 0 || run.earnedSeconds > 0
+    val unlocked = localGrantedSeconds?.let { it > 0 }
+        ?: (run.earnedMinutes > 0 || run.earnedSeconds > 0)
     // The reward film hands an unlocked round to its session on its own. The button below
     // already starts early; this only saves the extra press once the film has finished.
     var filmEnded by remember(session.id) { mutableStateOf(false) }

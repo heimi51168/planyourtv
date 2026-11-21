@@ -1,11 +1,9 @@
 package app.orchard.tv.ui.policy
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -23,7 +21,6 @@ import androidx.compose.foundation.relocation.BringIntoViewRequester
 import app.orchard.tv.R
 import app.orchard.tv.ui.theme.Palette
 import app.orchard.tv.ui.theme.Type
-import com.planyourtv.policy.Activation
 import com.planyourtv.policy.LocalRules
 import com.planyourtv.policy.LocalTimeWindow
 
@@ -34,7 +31,6 @@ import com.planyourtv.policy.LocalTimeWindow
 @Composable
 internal fun V6LocalPane(
     rules: LocalRules,
-    activation: Activation,
     quizEntryVisible: Boolean,
     sourceEntriesVisible: Boolean,
     sessionActive: Boolean,
@@ -49,7 +45,6 @@ internal fun V6LocalPane(
     onFocusRail: () -> Unit,
     onActivateValue: (String) -> Unit,
     onAdjust: (String, Int) -> Unit,
-    onSelectActivation: (Activation) -> Unit,
     onToggleQuizEntry: () -> Unit,
     onToggleSourceEntries: () -> Unit,
     onRemoveWindow: (Boolean, Int) -> Unit,
@@ -58,7 +53,7 @@ internal fun V6LocalPane(
     onEndSession: () -> Unit,
 ) {
     val scroll = rememberScrollState()
-    val focusKeys = v6LocalFocusKeys(rules, activation, sessionActive, readOnly)
+    val focusKeys = v6LocalFocusKeys(rules, sessionActive, readOnly)
     val highlightedKey = (focusedTarget as? ParentFocusTarget.LocalRow)?.key
 
     fun upFor(key: String): (() -> Unit)? {
@@ -70,12 +65,6 @@ internal fun V6LocalPane(
         val next = focusKeys.getOrNull(focusKeys.indexOf(key) + 1) ?: return null
         return { onFocusRow(next) }
     }
-
-    // Down from either tab leaves the strip: skip the sibling tab and land on the first row
-    // of the selected mode (the quiz switch in manual, the first window row in automatic).
-    val afterTabs: (() -> Unit)? = focusKeys
-        .getOrNull(focusKeys.indexOf("activation-manual") + 1)
-        ?.let { key -> { onFocusRow(key) } }
 
     @Composable
     fun WindowRows(weekday: Boolean, windows: List<LocalTimeWindow>) {
@@ -155,8 +144,7 @@ internal fun V6LocalPane(
                 .weight(1f)
                 .verticalScroll(scroll),
         ) {
-            // The app scope is shared by both activations, so it stays above the timing tabs and
-            // is edited independently of the selected rule set.
+            // The app scope is independent of the timing windows, so it stays at the top.
             PolicySectionHeader(stringResource(R.string.policy_parent_section_apps))
             RuleHint(stringResource(R.string.policy_v6_apps_shared_hint))
             PolicyActionRow(
@@ -192,8 +180,8 @@ internal fun V6LocalPane(
             )
             Spacer(Modifier.height(8.dp))
 
-            // Sources are not apps, but they are another child-mode entry. The switch is shared by
-            // both timing modes and only controls Aerial's own entries, as the hint says.
+            // Sources are not apps, but they are another child-mode entry. The switch only
+            // controls Aerial's own entries, as the hint says.
             PolicySectionHeader(stringResource(R.string.policy_v6_source_section))
             PolicySwitchRow(
                 title = stringResource(R.string.policy_v6_source_entries),
@@ -208,122 +196,48 @@ internal fun V6LocalPane(
                 focusRequester = focusFor("sources"),
                 onClick = { if (!readOnly) onToggleSourceEntries() },
                 onUp = upFor("sources"),
-                onDown = {
-                    val tab = if (activation == Activation.MANUAL) "activation-manual" else "activation-auto"
-                    onFocusRow(tab)
-                },
+                onDown = downFor("sources"),
                 onLeft = onFocusRail,
                 highlighted = highlightedKey == "sources",
             )
             RuleHint(stringResource(R.string.policy_v6_source_entries_hint))
             Spacer(Modifier.height(8.dp))
 
-            // Automatic and Manual are a tab pair, not a value row: OK selects the focused tab
-            // and the section below shows that mode's own windows, limits, rest and buffer.
+            // Local timing is manual only. The hint explains how a segment starts; the quiz
+            // switch below only shows/hides the dedicated lock-screen entry, and the quiz
+            // itself stays available from entertainment apps.
             PolicySectionHeader(stringResource(R.string.policy_v6_activation_section))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                ActivationTab(
-                    label = stringResource(v6ActivationLabel(Activation.AUTO)),
-                    selected = activation == Activation.AUTO,
-                    focusRequester = focusFor("activation-auto"),
-                    bringIntoViewRequester = bringFor("activation-auto"),
-                    // Both tabs sit on one row: vertical keys leave the row (up to the shared
-                    // entries, down to the first item after the tab pair), horizontal keys move
-                    // between them.
-                    onUp = { onFocusRow("sources") },
-                    onDown = afterTabs,
-                    onLeft = onFocusRail,
-                    onRight = { onFocusRow("activation-manual") },
-                    onSelect = { if (!readOnly) onSelectActivation(Activation.AUTO) },
-                    highlighted = highlightedKey == "activation-auto",
-                    modifier = Modifier.weight(1f),
-                )
-                ActivationTab(
-                    label = stringResource(R.string.policy_v6_activation_manual),
-                    selected = activation == Activation.MANUAL,
-                    focusRequester = focusFor("activation-manual"),
-                    bringIntoViewRequester = bringFor("activation-manual"),
-                    onUp = { onFocusRow("sources") },
-                    onDown = afterTabs,
-                    onLeft = { onFocusRow("activation-auto") },
-                    onRight = null,
-                    onSelect = { if (!readOnly) onSelectActivation(Activation.MANUAL) },
-                    highlighted = highlightedKey == "activation-manual",
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            RuleHint(stringResource(R.string.policy_v6_activation_tab_hint))
-            RuleHint(stringResource(v6ActivationHint(activation)))
-            if (activation == Activation.MANUAL) {
-                // Only manual timing offers the quiz, so the switch sits directly under the
-                // timing mode. It only shows/hides the dedicated lock-screen entry; the quiz
-                // itself stays available from entertainment apps.
-                PolicySwitchRow(
-                    title = stringResource(R.string.policy_v6_quiz_challenge),
-                    status = stringResource(R.string.policy_v6_quiz_hint),
-                    on = quizEntryVisible,
-                    focusRequester = focusFor("quiz"),
-                    onClick = { if (!readOnly) onToggleQuizEntry() },
-                    onUp = upFor("quiz"),
-                    onDown = downFor("quiz"),
-                    onLeft = onFocusRail,
-                    highlighted = highlightedKey == "quiz",
-                )
-                Spacer(Modifier.height(8.dp))
-            }
+            RuleHint(stringResource(R.string.policy_v6_activation_manual_hint))
+            PolicySwitchRow(
+                title = stringResource(R.string.policy_v6_quiz_challenge),
+                status = stringResource(R.string.policy_v6_quiz_hint),
+                on = quizEntryVisible,
+                focusRequester = focusFor("quiz"),
+                onClick = { if (!readOnly) onToggleQuizEntry() },
+                onUp = upFor("quiz"),
+                onDown = downFor("quiz"),
+                onLeft = onFocusRail,
+                highlighted = highlightedKey == "quiz",
+            )
+            Spacer(Modifier.height(8.dp))
 
             PolicySectionHeader(stringResource(R.string.policy_parent_section_time))
-            RuleHint(stringResource(R.string.policy_parent_windows_schedule_hint))
-            PolicySectionHeader(stringResource(R.string.policy_parent_weekday))
-            WindowRows(true, rules.weekdayWindows)
-            PolicySectionHeader(stringResource(R.string.policy_parent_weekend))
-            WindowRows(false, rules.weekendWindows)
+            if (rules.hasDefaultDayGrouping()) {
+                RuleHint(stringResource(R.string.policy_parent_windows_schedule_hint))
+                PolicySectionHeader(stringResource(R.string.policy_parent_weekday))
+                WindowRows(true, rules.weekdayWindows)
+                PolicySectionHeader(stringResource(R.string.policy_parent_weekend))
+                WindowRows(false, rules.weekendWindows)
+            } else {
+                // The native pane only understands the default Monday–Friday / weekend split.
+                // Writing through it would silently rewrite a custom group's schedule, so the
+                // web page stays the editor and the TV only explains where to find it.
+                RuleHint(stringResource(R.string.policy_parent_custom_schedule_hint))
+            }
 
             PolicySectionHeader(stringResource(R.string.policy_parent_section_limits))
             // Manual mode has no daily quota, and its per-session length is the value the parent
-            // types on the lock screen. Neither number is read by the executor, so neither row
-            // belongs here; only the rest interval still applies to manual sessions.
-            if (activation == Activation.AUTO) {
-                V6ValueRow(
-                    label = stringResource(R.string.policy_parent_daily),
-                    value = stringResource(R.string.policy_parent_minutes, rules.autoDailyLimitMinutes),
-                    editing = !readOnly && editingKey == "daily",
-                    canDecrease = !readOnly && rules.autoDailyLimitMinutes > MIN_EDIT_DAILY_MINUTES,
-                    canIncrease = !readOnly && rules.autoDailyLimitMinutes < MAX_EDIT_DAILY_MINUTES,
-                    focusRequester = focusFor("daily"),
-                    bringIntoViewRequester = bringFor("daily"),
-                    onUp = upFor("daily"),
-                    onDown = downFor("daily"),
-                    onLeftRail = onFocusRail,
-                    onActivate = { if (!readOnly) onActivateValue("daily") },
-                    onDecrease = { onAdjust("daily", -15) },
-                    onIncrease = { onAdjust("daily", 15) },
-                    highlighted = highlightedKey == "daily",
-                )
-                RuleHint(stringResource(R.string.policy_parent_daily_hint))
-                Spacer(Modifier.height(6.dp))
-                V6ValueRow(
-                    label = stringResource(R.string.policy_parent_session),
-                    value = stringResource(R.string.policy_parent_minutes, rules.sessionLimitMinutes),
-                    editing = !readOnly && editingKey == "session",
-                    canDecrease = !readOnly && rules.sessionLimitMinutes > MIN_EDIT_SESSION_MINUTES,
-                    canIncrease = !readOnly && rules.sessionLimitMinutes < MAX_EDIT_DAILY_MINUTES,
-                    focusRequester = focusFor("session"),
-                    bringIntoViewRequester = bringFor("session"),
-                    onUp = upFor("session"),
-                    onDown = downFor("session"),
-                    onLeftRail = onFocusRail,
-                    onActivate = { if (!readOnly) onActivateValue("session") },
-                    onDecrease = { onAdjust("session", -5) },
-                    onIncrease = { onAdjust("session", 5) },
-                    highlighted = highlightedKey == "session",
-                )
-                RuleHint(stringResource(R.string.policy_parent_session_hint))
-                Spacer(Modifier.height(6.dp))
-            }
+            // types on the lock screen; only the rest interval still applies to manual sessions.
             V6ValueRow(
                 label = stringResource(R.string.policy_parent_rest),
                 value = stringResource(R.string.policy_parent_minutes, rules.restMinutes),
@@ -473,96 +387,38 @@ private fun V6ValueRow(
 }
 
 /**
- * One half of the timing-mode tab pair. OK selects the mode; the selected tab keeps a green plate
- * even while focus is elsewhere, so the rule set shown below is always identifiable.
+ * The native TV pane edits only the default two-group schedule. A custom grouping (added on the
+ * web page) must not be rewritten through the weekday/weekend projection.
  */
-@Composable
-private fun ActivationTab(
-    label: String,
-    selected: Boolean,
-    focusRequester: FocusRequester,
-    bringIntoViewRequester: BringIntoViewRequester,
-    onUp: (() -> Unit)?,
-    onDown: (() -> Unit)?,
-    onLeft: (() -> Unit)?,
-    onRight: (() -> Unit)?,
-    onSelect: () -> Unit,
-    highlighted: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    PolicyFocusRow(
-        focusRequester = focusRequester,
-        onClick = onSelect,
-        onUp = onUp,
-        onDown = onDown,
-        onLeft = onLeft,
-        onRight = onRight,
-        modifier = modifier,
-        bringIntoViewRequester = bringIntoViewRequester,
-        normalBackground = if (selected) {
-            Palette.Green.copy(alpha = 0.18f)
-        } else {
-            Palette.Fill.copy(alpha = 0.45f)
-        },
-        highlighted = highlighted,
-    ) { plate ->
-        val color = when {
-            plate -> Palette.OnFocus
-            selected -> Palette.Green
-            else -> Palette.Label
-        }
-        BasicText(
-            label,
-            style = Type.Headline.copy(fontSize = 15.sp, color = color, textAlign = TextAlign.Center),
-            modifier = Modifier.fillMaxWidth(),
-        )
-    }
-}
-
-internal fun v6ActivationLabel(activation: Activation): Int =
-    if (activation == Activation.MANUAL) {
-        R.string.policy_v6_activation_manual
-    } else {
-        R.string.policy_v6_activation_auto
-    }
-
-internal fun v6ActivationHint(activation: Activation): Int =
-    if (activation == Activation.MANUAL) {
-        R.string.policy_v6_activation_manual_hint
-    } else {
-        R.string.policy_v6_activation_auto_hint
-    }
+internal fun LocalRules.hasDefaultDayGrouping(): Boolean =
+    dayGroups.size == 2 &&
+        dayGroups.any { it.days == listOf(1, 2, 3, 4, 5) } &&
+        dayGroups.any { it.days == listOf(6, 7) }
 
 internal fun v6LocalFocusKeys(
     rules: LocalRules,
-    activation: Activation,
     sessionActive: Boolean,
     readOnly: Boolean = false,
 ): List<String> = buildList {
-    // Shared app and source entries first, then the timing tabs and the selected set's rows.
+    // Shared app and source entries first, then the manual timing rows.
     add("apps")
     add("study")
     add("sources")
-    add("activation-auto")
-    add("activation-manual")
-    // The quiz only exists in manual timing; Automatic has no challenge to switch off.
-    if (activation == Activation.MANUAL) add("quiz")
-    rules.weekdayWindows.forEachIndexed { index, _ ->
-        add("wd-$index-start")
-        add("wd-$index-end")
-        if (!readOnly && rules.weekdayWindows.size > 1) add("wd-$index-remove")
+    add("quiz")
+    if (rules.hasDefaultDayGrouping()) {
+        rules.weekdayWindows.forEachIndexed { index, _ ->
+            add("wd-$index-start")
+            add("wd-$index-end")
+            if (!readOnly && rules.weekdayWindows.size > 1) add("wd-$index-remove")
+        }
+        rules.weekendWindows.forEachIndexed { index, _ ->
+            add("we-$index-start")
+            add("we-$index-end")
+            if (!readOnly && rules.weekendWindows.size > 1) add("we-$index-remove")
+        }
     }
-    rules.weekendWindows.forEachIndexed { index, _ ->
-        add("we-$index-start")
-        add("we-$index-end")
-        if (!readOnly && rules.weekendWindows.size > 1) add("we-$index-remove")
-    }
-    // Automatic segments use both values. Manual time has no daily quota and takes its length
-    // from the lock-screen entry, so neither row (nor its focus target) exists in manual mode.
-    if (activation == Activation.AUTO) {
-        add("daily")
-        add("session")
-    }
+    // Manual time takes its segment length from the lock-screen entry, so there is no
+    // daily/session editor here; only the rest interval and screen-off buffer remain.
     add("rest")
     add("buffer")
     if (sessionActive && !readOnly) add("end-session")
@@ -570,7 +426,7 @@ internal fun v6LocalFocusKeys(
 
 internal fun isV6ValueKey(key: String): Boolean =
     key.endsWith("-start") || key.endsWith("-end") ||
-        key == "daily" || key == "session" || key == "rest" || key == "buffer"
+        key == "rest" || key == "buffer"
 
 internal fun v6ValueStep(key: String): Int =
-    if (key == "session" || key == "rest" || key == "buffer") 5 else 15
+    if (key == "rest" || key == "buffer") 5 else 15

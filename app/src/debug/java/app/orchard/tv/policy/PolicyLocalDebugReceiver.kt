@@ -3,7 +3,6 @@ package app.orchard.tv.policy
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import com.planyourtv.policy.Activation
 import com.planyourtv.policy.LocalPolicyStore
 import com.planyourtv.policy.LocalRules
 import com.planyourtv.policy.LocalTimeWindow
@@ -21,12 +20,12 @@ class PolicyLocalDebugReceiver : BroadcastReceiver() {
             ACTION_SETUP -> {
                 val start = intent.getIntExtra(EXTRA_START, 0)
                 val end = intent.getIntExtra(EXTRA_END, 24 * 60)
-                val rules = LocalRules(
-                    weekdayWindows = listOf(LocalTimeWindow(start, end)),
-                    weekendWindows = listOf(LocalTimeWindow(start, end)),
-                    autoDailyLimitMinutes = intent.getIntExtra(EXTRA_DAILY, 60),
-                    sessionLimitMinutes = intent.getIntExtra(EXTRA_SESSION, 20),
-                    restMinutes = intent.getIntExtra(EXTRA_REST, 10),
+                val rules = debugRules(
+                    start = start,
+                    end = end,
+                    daily = intent.getIntExtra(EXTRA_DAILY, 60),
+                    session = intent.getIntExtra(EXTRA_SESSION, 20),
+                    rest = intent.getIntExtra(EXTRA_REST, 10),
                 )
                 val code = PolicyModeCoordinator.debugLocalSetup(
                     intent.getStringExtra(EXTRA_PIN).orEmpty().ifBlank { "123456" },
@@ -64,17 +63,6 @@ class PolicyLocalDebugReceiver : BroadcastReceiver() {
                     )
                 }
             }
-            ACTION_LOCAL_ACTIVATION -> {
-                val activation = runCatching {
-                    Activation.valueOf(
-                        intent.getStringExtra(EXTRA_ACTIVATION).orEmpty().uppercase(),
-                    )
-                }.getOrNull()
-                if (activation != null) {
-                    PolicyModeCoordinator.setLocalActivation(activation)
-                    writeStatus(context, "activation=${activation.name}")
-                }
-            }
             ACTION_SETUP_DEFAULT -> {
                 val code = PolicyModeCoordinator.debugLocalSetup("123456", LocalRules.DEFAULTS)
                 writeStatus(context, "setupRecovery=$code")
@@ -82,12 +70,12 @@ class PolicyLocalDebugReceiver : BroadcastReceiver() {
             ACTION_RULES -> {
                 val start = intent.getIntExtra(EXTRA_START, 0)
                 val end = intent.getIntExtra(EXTRA_END, 24 * 60)
-                val rules = LocalRules(
-                    weekdayWindows = listOf(LocalTimeWindow(start, end)),
-                    weekendWindows = listOf(LocalTimeWindow(start, end)),
-                    autoDailyLimitMinutes = intent.getIntExtra(EXTRA_DAILY, 60),
-                    sessionLimitMinutes = intent.getIntExtra(EXTRA_SESSION, 20),
-                    restMinutes = intent.getIntExtra(EXTRA_REST, 10),
+                val rules = debugRules(
+                    start = start,
+                    end = end,
+                    daily = intent.getIntExtra(EXTRA_DAILY, 60),
+                    session = intent.getIntExtra(EXTRA_SESSION, 20),
+                    rest = intent.getIntExtra(EXTRA_REST, 10),
                 )
                 PolicyModeCoordinator.debugSetLocalRules(rules)
             }
@@ -97,6 +85,18 @@ class PolicyLocalDebugReceiver : BroadcastReceiver() {
             ACTION_STATUS -> writeStatus(context, "")
         }
     }
+
+    private fun debugRules(start: Int, end: Int, daily: Int, session: Int, rest: Int) =
+        LocalRules(
+            dayGroups = LocalRules.fromLegacyWeekdayWeekend(
+                weekdayWindows = listOf(LocalTimeWindow(start, end)),
+                weekendWindows = listOf(LocalTimeWindow(start, end)),
+                weekdayLimitMinutes = daily.takeIf { it < LocalRules.MAX_DAILY_MINUTES },
+                weekendLimitMinutes = daily.takeIf { it < LocalRules.MAX_DAILY_MINUTES },
+            ),
+            sessionLimitMinutes = session,
+            restMinutes = rest,
+        )
 
     private fun writeStatus(context: Context, extra: String) {
         val state = PolicyModeCoordinator.state.value
@@ -136,7 +136,6 @@ class PolicyLocalDebugReceiver : BroadcastReceiver() {
         const val ACTION_LOCAL_END_USER = "app.orchard.tv.policy.DEBUG_LOCAL_END_USER"
         const val ACTION_LOCAL_RESTORE_USAGE = "app.orchard.tv.policy.DEBUG_LOCAL_RESTORE_USAGE"
         const val ACTION_LOCAL_EXPIRE_REST = "app.orchard.tv.policy.DEBUG_LOCAL_EXPIRE_REST"
-        const val ACTION_LOCAL_ACTIVATION = "app.orchard.tv.policy.DEBUG_LOCAL_ACTIVATION"
         const val ACTION_SETUP_DEFAULT = "app.orchard.tv.policy.DEBUG_LOCAL_SETUP_DEFAULT"
         const val ACTION_CLEAR = "app.orchard.tv.policy.DEBUG_LOCAL_CLEAR"
         const val ACTION_OPEN_PARENT = "app.orchard.tv.policy.DEBUG_OPEN_PARENT"
@@ -149,6 +148,5 @@ class PolicyLocalDebugReceiver : BroadcastReceiver() {
         const val EXTRA_REST = "rest"
         const val EXTRA_PIN = "pin"
         const val EXTRA_SECONDS = "seconds"
-        const val EXTRA_ACTIVATION = "activation"
     }
 }

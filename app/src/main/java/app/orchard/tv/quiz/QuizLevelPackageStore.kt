@@ -3,6 +3,7 @@ package app.orchard.tv.quiz
 import android.util.Log
 import app.orchard.tv.policy.PolicyModeCoordinator
 import com.planyourtv.policy.PolicyMode
+import com.planyourtv.policy.quiz.CourseOrigin
 import com.planyourtv.policy.quiz.QuizAnswerScope
 import com.planyourtv.policy.quiz.QuizCollectionLevel
 import com.planyourtv.policy.quiz.QuizConfigDocument
@@ -23,7 +24,9 @@ import org.json.JSONObject
 object QuizLevelPackageStore {
     private const val TAG = "QuizPackageStore"
     private const val EXTENSION_KEY = "levelPackages"
-    private const val EXTENSION_VERSION = 2
+    private const val EXTENSION_VERSION = 3
+    /** Version 2 documents predate the preset source and remain readable. */
+    private const val MIN_READ_VERSION = 2
 
     sealed interface LoadResult {
         data class Ok(
@@ -165,7 +168,7 @@ object QuizLevelPackageStore {
         }
         val marker = local.optJSONObject(EXTENSION_KEY)
             ?: return Extension.Broken(listOf("levelPackages:INVALID"))
-        if (marker.optInt("version", -1) != EXTENSION_VERSION) {
+        if (marker.optInt("version", -1) !in MIN_READ_VERSION..EXTENSION_VERSION) {
             return Extension.Broken(listOf("levelPackages:VERSION"))
         }
         val array = marker.optJSONArray("levels")
@@ -183,6 +186,9 @@ object QuizLevelPackageStore {
      * cloud contract. Present packages own the answer, even when they contain
      * no course source; an absent or broken extension falls back to the legacy
      * list so a pre-migration TV reports what it still uses.
+     *
+     * A preset (or legacy combined) course wins over an AI-only one: the cloud
+     * scope describes the shared curriculum, not content one child generated.
      */
     fun defaultCourseScope(nowMs: Long = System.currentTimeMillis()): QuizAnswerScope? {
         if (PolicyModeCoordinator.mode != PolicyMode.LOCAL) {
@@ -200,9 +206,11 @@ object QuizLevelPackageStore {
             is Extension.Broken,
             -> return QuizAnswerScopeStore.defaultScope()
         }
-        return packages.firstNotNullOfOrNull { pkg ->
-            pkg.sources.firstNotNullOfOrNull { (it as? QuizPackageSource.Course)?.scope }
-        }
+        val courses = packages.asSequence()
+            .flatMap { it.sources.asSequence() }
+            .filterIsInstance<QuizPackageSource.Course>()
+        return courses.firstOrNull { it.origin != CourseOrigin.AI }?.scope
+            ?: courses.firstOrNull()?.scope
     }
 
     /** Returns a copy with only the level-package extension replaced. */

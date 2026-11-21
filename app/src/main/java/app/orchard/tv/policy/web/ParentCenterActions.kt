@@ -1,11 +1,19 @@
 package app.orchard.tv.policy.web
 
 import android.content.Context
+import app.orchard.tv.BuildConfig
+import app.orchard.tv.policy.FamilyAvatarStore
+import app.orchard.tv.policy.FamilyHub
 import app.orchard.tv.policy.LocalPolicyRuntime
+import app.orchard.tv.policy.MemberSwitchAuth
 import app.orchard.tv.policy.PolicyInstalledApps
 import app.orchard.tv.policy.PolicyModeCoordinator
 import app.orchard.tv.policy.PolicyProduct
 import app.orchard.tv.policy.SourceEntrySettings
+import app.orchard.tv.policy.SubjectSwitcher
+import app.orchard.tv.policy.UserConfigPinSettings
+import app.orchard.tv.policy.media.OfficialAudioCatalog
+import app.orchard.tv.policy.media.OfficialAudioDownloader
 import app.orchard.tv.policy.media.OfficialMediaCatalog
 import app.orchard.tv.policy.media.OfficialMediaDownloader
 import app.orchard.tv.policy.media.PolicyVideoLibrary
@@ -13,18 +21,27 @@ import app.orchard.tv.policy.media.PolicyVideoRole
 import app.orchard.tv.quiz.QuizAccess
 import app.orchard.tv.quiz.QuizIntroVideo
 import app.orchard.tv.quiz.QuizSettings
+import app.orchard.tv.quiz.QuizSubjectScope
 import app.orchard.tv.update.Updates
-import com.planyourtv.policy.Activation
+import com.planyourtv.policy.FamilyIds
+import com.planyourtv.policy.FamilyMember
+import com.planyourtv.policy.LocalDayGroup
 import com.planyourtv.policy.LocalPin
 import com.planyourtv.policy.LocalRecovery
 import com.planyourtv.policy.LocalRules
 import com.planyourtv.policy.LocalRulesError
 import com.planyourtv.policy.LocalTimeWindow
+import com.planyourtv.policy.MemberPin
+import com.planyourtv.policy.MemberStatus
 import com.planyourtv.policy.PinResult
 import com.planyourtv.policy.PolicyMode
 import com.planyourtv.policy.PolicyRuntime
 import com.planyourtv.policy.RemoteHandoffState
 import com.planyourtv.policy.SessionState
+import com.planyourtv.policy.UnlockRoute
+import com.planyourtv.policy.UnlockRoutePlan
+import com.planyourtv.policy.UnlockRoutePlanner
+import com.planyourtv.policy.quiz.QuizCurriculum
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -34,7 +51,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import org.json.JSONArray
 import org.json.JSONObject
-import java.util.Locale
+import java.time.LocalDate
 
 /**
  * State projection and the only write path of the web parent center.
@@ -48,6 +65,14 @@ import java.util.Locale
  */
 object ParentCenterActions {
     const val EDITOR_REQUIRED = "EDITOR_REQUIRED"
+
+    /**
+     * Web rules contract. V5 makes the three child unlock routes independent, adds the shared
+     * public per-session cap and one daily count per route. V3/V4 pages cannot express those
+     * fields and are rejected so they reload before writing.
+     */
+    const val RULES_CONTRACT_VERSION = 5
+    private const val MIN_RULES_CONTRACT_VERSION = 5
 
     data class Outcome(
         val ok: Boolean,
@@ -90,12 +115,15 @@ object ParentCenterActions {
         val childOn = ui.mode != PolicyMode.NONE
         val localSessionActive =
             ui.mode == PolicyMode.LOCAL && ui.sessionState == SessionState.ACTIVE
-        val rules = LocalPolicyRuntime.currentRules
-            ?: LocalRules.defaultsFor(ui.activation)
+        val rules = LocalPolicyRuntime.currentRules ?: LocalRules.DEFAULTS
         val ruleSets = LocalPolicyRuntime.currentRuleSets
+        val family = FamilyHub.state.value
 
         val result = JSONObject()
             .put("ok", true)
+            // APP filing number, injected at build time. Empty in community builds; the web UI
+            // hides the row, and the phone shell hides it until its own filing is added.
+            .put("appRecordNumber", BuildConfig.APP_RECORD_NUMBER)
             .put("mode", ui.mode.name)
             .put("loaded", ui.loaded)
             .put("guardState", ui.guardState.name)
@@ -114,6 +142,10 @@ object ParentCenterActions {
             .put("autoUpdate", Updates.auto)
             .put("update", updateJson(context))
             .put("sourceEntriesVisible", SourceEntrySettings.isVisible())
+            // Defaults to false on upgraded and fresh devices: no prompt until enabled.
+            .put("memberSwitchRequired", MemberSwitchAuth.isRequired())
+            // Defaults to true: the web user-configuration tab keeps asking for the parent PIN.
+            .put("userConfigRequirePin", UserConfigPinSettings.isRequired())
             .put("quizEntryVisible", QuizSettings.isLockEntryVisible())
             .put("introVideo", QuizIntroVideo.snapshot(context))
             // The main page only needs the current roles. Opening "Videos & wallpapers"
@@ -128,6 +160,29 @@ object ParentCenterActions {
             .put("handoffDone", handoffDone)
             .put("childModeOn", childOn)
             .put("localSessionActive", localSessionActive)
+            .put("family", familyJson(family))
+            // The member sheet offers the curriculum's own grade list, so every language
+            // shows the same labels as the quiz page without duplicating them in JS.
+            .put("gradeOptions", gradeOptionsJson())
+            .put(
+                "members",
+                JSONArray().also { array ->
+                    family.members
+                        .sortedWith(compareBy({ it.sortOrder }, { it.createdAt }))
+                        .forEach { array.put(memberJson(it, family)) }
+                },
+            )
+            .put(
+                "activeSubject",
+                if (family.ready) {
+                    JSONObject()
+                        .put("familyId", family.familyId)
+                        .put("userId", family.activeUserId)
+                        .put("epoch", family.activeEpoch)
+                } else {
+                    JSONObject.NULL
+                },
+            )
             .put("rules", rulesJson(rules))
             .put(
                 "capabilities",
@@ -142,6 +197,24 @@ object ParentCenterActions {
                     .put("canEditIntroVideos", ui.mode == PolicyMode.LOCAL && !readOnlyLocal)
                     .put("canEndSession", localSessionActive)
                     .put("canSetupPin", false)
+                    // Family profiles are local identity, not a policy template. They follow the
+                    // same LOCAL/unbound restriction as the rule editor.
+                    .put("canEditFamily", ui.mode == PolicyMode.LOCAL && !readOnlyLocal)
+                    .put(
+                        "canAddMember",
+                        family.canAddMember && ui.mode == PolicyMode.LOCAL && !readOnlyLocal,
+                    )
+                    // Remote switching shares SubjectSwitcher's lock-screen/busy gate with the
+                    // TV; it is offered wherever the family editor is available.
+                    .put(
+                        "canSwitchSubject",
+                        family.ready && family.canSwitchMember &&
+                            ui.mode == PolicyMode.LOCAL && !readOnlyLocal,
+                    )
+                    .put(
+                        "canToggleMemberSwitch",
+                        ui.mode == PolicyMode.LOCAL && !readOnlyLocal && family.ready,
+                    )
                     .put("cloudEnabled", PolicyProduct.cloudEnabled),
             )
             .put(
@@ -152,11 +225,19 @@ object ParentCenterActions {
                     .put("effectiveRemainingSeconds", ui.effectiveRemainingSeconds)
                     .put("dailyUsedSeconds", ui.dailyUsedSeconds)
                     .put("dailyLimitSeconds", ui.dailyLimitSeconds)
+                    .put("studyDailyUsedSeconds", ui.studyDailyUsedSeconds)
+                    .put("studyDailyLimitSeconds", ui.studyDailyLimitSeconds)
+                    .put("studyRemainingSeconds", ui.studyRemainingSeconds)
+                    .put("studyLimitUnlimited", ui.studyLimitUnlimited)
+                    .put("currentDayGroupLabel", ui.currentDayGroupLabel)
                     .put("sessionLimitSeconds", ui.sessionLimitSeconds)
+                    .put("sessionCapSeconds", ui.sessionCapSeconds)
+                    // Read-only day progress for the TV popup/other surfaces. The configuration
+                    // page itself must only render configured values, never today's usage.
+                    .put("routeCounts", routeCountsJson(ui.unlockRoutePlan, rules))
                     .put("configuredRestMinutes", ui.configuredRestMinutes)
                     .put("configuredBufferMinutes", ui.configuredBufferMinutes)
                     .put("restRemainingSeconds", ui.restRemainingSeconds)
-                    .put("autoReady", ui.autoReady)
                     .put("lockReason", ui.lockReason.name)
                     .put("nextWindowLabel", ui.nextWindowLabel)
                     .put("todayWindowsLabel", ui.todayWindowsLabel)
@@ -167,9 +248,7 @@ object ParentCenterActions {
         if (ruleSets != null) {
             result.put(
                 "ruleSets",
-                JSONObject()
-                    .put("auto", ruleSetJson(ruleSets.auto))
-                    .put("manual", ruleSetJson(ruleSets.manual)),
+                JSONObject().put("manual", ruleSetJson(ruleSets.manual)),
             )
         }
         return result
@@ -224,32 +303,172 @@ object ParentCenterActions {
             .put("notes", notes)
     }
 
+    private fun familyJson(family: FamilyHub.UiState): JSONObject = JSONObject()
+        .put("available", family.ready)
+        .put("id", family.familyId)
+        .put("name", family.familyName)
+        .put("revision", family.revision)
+        .put("defaultUserId", family.defaultUserId)
+        .put("activeUserId", family.activeUserId)
+        .put("activeEpoch", family.activeEpoch)
+        .put("canAddMember", family.canAddMember)
+        .put("error", family.error)
+
+    private fun memberJson(member: FamilyMember, family: FamilyHub.UiState): JSONObject {
+        val avatarUrl = member.avatarImage?.let { path ->
+            "/api/parent/avatar?userId=" + member.userId +
+                "&rev=" + member.avatarRevision +
+                "&name=" + path.substringAfterLast('/')
+        }
+        return JSONObject()
+            .put("userId", member.userId)
+            .put("familyId", member.familyId)
+            .put("name", member.displayName)
+            .put("avatarPreset", member.avatarPreset)
+            .put("avatarRevision", member.avatarRevision)
+            .put("avatarUrl", avatarUrl ?: JSONObject.NULL)
+            .put("role", member.role.name)
+            .put("source", member.source.name)
+            .put("status", member.status.name)
+            .put("sortOrder", member.sortOrder)
+            .put("grade", member.grade ?: JSONObject.NULL)
+            .put("semester", member.semester ?: JSONObject.NULL)
+            // Only the "still initial" flag, never the salt or hash.
+            .put("switchPinInitial", member.switchPinInitial)
+            .put("isDefault", member.userId == family.defaultUserId)
+            .put("isActive", member.userId == family.activeUserId)
+    }
+
+    private fun gradeOptionsJson(): JSONArray = JSONArray().apply {
+        val curriculum = QuizCurriculum.current() ?: return@apply
+        curriculum.grades.sortedBy { it.no }.forEach { grade ->
+            put(
+                JSONObject()
+                    .put("no", grade.no)
+                    .put(
+                        "labels",
+                        JSONObject().also { labels ->
+                            grade.labels.forEach { (language, value) ->
+                                labels.put(language, value)
+                            }
+                        },
+                    ),
+            )
+        }
+    }
+
     private fun ruleSetJson(set: com.planyourtv.policy.LocalRuleSet): JSONObject = JSONObject()
+        .put("dayGroups", dayGroupsJson(set.dayGroups))
         .put("weekdayWindows", windowsJson(set.weekdayWindows))
         .put("weekendWindows", windowsJson(set.weekendWindows))
         .put("autoDailyLimitMinutes", set.autoDailyLimitMinutes)
+        .put("weekendDailyLimitMinutes", set.weekendDailyLimitMinutes)
         .put("sessionLimitMinutes", set.sessionLimitMinutes)
+        .put("sessionCapMinutes", set.sessionCapMinutes)
+        .put("quizDailyLimitCount", set.quizDailyLimitCount)
+        .put("studyRewardDailyLimitCount", set.studyRewardDailyLimitCount)
+        .put("directDailyFreeCount", set.directDailyFreeCount)
         .put("restMinutes", set.restMinutes)
+        .put("weekendRestMinutes", set.weekendRestMinutes ?: JSONObject.NULL)
         .put("sessionScreenOffBufferMinutes", set.sessionScreenOffBufferMinutes ?: JSONObject.NULL)
+        .put(
+            "weekendSessionScreenOffBufferMinutes",
+            set.weekendSessionScreenOffBufferMinutes ?: JSONObject.NULL,
+        )
+        .put("quizGateEnabled", set.quizGateEnabled)
+        .put("studyEarnEnabled", set.studyEarnEnabled)
+        .put("directStartEnabled", set.directStartEnabled)
+
+    /** Read-only projection of today's route counts; the configuration page never renders it. */
+    private fun routeCountsJson(plan: UnlockRoutePlan?, rules: LocalRules): JSONObject {
+        val result = JSONObject().put("date", plan?.date ?: LocalDate.now().toString())
+        UnlockRoute.entries.forEach { route ->
+            val decision = plan?.decision(route)
+            val limit = decision?.dailyLimit ?: rules.dailyLimitFor(route)
+            val used = decision?.used ?: 0
+            result.put(
+                routeKey(route),
+                JSONObject()
+                    .put("used", used)
+                    .put("limit", limit)
+                    .put(
+                        "remaining",
+                        decision?.remaining
+                            ?: if (limit < 0) UnlockRoutePlanner.UNLIMITED_REMAINING
+                            else (limit - used).coerceAtLeast(0),
+                    ),
+            )
+        }
+        return result
+    }
+
+    private fun routeKey(route: UnlockRoute): String = when (route) {
+        UnlockRoute.QUIZ -> "quiz"
+        UnlockRoute.STUDY_REWARD -> "studyReward"
+        UnlockRoute.DIRECT -> "directFree"
+    }
 
     fun rulesJson(rules: LocalRules): JSONObject = JSONObject()
+        .put("rulesContractVersion", RULES_CONTRACT_VERSION)
+        .put("dayGroups", dayGroupsJson(rules.dayGroups))
         .put("weekdayWindows", windowsJson(rules.weekdayWindows))
         .put("weekendWindows", windowsJson(rules.weekendWindows))
         .put("autoDailyLimitMinutes", rules.autoDailyLimitMinutes)
+        .put("weekendDailyLimitMinutes", rules.weekendDailyLimitMinutes)
         .put("sessionLimitMinutes", rules.sessionLimitMinutes)
+        // V5 keeps the old alias for readers that still use the V4 field name.
+        .put("directSessionMinutes", rules.sessionLimitMinutes)
+        .put("sessionCapMinutes", rules.sessionCapMinutes)
+        .put("quizDailyLimitCount", rules.quizDailyLimitCount)
+        .put("studyRewardDailyLimitCount", rules.studyRewardDailyLimitCount)
+        .put("directDailyFreeCount", rules.directDailyFreeCount)
         .put("restMinutes", rules.restMinutes)
+        .put("weekendRestMinutes", rules.weekendRestMinutes)
         .put("sessionScreenOffBufferMinutes", rules.sessionScreenOffBufferMinutes)
+        .put(
+            "weekendSessionScreenOffBufferMinutes",
+            rules.weekendSessionScreenOffBufferMinutes,
+        )
         .put("allApps", rules.allowsAllEntertainmentApps)
         .put(
             "allowedPackages",
             JSONArray(rules.effectiveAllowedPackages - ALL_VALID_APP_SENTINEL),
         )
         .put("studyPackages", JSONArray(rules.effectiveStudyPackages))
+        .put("unlimitedPackages", JSONArray(rules.effectiveUnlimitedPackages))
+        .put("studyEarnPackages", JSONArray(rules.effectiveStudyEarnPackages))
+        .put("studyEarnStudyMinutes", rules.studyEarnStudyMinutes)
+        .put("studyEarnRewardMinutes", rules.studyEarnRewardMinutes)
+        .put("quizGateEnabled", rules.quizGateEnabled)
+        .put("studyEarnEnabled", rules.studyEarnEnabled)
+        .put("directStartEnabled", rules.directStartEnabled)
 
     private fun windowsJson(windows: List<LocalTimeWindow>): JSONArray {
         val array = JSONArray()
         windows.forEach { window ->
             array.put(JSONObject().put("start", window.startMinute).put("end", window.endMinute))
+        }
+        return array
+    }
+
+    /** Schema-3 schedule. `null` is an unlimited quota; zero is a finite, locked quota. */
+    private fun dayGroupsJson(groups: List<com.planyourtv.policy.LocalDayGroup>): JSONArray {
+        val array = JSONArray()
+        groups.forEach { group ->
+            array.put(
+                JSONObject()
+                    .put("days", JSONArray(group.days.sorted()))
+                    .put("studyWindows", windowsJson(group.studyWindows))
+                    .put(
+                        "studyDailyLimitMinutes",
+                        group.studyDailyLimitMinutes ?: JSONObject.NULL,
+                    )
+                    .put("entertainmentWindows", windowsJson(group.entertainmentWindows))
+                    .put(
+                        "entertainmentDailyLimitMinutes",
+                        group.entertainmentDailyLimitMinutes ?: JSONObject.NULL,
+                    ),
+            )
         }
         return array
     }
@@ -287,31 +506,59 @@ object ParentCenterActions {
         if (expected < 0L || expected != LocalPolicyRuntime.rulesEpoch) {
             return conflict("STATE_CHANGED")
         }
-        val next = parseRules(body.optJSONObject("rules") ?: return error("RULES_INVALID"))
-            ?: return error("RULES_INVALID")
+        val before = LocalPolicyRuntime.currentRules
+        val rulesBody = body.optJSONObject("rules") ?: return error("RULES_INVALID")
+        // V42 has no compatibility path for the schedule: a page that cannot express groups must
+        // reload rather than have its flat weekday/weekend projection silently merged into the
+        // group schedule. V44 raises the contract to V5: a V3/V4 page cannot express the route
+        // counts or the shared cap and must reload before writing.
+        val contract = rulesBody.optInt("rulesContractVersion", 0)
+        if (contract !in MIN_RULES_CONTRACT_VERSION..RULES_CONTRACT_VERSION ||
+            !rulesBody.has("dayGroups")
+        ) {
+            return error("RULES_CLIENT_OUTDATED")
+        }
+        val next = when (val parsed = parseRules(rulesBody, before)) {
+            is ParsedRules.Valid -> parsed.rules
+            is ParsedRules.Invalid -> return error(parsed.code)
+        }
         val validation = next.validationError()
         if (validation != LocalRulesError.NONE) {
             val code = when (validation) {
                 LocalRulesError.OVERLAPPING_WINDOWS -> "RULES_OVERLAP"
-                LocalRulesError.TOO_MANY_WINDOWS -> "RULES_TOO_MANY_WINDOWS"
+                // Both are only reachable from a day group in schema 3.
+                LocalRulesError.TOO_MANY_WINDOWS,
+                LocalRulesError.INVALID_WINDOW,
+                LocalRulesError.INVALID_DAY_GROUPS,
+                -> "RULES_INVALID_DAY_GROUPS"
                 LocalRulesError.INVALID_ALLOWED_PACKAGES -> "RULES_INVALID_APPS"
                 LocalRulesError.INVALID_STUDY_PACKAGES -> "RULES_INVALID_STUDY_APPS"
+                LocalRulesError.INVALID_UNLIMITED_PACKAGES -> "RULES_INVALID_UNLIMITED_APPS"
+                LocalRulesError.INVALID_STUDY_EARN -> "RULES_INVALID_STUDY_EARN"
                 else -> "RULES_INVALID"
             }
             return error(code)
         }
-        val before = LocalPolicyRuntime.currentRules
         if (!LocalPolicyRuntime.setRules(next)) return error("RULES_INVALID")
         val scopeChanged = before == null ||
             before.effectiveAllowedPackages != next.effectiveAllowedPackages ||
-            before.effectiveStudyPackages != next.effectiveStudyPackages
+            before.effectiveStudyPackages != next.effectiveStudyPackages ||
+            before.effectiveUnlimitedPackages != next.effectiveUnlimitedPackages ||
+            before.effectiveStudyEarnPackages != next.effectiveStudyEarnPackages ||
+            before.studyEarnStudyMinutes != next.studyEarnStudyMinutes ||
+            before.studyEarnRewardMinutes != next.studyEarnRewardMinutes ||
+            before.quizGateEnabled != next.quizGateEnabled ||
+            before.studyEarnEnabled != next.studyEarnEnabled ||
+            before.directStartEnabled != next.directStartEnabled ||
+            before.quizDailyLimitCount != next.quizDailyLimitCount ||
+            before.studyRewardDailyLimitCount != next.studyRewardDailyLimitCount ||
+            before.directDailyFreeCount != next.directDailyFreeCount
         // Time rules are a next-session snapshot. Check them first: when one save mixes both
         // kinds, the deferred half is the part a parent must not misread as already live.
         val timeRulesChanged = before != null && (
-            before.weekdayWindows != next.weekdayWindows ||
-            before.weekendWindows != next.weekendWindows ||
-            before.autoDailyLimitMinutes != next.autoDailyLimitMinutes ||
+            before.dayGroups != next.dayGroups ||
             before.sessionLimitMinutes != next.sessionLimitMinutes ||
+            before.sessionCapMinutes != next.sessionCapMinutes ||
             before.restMinutes != next.restMinutes ||
             before.sessionScreenOffBufferMinutes != next.sessionScreenOffBufferMinutes
         )
@@ -321,27 +568,6 @@ object ParentCenterActions {
             else -> "SAVED"
         }
         return ok(messageKey)
-    }
-
-    fun setActivation(body: JSONObject): Outcome {
-        val ui = PolicyModeCoordinator.state.value
-        if (ui.mode != PolicyMode.LOCAL) return error("LOCAL_ONLY")
-        if (PolicyProduct.cloudEnabled && PolicyRuntime.state.value.bound) {
-            return error("READ_ONLY")
-        }
-        val expectedMode = body.optString("expectedModeRevision", "")
-        if (expectedMode.isBlank() || expectedMode != modeRevision()) {
-            return conflict("STATE_CHANGED")
-        }
-        // V29 removes the local automatic scheduler from the configuration surface. A stale
-        // page may only confirm the fixed manual mode; it can never turn AUTO back on.
-        if (body.optString("activation", "").uppercase(Locale.ROOT) != Activation.MANUAL.name) {
-            return error("MANUAL_MODE_FIXED")
-        }
-        if (!PolicyModeCoordinator.setLocalActivation(Activation.MANUAL)) {
-            return error("SAVE_FAILED")
-        }
-        return ok("SAVED")
     }
 
     fun setChildMode(body: JSONObject): Outcome {
@@ -510,6 +736,214 @@ object ParentCenterActions {
         return ok("UPDATE_STARTED")
     }
 
+    /**
+     * Family profiles are local identity, not a cloud-owned policy. The page still needs the
+     * editor lease; this method repeats the mode/binding check for the raw avatar route too.
+     */
+    fun canEditFamily(): Boolean {
+        val ui = PolicyModeCoordinator.state.value
+        // Cloud mode is single-member until the backend carries per-member policy. The web
+        // capabilities already hide the editor there; this check keeps a raw request honest.
+        if (ui.mode != PolicyMode.LOCAL || !ui.loaded) return false
+        if (PolicyProduct.cloudEnabled && PolicyRuntime.state.value.bound) return false
+        return FamilyHub.isReady
+    }
+
+    /**
+     * Adds a local child without changing which member the TV executes. The member always
+     * starts from clean local defaults: no rules, quiz settings, level packages or AI
+     * generation parameters are copied from a sibling, so a mismatched grade/textbook range
+     * cannot leak into the new member. Usage, the date ledger, sessions, study rounds and
+     * quiz progress are never copied either.
+     * Cloud mode is refused by [canEditFamily] because the backend is still single-member.
+     */
+    fun addMember(body: JSONObject): Outcome {
+        if (!canEditFamily()) {
+            return error(
+                if (!FamilyHub.isReady) "FAMILY_NOT_READY" else "READ_ONLY",
+            )
+        }
+        val family = FamilyHub.state.value
+        if (!family.canAddMember) return error("FAMILY_NOT_READY")
+        val name = body.optString("name", "")
+        val preset = body.optString("avatarPreset", "rabbit")
+        val scope = memberGradeSelection(body) ?: return error("SUBJECT_GRADE_INVALID")
+        // A newly added member must leave the parent with a working switch password. The
+        // default member keeps the historical 123456 initial credential, but the Web add
+        // form no longer accepts an empty field that would silently fall back to it.
+        val switchPin = body.optString("switchPin", "").trim()
+        if (switchPin.isEmpty()) return error("SUBJECT_PIN_REQUIRED")
+        if (!MemberPin.isValid(switchPin)) return error("SUBJECT_PIN_INVALID")
+        val member = FamilyHub.addMember(
+            displayName = name,
+            avatarPreset = preset,
+            grade = scope.first,
+            semester = scope.second,
+            switchPin = switchPin,
+        ) ?: return error(
+            when {
+                FamilyIds.normalizeDisplayName(name) == null -> "SUBJECT_NAME_INVALID"
+                !FamilyAvatarStore.PRESETS.contains(preset.trim().lowercase()) ->
+                    "SUBJECT_AVATAR_INVALID"
+                else -> "SUBJECT_ADD_FAILED"
+            },
+        )
+        // A clean QCD has no levels and no copied quiz settings. AI generation preferences
+        // are a separate per-member key and stay absent until the parent configures them.
+        QuizSubjectScope.provisionLocalDocument(member.userId, null)
+        return ok("SUBJECT_ADDED")
+    }
+
+    /**
+     * Renames the member and/or changes the avatar preset. Uploaded images have their own raw
+     * route; this action never accepts a path from the page.
+     */
+    fun updateMemberProfile(body: JSONObject): Outcome {
+        if (!canEditFamily()) {
+            return error(
+                if (!FamilyHub.isReady) "FAMILY_NOT_READY" else "READ_ONLY",
+            )
+        }
+        val userId = body.optString("userId", "").trim()
+        if (userId.isEmpty()) return error("SUBJECT_REQUIRED")
+        val name = body.optString("name", "")
+        val preset = body.optString("avatarPreset", "")
+        val scope = memberGradeSelection(body) ?: return error("SUBJECT_GRADE_INVALID")
+        // Blank means "keep the current password": the edit form shows a placeholder instead of
+        // the stored value, and old members may still be on the initial one.
+        val switchPin = body.optString("switchPin", "").trim().takeIf { it.isNotEmpty() }
+        if (switchPin != null && !MemberPin.isValid(switchPin)) return error("SUBJECT_PIN_INVALID")
+        val failure = FamilyHub.updateProfile(
+            userId,
+            name,
+            preset,
+            grade = scope.first,
+            semester = scope.second,
+            switchPin = switchPin,
+        )
+        return if (failure == null) ok("SUBJECT_SAVED") else error(failure)
+    }
+
+    /**
+     * Removes a local child. The route already verified the parent PIN; this method keeps the
+     * roster guards honest for a raw request. The default member anchors the legacy
+     * single-child keys and the active member is executing on the TV, so both are refused
+     * until the parent switches away (the default can never be removed).
+     */
+    fun deleteMember(body: JSONObject): Outcome {
+        if (!canEditFamily()) {
+            return error(
+                if (!FamilyHub.isReady) "FAMILY_NOT_READY" else "READ_ONLY",
+            )
+        }
+        val userId = body.optString("userId", "").trim()
+        if (userId.isEmpty()) return error("SUBJECT_REQUIRED")
+        val family = FamilyHub.state.value
+        val member = family.members.firstOrNull {
+            it.userId == userId && it.status == MemberStatus.ACTIVE
+        } ?: return error("SUBJECT_NOT_FOUND")
+        if (member.userId == family.defaultUserId) return error("SUBJECT_DEFAULT")
+        if (member.userId == family.activeUserId) return error("SUBJECT_ACTIVE")
+        val context = appContext ?: return error("NOT_READY")
+        val failure = FamilyHub.removeMember(member.userId)
+        if (failure != null) {
+            return error(
+                if (failure == "SUBJECT_UPDATE_FAILED") "SUBJECT_DELETE_FAILED" else failure,
+            )
+        }
+        FamilyAvatarStore.deleteAllForMember(context, member.familyId, member.userId)
+        return ok("SUBJECT_DELETED")
+    }
+
+    /**
+     * Whether the TV lock screen asks for the target member's 6-digit password. The setting is
+     * device-local; Web itself never asks a child for that password.
+     */
+    fun setMemberSwitch(body: JSONObject): Outcome {
+        val ui = PolicyModeCoordinator.state.value
+        if (ui.mode != PolicyMode.LOCAL) return error("LOCAL_ONLY")
+        if (PolicyProduct.cloudEnabled && PolicyRuntime.state.value.bound) {
+            return error("READ_ONLY")
+        }
+        if (!FamilyHub.isReady) return error("FAMILY_NOT_READY")
+        val enabled = body.optBoolean("enabled", MemberSwitchAuth.isRequired())
+        if (!MemberSwitchAuth.setRequired(enabled)) return error("SAVE_FAILED")
+        return ok("MEMBER_SWITCH_SAVED")
+    }
+
+    /**
+     * Whether the web "user configuration" tab keeps asking for the parent PIN. Disabling is
+     * protected by a single-use USER_CONFIG proof in the HTTP layer; enabling only restores
+     * protection and needs no proof. Both directions are device-local.
+     */
+    fun setUserConfigPin(requirePin: Boolean): Outcome {
+        val ui = PolicyModeCoordinator.state.value
+        if (ui.mode != PolicyMode.LOCAL) return error("LOCAL_ONLY")
+        if (PolicyProduct.cloudEnabled && PolicyRuntime.state.value.bound) {
+            return error("READ_ONLY")
+        }
+        if (!UserConfigPinSettings.setRequired(requirePin)) return error("SAVE_FAILED")
+        return ok("USER_CONFIG_PIN_SAVED")
+    }
+
+    /**
+     * Moves the TV's active member from the Web. Authentication is the parent-center login; the
+     * move itself uses the same [SubjectSwitcher] gate as the TV, so a running timer, quiz,
+     * study round, temporary unlock or non-lock-screen state refuses with [TV_BUSY].
+     */
+    fun activateSubject(body: JSONObject): Outcome {
+        if (!canEditFamily()) {
+            return error(
+                if (!FamilyHub.isReady) "FAMILY_NOT_READY" else "READ_ONLY",
+            )
+        }
+        val userId = body.optString("userId", "").trim()
+        if (userId.isEmpty()) return error("SUBJECT_REQUIRED")
+        val family = FamilyHub.state.value
+        val member = family.members.firstOrNull {
+            it.userId == userId && it.status == MemberStatus.ACTIVE
+        } ?: return error("SUBJECT_NOT_FOUND")
+        if (member.userId == family.activeUserId) return ok("SUBJECT_SWITCHED")
+        val expected = body.optLong("expectedActiveEpoch", -1L).takeIf { it >= 0L }
+        return when (SubjectSwitcher.switchTo(member.userId, expected)) {
+            SubjectSwitcher.Result.OK -> ok("SUBJECT_SWITCHED")
+            SubjectSwitcher.Result.STATE_CHANGED -> conflict("STATE_CHANGED")
+            SubjectSwitcher.Result.BUSY,
+            SubjectSwitcher.Result.NOT_LOCKED -> error("TV_BUSY")
+            SubjectSwitcher.Result.CLOUD_MODE -> error("READ_ONLY")
+            SubjectSwitcher.Result.UNKNOWN_MEMBER -> error("SUBJECT_NOT_FOUND")
+            SubjectSwitcher.Result.NOT_READY -> error("FAMILY_NOT_READY")
+            SubjectSwitcher.Result.FAILED -> error("SAVE_FAILED")
+        }
+    }
+
+    /**
+     * Reads the optional member default scope. 0/absent means "all", which is how members
+     * created before these fields existed are represented. A semester needs a grade.
+     */
+    private fun memberGradeSelection(body: JSONObject): Pair<Int?, Int?>? {
+        val grade = body.optInt("grade", 0)
+        val semester = body.optInt("semester", 0)
+        if (grade !in 0..9 || semester !in 0..2) return null
+        if (semester != 0 && grade == 0) return null
+        return grade.takeIf { it > 0 } to semester.takeIf { it > 0 }
+    }
+
+    fun deleteMemberAvatar(body: JSONObject): Outcome {
+        if (!canEditFamily()) {
+            return error(
+                if (!FamilyHub.isReady) "FAMILY_NOT_READY" else "READ_ONLY",
+            )
+        }
+        val userId = body.optString("userId", "").trim()
+        if (userId.isEmpty()) return error("SUBJECT_REQUIRED")
+        val context = appContext ?: return error("NOT_READY")
+        val member = FamilyHub.state.value.members.firstOrNull { it.userId == userId }
+            ?: return error("SUBJECT_NOT_FOUND")
+        FamilyAvatarStore.deleteForMember(context, member)
+        return ok("SUBJECT_SAVED")
+    }
+
     fun setSourceEntries(body: JSONObject): Outcome {
         val ui = PolicyModeCoordinator.state.value
         if (ui.mode == PolicyMode.NONE) return error("NOT_READY")
@@ -612,7 +1046,40 @@ object ParentCenterActions {
             PolicyVideoLibrary.EditResult.NotReady -> error("MEDIA_NOT_READY")
             PolicyVideoLibrary.EditResult.Busy -> error("MEDIA_BUSY")
             PolicyVideoLibrary.EditResult.RoleInvalid -> error("MEDIA_ROLE_INVALID")
+            PolicyVideoLibrary.EditResult.PlaylistTooLong,
+            PolicyVideoLibrary.EditResult.PlaylistInvalid -> error("MEDIA_ROLE_INVALID")
             PolicyVideoLibrary.EditResult.DeleteFailed -> error("MEDIA_DOWNLOAD_FAILED")
+        }
+    }
+
+    /**
+     * Replaces the lock wallpaper rotation. The page sends the ids in the order the child should
+     * see them; an empty array clears the rotation. The TV re-checks every id and the interval.
+     */
+    fun saveMediaPlaylist(context: Context, body: JSONObject): Outcome {
+        val array = body.optJSONArray("ids") ?: return error("MEDIA_PLAYLIST_INVALID")
+        if (array.length() > PolicyVideoLibrary.WALLPAPER_MAX_ITEMS) {
+            return error("MEDIA_PLAYLIST_TOO_LONG")
+        }
+        val ids = ArrayList<String>(array.length())
+        for (index in 0 until array.length()) {
+            ids += array.optString(index, "").trim()
+        }
+        val intervalMs = body.optLong(
+            "intervalMs",
+            PolicyVideoLibrary.WALLPAPER_DEFAULT_INTERVAL_MS,
+        )
+        return when (
+            PolicyVideoLibrary.saveLockPlaylist(context.applicationContext, ids, intervalMs)
+        ) {
+            PolicyVideoLibrary.EditResult.Ok -> ok("MEDIA_PLAYLIST_SAVED")
+            PolicyVideoLibrary.EditResult.NotFound -> error("MEDIA_NOT_FOUND")
+            PolicyVideoLibrary.EditResult.PlaylistTooLong -> error("MEDIA_PLAYLIST_TOO_LONG")
+            PolicyVideoLibrary.EditResult.PlaylistInvalid -> error("MEDIA_PLAYLIST_INVALID")
+            PolicyVideoLibrary.EditResult.RoleInvalid -> error("MEDIA_ROLE_INVALID")
+            PolicyVideoLibrary.EditResult.DeleteFailed -> error("MEDIA_DOWNLOAD_FAILED")
+            PolicyVideoLibrary.EditResult.NotReady -> error("MEDIA_NOT_READY")
+            PolicyVideoLibrary.EditResult.Busy -> error("MEDIA_BUSY")
         }
     }
 
@@ -625,7 +1092,9 @@ object ParentCenterActions {
             PolicyVideoLibrary.EditResult.Busy -> error("MEDIA_BUSY")
             PolicyVideoLibrary.EditResult.DeleteFailed -> error("MEDIA_DELETE_FAILED")
             PolicyVideoLibrary.EditResult.NotReady,
-            PolicyVideoLibrary.EditResult.RoleInvalid -> error("MEDIA_NOT_FOUND")
+            PolicyVideoLibrary.EditResult.RoleInvalid,
+            PolicyVideoLibrary.EditResult.PlaylistTooLong,
+            PolicyVideoLibrary.EditResult.PlaylistInvalid -> error("MEDIA_NOT_FOUND")
         }
     }
 
@@ -640,6 +1109,71 @@ object ParentCenterActions {
             return error("MEDIA_SOUND_UNAVAILABLE")
         }
         return ok("MEDIA_SOUND_SAVED")
+    }
+
+    fun refreshAudio(context: Context): Outcome {
+        if (!OfficialAudioCatalog.isConfigured()) return error("AUDIO_CATALOG_UNAVAILABLE")
+        OfficialAudioCatalog.requestRefresh(context.applicationContext, force = true)
+        return ok("AUDIO_REFRESHING")
+    }
+
+    fun downloadAudio(context: Context, body: JSONObject): Outcome {
+        val id = body.optString("id", "").trim()
+        if (id.isEmpty()) return error("AUDIO_NOT_FOUND")
+        return when (OfficialAudioDownloader.start(context.applicationContext, id)) {
+            is OfficialAudioDownloader.StartResult.Started -> ok("AUDIO_DOWNLOAD_STARTED")
+            is OfficialAudioDownloader.StartResult.AlreadyReady -> ok("AUDIO_ALREADY_READY")
+            is OfficialAudioDownloader.StartResult.Running -> ok("AUDIO_DOWNLOADING")
+            OfficialAudioDownloader.StartResult.Busy -> error("AUDIO_BUSY")
+            OfficialAudioDownloader.StartResult.NotFound -> error("AUDIO_NOT_FOUND")
+            OfficialAudioDownloader.StartResult.NoSpace -> error("AUDIO_NO_SPACE")
+        }
+    }
+
+    fun cancelAudioDownload(body: JSONObject): Outcome {
+        val id = body.optString("id", "").trim()
+        if (id.isEmpty() || !OfficialAudioDownloader.cancel(id)) {
+            return error("AUDIO_NOT_FOUND")
+        }
+        return ok("AUDIO_CANCELLED")
+    }
+
+    /**
+     * The child wallpaper's background music. Unlike the embedded video sound switch this is
+     * its own track, stored per member and played under every rotation item; an empty id
+     * removes it. A cloud id resolves only after its verified download exists. The HTTP layer
+     * has already checked the editor lease.
+     */
+    fun selectAudio(context: Context, body: JSONObject): Outcome {
+        val id = body.optString("id", "").trim()
+        return when (PolicyVideoLibrary.selectLockAudio(context.applicationContext, id)) {
+            PolicyVideoLibrary.EditResult.Ok -> ok("AUDIO_SELECTED")
+            PolicyVideoLibrary.EditResult.NotFound -> error("AUDIO_NOT_FOUND")
+            PolicyVideoLibrary.EditResult.DeleteFailed -> error("AUDIO_DELETE_FAILED")
+            PolicyVideoLibrary.EditResult.NotReady,
+            PolicyVideoLibrary.EditResult.Busy,
+            PolicyVideoLibrary.EditResult.RoleInvalid,
+            PolicyVideoLibrary.EditResult.PlaylistTooLong,
+            PolicyVideoLibrary.EditResult.PlaylistInvalid -> error("AUDIO_NOT_FOUND")
+        }
+    }
+
+    /**
+     * Deletes one uploaded track or downloaded official copy and clears every member's selection
+     * that used it. An official cloud entry itself is read-only and remains in the catalogue.
+     */
+    fun deleteAudio(context: Context, body: JSONObject): Outcome {
+        val id = body.optString("id", "").trim()
+        return when (PolicyVideoLibrary.deleteLockAudio(context.applicationContext, id)) {
+            PolicyVideoLibrary.EditResult.Ok -> ok("AUDIO_DELETED")
+            PolicyVideoLibrary.EditResult.NotFound -> error("AUDIO_NOT_FOUND")
+            PolicyVideoLibrary.EditResult.DeleteFailed -> error("AUDIO_DELETE_FAILED")
+            PolicyVideoLibrary.EditResult.NotReady,
+            PolicyVideoLibrary.EditResult.Busy,
+            PolicyVideoLibrary.EditResult.RoleInvalid,
+            PolicyVideoLibrary.EditResult.PlaylistTooLong,
+            PolicyVideoLibrary.EditResult.PlaylistInvalid -> error("AUDIO_NOT_FOUND")
+        }
     }
 
     fun endSession(body: JSONObject): Outcome {
@@ -701,44 +1235,195 @@ object ParentCenterActions {
         defaultPinCheckedAt = 0L
     }
 
-    private fun parseRules(json: JSONObject): LocalRules? {
-        val weekday = parseWindows(json.optJSONArray("weekdayWindows")) ?: return null
-        val weekend = parseWindows(json.optJSONArray("weekendWindows")) ?: return null
-        // V29 has exactly one window per day class. Reject a stale page trying to save a
-        // second one instead of silently dropping it.
-        if (weekday.size != 1 || weekend.size != 1) return null
-        val daily = json.optInt("autoDailyLimitMinutes", -1)
-        val session = json.optInt("sessionLimitMinutes", -1)
+    private fun parseRules(json: JSONObject, previous: LocalRules?): ParsedRules {
+        val dayGroups = parseDayGroups(json.optJSONArray("dayGroups"))
+            ?: return ParsedRules.Invalid("RULES_INVALID_DAY_GROUPS")
+        // V44: `directSessionMinutes` is the V5 name for the direct "each viewing" value.
+        // `sessionLimitMinutes` stays accepted as the old alias; if both are sent they must agree.
+        val direct = when {
+            json.has("directSessionMinutes") -> json.optInt("directSessionMinutes", -1)
+            json.has("sessionLimitMinutes") -> json.optInt("sessionLimitMinutes", -1)
+            else -> LocalRules.DEFAULT_DIRECT_SESSION_MINUTES
+        }
+        val cap = if (json.has("sessionCapMinutes")) {
+            json.optInt("sessionCapMinutes", -1)
+        } else {
+            -1
+        }
+        if (cap !in LocalRules.MIN_SESSION_CAP_MINUTES..LocalRules.MAX_SESSION_CAP_MINUTES) {
+            return ParsedRules.Invalid("RULES_INVALID_SESSION_CAP")
+        }
+        if (json.has("directSessionMinutes") && json.has("sessionLimitMinutes") &&
+            json.optInt("directSessionMinutes", -1) != json.optInt("sessionLimitMinutes", -2)
+        ) {
+            return ParsedRules.Invalid("RULES_INVALID_DIRECT_SESSION")
+        }
+        if (direct !in LocalRules.MIN_WRITE_DIRECT_SESSION_MINUTES..cap) {
+            return ParsedRules.Invalid("RULES_INVALID_DIRECT_SESSION")
+        }
+        val quizCount = json.optInt("quizDailyLimitCount", -1)
+        val studyRewardCount = json.optInt("studyRewardDailyLimitCount", -1)
+        val directCount = json.optInt("directDailyFreeCount", -1)
+        if (quizCount !in 0..LocalRules.MAX_ROUTE_DAILY_COUNT ||
+            studyRewardCount !in 0..LocalRules.MAX_ROUTE_DAILY_COUNT ||
+            directCount !in 0..LocalRules.MAX_ROUTE_DAILY_COUNT
+        ) {
+            return ParsedRules.Invalid("RULES_INVALID_ROUTE_COUNTS")
+        }
         val rest = json.optInt("restMinutes", -1)
         val buffer = json.optInt("sessionScreenOffBufferMinutes", -1)
-        if (daily < 0 || session < 0 || rest < 0 || buffer < 0) return null
+        if (rest < 0 || buffer < 0) return ParsedRules.Invalid("RULES_INVALID")
         val allApps = json.optBoolean("allApps", false)
         val allowed = LinkedHashSet<String>()
         if (allApps) {
             allowed.add(ALL_VALID_APP_SENTINEL)
-        } else {
-            val array = json.optJSONArray("allowedPackages") ?: JSONArray()
+        } else if (json.has("allowedPackages")) {
+            val array = json.optJSONArray("allowedPackages")
+                ?: return ParsedRules.Invalid("RULES_INVALID_APPS")
             for (i in 0 until minOf(array.length(), 500)) {
                 val value = array.optString(i, "").trim()
                 if (value.isNotEmpty()) allowed.add(value)
             }
         }
         val study = LinkedHashSet<String>()
-        val studyArray = json.optJSONArray("studyPackages") ?: JSONArray()
-        for (i in 0 until minOf(studyArray.length(), 500)) {
-            val value = studyArray.optString(i, "").trim()
-            if (value.isNotEmpty()) study.add(value)
+        if (json.has("studyPackages")) {
+            val array = json.optJSONArray("studyPackages")
+                ?: return ParsedRules.Invalid("RULES_INVALID_STUDY_APPS")
+            for (i in 0 until minOf(array.length(), 500)) {
+                val value = array.optString(i, "").trim()
+                if (value.isNotEmpty()) study.add(value)
+            }
         }
-        return LocalRules(
-            weekdayWindows = weekday,
-            weekendWindows = weekend,
-            autoDailyLimitMinutes = daily,
-            sessionLimitMinutes = session,
+        // V42: a missing unlimited list means an empty category, never a fallback to the
+        // entertainment list. The category also cannot use the all-apps sentinel.
+        val unlimited = LinkedHashSet<String>()
+        if (json.has("unlimitedPackages")) {
+            val array = json.optJSONArray("unlimitedPackages")
+                ?: return ParsedRules.Invalid("RULES_INVALID_UNLIMITED_APPS")
+            for (i in 0 until minOf(array.length(), 500)) {
+                val value = array.optString(i, "").trim()
+                if (value.isNotEmpty()) unlimited.add(value)
+            }
+        }
+        val studyEarn = if (json.has("studyEarnPackages")) {
+            val array = json.optJSONArray("studyEarnPackages")
+                ?: return ParsedRules.Invalid("RULES_INVALID_STUDY_EARN")
+            LinkedHashSet<String>().apply {
+                for (i in 0 until minOf(array.length(), 500)) {
+                    val value = array.optString(i, "").trim()
+                    if (value.isNotEmpty()) add(value)
+                }
+            }
+        } else {
+            previous?.effectiveStudyEarnPackages ?: emptySet()
+        }
+        val studyEarnStudy = if (json.has("studyEarnStudyMinutes")) {
+            json.optInt("studyEarnStudyMinutes", -1)
+        } else {
+            previous?.studyEarnStudyMinutes ?: LocalRules.DEFAULT_STUDY_EARN_STUDY_MINUTES
+        }
+        val studyEarnReward = if (json.has("studyEarnRewardMinutes")) {
+            json.optInt("studyEarnRewardMinutes", -1)
+        } else {
+            previous?.studyEarnRewardMinutes ?: LocalRules.DEFAULT_STUDY_EARN_REWARD_MINUTES
+        }
+        // New V5 writes are stricter than the legacy local document: X 1–180 and
+        // Y 1..cap. X and Y are independent inputs; Y may exceed X. Old data keeps loading
+        // through LocalPolicyStore, not this path.
+        if (studyEarnStudy !in
+            LocalRules.MIN_WRITE_STUDY_EARN_MINUTES..LocalRules.MAX_STUDY_EARN_MINUTES
+        ) {
+            return ParsedRules.Invalid("RULES_INVALID_STUDY_EARN")
+        }
+        if (studyEarnReward !in LocalRules.MIN_WRITE_STUDY_EARN_MINUTES..cap) {
+            return ParsedRules.Invalid("RULES_INVALID_STUDY_EARN")
+        }
+        // A V3 page cannot express the route switches. Preserve the stored values rather than
+        // resetting the parent's choices; V4 sends all three explicitly.
+        val quizGate = if (json.has("quizGateEnabled")) {
+            json.optBoolean("quizGateEnabled", true)
+        } else {
+            previous?.quizGateEnabled ?: LocalRules.DEFAULTS.quizGateEnabled
+        }
+        val studyEnabled = if (json.has("studyEarnEnabled")) {
+            json.optBoolean("studyEarnEnabled", true)
+        } else {
+            previous?.studyEarnEnabled ?: LocalRules.DEFAULTS.studyEarnEnabled
+        }
+        val directStart = if (json.has("directStartEnabled")) {
+            json.optBoolean("directStartEnabled", false)
+        } else {
+            previous?.directStartEnabled ?: LocalRules.DEFAULTS.directStartEnabled
+        }
+        val parsed = LocalRules(
+            dayGroups = dayGroups,
+            sessionLimitMinutes = direct,
+            sessionCapMinutes = cap,
+            quizDailyLimitCount = quizCount,
+            studyRewardDailyLimitCount = studyRewardCount,
+            directDailyFreeCount = directCount,
             restMinutes = rest,
             sessionScreenOffBufferMinutes = buffer,
+            quizGateEnabled = quizGate,
+            studyEarnEnabled = studyEnabled,
+            directStartEnabled = directStart,
             allowedPackages = allowed,
             studyPackages = study,
+            unlimitedPackages = unlimited,
+            studyEarnPackages = studyEarn,
+            studyEarnStudyMinutes = studyEarnStudy,
+            studyEarnRewardMinutes = studyEarnReward,
         ).normalized()
+        // V44: all three routes off is a valid choice. The parent confirms on the page and the
+        // TV shows its empty state; the TV must not rewrite that decision.
+        return ParsedRules.Valid(parsed)
+    }
+
+    /**
+     * Strict schema-3 group parse. Coverage, duplicate days and category overlap are left to
+     * [LocalRules.validationError]; malformed shapes fail here with the day-group error code.
+     */
+    private fun parseDayGroups(array: JSONArray?): List<LocalDayGroup>? {
+        if (array == null || array.length() !in 1..LocalRules.MAX_DAY_GROUPS) return null
+        val groups = ArrayList<LocalDayGroup>(array.length())
+        for (i in 0 until array.length()) {
+            val item = array.optJSONObject(i) ?: return null
+            val daysArray = item.optJSONArray("days") ?: return null
+            if (daysArray.length() !in 1..7) return null
+            val days = ArrayList<Int>(daysArray.length())
+            for (j in 0 until daysArray.length()) {
+                val day = daysArray.optInt(j, -1)
+                if (day !in 1..7) return null
+                days.add(day)
+            }
+            val studyWindows = parseWindows(item.optJSONArray("studyWindows")) ?: return null
+            val studyLimit = parseLimit(item, "studyDailyLimitMinutes") ?: return null
+            val entertainmentWindows =
+                parseWindows(item.optJSONArray("entertainmentWindows")) ?: return null
+            val entertainmentLimit =
+                parseLimit(item, "entertainmentDailyLimitMinutes") ?: return null
+            groups.add(
+                LocalDayGroup(
+                    days = days,
+                    studyWindows = studyWindows,
+                    studyDailyLimitMinutes = studyLimit.minutes,
+                    entertainmentWindows = entertainmentWindows,
+                    entertainmentDailyLimitMinutes = entertainmentLimit.minutes,
+                ),
+            )
+        }
+        return groups
+    }
+
+    private data class ParsedLimit(val minutes: Int?)
+
+    /** `null` JSON is the unlimited quota; zero stays a finite quota. Missing is malformed. */
+    private fun parseLimit(json: JSONObject, name: String): ParsedLimit? {
+        if (!json.has(name)) return null
+        if (json.isNull(name)) return ParsedLimit(null)
+        val value = json.optInt(name, -1)
+        if (value !in 0..LocalRules.MAX_DAILY_MINUTES) return null
+        return ParsedLimit(value)
     }
 
     private fun parseWindows(array: JSONArray?): List<LocalTimeWindow>? {
@@ -749,10 +1434,15 @@ object ParentCenterActions {
             val item = array.optJSONObject(i) ?: return null
             val start = item.optInt("start", -1)
             val end = item.optInt("end", -1)
-            if (start < 0 || end < 0) return null
+            if (start !in 0 until 1440 || end !in 1..1440 || start >= end) return null
             windows.add(LocalTimeWindow(start, end))
         }
         return windows
+    }
+
+    private sealed class ParsedRules {
+        data class Valid(val rules: LocalRules) : ParsedRules()
+        data class Invalid(val code: String) : ParsedRules()
     }
 
     private const val ALL_VALID_APP_SENTINEL = "all_valid_app"

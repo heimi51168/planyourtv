@@ -1,5 +1,6 @@
 package app.orchard.tv.quiz
 
+import app.orchard.tv.policy.FamilyHub
 import com.planyourtv.policy.quiz.QuizAnswerScope
 import com.planyourtv.policy.quiz.QuizCurriculum
 import com.planyourtv.policy.quiz.QuizItem
@@ -147,6 +148,8 @@ object QuizGeneration {
         val progress: Progress,
         val batch: List<StagedItem> = emptyList(),
         val errorCode: String? = null,
+        /** V41: the member who will own this batch; null keeps legacy shared behavior. */
+        val subjectUserId: String? = null,
     )
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -154,20 +157,42 @@ object QuizGeneration {
     private var network: Job? = null
 
     @Synchronized
-    fun start(ownerToken: String, request: Request, nowMs: Long = System.currentTimeMillis()): StartResult {
+    fun start(
+        ownerToken: String,
+        request: Request,
+        subjectUserId: String? = null,
+        nowMs: Long = System.currentTimeMillis(),
+    ): StartResult {
         if (!QuizSessionStore.consentAccepted()) return StartResult.Failure("CONSENT_REQUIRED")
         val key = QuizSessionStore.providerKey() ?: return StartResult.Failure("PROVIDER_NOT_CONFIGURED")
         if (!QuizQuestionCache.isReady()) return StartResult.Failure("CACHE_UNAVAILABLE")
         val meta = QuizSessionStore.loadProviderMeta()
         val owner = QuizAccess.fingerprint(ownerToken)
+        val subject = normalizeSubject(subjectUserId)
         val current = job
         if (current != null && current.state == State.RUNNING &&
             current.owner == owner && nowMs < current.progress.expiresAt
         ) {
-            return StartResult.Failure("BUSY")
+            // One in-memory job serves one member. Editing another member's
+            // bank replaces the previous batch instead of reporting BUSY.
+            if (sameSubject(current.subjectUserId, subject)) {
+                return StartResult.Failure("BUSY")
+            }
+            network?.cancel()
+            job = null
         }
-        val counts = QuizQuestionCache.bankCounts(QuizQuestionCache.LOCAL_SCOPE, nowMs)
-        if (QuizQuestionCache.BANK_CAPACITY - counts.total < request.targetCount) {
+        val active = FamilyHub.state.value.let { family ->
+            family.activeUserId.takeIf { family.ready }
+        }
+        val counts = QuizQuestionCache.bankCounts(
+            QuizQuestionCache.LOCAL_SCOPE,
+            nowMs,
+            subjectUserId = subject,
+            activeSubjectUserId = active,
+        )
+        if (QuizQuestionCache.remainingCapacity(subject, QuizQuestionCache.BANK_CAPACITY) <
+            request.targetCount
+        ) {
             return StartResult.Failure("BANK_FULL")
         }
 
@@ -184,11 +209,17 @@ object QuizGeneration {
             counts = counts,
             expiresAt = expiresAt,
         )
-        val next = GenerationJob(id, owner, State.RUNNING, progress)
+        val next = GenerationJob(
+            id = id,
+            owner = owner,
+            state = State.RUNNING,
+            progress = progress,
+            subjectUserId = subject,
+        )
         network?.cancel()
         job = next
         network = scope.launch {
-            runJob(id, meta, key, request, expiresAt)
+            runJob(id, meta, key, request, expiresAt, subject)
         }
         return StartResult.Started(id, expiresAt)
     }
@@ -197,10 +228,14 @@ object QuizGeneration {
     fun poll(
         ownerToken: String,
         jobId: String,
+        subjectUserId: String? = null,
         nowMs: Long = System.currentTimeMillis(),
     ): PollResult {
         val current = job ?: return PollResult.Lost
         if (current.owner != QuizAccess.fingerprint(ownerToken) || current.id != jobId) {
+            return PollResult.Lost
+        }
+        if (!sameSubject(current.subjectUserId, normalizeSubject(subjectUserId))) {
             return PollResult.Lost
         }
         if (nowMs >= current.progress.expiresAt) {
@@ -209,7 +244,7 @@ object QuizGeneration {
             return PollResult.Expired
         }
         val progress = current.progress.copy(
-            counts = QuizQuestionCache.bankCounts(QuizQuestionCache.LOCAL_SCOPE, nowMs),
+            counts = countsFor(current.subjectUserId, nowMs),
         )
         return when (current.state) {
             State.RUNNING -> PollResult.Running(progress)
@@ -223,9 +258,10 @@ object QuizGeneration {
      * then polls once more and receives a READY partial batch to review.
      */
     @Synchronized
-    fun cancel(ownerToken: String, jobId: String): Boolean {
+    fun cancel(ownerToken: String, jobId: String, subjectUserId: String? = null): Boolean {
         val current = job ?: return false
         if (current.owner != QuizAccess.fingerprint(ownerToken) || current.id != jobId) return false
+        if (!sameSubject(current.subjectUserId, normalizeSubject(subjectUserId))) return false
         if (current.state == State.RUNNING) {
             job = current.copy(state = State.READY, errorCode = null)
         }
@@ -240,10 +276,14 @@ object QuizGeneration {
         ownerToken: String,
         jobId: String,
         indexes: List<Int>,
+        subjectUserId: String? = null,
         nowMs: Long = System.currentTimeMillis(),
     ): CommitResult {
         val current = job ?: return CommitResult.Lost
         if (current.owner != QuizAccess.fingerprint(ownerToken) || current.id != jobId) {
+            return CommitResult.Lost
+        }
+        if (!sameSubject(current.subjectUserId, normalizeSubject(subjectUserId))) {
             return CommitResult.Lost
         }
         if (current.state == State.RUNNING) return CommitResult.NotReady
@@ -262,11 +302,16 @@ object QuizGeneration {
                 duplicates = uniqueIndexes.size,
                 rejected = 0,
                 capacityReached = false,
-                counts = QuizQuestionCache.bankCounts(QuizQuestionCache.LOCAL_SCOPE, nowMs),
+                counts = countsFor(current.subjectUserId, nowMs),
             )
         }
-        val append = QuizQuestionCache.appendLocalQuestions(current.id, selected, nowMs)
-        val counts = QuizQuestionCache.bankCounts(QuizQuestionCache.LOCAL_SCOPE, nowMs)
+        val append = QuizQuestionCache.appendLocalQuestions(
+            current.id,
+            selected,
+            nowMs,
+            ownerUserId = current.subjectUserId,
+        )
+        val counts = countsFor(current.subjectUserId, nowMs)
         job = null
         network?.cancel()
         network = null
@@ -281,9 +326,10 @@ object QuizGeneration {
 
     /** Throws away the temporary batch without writing anything to the bank. */
     @Synchronized
-    fun discard(ownerToken: String, jobId: String): Boolean {
+    fun discard(ownerToken: String, jobId: String, subjectUserId: String? = null): Boolean {
         val current = job ?: return false
         if (current.owner != QuizAccess.fingerprint(ownerToken) || current.id != jobId) return false
+        if (!sameSubject(current.subjectUserId, normalizeSubject(subjectUserId))) return false
         job = null
         network?.cancel()
         network = null
@@ -296,6 +342,7 @@ object QuizGeneration {
         key: String,
         request: Request,
         expiresAt: Long,
+        subjectUserId: String?,
     ) {
         var generated = 0
         var unique = 0
@@ -347,7 +394,7 @@ object QuizGeneration {
                 is QuizAiClient.Result.Success -> {
                     parseRetries = 0
                     staged += result.items.map { request.stamp(it) }
-                    val flags = QuizQuestionCache.duplicateFlags(staged)
+                    val flags = QuizQuestionCache.duplicateFlags(staged, subjectUserId)
                     val batch = staged.mapIndexed { index, item ->
                         StagedItem(item, flags[index])
                     }
@@ -363,7 +410,7 @@ object QuizGeneration {
                         rejected = rejected,
                         batchIndex = batchIndex + 1,
                         warnings = warnings,
-                        counts = QuizQuestionCache.bankCounts(QuizQuestionCache.LOCAL_SCOPE),
+                        counts = countsFor(subjectUserId),
                         expiresAt = expiresAt,
                     )
                     val finished = unique >= request.targetCount
@@ -386,7 +433,7 @@ object QuizGeneration {
             val active = job
             if (active?.id != id || active.state != State.RUNNING) return
             val progress = active.progress.copy(
-                counts = QuizQuestionCache.bankCounts(QuizQuestionCache.LOCAL_SCOPE),
+                counts = countsFor(subjectUserId),
             )
             job = active.copy(
                 state = if (errorCode == null) State.READY else State.ERROR,
@@ -399,6 +446,31 @@ object QuizGeneration {
     @Synchronized
     private fun isRunning(id: String): Boolean =
         job?.id == id && job?.state == State.RUNNING
+
+    private fun normalizeSubject(userId: String?): String? =
+        userId?.trim()?.takeIf { it.isNotEmpty() }
+
+    private fun sameSubject(left: String?, right: String?): Boolean =
+        normalizeSubject(left) == normalizeSubject(right)
+
+    /**
+     * Counts for one member. A non-active member's answer state is projected
+     * from their snapshot, so the progress card is correct while the parent
+     * edits a child the TV is not currently running.
+     */
+    private fun countsFor(
+        subjectUserId: String?,
+        nowMs: Long = System.currentTimeMillis(),
+    ): QuizQuestionCache.BankCounts {
+        val family = FamilyHub.state.value
+        val active = family.activeUserId.takeIf { family.ready }
+        return QuizQuestionCache.bankCounts(
+            QuizQuestionCache.LOCAL_SCOPE,
+            nowMs,
+            subjectUserId = subjectUserId,
+            activeSubjectUserId = active,
+        )
+    }
 
     private fun Request.toAiRequest(count: Int): QuizAiClient.Request = QuizAiClient.Request(
         count = count,

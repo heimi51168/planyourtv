@@ -33,9 +33,12 @@ class ParentSensitiveAuthTest {
     private lateinit var app: android.app.Application
 
     private fun rules() = LocalRules(
-        weekdayWindows = listOf(LocalTimeWindow(0, 24 * 60)),
-        weekendWindows = listOf(LocalTimeWindow(0, 24 * 60)),
-        autoDailyLimitMinutes = 60,
+        dayGroups = LocalRules.fromLegacyWeekdayWeekend(
+            weekdayWindows = listOf(LocalTimeWindow(0, 24 * 60)),
+            weekendWindows = listOf(LocalTimeWindow(0, 24 * 60)),
+            weekdayLimitMinutes = 60,
+            weekendLimitMinutes = 60,
+        ),
         sessionLimitMinutes = 20,
         restMinutes = 5,
         allowedPackages = setOf("com.example.video"),
@@ -162,6 +165,54 @@ class ParentSensitiveAuthTest {
                 ParentSensitiveAuth.Scope.TAKE_OVER,
                 editor,
                 now,
+            ),
+        )
+    }
+
+    @Test
+    fun userConfigProofIsSingleUseAndExpiresAfterSixtySeconds() {
+        val now = System.currentTimeMillis()
+        val token = token(verify("USER_CONFIG", nowMs = now))
+        assertEquals(
+            ParentSensitiveAuth.Status.OK,
+            ParentSensitiveAuth.check(
+                token,
+                ParentSensitiveAuth.Scope.USER_CONFIG,
+                editor,
+                now,
+            ),
+        )
+        assertEquals(
+            ParentSensitiveAuth.Status.SCOPE,
+            ParentSensitiveAuth.check(token, ParentSensitiveAuth.Scope.RULES_EDIT, editor, now),
+        )
+        assertEquals(
+            ParentSensitiveAuth.Status.OK,
+            ParentSensitiveAuth.consume(
+                token,
+                ParentSensitiveAuth.Scope.USER_CONFIG,
+                editor,
+                now,
+            ),
+        )
+        assertEquals(
+            ParentSensitiveAuth.Status.EXPIRED,
+            ParentSensitiveAuth.check(
+                token,
+                ParentSensitiveAuth.Scope.USER_CONFIG,
+                editor,
+                now,
+            ),
+        )
+
+        val second = token(verify("USER_CONFIG", nowMs = now))
+        assertEquals(
+            ParentSensitiveAuth.Status.EXPIRED,
+            ParentSensitiveAuth.check(
+                second,
+                ParentSensitiveAuth.Scope.USER_CONFIG,
+                editor,
+                now + 61_000L,
             ),
         )
     }

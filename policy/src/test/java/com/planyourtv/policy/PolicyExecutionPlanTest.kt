@@ -8,7 +8,7 @@ class PolicyExecutionPlanTest {
         id: String = "session-1",
         sessionId: String? = "session-1",
         recordId: Long? = null,
-        activation: PolicyActivation = PolicyActivation.AUTO,
+        activation: PolicyActivation = PolicyActivation.MANUAL,
         endReason: PolicyEndReason = PolicyEndReason.SESSION_LIMIT,
         budgetSeconds: Long = 600L,
         restAfterSeconds: Long = 600L,
@@ -77,8 +77,8 @@ class PolicyExecutionPlanTest {
     }
 
     @Test
-    fun rulePlanCanRunManualSessions() {
-        val plan = rulePlan(activation = PolicyActivation.MANUAL)
+    fun rulePlanRunsInManualMode() {
+        val plan = rulePlan()
         assertEquals(PolicyActivation.MANUAL, plan.activation)
     }
 
@@ -90,11 +90,6 @@ class PolicyExecutionPlanTest {
     @Test(expected = IllegalArgumentException::class)
     fun redemptionPlanCannotCarryRuleSessionId() {
         redeemPlan(sessionId = "session-1")
-    }
-
-    @Test(expected = IllegalArgumentException::class)
-    fun redemptionPlanMustBeManual() {
-        redeemPlan(activation = PolicyActivation.AUTO)
     }
 
     @Test(expected = IllegalArgumentException::class)

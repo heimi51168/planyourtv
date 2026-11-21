@@ -146,6 +146,186 @@ body.parent-open .modal-root { z-index: 80; }
   text-transform: uppercase;
 }
 
+/* V40 family card: one member still shows an avatar and name, so an upgraded single-child
+   TV reads as “there is a user on this TV”, not as before/after different products. */
+.parent-family-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 18px 4px 7px;
+}
+
+.parent-family-head .parent-section-label { margin: 0; }
+.parent-family-count { color: var(--muted); font-size: 12px; }
+
+.parent-avatar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+/* Same solid green ring as the quiz header: the member shown here is the member the
+   TV runs, and green marks the available/active state. */
+.parent-avatar.is-tv-current {
+  box-shadow: 0 0 0 3px var(--ok);
+}
+
+.parent-avatar svg,
+.parent-avatar img { display: block; width: 100%; height: 100%; }
+.parent-avatar img { object-fit: cover; }
+.parent-avatar-member { flex-basis: 40px; width: 40px; height: 40px; }
+.parent-avatar-sheet { flex-basis: 64px; width: 64px; height: 64px; }
+.parent-avatar-slot { display: flex; flex: 0 0 auto; }
+
+.parent-member-name {
+  display: block;
+  font-size: 15px;
+  font-weight: 520;
+  overflow-wrap: anywhere;
+}
+
+.parent-member-badge {
+  display: inline-block;
+  margin-inline-start: 7px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  vertical-align: 1px;
+}
+
+.parent-add-member .parent-add-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  border: 1px dashed var(--line);
+  border-radius: 50%;
+  color: var(--muted);
+  font-size: 22px;
+}
+
+.parent-family-note {
+  margin: 0;
+  padding: 10px 14px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+
+.parent-member-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 12px 0 4px;
+}
+
+.parent-member-hero-main { min-width: 0; }
+
+.parent-member-hero-name {
+  display: block;
+  font-size: 18px;
+  font-weight: 660;
+  overflow-wrap: anywhere;
+}
+
+.parent-member-hero-sub {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.parent-name-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 16px;
+}
+
+.parent-name-input:disabled { opacity: 0.6; }
+
+.parent-scope-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.parent-scope-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.parent-scope-row + .parent-hint { margin-bottom: 6px; }
+
+.parent-member-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 32px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 17px) 21px, calc(100% - 12px) 21px;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.parent-avatar-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.parent-avatar-option {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.parent-avatar-option svg {
+  display: block;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
+
+.parent-avatar-option.is-selected { border-color: var(--accent); }
+.parent-avatar-option:disabled { opacity: 0.5; cursor: default; }
+
+.parent-avatar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.parent-avatar-actions .parent-btn { min-height: 42px; padding: 0 14px; }
+/* .parent-btn sets its own display, which otherwise overrides the hidden attribute. */
+.parent-avatar-actions .parent-btn[hidden] { display: none; }
+
 .parent-card {
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -154,6 +334,35 @@ body.parent-open .modal-root { z-index: 80; }
 }
 
 .parent-card + .parent-card { margin-top: 10px; }
+
+/* Inline body under a route switch: direct-start duration and the study-to-earn list. */
+.parent-method-body {
+  margin: 0 14px 12px;
+  padding: 2px 10px 10px;
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.parent-method-body .parent-row { padding: 8px 2px; }
+
+.parent-method-title {
+  padding: 8px 2px 2px;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.parent-method-body .parent-hint { margin: 6px 2px 0; }
+
+/* V44 route counts share the duration stepper; let the stepper drop to its own line on a
+   narrow phone instead of compressing the label. */
+.parent-route-count { flex-wrap: wrap; }
+.parent-route-count .parent-stepper { margin-left: auto; }
+
+.parent-method-action {
+  width: 100%;
+  margin-top: 8px;
+}
 
 .parent-row {
   display: flex;
@@ -638,6 +847,124 @@ body.parent-open .modal-root { z-index: 80; }
   display: block;
 }
 
+.parent-media-audio-thumb {
+  display: grid;
+  place-items: center;
+  flex: 0 0 76px;
+  width: 76px;
+  height: 43px;
+  border-radius: 9px;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 24%, var(--surface-2)),
+    var(--surface-2)
+  );
+  color: var(--accent);
+}
+
+.parent-media-audio-note { font-size: 22px; line-height: 1; }
+
+.parent-media-audio-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.parent-media-audio-none { margin-bottom: 12px; }
+
+.parent-media-audio-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.parent-media-audio-row.is-selected { border-color: var(--accent); }
+
+.parent-media-audio-pick {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: start;
+}
+
+.parent-media-audio-pick:disabled { opacity: 1; }
+
+.parent-media-audio-mark {
+  display: grid;
+  place-items: center;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--accent);
+  font-size: 17px;
+}
+
+.parent-media-audio-main {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.parent-media-audio-name {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.parent-media-audio-sub {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.parent-media-audio-check {
+  margin-left: auto;
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.parent-media-audio-action {
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+  color: var(--accent);
+  font-size: 11.5px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.parent-media-audio-delete {
+  flex: 0 0 44px;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 20px;
+}
+
+.parent-media-audio-delete:active { background: var(--surface-2); }
+
 .parent-media-default-thumb {
   position: relative;
   display: block;
@@ -1055,6 +1382,73 @@ body.parent-open .modal-root { z-index: 80; }
   pointer-events: none;
 }
 
+/* The multi-select badge carries both the check and its position in the rotation. */
+.parent-media-option-check.is-order {
+  width: auto;
+  min-width: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+
+.parent-media-option:disabled {
+  opacity: 0.45;
+}
+
+.parent-media-option:disabled:active { transform: none; }
+
+.parent-media-lock-hint { margin: 8px 0 0; }
+
+/* A grid keeps a longer rotation visible without adding a separate editor page. */
+.parent-media-lock-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 8px;
+  margin-top: 12px;
+}
+
+.parent-media-lock-grid .parent-media-option {
+  flex: none;
+  width: auto;
+  min-width: 0;
+}
+
+.parent-media-interval {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.parent-media-interval-label {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.parent-media-interval-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.parent-media-interval-chip {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12.5px;
+}
+
+.parent-media-interval-chip.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.parent-media-interval-chip:disabled { opacity: 0.5; }
+
 .parent-media-picker-empty {
   margin-top: 12px;
   padding: 14px;
@@ -1085,7 +1479,7 @@ body.parent-open .modal-root { z-index: 80; }
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 12px;
+  padding: 6px 14px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -1112,6 +1506,15 @@ body.parent-open .modal-root { z-index: 80; }
 }
 
 .parent-time-select:disabled { opacity: 0.5; }
+
+/* V41: language is an inline control in 系统配置, so it stays compact. */
+.parent-language-select {
+  flex: 0 0 auto;
+  min-width: 108px;
+  max-width: 46%;
+  min-height: 38px;
+  font-size: 14px;
+}
 
 .parent-time-colon { flex: 0 0 auto; color: var(--muted); }
 
@@ -1253,6 +1656,11 @@ body.parent-open .modal-root { z-index: 80; }
   letter-spacing: 0.18em;
 }
 
+/* The avatar names whose switch password is being typed; the field itself stays masked. */
+.parent-pin-line { display: flex; align-items: center; gap: 10px; }
+.parent-pin-line .parent-avatar { flex: 0 0 44px; width: 44px; height: 44px; }
+.parent-pin-line .parent-pin-input { flex: 1 1 auto; width: auto; }
+
 .parent-field { margin-top: 12px; }
 .parent-field-inset { padding-inline: 14px; }
 
@@ -1372,6 +1780,10 @@ body.parent-open .modal-root { z-index: 80; }
 .parent-app-tile:active { background: var(--surface-2); }
 .parent-app-tile.selected { background: var(--accent-soft); border-color: var(--accent); }
 .parent-app-tile.disabled { opacity: 0.45; }
+/* A conflicting app stays dimmed, but its category note must remain readable. */
+.parent-app-tile.disabled.conflict { opacity: 1; }
+.parent-app-tile.conflict > *:not(.parent-app-note) { opacity: 0.45; }
+.parent-app-tile.conflict .parent-app-note { opacity: 1; }
 
 .parent-app-tile input {
   position: absolute;
@@ -1403,6 +1815,30 @@ body.parent-open .modal-root { z-index: 80; }
   object-fit: contain;
 }
 
+/* One compact icon per study app; the switch row stays the same height as the limit rows. */
+.parent-study-earn-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.parent-study-earn-main .parent-row-title {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.parent-study-earn-icon {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+}
+.parent-study-earn-icon .parent-app-initial {
+  flex-basis: 24px;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  font-size: 12px;
+}
+
 .parent-app-name {
   width: 100%;
   color: var(--ink);
@@ -1432,6 +1868,111 @@ body.parent-open .modal-root { z-index: 80; }
 }
 
 .parent-app-tile.selected .parent-app-check { display: grid; }
+
+/* V45 inline app cards: the unlimited card on the user index, and the entertainment and
+   study icon grids inside the time plan. Icons are the entry; there is no summary page. */
+.parent-icon-card { padding: 12px 14px 10px; }
+
+.parent-icon-card-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.parent-icon-card-hint { margin: 8px 0 0; }
+
+.parent-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  padding-top: 10px;
+}
+
+.parent-icon-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 6px 2px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.parent-icon-tile:active { background: var(--surface-2); }
+.parent-icon-tile:disabled { opacity: 0.5; }
+.parent-icon-tile .parent-app-icon { width: 48px; height: 48px; }
+
+.parent-icon-tile.is-add .parent-app-icon {
+  border: 1px dashed var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 22px;
+}
+
+.parent-icon-tile.is-all .parent-app-initial { font-size: 24px; }
+
+.parent-empty-add {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13.5px;
+  text-align: start;
+}
+
+.parent-empty-add:active { background: var(--surface-2); }
+.parent-empty-add:disabled { opacity: 0.5; }
+.parent-empty-add-mark { font-size: 20px; line-height: 1; }
+
+/* The virtual select-all tile: four mini squares, never a real package. */
+.parent-select-all-icon {
+  grid-template-columns: repeat(2, 14px);
+  grid-template-rows: repeat(2, 14px);
+  gap: 4px;
+}
+
+.parent-select-all-dot {
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface);
+}
+
+.parent-select-all.selected .parent-select-all-dot {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+/* An app that can be moved to this category by tapping it; informational, not an error. */
+.parent-app-tile.category-move .parent-app-note { color: var(--muted); }
+
+/* V45 single-session scope chips in the out-of-plan timer sheet. */
+.parent-manual-scope {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 2px 0 10px;
+}
+
+.parent-manual-chip {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 12.5px;
+}
 
 .parent-sticky-actions {
   position: sticky;
@@ -1973,12 +2514,514 @@ body.parent-open .modal-root { z-index: 80; }
 
 .parent-logout-btn:active { background: var(--surface-2); }
 
+.parent-app-record {
+  margin: 14px 0 0;
+  text-align: center;
+}
+
+.parent-app-record a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.parent-app-record a:hover { text-decoration: underline; }
+
+/* V41 user tab header: the same chat-style profile row the quiz page uses, so
+   all member-scoped tabs put the avatar in the top-left corner. */
+.parent-member-bar {
+  gap: 8px;
+  padding: max(10px, env(safe-area-inset-top)) 12px 8px;
+  border-bottom: 0;
+  background: var(--bg);
+}
+
+.parent-member-head {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 2px 8px 2px 0;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+}
+
+.parent-member-head:active { background: var(--surface-2); }
+.parent-member-head:disabled { cursor: default; opacity: 1; }
+
+.parent-avatar-head {
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+}
+
+.parent-member-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.parent-member-head-name {
+  overflow: hidden;
+  font-size: 17px;
+  font-weight: 680;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.parent-member-head-sub {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.parent-member-head .chevron {
+  flex: 0 0 auto;
+  margin-left: -3px;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* V41 user tab: the member being edited, with the member the TV is actually running below. */
+.parent-user-hero {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 14px;
+}
+
+.parent-avatar-hero {
+  flex: 0 0 64px;
+  width: 64px;
+  height: 64px;
+}
+
+.parent-avatar-empty {
+  color: var(--muted);
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.parent-user-copy { flex: 1 1 auto; min-width: 0; }
+
+.parent-user-name {
+  margin: 0;
+  font-size: 21px;
+  line-height: 1.2;
+  font-weight: 660;
+  overflow-wrap: anywhere;
+}
+
+.parent-user-tv {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.parent-user-switch { flex: 0 0 auto; min-height: 36px; padding: 0 12px; }
+
+.parent-user-note { margin: 10px 4px 0; }
+
+.parent-system-group .parent-section-label:first-child { margin-top: 8px; }
+
+.parent-timer-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 560;
+}
+
+/* Quiz dialogs (member picker, privacy sheet) must sit above the parent overlay. */
+body.parent-open #modalRoot { z-index: 70; }
+
+/* V42 avatar cropper: a separate overlay above the member sheet, so canceling the crop
+   leaves the sheet's unsaved name/grade/PIN edits untouched. */
+.parent-crop-root {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+
+.parent-crop-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 22, 18, 0.62);
+}
+
+.parent-crop-panel {
+  position: relative;
+  width: min(100%, 440px);
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 18px;
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+
+.parent-crop-panel h2 { margin: 0 0 4px; font-size: 19px; }
+.parent-crop-hint { margin: 0 0 12px; color: var(--muted); font-size: 13px; }
+
+/* The padding-top square keeps the viewport square on WebViews that lack aspect-ratio.
+   Absolutely positioned children resolve against the padding box; the 50% radius clips
+   that square to the same circle every avatar uses, so the crop framing is exactly the
+   TV's visible avatar area. */
+.parent-crop-viewport {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-top: 100%;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #000;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.parent-crop-viewport:active { cursor: grabbing; }
+
+.parent-crop-viewport img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  max-width: none;
+  max-height: none;
+  transform-origin: center;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+.parent-crop-zoom {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.parent-crop-zoom .parent-field-label { flex: 0 0 auto; margin: 0; }
+
+.parent-crop-zoom input[type="range"] {
+  flex: 1 1 auto;
+  min-width: 0;
+  accent-color: var(--accent);
+}
+
+.parent-crop-panel .parent-error { margin: 10px 0 0; }
+
+.parent-member-delete {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.parent-member-delete .parent-hint { margin: 0; }
+.parent-member-delete .parent-btn { align-self: flex-start; min-height: 42px; padding: 0 14px; }
+
+/* ---------------------------------------------------------- V48 time page tabs */
+/* DingTalk-style top tabs: equal segments, text-only, short accent underline. The bar
+   sticks under the page bar, whose measured height lives in --parent-bar-h. */
+.parent-time-tabs {
+  position: sticky;
+  top: var(--parent-bar-h, 62px);
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 0 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+  background: color-mix(in srgb, var(--bg) 94%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.parent-time-tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 46px;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.parent-time-tab[aria-selected="true"] {
+  color: var(--ink);
+  font-weight: 660;
+}
+
+.parent-time-tab[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 28px;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--accent);
+  transform: translateX(-50%);
+}
+
+.parent-time-tab:active {
+  background: color-mix(in srgb, var(--surface-2) 60%, transparent);
+}
+
+.parent-time-panel[hidden] { display: none !important; }
+
+/* --------------------------------------------------------------- V42 day segments */
+
+.parent-seg-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 14px 0;
+}
+
+.parent-seg-preset {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.parent-seg-preset[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.parent-seg-preset:disabled { opacity: 0.5; }
+
+.parent-seg-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+  padding: 12px 14px 8px;
+}
+
+.parent-seg-day {
+  position: relative;
+  min-height: 46px;
+  padding: 16px 1px 7px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.parent-seg-day::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  border-radius: 0 0 9px 9px;
+  background: var(--seg-color, var(--accent));
+}
+
+.parent-seg-day.is-start {
+  border-color: var(--seg-color, var(--accent));
+  box-shadow: inset 0 0 0 1px var(--seg-color, var(--accent));
+}
+
+.parent-seg-day.is-start::before {
+  content: attr(data-seg-index);
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--seg-color, var(--accent));
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  transform: translateX(-50%);
+}
+
+.parent-seg-day:disabled { opacity: 0.5; }
+
+.parent-seg-day.is-first:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.parent-seg-hint {
+  margin: 0 14px 12px;
+  font-size: 12px;
+}
+
+.parent-seg-cards { margin-top: 10px; }
+
+.parent-seg-card { border-left: 3px solid var(--seg-color, var(--accent)); }
+
+.parent-seg-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.parent-seg-badge {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--seg-color, var(--accent));
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.parent-seg-range {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.parent-seg-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: "label window quota";
+  align-items: center;
+  gap: 6px 8px;
+  padding: 5px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.parent-seg-row:last-child { border-bottom: 0; }
+
+.parent-seg-label {
+  grid-area: label;
+  min-width: 30px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.parent-seg-window {
+  grid-area: window;
+  min-width: 0;
+  padding: 0;
+  border-bottom: 0;
+}
+
+.parent-seg-quota-wrap {
+  grid-area: quota;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* Name the number; the same "Unlimited" wording next to a time window could
+   read as a window state rather than the daily cap. */
+.parent-seg-quota-label {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.parent-seg-quota {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.parent-seg-quota:disabled { opacity: 0.5; }
+
+/* A 360px phone cannot fit a label, four time selects and the quota on one line; the
+   quota moves up beside the label and the time controls get the full row width. */
+@media (max-width: 520px) {
+  .parent-seg-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "label quota" "window window";
+    padding-block: 7px;
+  }
+  .parent-seg-window .parent-time-select {
+    flex: 1 1 0;
+    min-width: 54px;
+    padding-inline: 3px;
+  }
+}
+
+.parent-inline-note { margin: 8px 14px 12px; }
+
+.parent-app-note {
+  width: 100%;
+  color: var(--danger);
+  font-size: 10.5px;
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 339px) {
   .parent-content, .parent-subpage { padding-inline: 12px; }
   .parent-bar { padding-inline: 10px; }
   .parent-step { width: 40px; }
   .parent-step-value { min-width: 54px; }
   .parent-time { font-size: 14px; padding-inline: 4px; }
+  .parent-seg-week { gap: 3px; padding-inline: 10px; }
+  .parent-seg-day { font-size: 11.5px; padding-inline: 0; }
+  .parent-seg-preset { padding: 0 9px; font-size: 11.5px; }
+  .parent-seg-label { min-width: 26px; font-size: 11px; }
+  .parent-seg-quota-wrap { gap: 4px; }
+  .parent-seg-quota-label { font-size: 10px; }
+  .parent-seg-quota { padding: 0 8px; font-size: 11px; }
 }
 
 @media (max-height: 499px) {

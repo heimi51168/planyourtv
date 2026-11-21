@@ -87,9 +87,9 @@ they are Android/HTTP-specific. The server protocol is not part of this reposito
 
 ### `LocalPolicyRuntime`
 
-The local executor in `:app`. Automatic rule sessions and parent-started manual sessions share
-one timer, daily ledger, rest timer and app scope. Study mode changes the visible app scope but
-does not start a timed ledger session.
+The local executor in `:app`. Parent-started manual sessions own one timer, daily ledger, rest
+timer and app scope. There is no automatic activation or scheduler; the TV always waits for a
+parent. Study mode changes the visible app scope but does not start a timed ledger session.
 
 The executor never reads the network. It reads rules from local storage and reports usage through
 the policy module's usage sink. If the app process is killed, the next start restores a saved
@@ -99,8 +99,6 @@ session and reconciles wall-clock time.
 
 - `LocalRules`: pure model of allowed windows, daily/session limits, rest, and the entertainment
   and study package scopes. Validation and schema migration are pure functions.
-- `LocalScheduleEngine`: decides whether a rule session may start, must end, or is blocked by a
-  window or daily limit.
 - `PolicyExecutionPlan`: immutable snapshot of the budget, deadline, app scope and end reason used
   by the executor. Running plans are not rewritten by later rule changes.
 - `RuleUsageStore` and `RuleUsageEventFactory`: durable usage ledger and event construction.
@@ -121,9 +119,9 @@ All Android-free logic is covered by JVM tests in `policy/src/test`.
 1. The parent opens the parent center and sets rules: windows, daily/session limits, rest, study
    apps and entertainment apps.
 2. `LocalPolicyStore` persists the rules. The pure `LocalRules` model validates them.
-3. `LocalScheduleEngine` evaluates the current day and minute against the rules.
-4. When a session is allowed, `LocalPolicyRuntime` creates a `PolicyExecutionPlan` and starts the
-   countdown. It records usage locally and writes periodic checkpoints.
+3. When a parent starts a manual session, `LocalPolicyRuntime` checks the current day and minute
+   against the rules, then creates a `PolicyExecutionPlan` and starts the countdown. It records
+   usage locally and writes periodic checkpoints.
 5. While a session is active, `PolicyAccessPolicy` defines the allowed app set. Outside allowed
    apps, `HomeGuardService` returns the TV to PlanYourTV. Study apps remain available in study
    mode.
@@ -174,7 +172,7 @@ Rules for keeping merges small:
 ## Versions
 
 `versionCode` and `versionName` are derived from the Aerial base version plus a product revision in
-`app/build.gradle.kts`. The community baseline is `1.97.003` / `142003`, based on Aerial 1.97 /
-142. An Aerial base update resets the revision; product releases increase it by one and never
+`app/build.gradle.kts`. The community baseline is `2.0.000` / `148000`, based on Aerial 2.0 /
+148. An Aerial base update resets the revision; product releases increase it by one and never
 decrease the code. Public releases ship only the `standard` and `guard` flavors; Android 4.x is
 not supported. See [BUILDING.md](BUILDING.md).

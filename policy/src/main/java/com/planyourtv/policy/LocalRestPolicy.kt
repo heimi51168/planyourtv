@@ -1,10 +1,9 @@
 package com.planyourtv.policy
 
 /**
- * The rest interval after a child entertainment session. Automatic and manual segments share
- * the same rule: whether the segment ended naturally, the child exited early, the parent ended
- * it, or the screen-off deadline expired, the child waits one configured rest before any child
- * entry can start again.
+ * The rest interval after a child entertainment session. Whether the segment ended naturally,
+ * the child exited early, the parent ended it, or the screen-off deadline expired, the child
+ * waits one configured rest before any child entry can start again.
  *
  * A parent takeover is the exception: the parent is about to use the TV, so the child's rest
  * does not begin. A mode switch is also a bookkeeping end: the caller stops the old mode's rest
@@ -13,7 +12,6 @@ package com.planyourtv.policy
  */
 object LocalRestPolicy {
     fun restSeconds(
-        activation: Activation,
         configuredRestMinutes: Int,
         endReason: PolicyEndReason,
         planRestSeconds: Long = 0L,
@@ -26,12 +24,9 @@ object LocalRestPolicy {
             return 0L
         }
         val configured = configuredRestMinutes.coerceAtLeast(0).toLong() * 60L
-        // A running automatic plan snapshots its rest. Keep that snapshot when present so a
-        // configuration edit cannot shorten a rest the child already earned.
-        val seconds = if (planRestSeconds > 0L) planRestSeconds else configured
-        return when (activation) {
-            Activation.AUTO, Activation.MANUAL -> seconds
-        }
+        // A running plan snapshots its rest. Keep that snapshot when present so a configuration
+        // edit cannot shorten a rest the child already earned.
+        return if (planRestSeconds > 0L) planRestSeconds else configured
     }
 
     /** Epoch millis at which the rest ends; zero when there is no rest. */

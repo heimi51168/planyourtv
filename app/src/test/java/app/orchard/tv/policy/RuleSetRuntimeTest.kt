@@ -4,15 +4,13 @@ import android.os.PowerManager
 import com.planyourtv.policy.Activation
 import com.planyourtv.policy.LocalRuleSet
 import com.planyourtv.policy.LocalRuleSets
-import com.planyourtv.policy.LocalPolicyStore
 import com.planyourtv.policy.LocalRules
 import com.planyourtv.policy.LocalSharedAppScope
 import com.planyourtv.policy.LocalTimeWindow
-import com.planyourtv.policy.LockReason
 import com.planyourtv.policy.PolicySource
-import com.planyourtv.policy.SessionState
 import com.planyourtv.policy.TvStore
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -23,9 +21,9 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 
 /**
- * The runtime keeps one materialized [LocalRules] for the executor, but AUTO and MANUAL persist
- * independent time sets. Switching swaps the stored rules without rewriting either set, ends the
- * rest cursor earned by the old mode, and must not interrupt a session for an inactive-set edit.
+ * The runtime keeps one materialized [LocalRules] for the executor. Applying a stored manual set
+ * replaces that snapshot, while rewriting it with identical content must neither bump the epoch
+ * nor disturb the running configuration.
  */
 @RunWith(RobolectricTestRunner::class)
 class RuleSetRuntimeTest {
@@ -34,32 +32,27 @@ class RuleSetRuntimeTest {
 
     private fun state() = LocalPolicyRuntime.state.value
 
-    private fun rules() = LocalRules(
+    private fun allDayGroups(limitMinutes: Int?) = LocalRules.fromLegacyWeekdayWeekend(
         weekdayWindows = listOf(LocalTimeWindow(0, 24 * 60)),
         weekendWindows = listOf(LocalTimeWindow(0, 24 * 60)),
-        autoDailyLimitMinutes = 60,
+        weekdayLimitMinutes = limitMinutes,
+        weekendLimitMinutes = limitMinutes,
+    )
+
+    private fun rules() = LocalRules(
+        dayGroups = allDayGroups(60),
         sessionLimitMinutes = 20,
         restMinutes = 5,
         allowedPackages = setOf(videoPackage),
     )
 
     private fun sets(
-        auto: LocalRuleSet = LocalRuleSet(
-            weekdayWindows = listOf(LocalTimeWindow(0, 24 * 60)),
-            weekendWindows = listOf(LocalTimeWindow(0, 24 * 60)),
-            autoDailyLimitMinutes = 60,
-            sessionLimitMinutes = 20,
-            restMinutes = 5,
-        ),
         manual: LocalRuleSet = LocalRuleSet(
-            weekdayWindows = listOf(LocalTimeWindow(0, 24 * 60)),
-            weekendWindows = listOf(LocalTimeWindow(0, 24 * 60)),
-            autoDailyLimitMinutes = 120,
+            dayGroups = allDayGroups(120),
             sessionLimitMinutes = 30,
             restMinutes = 0,
         ),
     ) = LocalRuleSets(
-        auto = auto,
         manual = manual,
         shared = LocalSharedAppScope(allowedPackages = setOf(videoPackage)),
     )
@@ -77,90 +70,46 @@ class RuleSetRuntimeTest {
     }
 
     @Test
-    fun inactiveSetEditDoesNotBumpEpochOrInterruptTheExecutor() {
-        assertTrue(LocalPolicyRuntime.setRuleSetsWithVersion(sets(), 1L))
-        val activeEpoch = LocalPolicyRuntime.state.value.policyEpoch
-        assertEquals(Activation.MANUAL, LocalPolicyRuntime.state.value.activation)
-        assertEquals(120, LocalPolicyRuntime.currentRules!!.autoDailyLimitMinutes)
-        assertEquals(0, LocalPolicyRuntime.currentRules!!.restMinutes)
-
-        // Only AUTO (the inactive set) changes: store it for the next switch without an epoch
-        // bump, so the running manual configuration and its grants stay valid.
-        val inactiveEdited = sets(
-            auto = sets().auto.copy(autoDailyLimitMinutes = 90, restMinutes = 8),
-        )
-        assertTrue(LocalPolicyRuntime.setRuleSetsWithVersion(inactiveEdited, 2L))
-        assertEquals(activeEpoch, LocalPolicyRuntime.state.value.policyEpoch)
-        assertEquals(120, LocalPolicyRuntime.currentRules!!.autoDailyLimitMinutes)
-        assertEquals(0, LocalPolicyRuntime.currentRules!!.restMinutes)
-        assertEquals(90, LocalPolicyRuntime.currentRuleSets!!.auto.autoDailyLimitMinutes)
-    }
-
-    @Test
-    fun switchingSwapsTheStoredSetWithoutRewritingEitherRest() {
-        assertTrue(LocalPolicyRuntime.setRuleSetsWithVersion(sets(), 1L))
-        assertTrue(LocalPolicyRuntime.setActivation(Activation.AUTO))
-
-        // AUTO runs its own quota and rest, exactly as stored.
-        assertEquals(60, LocalPolicyRuntime.currentRules!!.autoDailyLimitMinutes)
-        assertEquals(5, LocalPolicyRuntime.currentRules!!.restMinutes)
-
-        assertTrue(LocalPolicyRuntime.setActivation(Activation.MANUAL))
-
-        // MANUAL still has its own rest; the switch did not adopt AUTO's default.
-        assertEquals(120, LocalPolicyRuntime.currentRules!!.autoDailyLimitMinutes)
-        assertEquals(0, LocalPolicyRuntime.currentRules!!.restMinutes)
-        assertEquals(5, LocalPolicyRuntime.currentRuleSets!!.auto.restMinutes)
-    }
-
-    @Test
-    fun switchingFromAutoEndsTheRestEarnedByAuto() {
-        assertTrue(LocalPolicyRuntime.setActivation(Activation.AUTO))
-        LocalPolicyRuntime.debugStartSession(60L)
-        assertTrue(LocalPolicyRuntime.endSessionByUser())
-        assertEquals(LockReason.RESTING, state().lockReason)
-        assertTrue(state().restRemainingSeconds > 0L)
-        assertTrue(LocalPolicyStore.breakUntil() > System.currentTimeMillis())
-        assertTrue(LocalPolicyStore.lastSessionEndedAt() > 0L)
-
-        assertTrue(LocalPolicyRuntime.setActivation(Activation.MANUAL))
+    fun applyingTheStoredManualSetUpdatesTheExecutor() {
+        val stored = sets()
+        assertTrue(LocalPolicyRuntime.setRuleSetsWithVersion(stored, 1L))
 
         assertEquals(Activation.MANUAL, state().activation)
-        assertEquals(LockReason.MANUAL_WAITING, state().lockReason)
-        assertEquals(0L, state().restRemainingSeconds)
-        assertEquals(0L, LocalPolicyStore.breakUntil())
-        // The recovery timestamp must go too, or initialize() would rebuild the old rest.
-        assertEquals(0L, LocalPolicyStore.lastSessionEndedAt())
+        assertEquals(120, LocalPolicyRuntime.currentRules!!.autoDailyLimitMinutes)
+        assertEquals(0, LocalPolicyRuntime.currentRules!!.restMinutes)
+        assertEquals(stored, LocalPolicyRuntime.currentRuleSets)
     }
 
     @Test
-    fun switchingToAutoEndsTheRestEarnedByManual() {
-        LocalPolicyRuntime.debugStartSession(60L)
-        assertTrue(LocalPolicyRuntime.endSessionByUser())
-        assertEquals(LockReason.RESTING, state().lockReason)
-        assertTrue(state().restRemainingSeconds > 0L)
+    fun rewritingTheSameSetDoesNotBumpTheEpoch() {
+        assertTrue(LocalPolicyRuntime.setRuleSetsWithVersion(sets(), 1L))
+        val appliedEpoch = state().policyEpoch
 
-        assertTrue(LocalPolicyRuntime.setActivation(Activation.AUTO))
+        // A cloud mirror or a web write may repeat the stored set; unchanged content must not
+        // invalidate the grants and pending confirmations of the current configuration.
+        assertTrue(LocalPolicyRuntime.setRuleSetsWithVersion(sets(), 2L))
 
-        assertEquals(Activation.AUTO, state().activation)
-        assertEquals(LockReason.AUTO_READY, state().lockReason)
-        assertTrue(state().autoReady)
-        assertEquals(0L, state().restRemainingSeconds)
-        assertEquals(0L, LocalPolicyStore.breakUntil())
-        assertEquals(0L, LocalPolicyStore.lastSessionEndedAt())
+        assertEquals(appliedEpoch, state().policyEpoch)
+        assertEquals(120, LocalPolicyRuntime.currentRules!!.autoDailyLimitMinutes)
     }
 
     @Test
-    fun switchingModeSettlesARunningSessionWithoutStartingANewRest() {
-        assertTrue(LocalPolicyRuntime.setActivation(Activation.AUTO))
-        LocalPolicyRuntime.debugStartSession(10 * 60L)
-        assertEquals(SessionState.ACTIVE, state().sessionState)
+    fun anUnusableSetIsRejectedWithoutTouchingTheExecutor() {
+        val before = LocalPolicyRuntime.currentRules
 
-        assertTrue(LocalPolicyRuntime.setActivation(Activation.MANUAL))
+        assertFalse(
+            LocalPolicyRuntime.setRuleSetsWithVersion(
+                sets(
+                    manual = LocalRuleSet(
+                        dayGroups = allDayGroups(120).map {
+                            it.copy(studyWindows = emptyList(), entertainmentWindows = emptyList())
+                        },
+                    ),
+                ),
+                1L,
+            ),
+        )
 
-        assertEquals(SessionState.IDLE, state().sessionState)
-        assertEquals(LockReason.MANUAL_WAITING, state().lockReason)
-        assertEquals(0L, LocalPolicyStore.breakUntil())
-        assertEquals(0L, LocalPolicyStore.lastSessionEndedAt())
+        assertEquals(before, LocalPolicyRuntime.currentRules)
     }
 }

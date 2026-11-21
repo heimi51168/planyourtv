@@ -54,23 +54,18 @@ internal object PolicyKeys {
     // LOCAL and CLOUD share one logical password. The session/rules keys remain mode-specific.
     const val LOCAL_MODE = "local_mode"
     const val MODE_VERSION = "policy_mode_version"
+    // Legacy flat rules. Schema 3 no longer writes this key.
     const val LOCAL_RULES = "local_rules_v1"
-    // Two independent time-rule sets (AUTO/MANUAL) plus the shared app scope. Every v2 write
-    // also writes the active set through to LOCAL_RULES for old builds and rollback.
+    // Schema 2 rule sets. V42 treats these documents as unconfigured instead of migrating them.
     const val LOCAL_RULES_V2 = "local_rules_v2"
+    // Schema 3: the manual time-rule set with day groups plus the shared app scope.
+    const val LOCAL_RULES_V3 = "local_rules_v3"
     // Execution configuration, separate from the rule template.
-    const val LOCAL_ACTIVATION = "local_activation_v1"
     const val LOCAL_POLICY_EPOCH = "local_policy_epoch_v1"
     // Exchange records already confirmed or ended on this TV. The grant poll must not re-arm
     // them (especially when it still reports costTime=0), including after a process restart.
     const val LOCAL_SETTLED_GRANT_RECORDS = "local_settled_grant_records_v1"
-    // Date + window key that was ended by a parent; automatic start stays off until the next one.
-    const val LOCAL_AUTO_BLOCK = "local_auto_block_v1"
-    // A completed segment/rest waits for the child's explicit "开始计时"; the lock state must
-    // survive a process restart instead of letting the scheduler auto-start behind their back.
-    const val LOCAL_AUTO_READY = "local_auto_ready_v1"
-    // A parent override must not survive a restart as an unlock; the current window is blocked
-    // on the next start instead of letting automatic mode begin again behind the lock screen.
+    // A parent override must not survive a restart as an unlock.
     const val LOCAL_PARENT_OVERRIDE = "local_parent_override_v1"
     const val LOCAL_PIN_SALT = "local_pin_salt"
     const val LOCAL_PIN_HASH = "local_pin_hash"
@@ -106,9 +101,42 @@ internal object PolicyKeys {
     const val LOCAL_SESSION_ACTIVATION = "local_session_activation"
     const val LOCAL_SESSION_ACCESS_MODE = "local_session_access_mode"
     const val LOCAL_SESSION_ALLOWED_PACKAGES = "local_session_allowed_packages"
+    // V45 parent-started session outside the child plan; never writes the daily ledger.
+    const val LOCAL_SESSION_OUTSIDE_PLAN = "local_session_outside_plan"
     // V37 durable execution state. Each key is one atomic JSON snapshot with a version and CRC;
     // the legacy keys above remain as the migration/rollback source and are never the authority
     // once these exist.
     const val LOCAL_RUNTIME_V2 = "local_runtime_v2"
     const val LOCAL_GUARD_V2 = "local_guard_v2"
+    // An in-progress study-to-earn round. Kept outside the runtime snapshot so adding it cannot
+    // change the codec version or invalidate an existing session/ledger document.
+    const val LOCAL_STUDY_ROUND_V1 = "local_study_round_v1"
+
+    // Hosted (cloud rule guard) execution partition. A TV controlled from the cloud keeps its
+    // usage/guard/study state here, so it can never overwrite — or be mistaken for — the
+    // independent LOCAL child-mode state. Rule templates are deliberately not duplicated: the
+    // cloud policy cache (REMOTE_POLICY) is their only copy, and LOCAL rules stay in
+    // LOCAL_RULES_V3.
+    const val HOSTED_POLICY_EPOCH = "hosted_policy_epoch_v1"
+    const val HOSTED_SETTLED_GRANT_RECORDS = "hosted_settled_grant_records_v1"
+    const val HOSTED_RUNTIME_V2 = "hosted_runtime_v2"
+    const val HOSTED_GUARD_V2 = "hosted_guard_v2"
+    const val HOSTED_STUDY_ROUND_V1 = "hosted_study_round_v1"
+    // The cloud roster is per member since 2026-11-21. Every hosted key above gains a
+    // `@member:<id>` suffix so one child's ledger, rest cursor and study round can never leak
+    // into another's. The bare key remains as the pre-scope partition used for migration.
+    const val HOSTED_SUBJECT_INDEX_V1 = "hosted_subject_index_v1"
+    // The pre-scope partition may be adopted exactly once (into the member active at upgrade).
+    // Without this marker every later member would adopt the same stale ledger on first scope.
+    const val HOSTED_LEGACY_ADOPTED_V1 = "hosted_legacy_adopted_v1"
+
+    internal fun hostedScoped(base: String, scope: String?): String =
+        if (scope.isNullOrBlank()) base else "$base@$scope"
+
+    // V40 family cache. Exactly one family is active on a TV; subject keys are built from the
+    // validated local family/user IDs in FamilyKeys, never from a cloud ID or request string.
+    const val FAMILY_INDEX_V1 = "family.index.v1"
+    const val SUBJECT_ACTIVE_V1 = "subject.active.v1"
+    const val IDENTITY_LINKS_V1 = "identity.links.v1"
+    const val SUBJECT_MIGRATION_V1 = "subject.migration.v1"
 }

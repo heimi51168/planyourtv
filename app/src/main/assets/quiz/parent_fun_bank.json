@@ -1,0 +1,3008 @@
+{
+  "version": 1,
+  "name": "家长趣味题",
+  "description": "生活常识、家庭安全、健康起居与亲子沟通，单选与多选混合。",
+  "count": 150,
+  "items": [
+    {
+      "questionId": "life-elec-001",
+      "prompt": "擦洗正在通电的插座和开关前，正确的做法是？",
+      "options": [
+        "用湿抹布直接擦",
+        "先切断电源",
+        "先喷清洁剂",
+        "用手摸一摸是否发热"
+      ],
+      "answerIndex": 1,
+      "explanation": "水和潮气会导电。清洁插座、开关和电器前先断电；插座进水或受潮时不要通电，等彻底干燥或请电工处理。",
+      "subject": "用电安全",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-elec-002",
+      "prompt": "发现插头的电线外皮破损，应该怎么处理？",
+      "options": [
+        "用胶带随便缠一下继续用",
+        "停止使用并更换电线或电器",
+        "剪掉插头直接把线插进插座",
+        "用湿布包住破损处"
+      ],
+      "answerIndex": 1,
+      "explanation": "破损的电线可能漏电或短路，胶带和湿布都不能替代绝缘修复。应停止使用，请专业人员更换。",
+      "subject": "用电安全",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-elec-003",
+      "prompt": "手机充电完成后，哪种习惯更安全？",
+      "options": [
+        "把充电器继续长期插在插座上",
+        "拔掉充电器，避免长时间空载发热",
+        "把充电器放在枕头下散热",
+        "用湿手去拔插头"
+      ],
+      "answerIndex": 1,
+      "explanation": "充电器长期插电会持续待机发热，放在床上或枕头下更不利于散热。充完拔掉、保持通风更稳妥。",
+      "subject": "用电安全",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-elec-004",
+      "prompt": "多个大功率电器共用一个插排，最主要的危险是什么？",
+      "options": [
+        "插排过热、过载甚至起火",
+        "电费会自动减少",
+        "电压会变得更稳定",
+        "电器寿命会变长"
+      ],
+      "answerIndex": 0,
+      "explanation": "电暖器、电水壶、微波炉等大功率电器同时使用，容易超过插排额定功率，导致发热、绝缘损坏和火灾。",
+      "subject": "用电安全",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-elec-005",
+      "prompt": "空气开关跳闸后，正确的处理方式是？",
+      "options": [
+        "湿手直接合闸",
+        "先拔掉大功率电器，保持手干再试合一次；再次跳闸就请电工",
+        "用铁丝顶住开关让它一直通电",
+        "反复快速合闸直到不跳"
+      ],
+      "answerIndex": 1,
+      "explanation": "跳闸是保护动作。先减少负载、保持手干，再复位一次；如果马上又跳，说明线路或电器有故障，不能反复强行合闸。",
+      "subject": "用电安全",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-elec-006",
+      "prompt": "雷雨天气，下列哪种做法更安全？",
+      "options": [
+        "在阳台给电动车充电",
+        "拔掉不必要的电源，远离窗户和金属管道",
+        "用湿手扶金属窗框",
+        "站在大树下打电话"
+      ],
+      "answerIndex": 1,
+      "explanation": "雷电能沿电线、金属和潮湿物体传导。雷雨时减少用电、远离窗户和大树，不要在户外打有线电话。",
+      "subject": "用电安全",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-elec-007",
+      "prompt": "发现有人触电，第一步应该怎么做？",
+      "options": [
+        "直接用手把人拉开",
+        "先切断电源，或用干燥木棍等绝缘物挑开电线",
+        "向触电者泼水",
+        "抓住衣服把人拖走"
+      ],
+      "answerIndex": 1,
+      "explanation": "徒手拉人会让施救者也触电。先断电或用干燥绝缘物分离电源，再呼救并拨打 120；不要直接接触伤者。",
+      "subject": "用电安全",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-elec-008",
+      "prompt": "使用电热水器时，最稳妥的防触电习惯是？",
+      "options": [
+        "边洗澡边通电加热",
+        "使用前断电，并定期检查漏电保护器",
+        "用湿手按开关",
+        "自己改装地线"
+      ],
+      "answerIndex": 1,
+      "explanation": "电热水器要可靠接地并定期测试漏电保护器。老旧或环境潮湿时，洗澡前断电更稳妥；不要私改线路。",
+      "subject": "用电安全",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-elec-009",
+      "prompt": "家里有幼儿，防触电最有效的做法是？",
+      "options": [
+        "给插座装保护盖，并教育孩子不玩插座",
+        "只把插头拔掉就行",
+        "让孩子自己练习插拔",
+        "用湿布盖住插座"
+      ],
+      "answerIndex": 0,
+      "explanation": "保护盖能挡住异物插入，教育能减少好奇行为。两者结合最有效；湿布覆盖反而增加受潮和触电风险。",
+      "subject": "用电安全",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-elec-010",
+      "prompt": "电器冒烟或有焦糊味时，应该怎么做？",
+      "options": [
+        "继续使用到彻底坏掉",
+        "立即断电、远离，并联系维修；已经着火先撤离并报警",
+        "用水直接浇",
+        "打开外壳看看哪里冒烟"
+      ],
+      "answerIndex": 1,
+      "explanation": "焦糊味说明绝缘或元件可能过热。先断电并远离，火势已起时不要泼水，先撤离并拨打火警电话。",
+      "subject": "用电安全",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-elec-011",
+      "prompt": "以下哪些是安全用电习惯？",
+      "options": [
+        "湿手不碰开关和插头",
+        "电线远离水源和热源",
+        "拔插头时捏住插头而不是拉电线",
+        "一个插排接满大功率电器"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        2
+      ],
+      "explanation": "湿手、拉电线、超负荷都可能引发触电或火灾。拔插头应捏住插头本体，电线要远离水和热。",
+      "subject": "用电安全",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-elec-012",
+      "prompt": "以下哪些情况应停止使用并请专业电工检查？",
+      "options": [
+        "插座摸起来发烫",
+        "电线外皮破损或露出铜丝",
+        "漏电保护器频繁跳闸",
+        "插头表面有一点灰尘"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        2
+      ],
+      "explanation": "发烫、破损和频繁跳闸都是线路或电器故障信号。灰尘擦掉即可，但前三者不能继续凑合使用。",
+      "subject": "用电安全",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-elec-013",
+      "prompt": "关于插排的使用，哪些说法正确？",
+      "options": [
+        "不要串联多个插排",
+        "不要放在地毯或被子下面",
+        "不要超过额定功率",
+        "可以泡在水里降温"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        2
+      ],
+      "explanation": "串联、覆盖和超载都会让插排散热变差、电流过载。插排应放在通风干燥处，并按额定功率使用。",
+      "subject": "用电安全",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-elec-014",
+      "prompt": "以下哪些做法能降低电动车充电风险？",
+      "options": [
+        "在通风良好的指定区域充电",
+        "使用原装或匹配的充电器",
+        "避免长时间过充",
+        "在楼道里私拉电线充电"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        2
+      ],
+      "explanation": "通风、匹配充电器和避免过充能降低电池过热风险。楼道私拉电线既影响疏散，也容易因线路过载起火。",
+      "subject": "用电安全",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-elec-015",
+      "prompt": "关于断电操作，哪些做法正确？",
+      "options": [
+        "清洁电器前先拔掉插头",
+        "维修前确认电源已断开",
+        "拉闸后提醒家人不要合闸",
+        "带电操作更快更省事"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        2
+      ],
+      "explanation": "清洁和维修前断电是基本要求。多人家庭还应挂牌或口头提醒，避免别人误合闸；带电操作非常危险。",
+      "subject": "用电安全",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-kitchen-001",
+      "prompt": "进屋闻到明显燃气味，第一步应该做什么？",
+      "options": [
+        "马上开灯检查",
+        "关阀门、开窗，不碰明火和电器，到室外打电话",
+        "点火试试是否漏气",
+        "先打开抽油烟机"
+      ],
+      "answerIndex": 1,
+      "explanation": "燃气遇电火花或明火可能爆炸。不要开关灯、排气扇或打电话，先关阀开窗，到室外联系燃气公司或报警。",
+      "subject": "厨房安全",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-kitchen-002",
+      "prompt": "油锅起火时，正确的灭火方法是？",
+      "options": [
+        "立刻往锅里浇水",
+        "关火，用锅盖或灭火毯盖住锅口",
+        "端着锅跑到客厅",
+        "用扇子把火扇灭"
+      ],
+      "answerIndex": 1,
+      "explanation": "水会让热油飞溅、火势扩大。关火后用锅盖或灭火毯隔绝空气；不要端锅移动，火大时撤离并报警。",
+      "subject": "厨房安全",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-kitchen-003",
+      "prompt": "切生肉和切水果的案板，最好怎么用？",
+      "options": [
+        "生熟分开使用",
+        "用同一块，冲一下就好",
+        "用抹布擦一擦继续用",
+        "生熟都放冰箱里切"
+      ],
+      "answerIndex": 0,
+      "explanation": "生肉可能带有致病菌，生熟分开能避免交叉污染。案板、刀具和盛放容器都应生熟区分。",
+      "subject": "厨房安全",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-kitchen-004",
+      "prompt": "冷冻肉最安全的解冻方式是？",
+      "options": [
+        "常温放一整天",
+        "放冷藏室解冻，或用微波炉解冻后立即烹饪",
+        "用热水泡到完全变软",
+        "放阳台晒太阳"
+      ],
+      "answerIndex": 1,
+      "explanation": "冷藏解冻温度低，细菌不易大量繁殖；微波解冻后要马上烹饪。常温、热水和阳台都不安全。",
+      "subject": "厨房安全",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-kitchen-005",
+      "prompt": "燃气灶火焰发黄、锅底有黑烟，可能是什么原因？",
+      "options": [
+        "燃烧不充分，应清洁火盖、检查风门并保持通风",
+        "火力太旺，属于正常",
+        "燃气变得更纯",
+        "锅的材质太好"
+      ],
+      "answerIndex": 0,
+      "explanation": "黄焰和黑烟通常说明燃气与空气混合不佳。先清洁火盖、调整风门并通风；仍不改善就请燃气公司检查。",
+      "subject": "厨房安全",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-kitchen-006",
+      "prompt": "抽油烟机滤网油垢很厚，主要会带来什么风险？",
+      "options": [
+        "火灾隐患，吸力也会下降",
+        "更省电",
+        "噪音会变小",
+        "燃气会变得更香"
+      ],
+      "answerIndex": 0,
+      "explanation": "厚油垢遇高温可能燃烧，也会堵住风道、降低吸力。应定期清洗滤网和油杯，灶台附近不要堆放易燃物。",
+      "subject": "厨房安全",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-kitchen-007",
+      "prompt": "高压锅使用中限压阀堵塞，可能造成什么后果？",
+      "options": [
+        "锅内压力过大，有爆炸或烫伤风险，应立即关火冷却并检修",
+        "煮饭会更快",
+        "会更省燃气",
+        "完全没有影响"
+      ],
+      "answerIndex": 0,
+      "explanation": "限压阀和排气孔堵塞会让压力无法释放。发现异常先关火、远离，等自然冷却后再检查，不要强行开盖。",
+      "subject": "厨房安全",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-kitchen-008",
+      "prompt": "燃气软管应该怎样维护？",
+      "options": [
+        "定期检查，按说明书寿命更换，老化开裂立即换",
+        "用到漏气再换",
+        "装好后十年不用管",
+        "开裂处用胶带缠紧"
+      ],
+      "answerIndex": 0,
+      "explanation": "软管会老化、被老鼠咬破或松动。定期检查接口和管身，按厂家建议年限更换；胶带不能保证密封。",
+      "subject": "厨房安全",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-kitchen-009",
+      "prompt": "炒菜时孩子突然跑进厨房，最安全的做法是？",
+      "options": [
+        "让孩子远离灶台，并把锅柄转向内侧",
+        "抱着孩子继续炒菜",
+        "让孩子帮忙翻热锅",
+        "把热锅先放到地上"
+      ],
+      "answerIndex": 0,
+      "explanation": "热油、热水和锅柄都是烫伤风险。让孩子保持距离，锅柄朝内，热锅不要放在孩子能碰到的地方。",
+      "subject": "厨房安全",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-kitchen-010",
+      "prompt": "把带壳鸡蛋放进微波炉加热，可能发生什么？",
+      "options": [
+        "鸡蛋内部压力升高，可能爆裂烫伤",
+        "鸡蛋会更入味",
+        "营养会翻倍",
+        "和普通加热没有区别"
+      ],
+      "answerIndex": 0,
+      "explanation": "带壳或整颗鸡蛋在微波炉里受热不均，内部蒸汽无法释放，可能爆裂。鸡蛋应去壳、切开后再加热。",
+      "subject": "厨房安全",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-kitchen-011",
+      "prompt": "厨房防火，哪些做法正确？",
+      "options": [
+        "人离开时关火",
+        "灶台旁不堆放抹布和塑料袋",
+        "油锅起火时用水浇",
+        "定期清理灶台和油烟机油垢"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "离人关火、远离易燃物、定期清油垢都能降低火灾风险。油锅起火不能用水，应关火并盖住锅口。",
+      "subject": "厨房安全",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-kitchen-012",
+      "prompt": "做到生熟分开，哪些做法正确？",
+      "options": [
+        "生熟案板分开使用",
+        "生肉放在冰箱下层，避免汁水滴到熟食",
+        "用装过生肉的盘子直接装熟菜",
+        "处理生肉后洗手并清洗台面"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "生肉汁液可能带菌。案板分开、冰箱分层、及时洗手和清洁台面能减少交叉污染；装过生肉的盘子要洗净再用。",
+      "subject": "厨房安全",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-kitchen-013",
+      "prompt": "燃气安全，哪些做法正确？",
+      "options": [
+        "用完关闭灶前阀",
+        "做饭时保持厨房通风",
+        "自己私接或改装燃气管道",
+        "安装并定期检查燃气报警器"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "关阀、通风和报警器能降低泄漏风险。燃气管道改造必须由有资质的专业人员完成，私接非常危险。",
+      "subject": "厨房安全",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-kitchen-014",
+      "prompt": "油锅起火时，以下哪些做法是错误的？",
+      "options": [
+        "往锅里浇水",
+        "端着燃烧的锅跑到客厅",
+        "关火后用锅盖盖住锅口",
+        "打开抽油烟机把烟抽走"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "浇水会让热油飞溅，端锅移动会扩大火势，开抽油烟机会把火引入风道。正确做法是关火并隔绝空气。",
+      "subject": "厨房安全",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-kitchen-015",
+      "prompt": "防止孩子被烫伤，哪些做法正确？",
+      "options": [
+        "热汤放在桌子中间",
+        "锅柄转向灶台内侧",
+        "让孩子自己端刚烧开的水",
+        "热水壶放在孩子够不到的高处"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "热食放中间、锅柄朝内、热水壶放高处都能减少碰倒和拉扯。开水应由大人端，并先提醒孩子避让。",
+      "subject": "厨房安全",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-clean-001",
+      "prompt": "84 消毒液和洁厕灵混用，可能产生什么危险？",
+      "options": [
+        "产生有毒氯气",
+        "清洁力翻倍且更安全",
+        "气味会变香",
+        "完全没有影响"
+      ],
+      "answerIndex": 0,
+      "explanation": "含氯消毒液遇酸性洁厕灵会释放氯气，刺激呼吸道甚至造成中毒。两种清洁剂不要混用，使用后充分通风。",
+      "subject": "清洁卫生",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-clean-002",
+      "prompt": "使用 84 消毒液拖地，正确的做法是？",
+      "options": [
+        "按说明稀释、戴手套并开窗通风",
+        "原液越浓消毒越好",
+        "和酒精混在一起用",
+        "关紧门窗闷着"
+      ],
+      "answerIndex": 0,
+      "explanation": "消毒液应按标签比例稀释，避免与酸性或其他清洁剂混用。使用时戴手套、保持通风，用后清水擦净。",
+      "subject": "清洁卫生",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-clean-003",
+      "prompt": "浴室瓷砖缝发霉，首先应该怎么做？",
+      "options": [
+        "保持通风干燥，清洁后让表面彻底干透",
+        "用湿布一直捂着",
+        "关窗保持湿度",
+        "涂一层食用油"
+      ],
+      "answerIndex": 0,
+      "explanation": "霉菌喜欢潮湿。清洁霉斑后要让浴室通风、干燥，修复漏水；只擦表面不解决潮湿，很快会再长。",
+      "subject": "清洁卫生",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-clean-004",
+      "prompt": "擦玻璃时，最安全的做法是？",
+      "options": [
+        "站稳，不探身窗外，使用长柄工具",
+        "站在窗台外沿伸手擦",
+        "踩在椅子边缘够外面",
+        "一只手拉窗帘一只手擦"
+      ],
+      "answerIndex": 0,
+      "explanation": "探身窗外和踩不稳的椅子是坠落风险。高层应使用长柄工具，必要时请专业保洁，不要冒险。",
+      "subject": "清洁卫生",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-clean-005",
+      "prompt": "洗衣机内筒有异味，较有效的处理是？",
+      "options": [
+        "定期清洁滤网和密封圈，运行筒清洁程序并开门通风",
+        "往洗衣机里喷香水",
+        "洗完立刻关紧门",
+        "只用冷水洗所有衣物"
+      ],
+      "answerIndex": 0,
+      "explanation": "潮湿和洗涤剂残留会滋生霉菌。清理滤网、密封圈，定期做筒清洁，洗后开门通风，能减少异味。",
+      "subject": "清洁卫生",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-clean-006",
+      "prompt": "洗手至少多久更合适？",
+      "options": [
+        "20 秒左右，使用流动水和洗手液",
+        "3 秒冲一下",
+        "只用湿巾擦手",
+        "只搓手心"
+      ],
+      "answerIndex": 0,
+      "explanation": "流动水加洗手液、揉搓约 20 秒，能更有效地去除病菌。饭前便后、处理生食后都要洗手。",
+      "subject": "清洁卫生",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-clean-007",
+      "prompt": "冲马桶时，盖不盖马桶盖更好？",
+      "options": [
+        "盖上再冲，减少气溶胶飞溅",
+        "开着冲更干净",
+        "盖不盖都无所谓",
+        "用手压住水件冲"
+      ],
+      "answerIndex": 0,
+      "explanation": "冲水会产生含细菌的气溶胶。盖上马桶盖再冲，并定期清洁马桶圈和周围表面，更卫生。",
+      "subject": "清洁卫生",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-clean-008",
+      "prompt": "用含氯消毒剂清洁金属表面，主要要注意什么？",
+      "options": [
+        "可能腐蚀金属，按说明使用并用清水擦净",
+        "泡得越久越好",
+        "和醋混合增强效果",
+        "把湿抹布密封保存"
+      ],
+      "answerIndex": 0,
+      "explanation": "含氯消毒剂有腐蚀性，金属表面用后要及时清水擦净并擦干。绝不能与醋等酸性物质混用。",
+      "subject": "清洁卫生",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-clean-009",
+      "prompt": "厨房抹布有异味，应该怎么处理？",
+      "options": [
+        "定期清洗消毒并晾干，及时更换",
+        "继续用，味道不影响",
+        "喷香水盖住味道",
+        "放进冰箱除味"
+      ],
+      "answerIndex": 0,
+      "explanation": "潮湿抹布容易滋生病菌。可煮沸或按说明消毒，洗后彻底晾干，出现霉点或异味就更换。",
+      "subject": "清洁卫生",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-clean-010",
+      "prompt": "家里有宠物和幼儿，清洁时更应注意什么？",
+      "options": [
+        "避免刺激性强的清洁剂，清洁后通风并收好化学品",
+        "把消毒液装进饮料瓶",
+        "让孩子帮忙喷洒清洁剂",
+        "清洁时关紧所有门窗"
+      ],
+      "answerIndex": 0,
+      "explanation": "幼儿会爬会摸，宠物会舔舐。选择温和产品、充分通风、冲洗残留，并把清洁剂放到孩子拿不到的地方。",
+      "subject": "清洁卫生",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-clean-011",
+      "prompt": "以下哪些清洁习惯正确？",
+      "options": [
+        "清洁前开窗通风",
+        "戴手套保护双手",
+        "把不同清洁剂随意混合",
+        "清洁后洗手"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "通风、手套和洗手能减少吸入和皮肤刺激。不同清洁剂混合可能产生有毒气体，尤其是含氯产品与酸性产品。",
+      "subject": "清洁卫生",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-clean-012",
+      "prompt": "减少室内灰尘和螨虫，哪些做法有效？",
+      "options": [
+        "勤洗床单被套",
+        "保持通风",
+        "用湿抹布除尘",
+        "把灰尘扫到床底下"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        2
+      ],
+      "explanation": "勤洗床品、通风和湿式除尘能减少灰尘和螨虫。把灰尘扫到床下只会让过敏原堆积。",
+      "subject": "清洁卫生",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-clean-013",
+      "prompt": "厨房卫生，哪些做法正确？",
+      "options": [
+        "抹布按用途分区使用",
+        "厨余垃圾及时清理",
+        "生熟案板混用",
+        "保持台面干燥"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "分区抹布、及时倒垃圾、保持干燥能减少细菌滋生。生熟案板混用会增加交叉污染风险。",
+      "subject": "清洁卫生",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-clean-014",
+      "prompt": "清洁剂存放，哪些做法正确？",
+      "options": [
+        "放在孩子拿不到的地方",
+        "保留原标签和说明书",
+        "装进饮料瓶方便使用",
+        "远离火源和高温"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "原包装和标签能避免误用，锁在孩子拿不到的地方并远离火源。装进饮料瓶极易被误饮，非常危险。",
+      "subject": "清洁卫生",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-clean-015",
+      "prompt": "处理霉斑时，哪些做法合理？",
+      "options": [
+        "戴手套和口罩",
+        "开窗通风",
+        "用漂白剂处理后用清水擦净",
+        "干扫让霉孢子飞起来"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        2
+      ],
+      "explanation": "霉菌孢子会刺激呼吸道。戴防护、通风、湿式清洁更安全；干扫会把孢子扬到空气里。",
+      "subject": "清洁卫生",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-food-001",
+      "prompt": "煮白米饭时，常见的水米比例大约是？",
+      "options": [
+        "1:1.2 左右，再按米种和个人口感调整",
+        "1:5",
+        "1:0.2",
+        "水越少越好"
+      ],
+      "answerIndex": 0,
+      "explanation": "白米常见比例约为 1 杯米配 1.1-1.3 杯水，新米和陈米吸水不同。用电饭煲时可按内胆刻度调整，煮前浸泡更均匀。",
+      "subject": "饮食健康",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-food-002",
+      "prompt": "剩菜放凉后应该怎么保存？",
+      "options": [
+        "尽快冷藏，食用前彻底加热",
+        "常温放到第二天",
+        "放阳台吹风",
+        "反复加热很多次"
+      ],
+      "answerIndex": 0,
+      "explanation": "熟食在室温放太久细菌会快速繁殖。放凉到不烫手就应冷藏，吃前彻底加热；不要反复多次加热。",
+      "subject": "饮食健康",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-food-003",
+      "prompt": "冰箱冷藏室的温度设多少更合适？",
+      "options": [
+        "4℃ 左右",
+        "15℃ 左右",
+        "0℃ 以下",
+        "越高越省电"
+      ],
+      "answerIndex": 0,
+      "explanation": "冷藏室建议约 0-4℃，能抑制多数细菌又不冻坏食物。冰箱不要塞太满，生熟分层，定期清理。",
+      "subject": "饮食健康",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-food-004",
+      "prompt": "处理生鸡肉，哪种做法正确？",
+      "options": [
+        "单独案板处理，处理后洗手，彻底煮熟",
+        "在水龙头下冲一冲就直接吃",
+        "和熟食放在同一个盘子里",
+        "半熟更嫩，不用煮熟"
+      ],
+      "answerIndex": 0,
+      "explanation": "生鸡肉可能带沙门氏菌等致病菌。单独案板、及时洗手、彻底加热能降低风险；冲洗生肉反而可能溅污染周围。",
+      "subject": "饮食健康",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-food-005",
+      "prompt": "炒菜时油开始大量冒烟才下菜，可能有什么问题？",
+      "options": [
+        "油温过高，可能产生有害物质，应控制油温",
+        "这样更香更健康",
+        "油会更有营养",
+        "能省下不少油"
+      ],
+      "answerIndex": 0,
+      "explanation": "油温过高会分解产生刺激性物质，也容易起火。看到明显冒烟就应关小火或换油，不要反复高温使用。",
+      "subject": "饮食健康",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-food-006",
+      "prompt": "给孩子吃葡萄、圣女果，防噎应该怎么做？",
+      "options": [
+        "切成小块、去核，坐着吃",
+        "整颗边跑边吃",
+        "躺着喂",
+        "逗笑时喂"
+      ],
+      "answerIndex": 0,
+      "explanation": "圆形、光滑的食物容易卡住气道。应切小、去核，让孩子坐好、细嚼慢咽，大人全程看着。",
+      "subject": "饮食健康",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-food-007",
+      "prompt": "一岁以内婴儿不宜吃蜂蜜，主要原因是？",
+      "options": [
+        "蜂蜜可能含肉毒杆菌孢子",
+        "蜂蜜太甜",
+        "蜂蜜一定导致过敏",
+        "蜂蜜没有营养"
+      ],
+      "answerIndex": 0,
+      "explanation": "婴儿肠道菌群尚未成熟，肉毒杆菌孢子可能在肠道繁殖。一岁以内不要喂蜂蜜，包括蜂蜜水。",
+      "subject": "饮食健康",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-food-008",
+      "prompt": "看食品标签比较含糖量时，应该重点看什么？",
+      "options": [
+        "营养成分表中每 100 克/100 毫升的糖",
+        "包装的颜色",
+        "广告上写的“健康”",
+        "价格高低"
+      ],
+      "answerIndex": 0,
+      "explanation": "营养成分表按每 100 克/100 毫升标示，方便同类比较。还要注意配料表里糖、果葡糖浆等排得靠不靠前。",
+      "subject": "饮食健康",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-food-009",
+      "prompt": "面包表面长了霉点，正确的处理是？",
+      "options": [
+        "整包丢弃，霉菌菌丝可能已深入",
+        "切掉霉点继续吃",
+        "烤一下就没事",
+        "闻着不臭就继续吃"
+      ],
+      "answerIndex": 0,
+      "explanation": "肉眼看到的霉点只是表面，菌丝和毒素可能已扩散到食物内部。柔软食物发霉应整份丢弃，不要切掉继续吃。",
+      "subject": "饮食健康",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-food-010",
+      "prompt": "想让每天饮食更均衡，哪种做法更好？",
+      "options": [
+        "主食、蔬菜和蛋白质搭配，少油少盐",
+        "只吃肉",
+        "只吃水果",
+        "用零食代替正餐"
+      ],
+      "answerIndex": 0,
+      "explanation": "均衡饮食需要谷物、蔬菜水果、优质蛋白和适量脂肪。少油少盐、控制含糖饮料，比单一食物更可靠。",
+      "subject": "饮食健康",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-food-011",
+      "prompt": "食品安全，哪些做法正确？",
+      "options": [
+        "生熟食物分开",
+        "食物彻底加热",
+        "熟食常温放一整夜",
+        "饭前便后洗手"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "生熟分开、彻底加热和洗手能减少食源性疾病。熟食在室温放一夜风险很高，应及时冷藏。",
+      "subject": "饮食健康",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-food-012",
+      "prompt": "冰箱储存，哪些做法正确？",
+      "options": [
+        "生肉放在下层，避免汁水滴落",
+        "热菜放凉后及时冷藏",
+        "把冰箱塞得满满更省电",
+        "定期清理过期食物"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "分层、及时冷藏和定期清理能减少交叉污染。冰箱塞太满会影响冷气循环，反而不利于保鲜。",
+      "subject": "饮食健康",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-food-013",
+      "prompt": "孩子吃饭防噎，哪些做法正确？",
+      "options": [
+        "让孩子坐好吃",
+        "细嚼慢咽，不催促",
+        "边跑边吃也没关系",
+        "大人陪同并留意"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "坐着吃、细嚼慢咽、大人看护能降低噎食风险。跑跳、笑闹或躺着吃东西最容易发生意外。",
+      "subject": "饮食健康",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-food-014",
+      "prompt": "减少厨房油烟，哪些做法有效？",
+      "options": [
+        "控制油温，不等到大量冒烟",
+        "正确使用抽油烟机",
+        "把油反复用到发黑",
+        "保持厨房通风"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "控制油温、开抽油烟机和通风能减少油烟。反复使用的老油烟点更低，既影响味道也不利于健康。",
+      "subject": "饮食健康",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-food-015",
+      "prompt": "健康饮食，哪些建议合理？",
+      "options": [
+        "多吃蔬菜水果",
+        "少喝含糖饮料",
+        "用果汁完全代替水果",
+        "控制盐的摄入"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "蔬菜水果、少糖少盐是基础建议。果汁少了膳食纤维且容易摄入过量糖，不能完全代替完整水果。",
+      "subject": "饮食健康",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-health-001",
+      "prompt": "使用退烧药前，最应该先做什么？",
+      "options": [
+        "看说明书剂量和间隔，按年龄或体重给药",
+        "直接加倍吃",
+        "和多种感冒药一起吃",
+        "空腹吃得更快"
+      ],
+      "answerIndex": 0,
+      "explanation": "不同退烧药成分和剂量不同，混用容易过量。应看清说明书，按年龄/体重和间隔给药，必要时咨询医生或药师。",
+      "subject": "健康用药",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-health-002",
+      "prompt": "发烧时，除了必要的退烧药，还应该注意什么？",
+      "options": [
+        "多喝水、休息，观察精神状态",
+        "捂厚被子发汗",
+        "用酒精擦全身",
+        "尽量不喝水"
+      ],
+      "answerIndex": 0,
+      "explanation": "发热会丢失水分，补水休息很重要。捂汗和酒精擦浴可能带来风险；精神状态差、呼吸困难等要及时就医。",
+      "subject": "健康用药",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-health-003",
+      "prompt": "普通病毒性感冒需要使用抗生素吗？",
+      "options": [
+        "通常不需要，抗生素只对细菌感染有效，应遵医嘱",
+        "一定需要，越早越好",
+        "抗生素越多越好",
+        "和酒一起吃效果更好"
+      ],
+      "answerIndex": 0,
+      "explanation": "普通感冒多由病毒引起，抗生素对病毒无效，滥用还会导致耐药。是否使用应由医生判断。",
+      "subject": "健康用药",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-health-004",
+      "prompt": "家庭药箱应该怎样管理？",
+      "options": [
+        "定期检查有效期，清理过期药",
+        "过期药也一直留着",
+        "放在潮湿的浴室",
+        "让孩子自己随便拿"
+      ],
+      "answerIndex": 0,
+      "explanation": "药品应存放在阴凉干燥、孩子拿不到的地方，定期检查有效期和外观。过期药按当地要求回收，不要随意服用。",
+      "subject": "健康用药",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-health-005",
+      "prompt": "服用布洛芬等止痛药时，应注意什么？",
+      "options": [
+        "按说明书剂量，避免空腹和与其他同类药叠加；有胃病或肾病先问医生",
+        "疼得厉害就多吃几片",
+        "用酒送服",
+        "可以长期天天吃"
+      ],
+      "answerIndex": 0,
+      "explanation": "止痛药有剂量上限和适用禁忌。不要与同类药叠加，胃病、肾病、孕期等情况应先咨询医生；持续疼痛要查明原因。",
+      "subject": "健康用药",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-health-006",
+      "prompt": "孩子发烧出现哪些情况应立即就医？",
+      "options": [
+        "精神差、抽搐、呼吸困难，或小于 3 个月的婴儿发热",
+        "体温 37.5℃ 但精神很好",
+        "想吃东西",
+        "睡得很安稳"
+      ],
+      "answerIndex": 0,
+      "explanation": "精神差、抽搐、呼吸急促、持续高热不退、皮疹或脱水都需尽快就医。3 个月以下婴儿发热尤其要重视。",
+      "subject": "健康用药",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-health-007",
+      "prompt": "月经期肚子疼，较稳妥的处理方式是？",
+      "options": [
+        "热敷、休息、轻度活动；必要时按说明用止痛药，剧痛或异常出血就医",
+        "喝大量冰水",
+        "一直忍着不处理",
+        "自己吃激素类药物"
+      ],
+      "answerIndex": 0,
+      "explanation": "原发性痛经可通过热敷、休息和适度活动缓解，必要时按说明使用止痛药。疼痛突然加重、伴大量出血或发热应就医。",
+      "subject": "健康用药",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-health-008",
+      "prompt": "被蚊子叮咬后，正确止痒的做法是？",
+      "options": [
+        "冷敷、避免抓挠，必要时用止痒药",
+        "抓破皮肤",
+        "用很热的水烫",
+        "涂牙膏"
+      ],
+      "answerIndex": 0,
+      "explanation": "冷敷能减轻肿胀和痒感，抓破容易感染。若出现大面积红肿、发热或呼吸困难，应及时就医。",
+      "subject": "健康用药",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-health-009",
+      "prompt": "服药时，哪种做法正确？",
+      "options": [
+        "用温白开水送服，按医嘱或说明书",
+        "用酒送服",
+        "用浓茶送服所有药物",
+        "干吞药片"
+      ],
+      "answerIndex": 0,
+      "explanation": "酒精、浓茶可能影响药物代谢，干吞可能刺激食管。多数药物用温水送服更稳妥，特殊剂型按说明使用。",
+      "subject": "健康用药",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-health-010",
+      "prompt": "吃药后出现皮疹、嘴唇肿或呼吸困难，应该怎么做？",
+      "options": [
+        "立即停药并就医，严重时拨打急救电话",
+        "继续吃观察",
+        "加倍服药压下去",
+        "喝点酒缓解"
+      ],
+      "answerIndex": 0,
+      "explanation": "这可能是严重过敏反应，尤其是呼吸困难、喉头紧、血压下降时。立即停药、呼救，不要继续服用。",
+      "subject": "健康用药",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-health-011",
+      "prompt": "家庭用药安全，哪些做法正确？",
+      "options": [
+        "看清有效期",
+        "按剂量和间隔服用",
+        "多种感冒药叠加吃",
+        "放在孩子拿不到的地方"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "有效期、剂量和存放位置都关系到安全。多种感冒药常含相同成分，叠加容易过量。",
+      "subject": "健康用药",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-health-012",
+      "prompt": "感冒时，哪些做法合理？",
+      "options": [
+        "多休息",
+        "多喝水",
+        "自行滥用抗生素",
+        "症状加重或持续不退及时就医"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "休息、补水和观察是基础。抗生素对病毒无效，不应自行滥用；高热不退、呼吸困难等要就医。",
+      "subject": "健康用药",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-health-013",
+      "prompt": "预防交叉感染，哪些做法正确？",
+      "options": [
+        "勤洗手",
+        "咳嗽或打喷嚏时遮住口鼻",
+        "全家共用一条毛巾",
+        "保持室内通风"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "洗手、遮挡口鼻和通风能减少病原传播。毛巾、水杯等个人物品应分开使用。",
+      "subject": "健康用药",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-health-014",
+      "prompt": "以下哪些属于需要尽快就医的警示信号？",
+      "options": [
+        "胸痛胸闷",
+        "突然说话不清或一侧肢体无力",
+        "偶尔打一个喷嚏",
+        "呼吸困难"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "胸痛、脑卒中样症状和呼吸困难都可能是急症，应立即就医或拨打急救电话。偶尔打喷嚏通常不是危险信号。",
+      "subject": "健康用药",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-health-015",
+      "prompt": "关于止痛药，哪些说法正确？",
+      "options": [
+        "按说明书剂量使用",
+        "不与其他同类止痛药叠加",
+        "疼就无限加量",
+        "有基础病先咨询医生"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "止痛药要按剂量、按间隔使用，避免同类叠加。胃病、肾病、孕期或正在服其他药时，先问医生或药师。",
+      "subject": "健康用药",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-firstaid-001",
+      "prompt": "发现有人噎住、不能说话也不能咳嗽，应该怎么做？",
+      "options": [
+        "立即拨打急救电话，同时进行背部拍击和腹部冲击",
+        "先喂一杯水",
+        "让他平躺休息",
+        "等几分钟看看"
+      ],
+      "answerIndex": 0,
+      "explanation": "不能说话、不能咳嗽说明气道严重梗阻。应立即呼救并施行海姆立克急救法；失去意识时开始心肺复苏。",
+      "subject": "急救防噎",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-firstaid-002",
+      "prompt": "一岁以下婴儿噎住，正确的急救方式是？",
+      "options": [
+        "婴儿版背部拍击和胸部按压，同时呼救",
+        "直接做成人腹部冲击",
+        "倒提起来拍脚",
+        "喂水冲下去"
+      ],
+      "answerIndex": 0,
+      "explanation": "婴儿不能用成人腹部冲击。应让婴儿俯卧在前臂上拍背 5 次，再翻转做胸部按压 5 次，并立即呼叫急救。",
+      "subject": "急救防噎",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-firstaid-003",
+      "prompt": "轻微烫伤后，第一步应该怎么做？",
+      "options": [
+        "用流动冷水冲 20 分钟左右，并去除热源",
+        "马上涂牙膏",
+        "涂酱油",
+        "自己挑破水泡"
+      ],
+      "answerIndex": 0,
+      "explanation": "冷水冲洗能降温、减轻损伤。不要涂牙膏、酱油或油，也不要挑破水泡；面积大、起大水泡或面部烫伤要就医。",
+      "subject": "急救防噎",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-firstaid-004",
+      "prompt": "流鼻血时，正确的姿势是？",
+      "options": [
+        "坐直、身体前倾，捏住鼻翼 10-15 分钟",
+        "仰头",
+        "塞满纸团",
+        "平躺"
+      ],
+      "answerIndex": 0,
+      "explanation": "仰头会让血流向咽喉，可能呛咳。应坐直前倾、捏住鼻翼持续按压；超过 20 分钟不止或量大要就医。",
+      "subject": "急救防噎",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-firstaid-005",
+      "prompt": "脚踝扭伤后 48 小时内，较合适的处理是？",
+      "options": [
+        "休息、冰敷、加压、抬高，避免热敷和用力揉搓",
+        "马上热敷",
+        "用力按摩活血",
+        "继续跑步"
+      ],
+      "answerIndex": 0,
+      "explanation": "急性期遵循 RICE 原则能减轻肿胀。48 小时内不要热敷或强揉；不能负重、剧痛或明显变形要就医排除骨折。",
+      "subject": "急救防噎",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-firstaid-006",
+      "prompt": "成人心肺复苏时，胸外按压的正确位置是？",
+      "options": [
+        "两乳头连线中点/胸骨下半段，双手交叠垂直按压",
+        "按压肚子",
+        "按压脖子",
+        "只按左胸上方"
+      ],
+      "answerIndex": 0,
+      "explanation": "按压胸骨下半段，深度约 5-6 厘米，频率约 100-120 次/分，让胸廓充分回弹。尽快使用 AED 并等待急救人员。",
+      "subject": "急救防噎",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-firstaid-007",
+      "prompt": "被猫狗咬伤后，正确的处理是？",
+      "options": [
+        "用肥皂水和流动水冲洗约 15 分钟，尽快就医接种疫苗",
+        "用嘴把血吸出来",
+        "简单包扎后不管",
+        "只涂一点酒精"
+      ],
+      "answerIndex": 0,
+      "explanation": "充分冲洗能减少病毒和细菌。尽快就医评估狂犬病疫苗、破伤风和伤口处理；不要挤压或嘴吸伤口。",
+      "subject": "急救防噎",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-firstaid-008",
+      "prompt": "孩子误吞清洁剂，应该怎么做？",
+      "options": [
+        "不要催吐，保留包装，立即就医或拨打急救电话",
+        "大量喝水",
+        "马上催吐",
+        "先观察一天"
+      ],
+      "answerIndex": 0,
+      "explanation": "催吐可能让腐蚀性液体再次灼伤食道。不要自行催吐或中和，带上包装尽快就医，听从急救人员指导。",
+      "subject": "急救防噎",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-firstaid-009",
+      "prompt": "家人突然晕倒、没有呼吸，应该怎么做？",
+      "options": [
+        "呼救、拨打 120，立即开始心肺复苏并寻找 AED",
+        "先掐人中",
+        "喂水",
+        "扶起来走一走"
+      ],
+      "answerIndex": 0,
+      "explanation": "无呼吸、无反应是心脏骤停的信号。应立即呼救、胸外按压并使用 AED；掐人中、喂水会耽误抢救。",
+      "subject": "急救防噎",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-firstaid-010",
+      "prompt": "家人癫痫发作时，正确的做法是？",
+      "options": [
+        "移开周围危险物、保护头部、记录时间，不要往嘴里塞东西",
+        "按住四肢不让动",
+        "往嘴里塞勺子",
+        "喂水"
+      ],
+      "answerIndex": 0,
+      "explanation": "癫痫发作时不要强行按压或往嘴里塞东西。保护头部、移开尖锐物、记录时间；超过 5 分钟或反复发作要急救。",
+      "subject": "急救防噎",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-firstaid-011",
+      "prompt": "家庭急救箱可以准备哪些物品？",
+      "options": [
+        "创可贴",
+        "纱布和绷带",
+        "过期药品",
+        "体温计"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "创可贴、纱布、绷带和体温计是基础物品。急救箱要定期检查，过期药和变质敷料应清理。",
+      "subject": "急救防噎",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-firstaid-012",
+      "prompt": "预防孩子噎着，哪些做法正确？",
+      "options": [
+        "坚果等食物切碎",
+        "不让孩子边跑边吃",
+        "整颗果冻直接吞",
+        "大人陪同并留意"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "切碎、坐着吃、成人看护能降低噎食风险。整颗果冻、整颗葡萄和坚果是常见的高风险食物，要特别处理。",
+      "subject": "急救防噎",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-firstaid-013",
+      "prompt": "烧烫伤处理，哪些做法正确？",
+      "options": [
+        "用流动冷水冲洗",
+        "覆盖干净敷料",
+        "涂牙膏或酱油",
+        "严重时及时就医"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "冷水冲洗和干净覆盖是正确步骤。牙膏、酱油会污染伤口，起大泡、面积大或特殊部位烫伤应就医。",
+      "subject": "急救防噎",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-firstaid-014",
+      "prompt": "心肺复苏，哪些要点正确？",
+      "options": [
+        "按压频率约 100-120 次/分",
+        "成人按压深度约 5-6 厘米",
+        "按压时随意中断很久",
+        "尽快使用 AED"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "高质量按压要够快、够深、充分回弹并尽量减少中断。AED 越早使用，抢救成功率越高。",
+      "subject": "急救防噎",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-firstaid-015",
+      "prompt": "以下哪些情况应立即拨打急救电话？",
+      "options": [
+        "呼吸困难",
+        "意识不清",
+        "轻微擦伤",
+        "大量出血"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "呼吸困难、意识不清和大量出血都可能危及生命，应立即呼救。轻微擦伤可自行清洁处理。",
+      "subject": "急救防噎",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-sleep-001",
+      "prompt": "睡前一小时，更推荐做什么？",
+      "options": [
+        "减少看屏幕，做放松活动",
+        "刷短视频直到困",
+        "喝浓咖啡",
+        "做剧烈运动"
+      ],
+      "answerIndex": 0,
+      "explanation": "屏幕蓝光和刺激内容会推迟入睡。睡前可以洗漱、阅读、听轻音乐，保持固定的睡前流程。",
+      "subject": "睡眠作息",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-sleep-002",
+      "prompt": "成年人通常建议的睡眠时长是？",
+      "options": [
+        "7-9 小时",
+        "3-4 小时",
+        "12 小时以上",
+        "越少越好"
+      ],
+      "answerIndex": 0,
+      "explanation": "多数成年人需要 7-9 小时睡眠。个体有差异，但长期明显不足会影响注意力、情绪和代谢。",
+      "subject": "睡眠作息",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-sleep-003",
+      "prompt": "孩子长期睡眠不足，可能影响什么？",
+      "options": [
+        "注意力、情绪和生长发育",
+        "只影响身高",
+        "完全没有影响",
+        "会变得更聪明"
+      ],
+      "answerIndex": 0,
+      "explanation": "睡眠不足会影响注意力、记忆、情绪调节和生长激素分泌。应保证规律作息和足够时长。",
+      "subject": "睡眠作息",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-sleep-004",
+      "prompt": "卧室环境更适合睡眠的是？",
+      "options": [
+        "安静、黑暗、温度适宜",
+        "越亮越好",
+        "越热越好",
+        "开着电视睡"
+      ],
+      "answerIndex": 0,
+      "explanation": "安静、黑暗和适宜温度有助于褪黑素分泌和入睡。电视和手机的光线、声音会干扰睡眠。",
+      "subject": "睡眠作息",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-sleep-005",
+      "prompt": "下午喝咖啡可能影响晚上睡眠，主要是因为？",
+      "options": [
+        "咖啡因的作用可持续数小时",
+        "咖啡是安眠药",
+        "只会影响胃口",
+        "完全没有影响"
+      ],
+      "answerIndex": 0,
+      "explanation": "咖啡因半衰期较长，下午摄入可能到晚上仍起作用。对咖啡因敏感的人应更早停止咖啡、茶和能量饮料。",
+      "subject": "睡眠作息",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-sleep-006",
+      "prompt": "长期大声打鼾、睡觉憋醒、白天嗜睡，应该怎么办？",
+      "options": [
+        "就医评估睡眠呼吸暂停",
+        "睡前喝点酒",
+        "继续熬夜",
+        "不用管"
+      ],
+      "answerIndex": 0,
+      "explanation": "这些可能是阻塞性睡眠呼吸暂停的信号，会增加心血管风险。应到正规医院睡眠专科评估，不要靠酒精助眠。",
+      "subject": "睡眠作息",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-sleep-007",
+      "prompt": "轮班或倒时差后，较快调整作息的方法是？",
+      "options": [
+        "固定作息，白天增加光照，睡前减少强光",
+        "白天拉紧窗帘不出门",
+        "睡前开强光",
+        "一直补觉到中午"
+      ],
+      "answerIndex": 0,
+      "explanation": "光照是调节生物钟的重要信号。白天多见光、晚上调暗环境，并尽量固定起床时间，有助于重新同步作息。",
+      "subject": "睡眠作息",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-sleep-008",
+      "prompt": "孩子的睡前仪式，哪种更合适？",
+      "options": [
+        "固定顺序：洗漱、讲故事、关灯",
+        "睡前玩刺激游戏",
+        "睡前看恐怖片",
+        "睡前吃一大餐"
+      ],
+      "answerIndex": 0,
+      "explanation": "固定、安静的睡前流程能给孩子安全感，帮助大脑进入睡眠状态。睡前一小时避免剧烈活动和刺激内容。",
+      "subject": "睡眠作息",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-sleep-009",
+      "prompt": "失眠时，哪种做法更合理？",
+      "options": [
+        "固定起床时间，白天适量运动，睡前放松",
+        "白天补觉到中午",
+        "睡前喝酒",
+        "躺在床上刷手机"
+      ],
+      "answerIndex": 0,
+      "explanation": "固定起床时间、适量运动和放松有助于建立睡眠节律。酒精和长时间补觉会打乱节律；长期失眠应就医。",
+      "subject": "睡眠作息",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-sleep-010",
+      "prompt": "婴儿安全睡眠，正确的做法是？",
+      "options": [
+        "仰卧、睡硬床垫，婴儿床内不放枕头和毛绒玩具",
+        "趴睡",
+        "和大人同床盖厚被",
+        "枕大枕头"
+      ],
+      "answerIndex": 0,
+      "explanation": "仰卧、硬床垫、床内清爽能降低婴儿猝死综合征风险。避免趴睡、软床和松软物品，同房不同床更安全。",
+      "subject": "睡眠作息",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-sleep-011",
+      "prompt": "改善睡眠，哪些做法有帮助？",
+      "options": [
+        "保持规律作息",
+        "睡前做放松活动",
+        "睡前大量喝咖啡",
+        "卧室保持黑暗安静"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "规律作息、放松和适宜环境有助于入睡。咖啡因会推迟入睡，睡前应避免咖啡、浓茶和能量饮料。",
+      "subject": "睡眠作息",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-sleep-012",
+      "prompt": "孩子睡眠卫生，哪些做法正确？",
+      "options": [
+        "固定上床时间",
+        "睡前不看屏幕",
+        "周末完全打乱作息",
+        "白天有适量活动"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "固定作息、睡前远离屏幕和白天活动能改善睡眠。周末作息差太大，周一容易再次紊乱。",
+      "subject": "睡眠作息",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-sleep-013",
+      "prompt": "哪些因素可能影响睡眠？",
+      "options": [
+        "咖啡因",
+        "酒精",
+        "规律运动",
+        "睡前情绪紧张"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "咖啡因和酒精会干扰睡眠结构，紧张情绪会让人难以入睡。规律运动通常有助于睡眠，但避免睡前剧烈运动。",
+      "subject": "睡眠作息",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-sleep-014",
+      "prompt": "睡眠呼吸暂停的警示信号有哪些？",
+      "options": [
+        "大声打鼾",
+        "睡觉时憋醒",
+        "白天嗜睡",
+        "偶尔做梦"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        2
+      ],
+      "explanation": "大声打鼾、憋醒和白天嗜睡是常见信号，可能伴随晨起头痛、注意力下降。偶尔做梦是正常现象。",
+      "subject": "睡眠作息",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-sleep-015",
+      "prompt": "睡前放松，哪些活动合适？",
+      "options": [
+        "温水洗澡",
+        "听轻音乐",
+        "激烈争吵",
+        "阅读纸质书"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "温水澡、轻音乐和安静阅读能帮助放松。睡前争吵、工作或刷手机会让大脑保持兴奋。",
+      "subject": "睡眠作息",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-laundry-001",
+      "prompt": "晒床单被套的主要好处是？",
+      "options": [
+        "阳光中的紫外线有助于杀菌除湿，水分也能蒸发",
+        "让颜色更快变淡",
+        "专门招灰尘",
+        "没有任何好处"
+      ],
+      "answerIndex": 0,
+      "explanation": "阳光和通风能帮助干燥、减少部分微生物和螨虫。晒前抖开、晒后拍打，能减少灰尘和潮气。",
+      "subject": "洗晒收纳",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-laundry-002",
+      "prompt": "床单被套建议多久清洗一次？",
+      "options": [
+        "1-2 周一次，出汗多或过敏体质可更勤",
+        "一年一次",
+        "半年一次",
+        "不用洗"
+      ],
+      "answerIndex": 0,
+      "explanation": "床品会积累汗液、皮屑和螨虫。一般 1-2 周清洗一次，夏季或过敏人群可增加频率，并彻底晾干。",
+      "subject": "洗晒收纳",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-laundry-003",
+      "prompt": "血迹沾到床单上，正确的清洗方式是？",
+      "options": [
+        "先用冷水冲洗或浸泡，再用含酶洗涤剂",
+        "马上用热水烫",
+        "直接倒漂白剂",
+        "晒干后再洗"
+      ],
+      "answerIndex": 0,
+      "explanation": "血液中的蛋白质遇热会凝固，冷水更易洗净。顽固血渍可用含酶洗涤剂浸泡；漂白剂要先确认面料是否适用。",
+      "subject": "洗晒收纳",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-laundry-004",
+      "prompt": "阴雨天或雾霾天，衣物更适合怎么处理？",
+      "options": [
+        "放在室内通风处晾干，或用烘干机",
+        "露天淋雨",
+        "挂在马路边",
+        "湿着叠起来"
+      ],
+      "answerIndex": 0,
+      "explanation": "潮湿和污染环境下露天晾晒不易干，还可能吸附污染物。应室内通风或用烘干机，彻底干燥后再收纳。",
+      "subject": "洗晒收纳",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-laundry-005",
+      "prompt": "洗衣服时，洗衣液用量应该怎么掌握？",
+      "options": [
+        "按说明和衣物量使用，过多反而难漂洗",
+        "越多洗得越干净",
+        "完全不用",
+        "只放柔顺剂"
+      ],
+      "answerIndex": 0,
+      "explanation": "过量洗涤剂会残留，刺激皮肤并让衣物发硬。按说明和衣物量添加，必要时多漂洗一次。",
+      "subject": "洗晒收纳",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-laundry-006",
+      "prompt": "毛巾用久了发黏、有异味，最好怎么处理？",
+      "options": [
+        "及时清洗、彻底晾干，定期更换",
+        "喷香水盖住",
+        "一直阴干",
+        "用柔顺剂泡"
+      ],
+      "answerIndex": 0,
+      "explanation": "发黏异味通常是细菌和残留物。应清洗后彻底晾干，避免长期潮湿；无法去除时直接更换。",
+      "subject": "洗晒收纳",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-laundry-007",
+      "prompt": "羽绒服清洗后，正确的晾晒方式是？",
+      "options": [
+        "按标签说明轻柔洗涤，彻底干燥并拍松",
+        "放在烈日下暴晒",
+        "拧成麻花",
+        "湿着收纳"
+      ],
+      "answerIndex": 0,
+      "explanation": "羽绒服要按洗标处理，彻底干燥并轻轻拍打恢复蓬松。暴晒和强拧可能损伤面料和羽绒；潮湿收纳会发霉。",
+      "subject": "洗晒收纳",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-laundry-008",
+      "prompt": "枕芯需要清洁吗？",
+      "options": [
+        "需要，按材质定期清洗或晾晒，减少螨虫和皮屑",
+        "不需要",
+        "只洗枕套就行",
+        "喷香水即可"
+      ],
+      "answerIndex": 0,
+      "explanation": "枕芯会吸收汗液和皮屑，容易滋生螨虫。按材质选择清洗、晾晒或更换，枕套则要更频繁清洗。",
+      "subject": "洗晒收纳",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-laundry-009",
+      "prompt": "深浅色衣物分开洗，主要是为了防止什么？",
+      "options": [
+        "染色",
+        "缩水",
+        "掉扣子",
+        "省水"
+      ],
+      "answerIndex": 0,
+      "explanation": "深色衣物可能掉色，混洗会污染浅色衣物。新买的深色衣物可先单独洗，按颜色和面料分类更稳妥。",
+      "subject": "洗晒收纳",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-laundry-010",
+      "prompt": "内衣裤更建议怎么洗？",
+      "options": [
+        "单独清洗、彻底晾干，必要时消毒",
+        "和外衣袜子一起洗",
+        "阴干",
+        "不洗"
+      ],
+      "answerIndex": 0,
+      "explanation": "内衣裤直接接触皮肤，宜单独清洗并彻底晾干。有真菌感染时按医生建议消毒，避免与他人衣物混洗。",
+      "subject": "洗晒收纳",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-laundry-011",
+      "prompt": "晒被子、床单，哪些做法正确？",
+      "options": [
+        "定期晾晒",
+        "晒前抖开、晒后拍打除尘",
+        "下雨天也露天晒",
+        "保持通风"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "定期晾晒、抖开和通风能减少潮气和灰尘。雨天露天晒只会越晒越湿，应改在室内通风处或烘干。",
+      "subject": "洗晒收纳",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-laundry-012",
+      "prompt": "减少床品螨虫，哪些做法有效？",
+      "options": [
+        "勤洗床单被套",
+        "高温烘干或充分暴晒",
+        "保持卧室干燥",
+        "长期不洗"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        2
+      ],
+      "explanation": "勤洗、高温和干燥能减少螨虫。长期不洗会积累皮屑和过敏原；潮湿环境也会让螨虫繁殖。",
+      "subject": "洗晒收纳",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-laundry-013",
+      "prompt": "洗衣注意事项，哪些正确？",
+      "options": [
+        "先看衣物标签",
+        "深浅色分开",
+        "按说明控制洗衣液用量",
+        "所有衣物都用开水煮"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        2
+      ],
+      "explanation": "标签、分色和用量是基本要求。开水煮会损坏很多面料，应按材质选择水温。",
+      "subject": "洗晒收纳",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-laundry-014",
+      "prompt": "阴干衣物有异味，可能原因有哪些？",
+      "options": [
+        "通风不好",
+        "衣物没有彻底脱水",
+        "晾晒时间不足",
+        "太阳太足"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        2
+      ],
+      "explanation": "通风差、含水多和晾得太久都会让细菌繁殖产生异味。应充分脱水、摊开晾晒并保持空气流通。",
+      "subject": "洗晒收纳",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-laundry-015",
+      "prompt": "床品卫生，哪些建议合理？",
+      "options": [
+        "起床后开窗通风",
+        "定期清洗枕套",
+        "湿着头发直接睡",
+        "汗湿的床单及时更换"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "通风、勤洗枕套和及时更换汗湿床品能减少潮湿和螨虫。湿发睡觉会让枕头长期潮湿，容易滋生细菌。",
+      "subject": "洗晒收纳",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-home-001",
+      "prompt": "下水道堵塞最常见的原因是什么？",
+      "options": [
+        "头发、油脂和杂物堆积",
+        "水流太大",
+        "水压太高",
+        "管道太新"
+      ],
+      "answerIndex": 0,
+      "explanation": "浴室地漏常被头发堵住，厨房水槽常被油脂和食物残渣堵住。安装滤网、不把油脂倒进水槽能减少堵塞。",
+      "subject": "家居维修",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-home-002",
+      "prompt": "厨房水槽堵了，较安全的处理方式是？",
+      "options": [
+        "戴手套清理可见杂物，再用皮搋子疏通",
+        "直接倒入大量强酸",
+        "用开水猛冲",
+        "拆墙换管"
+      ],
+      "answerIndex": 0,
+      "explanation": "先清理可见杂物、用皮搋子更安全。强酸可能腐蚀管道和灼伤皮肤，开水可能让油脂更黏或烫坏软管。",
+      "subject": "家居维修",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-home-003",
+      "prompt": "马桶一直流水不停，最可能是什么问题？",
+      "options": [
+        "水箱里的浮球或排水阀故障，先关角阀再检修",
+        "水压太低",
+        "马桶太新",
+        "这是正常现象"
+      ],
+      "answerIndex": 0,
+      "explanation": "持续流水通常是水箱配件关闭不严。先关角阀止水，再检查浮球、排水阀和密封圈，必要时更换配件。",
+      "subject": "家居维修",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-home-004",
+      "prompt": "自动冲水马桶常见的冲水原理是？",
+      "options": [
+        "人体感应或按钮触发，由电磁阀或排水机构放水",
+        "靠声音大小",
+        "靠人的重量",
+        "靠室温变化"
+      ],
+      "answerIndex": 0,
+      "explanation": "智能马桶通常通过感应或按键给信号，控制电磁阀/排水机构放水。没电或感应失灵时，要用应急冲水方式。",
+      "subject": "家居维修",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-home-005",
+      "prompt": "家里闻到下水道返味，较有效的处理是？",
+      "options": [
+        "检查存水弯是否缺水，清理地漏并保持水封",
+        "喷香水盖住",
+        "把所有窗户封死",
+        "往下水道倒食用油"
+      ],
+      "answerIndex": 0,
+      "explanation": "返味多半是水封干涸或地漏密封不好。应补水、清理地漏、检查存水弯；长期不用时定期补水。",
+      "subject": "家居维修",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-home-006",
+      "prompt": "水龙头出水变小，应该先检查什么？",
+      "options": [
+        "起泡器或滤网是否堵塞",
+        "直接换整根水管",
+        "拆墙",
+        "加装增压泵"
+      ],
+      "answerIndex": 0,
+      "explanation": "先拧下起泡器清理水垢和杂质，再看角阀是否开足。若全屋水压都低，再考虑管道或供水问题。",
+      "subject": "家居维修",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-home-007",
+      "prompt": "燃气报警器和一氧化碳报警器，应该怎么维护？",
+      "options": [
+        "按说明定期测试，保持通电",
+        "直接拆掉",
+        "用塑料袋包住",
+        "只在冬天安装"
+      ],
+      "answerIndex": 0,
+      "explanation": "报警器需要通电并定期按测试键检查。不要遮挡或包裹，按厂家建议更换到期传感器。",
+      "subject": "家居维修",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-home-008",
+      "prompt": "空调滤网一般多久清洁一次？",
+      "options": [
+        "1-2 个月，或按使用环境和积灰情况更勤",
+        "一年一次",
+        "完全不用",
+        "十年一次"
+      ],
+      "answerIndex": 0,
+      "explanation": "滤网积灰会影响风量和空气质量。1-2 个月检查清洗一次，灰尘大的环境更勤，清洗后彻底晾干再装回。",
+      "subject": "家居维修",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-home-009",
+      "prompt": "配电箱里的漏电保护器，建议怎样检查？",
+      "options": [
+        "每月按测试按钮检查，跳闸后先排查原因",
+        "用胶带把开关固定住",
+        "直接拆掉",
+        "用水冲洗"
+      ],
+      "answerIndex": 0,
+      "explanation": "漏电保护器是防触电的重要保护。按说明定期按测试键，动作异常应更换；跳闸后不要强行固定。",
+      "subject": "家居维修",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-home-010",
+      "prompt": "家里发现漏水，第一步应该做什么？",
+      "options": [
+        "关闭对应角阀或总阀，再排查",
+        "继续用水",
+        "用电器吹干",
+        "用布盖住不管"
+      ],
+      "answerIndex": 0,
+      "explanation": "先关阀止水，避免损失扩大和触电风险。再查找漏水点，处理不了就联系物业或专业维修。",
+      "subject": "家居维修",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-home-011",
+      "prompt": "预防下水道堵塞，哪些做法正确？",
+      "options": [
+        "不把油脂倒进水槽",
+        "地漏安装滤网",
+        "头发及时清理",
+        "把厨余垃圾直接冲下去"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        2
+      ],
+      "explanation": "油脂、头发和厨余是常见堵塞物。滤网、及时清理和正确丢弃垃圾能减少堵塞，厨余不要冲入下水道。",
+      "subject": "家居维修",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-home-012",
+      "prompt": "家居用电安全，哪些做法正确？",
+      "options": [
+        "定期测试漏电保护器",
+        "不用湿手操作开关",
+        "私拉乱接电线",
+        "电线远离水源"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "漏保、干燥操作和远离水源是基本要求。私拉乱接容易过载、漏电，应由专业电工处理。",
+      "subject": "家居维修",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-home-013",
+      "prompt": "减少室内潮湿，哪些做法有效？",
+      "options": [
+        "经常通风",
+        "使用除湿机",
+        "浴室开排气扇",
+        "把门窗关紧闷着"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        2
+      ],
+      "explanation": "通风、除湿和排气能降低湿度，减少霉斑和螨虫。长期关窗会让潮气积聚，反而不利于健康。",
+      "subject": "家居维修",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-home-014",
+      "prompt": "发现燃气泄漏，哪些做法正确？",
+      "options": [
+        "关闭燃气阀门",
+        "打开门窗通风",
+        "在室内打电话",
+        "到室外联系燃气公司或报警"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "关阀、通风、到室外求助是正确的。室内打电话、开关电器或按门铃可能产生火花，应避免。",
+      "subject": "家居维修",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-home-015",
+      "prompt": "家庭维修前，哪些安全步骤正确？",
+      "options": [
+        "断电或关闭水源",
+        "准备合适的工具",
+        "带电带水直接操作",
+        "不确定时找专业人员"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "维修前断电关水、使用合适工具能降低风险。水电同时作业非常危险，不确定就请专业人员处理。",
+      "subject": "家居维修",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-parent-001",
+      "prompt": "孩子情绪激动时，第一步更建议怎么做？",
+      "options": [
+        "先共情、倾听，等情绪平稳再讲道理",
+        "立刻大声训斥",
+        "完全不理他",
+        "用手机哄住"
+      ],
+      "answerIndex": 0,
+      "explanation": "情绪高涨时大脑很难处理道理。先蹲下来听、说出孩子的感受，等平静后再一起讨论规则和解决办法。",
+      "subject": "亲子沟通",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-parent-002",
+      "prompt": "表扬孩子时，哪种方式更有效？",
+      "options": [
+        "表扬具体的努力和过程",
+        "只夸“你真聪明”",
+        "只用钱奖励",
+        "总拿别人家孩子比较"
+      ],
+      "answerIndex": 0,
+      "explanation": "具体的努力、方法和进步能帮助孩子建立成长型思维。笼统夸聪明或比较，容易让孩子害怕失败。",
+      "subject": "亲子沟通",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-parent-003",
+      "prompt": "想让孩子配合，哪种说法更好？",
+      "options": [
+        "给出清晰、具体的选择和步骤",
+        "用惩罚威胁",
+        "给孩子贴标签",
+        "反复唠叨很久"
+      ],
+      "answerIndex": 0,
+      "explanation": "清楚、可执行的小步骤和有限选择，比威胁和唠叨更容易让孩子行动。完成后及时肯定。",
+      "subject": "亲子沟通",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-parent-004",
+      "prompt": "孩子犯错后，较好的沟通方式是？",
+      "options": [
+        "先了解原因，再说明规则和补救办法",
+        "当众羞辱",
+        "翻旧账",
+        "体罚"
+      ],
+      "answerIndex": 0,
+      "explanation": "先弄清发生了什么，帮助孩子理解影响、承担后果并补救。羞辱和体罚会破坏信任，不能教会正确行为。",
+      "subject": "亲子沟通",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-parent-005",
+      "prompt": "每天高质量陪伴，重点在于什么？",
+      "options": [
+        "放下手机，专注互动一段时间",
+        "待在同一房间各玩各的",
+        "买很多礼物",
+        "报很多兴趣班"
+      ],
+      "answerIndex": 0,
+      "explanation": "高质量陪伴不在时长，而在专注和回应。哪怕每天十几分钟一起聊天、读书或玩游戏，也比各玩各的更有效。",
+      "subject": "亲子沟通",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-parent-006",
+      "prompt": "兄弟姐妹争抢玩具，家长更合适的做法是？",
+      "options": [
+        "先安抚情绪，引导轮流或协商，必要时定规则",
+        "只批评大的孩子",
+        "直接把玩具没收",
+        "让小的随便拿"
+      ],
+      "answerIndex": 0,
+      "explanation": "先处理情绪，再教协商和轮流，规则要稳定。总让大的让、或偏袒小的，会让冲突和委屈积累。",
+      "subject": "亲子沟通",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-parent-007",
+      "prompt": "孩子长期不愿和父母沟通，家长应该怎么做？",
+      "options": [
+        "创造轻松的固定交流时间，少评判多倾听；持续严重时寻求专业帮助",
+        "不断逼问",
+        "偷看日记",
+        "冷战"
+      ],
+      "answerIndex": 0,
+      "explanation": "固定的轻松时光和少评判的倾听能慢慢恢复信任。逼问、偷看会破坏信任；持续情绪低落或自我伤害倾向要寻求专业帮助。",
+      "subject": "亲子沟通",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-parent-008",
+      "prompt": "家庭规则怎样更有效？",
+      "options": [
+        "少而清晰、全家一致、提前说明后果",
+        "每天随意改变",
+        "只对孩子要求",
+        "靠大声吼叫"
+      ],
+      "answerIndex": 0,
+      "explanation": "规则要具体、可执行，大人也要遵守，并在事前说明。一致性和可预期性比规则数量更重要。",
+      "subject": "亲子沟通",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-parent-009",
+      "prompt": "安排孩子做家务，合适的态度是？",
+      "options": [
+        "按年龄安排力所能及的事，肯定参与",
+        "所有家务大人全包",
+        "把家务当惩罚",
+        "只要求孩子学习"
+      ],
+      "answerIndex": 0,
+      "explanation": "适龄家务能培养责任感和能力。把家务当惩罚会让孩子厌恶参与；完成后肯定付出，而不是只挑毛病。",
+      "subject": "亲子沟通",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-parent-010",
+      "prompt": "发现孩子撒谎，较好的处理方式是？",
+      "options": [
+        "保持冷静，了解动机，强调诚实和安全，一起补救",
+        "打骂",
+        "贴“骗子”标签",
+        "从此不再信任"
+      ],
+      "answerIndex": 0,
+      "explanation": "孩子撒谎常与害怕、逃避或想象有关。先了解原因，让他知道说实话是安全的，再一起承担和补救。",
+      "subject": "亲子沟通",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-parent-011",
+      "prompt": "积极倾听，哪些做法正确？",
+      "options": [
+        "放下手机",
+        "看着孩子并给予回应",
+        "打断孩子说教",
+        "复述孩子的感受"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "放下手机、眼神回应和复述感受能让孩子感到被听见。急着打断和说教，会让孩子不愿继续说。",
+      "subject": "亲子沟通",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    },
+    {
+      "questionId": "life-parent-012",
+      "prompt": "建立孩子的安全感，哪些做法有帮助？",
+      "options": [
+        "稳定回应",
+        "尊重孩子的感受",
+        "经常威胁“不要你了”",
+        "答应的事尽量做到"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "稳定回应、尊重感受和说到做到能建立信任。用抛弃、羞辱来威胁，会让孩子长期焦虑。",
+      "subject": "亲子沟通",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-parent-013",
+      "prompt": "管理屏幕时间，哪些做法合理？",
+      "options": [
+        "提前约定时长和规则",
+        "家长以身作则",
+        "用屏幕换孩子安静",
+        "提供替代活动"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "事先约定、家长示范和替代活动更有效。把屏幕当“安静工具”会强化依赖，规则也容易失控。",
+      "subject": "亲子沟通",
+      "grade": "家长",
+      "difficulty": "medium",
+      "points": 1,
+      "timeLimitSec": 90,
+      "recommendedTimeSec": 90
+    },
+    {
+      "questionId": "life-parent-014",
+      "prompt": "孩子发脾气时，哪些做法更合适？",
+      "options": [
+        "保证周围安全",
+        "帮助孩子说出情绪",
+        "以暴制暴",
+        "事后一起复盘"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "先保证安全、命名情绪，等平静后复盘。打骂会让孩子学会用暴力解决问题，也破坏亲子信任。",
+      "subject": "亲子沟通",
+      "grade": "家长",
+      "difficulty": "hard",
+      "points": 1,
+      "timeLimitSec": 120,
+      "recommendedTimeSec": 120
+    },
+    {
+      "questionId": "life-parent-015",
+      "prompt": "促进亲子关系，哪些活动合适？",
+      "options": [
+        "一起做饭",
+        "户外散步",
+        "各玩各的手机",
+        "睡前聊天"
+      ],
+      "type": "multiple",
+      "presentation": "choice",
+      "answerIndices": [
+        0,
+        1,
+        3
+      ],
+      "explanation": "共同做事、散步和睡前聊天能创造交流机会。各玩各的手机会减少互动，让陪伴变成“同处一室”。",
+      "subject": "亲子沟通",
+      "grade": "家长",
+      "difficulty": "easy",
+      "points": 1,
+      "timeLimitSec": 60,
+      "recommendedTimeSec": 60
+    }
+  ]
+}

@@ -45,7 +45,11 @@ class PolicyGuardSelectorTest {
 
     @Test
     fun doneRuleWithBrokenTemplateFallsBackToRedemption() {
-        val broken = LocalRules(weekdayWindows = emptyList(), weekendWindows = emptyList())
+        val broken = LocalRules.DEFAULTS.copy(
+            dayGroups = LocalRules.DEFAULTS.dayGroups.map {
+                it.copy(studyWindows = emptyList(), entertainmentWindows = emptyList())
+            },
+        )
         assertEquals(
             PolicyGuardChoice.CloudRedeem,
             PolicyGuardSelector.select(true, policy(rules = broken), localRulesUsable = true),

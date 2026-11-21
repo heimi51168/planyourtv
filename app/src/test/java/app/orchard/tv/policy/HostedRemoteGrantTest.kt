@@ -2,7 +2,6 @@ package app.orchard.tv.policy
 
 import android.os.PowerManager
 import com.planyourtv.policy.AccessMode
-import com.planyourtv.policy.Activation
 import com.planyourtv.policy.LocalPolicyStore
 import com.planyourtv.policy.LocalRules
 import com.planyourtv.policy.LocalTimeWindow
@@ -38,8 +37,12 @@ class HostedRemoteGrantTest {
     private var epoch = 0L
 
     private fun rules() = LocalRules(
-        weekdayWindows = listOf(LocalTimeWindow(0, 24 * 60)),
-        weekendWindows = listOf(LocalTimeWindow(0, 24 * 60)),
+        dayGroups = LocalRules.fromLegacyWeekdayWeekend(
+            weekdayWindows = listOf(LocalTimeWindow(0, 24 * 60)),
+            weekendWindows = listOf(LocalTimeWindow(0, 24 * 60)),
+            weekdayLimitMinutes = null,
+            weekendLimitMinutes = null,
+        ),
         restMinutes = 0,
         allowedPackages = setOf(videoPackage),
     )
@@ -397,16 +400,6 @@ class HostedRemoteGrantTest {
     }
 
     @Test
-    fun localManualStartIsStillRefusedWhenHostedActivationIsAuto() {
-        assertTrue(LocalPolicyRuntime.setActivation(Activation.AUTO))
-        assertEquals(
-            SessionStartResult.Rejected(RejectReason.ACTIVATION_MISMATCH),
-            LocalPolicyRuntime.startManualSession(20 * 60L),
-        )
-        assertNull(LocalPolicyRuntime.currentPlan)
-    }
-
-    @Test
     fun localManualStartStillHonorsTheConfiguredWindow() {
         // Pick a window that cannot contain the current minute so the check is deterministic.
         val minute = LocalDateTime.now().let { it.hour * 60 + it.minute }
@@ -416,9 +409,11 @@ class HostedRemoteGrantTest {
             else -> 0
         }
         val window = LocalTimeWindow(start, start + 60)
-        val closed = rules().copy(
-            weekdayWindows = listOf(window),
-            weekendWindows = listOf(window),
+        val base = rules()
+        val closed = base.copy(
+            dayGroups = base.dayGroups.map {
+                it.copy(entertainmentWindows = listOf(window))
+            },
         )
         assertTrue(LocalPolicyRuntime.setRulesWithVersion(closed, 2L))
         assertEquals(

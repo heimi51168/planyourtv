@@ -5,6 +5,7 @@ import android.os.PowerManager
 import android.os.SystemClock
 import android.util.Log
 import app.orchard.tv.R
+import app.orchard.tv.quiz.QuizLaunchTarget
 import app.orchard.tv.system.BootOpen
 import com.planyourtv.policy.AccessMode
 import com.planyourtv.policy.Activation
@@ -18,6 +19,7 @@ import com.planyourtv.policy.LocalRuleSets
 import com.planyourtv.policy.LocalRuleSetsLoad
 import com.planyourtv.policy.LocalRules
 import com.planyourtv.policy.LocalSessionEnd
+import com.planyourtv.policy.ManualTimerScope
 import com.planyourtv.policy.LocalTimeWindow
 import com.planyourtv.policy.LockReason
 import com.planyourtv.policy.OverrideLease
@@ -32,6 +34,7 @@ import com.planyourtv.policy.PolicyFlowTrace
 import com.planyourtv.policy.PolicyMode
 import com.planyourtv.policy.PolicyPlanSource
 import com.planyourtv.policy.PolicyRecoveryPolicy
+import com.planyourtv.policy.PolicyRuntime
 import com.planyourtv.policy.PolicySessionOrigin
 import com.planyourtv.policy.PolicySource
 import com.planyourtv.policy.PolicyStateRepository
@@ -40,16 +43,17 @@ import com.planyourtv.policy.PolicyVoiceBus
 import com.planyourtv.policy.PolicyVoiceCue
 import com.planyourtv.policy.RecoveryNow
 import com.planyourtv.policy.RejectReason
-import com.planyourtv.policy.RulePlanDecision
-import com.planyourtv.policy.RulePlanScheduler
 import com.planyourtv.policy.RuleUsageEventFactory
+import com.planyourtv.policy.RouteUsage
 import com.planyourtv.policy.RuleUsageEventType
 import com.planyourtv.policy.RuleUsageSink
 import com.planyourtv.policy.RuleUsageStore
 import com.planyourtv.policy.RuntimeLedger
 import com.planyourtv.policy.RuntimeSnapshot
 import com.planyourtv.policy.SavedLocalSession
+import com.planyourtv.policy.SavedStudyRound
 import com.planyourtv.policy.ScreenOffEvidence
+import com.planyourtv.policy.SessionPauseReason
 import com.planyourtv.policy.SessionPhase
 import com.planyourtv.policy.SessionSnapshot
 import com.planyourtv.policy.SessionStartResult
@@ -57,7 +61,14 @@ import com.planyourtv.policy.SessionState
 import com.planyourtv.policy.SessionTiming
 import com.planyourtv.policy.SettledSessionSnapshot
 import com.planyourtv.policy.StudyLease
+import com.planyourtv.policy.StudyRoundUi
 import com.planyourtv.policy.TvStore
+import com.planyourtv.policy.UnlockRoute
+import com.planyourtv.policy.UnlockRouteDecision
+import com.planyourtv.policy.UnlockRouteFacts
+import com.planyourtv.policy.UnlockRoutePlan
+import com.planyourtv.policy.UnlockRoutePlanner
+import com.planyourtv.policy.UnlockRouteReason
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -68,18 +79,21 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
 import java.time.Duration
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.time.format.TextStyle
 import java.util.Locale
 import java.util.UUID
 
 /**
- * The TV's single local executor. Automatic and manual entertainment sessions share this timer,
- * ledger, rest and app scope; study mode only replaces the visible app scope and has no timer,
+ * The TV's single local executor. Manual entertainment sessions own this timer, ledger, rest and
+ * app scope; study mode only replaces the visible app scope and has no timer,
  * ledger or plan. The executor never reads the network: hosted clients write the config mirror
  * and send commands, and this object executes from the local cache.
  */
@@ -91,6 +105,7 @@ object LocalPolicyRuntime {
     private const val SETTLED_GRANT_LIMIT = 32
     private const val SETTLED_SESSION_LIMIT = 64
     private const val KEPT_USAGE_DAYS = 3
+    private const val LEDGER_RETENTION_DAYS = 31
     private val USAGE_DATE = Regex("""\d{4}-\d{2}-\d{2}""")
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -99,12 +114,12 @@ object LocalPolicyRuntime {
     private var initialized = false
     private var active = false
     private var rules: LocalRules? = null
-    /** Both stored time-rule sets; [rules] is always their materialized active snapshot. */
+    /** The stored manual time-rule set; [rules] is its materialized snapshot. */
     private var ruleSets: LocalRuleSets? = null
     private var session: LocalActiveSession? = null
     /**
      * The exchange record that started the running session. Only a record-backed remote session
-     * is stopped when the REST snapshot says the record is gone; LOCAL, automatic and the
+     * is stopped when the REST snapshot says the record is gone; a LOCAL start and the
      * record-less PTV dispatch keep running even if the grant poll is empty.
      */
     private var activeRemoteRecordId: Int = 0
@@ -134,12 +149,29 @@ object LocalPolicyRuntime {
      */
     private var pendingRemoteStart: PendingRemoteStart? = null
 
+    /**
+     * A focused study-to-earn round. It is a timer only: no entertainment session, ledger entry or
+     * plan exists while it runs. The round is stored under its own key so the runtime snapshot
+     * codec (and its strict version contract) does not change.
+     */
+    private var studyRound: LocalStudyRound? = null
+    private var studyRoundSavedTick = 0L
+
     /** Grant records already confirmed, stopped or canceled here; a poll must not re-arm them. */
     private val settledGrantRecords = LinkedHashSet<Int>()
     private var dayKey = ""
     private var usedSeconds = 0L
+    /**
+     * V44 successful-session counts for the three child unlock routes. The date is part of the
+     * value; anything left over from another local day is treated as zero.
+     */
+    private var routeUsage: RouteUsage? = null
     /** Recent daily totals, including a session settled into the date it actually ran. */
     private val dayUsage = LinkedHashMap<String, Long>()
+    /** Focused study seconds per local date; never charged to [dayUsage]. */
+    private val studyDays = LinkedHashMap<String, Long>()
+    /** Last foreground package reported by the guard; memory-only, used to resume on return. */
+    private var foregroundPackage: String? = null
     private var breakUntil = 0L
     private var lastSessionEndedAt = 0L
     /** Sessions already settled, keyed by id, so a crash cannot add their usage twice. */
@@ -151,12 +183,24 @@ object LocalPolicyRuntime {
     private var recoveryComplete = false
     private var activation = Activation.MANUAL
     private var source = PolicySource.LOCAL
+    /**
+     * True once the hosted (cloud) execution partition has been read into memory. Kept separate
+     * from [source] because setSource is also called while no partition is active.
+     */
+    private var hostedExecutionLoaded = false
+    private val hostedStorage: Boolean get() = source == PolicySource.HOSTED
+    /**
+     * Cloud member that owns the hosted partition currently in memory (2026-11-21). The hosted
+     * snapshot is keyed by this id, so switching the TV desktop user restores that child's own
+     * ledger and rest cursor instead of leaking the previous child's state. 0 = the pre-scope
+     * device-global partition, used only before the roster is known or when migrating it.
+     */
+    private var hostedSubjectId = 0L
+    private val hostedScope: String? get() = LocalPolicyStore.hostedScopeOf(hostedSubjectId)
     private var policyEpoch = 0L
     private var studyMode = false
-    private var autoReady = false
     /** Launchable packages, cached so an all-apps policy can publish a concrete APPS scope. */
     private var installedPackages: Set<String> = emptySet()
-    private var blockedWindowKey = ""
     private var lockReason = LockReason.NONE
     private var nextWindowLabel = ""
     private var restRemainingSeconds = 0L
@@ -172,6 +216,34 @@ object LocalPolicyRuntime {
     private val _revision = MutableStateFlow(0L)
     val revision: StateFlow<Long> = _revision.asStateFlow()
 
+    private data class LocalStudyRound(
+        val studyPackage: String,
+        val targetPackage: String?,
+        /** This round's own allowance; the study window and quota are checked on every tick. */
+        val totalSeconds: Long,
+        val remainingSeconds: Long,
+        /** Accrued focus time, used once for the X-minute reward attempt. */
+        val studiedSeconds: Long = 0L,
+        val rewardSeconds: Long,
+        /** Only a study app in studyEarnPackages may trade this round for entertainment. */
+        val rewardEnabled: Boolean = false,
+        /** The one attempt happened; an unavailable reward is never retried this round. */
+        val rewardAttempted: Boolean = false,
+        val rewardGranted: Boolean = false,
+        /** The date this round's study seconds are charged to. */
+        val usageDate: String = "",
+        val startedAtEpochMs: Long,
+        val boot: BootEvidence = BootEvidence(),
+        /**
+         * Non-zero while the countdown is frozen. It is memory-only: after a process restart the
+         * round always restores paused, so a persisted flag could only resurrect a running round
+         * the child never explicitly resumed.
+         */
+        val pausedAtEpochMs: Long = 0L,
+    ) {
+        val isPaused: Boolean get() = pausedAtEpochMs > 0L
+    }
+
     private data class LocalActiveSession(
         val plan: PolicyExecutionPlan,
         val remainingSeconds: Long,
@@ -179,8 +251,9 @@ object LocalPolicyRuntime {
         val usageDate: String,
         /** Fixed at the first start: budget + screen-off grace, capped by the day. */
         val wallDeadlineEpochMs: Long,
-        /** Non-zero while the screen is off. Pausing never consumes [remainingSeconds]. */
+        /** Non-zero while the screen is off or an unlimited app is in front. */
         val pausedAtEpochMs: Long = 0L,
+        val pauseReason: SessionPauseReason? = null,
     ) {
         val totalSeconds: Long get() = plan.budgetSeconds
 
@@ -254,15 +327,17 @@ object LocalPolicyRuntime {
         remainingSeconds: Long,
         paused: Boolean,
         nowMs: Long,
+        pauseReason: SessionPauseReason? = null,
     ): LocalActiveSession {
         val consumed = (saved.totalSeconds - remainingSeconds).coerceAtLeast(0L)
         val startedAt = saved.startedAtEpochMs.takeIf { it > 0 }
             ?: (nowMs - consumed * 1_000L).coerceAtLeast(1L)
         val usageDate = saved.usageDate.takeIf { USAGE_DATE.matches(it) } ?: dayKey
         val endReason = saved.endReason.toPolicyEndReason()
-        val restAfter = if (endReason == PolicyEndReason.SESSION_LIMIT) {
+        val today = LocalDate.now().dayOfWeek.value
+        val restAfter = if (!saved.outsidePlan && endReason == PolicyEndReason.SESSION_LIMIT) {
             saved.restAfterSeconds.takeIf { it > 0 }
-                ?: ((rules?.restMinutes ?: 0) * 60L)
+                ?: ((rules?.restFor(today) ?: 0) * 60L)
         } else {
             0L
         }
@@ -278,6 +353,7 @@ object LocalPolicyRuntime {
             restAfterSeconds = restAfter,
             templateVersion = saved.templateVersion.takeIf { it > 0 } ?: templateVersion,
             sessionId = saved.sessionId,
+            outsidePlan = saved.outsidePlan,
         )
         // Sessions written before V11 have no fixed wall deadline. Reconstruct one from the
         // same start snapshot; the buffer is a grace, never an extension of usable time.
@@ -285,7 +361,7 @@ object LocalPolicyRuntime {
             ?: SessionTiming.wallDeadlineEpochMs(
                 startedAtEpochMs = startedAt,
                 budgetSeconds = saved.totalSeconds,
-                bufferMinutes = rules?.sessionScreenOffBufferMinutes
+                bufferMinutes = rules?.screenOffBufferFor(today)
                     ?: LocalRules.DEFAULT_SESSION_BUFFER_MINUTES,
                 planDeadlineEpochMs = saved.planDeadlineEpochMs.takeIf { it > 0L },
                 nextMidnightEpochMs = nextMidnightEpochMs(LocalDateTime.now()),
@@ -297,6 +373,7 @@ object LocalPolicyRuntime {
             usageDate = usageDate,
             wallDeadlineEpochMs = wallDeadline,
             pausedAtEpochMs = if (paused) nowMs.coerceAtLeast(1L) else 0L,
+            pauseReason = pauseReason.takeIf { paused },
         )
     }
 
@@ -385,8 +462,7 @@ object LocalPolicyRuntime {
     ): Long {
         val configured = rules?.normalized() ?: return 0L
         val restSeconds = LocalRestPolicy.restSeconds(
-            activation = activation,
-            configuredRestMinutes = configured.restMinutes,
+            configuredRestMinutes = configured.restFor(LocalDate.now().dayOfWeek.value),
             endReason = endReason,
             planRestSeconds = planRestSeconds,
             skipRest = skipRest,
@@ -408,6 +484,12 @@ object LocalPolicyRuntime {
         if (settledSessions.containsKey(saved.sessionId)) return
         val consumed = (saved.totalSeconds - saved.remainingSeconds).coerceAtLeast(0L)
         if (consumed <= 0L) return
+        if (saved.outsidePlan) {
+            // The parent timer never touches the ledger or rest, including when it ended while
+            // the process was dead. There is nothing to enqueue either.
+            Log.i(TAG, "recovered outside-plan session dropped id=${saved.sessionId} consumed=$consumed")
+            return
+        }
         val startedAt = saved.startedAtEpochMs.takeIf { it > 0 }
             ?: (endedAtEpochMs - consumed * 1_000L).coerceAtLeast(1L)
         val usageDate = saved.usageDate.takeIf { USAGE_DATE.matches(it) } ?: dayKey
@@ -479,26 +561,59 @@ object LocalPolicyRuntime {
         if (!TvStore.isReady && !TvStore.init(ctx)) return
         recoveryComplete = false
         refreshInstalledPackages()
-        // Read the activation first: the legacy v1 reader fills missing fields from the defaults
-        // of the saved activation.
-        activation = LocalPolicyStore.loadActivation()
-        loadRuleSets()
-        policyEpoch = LocalPolicyStore.policyEpoch()
-        settledGrantRecords.clear()
-        settledGrantRecords.addAll(LocalPolicyStore.settledGrantRecordIds())
-        blockedWindowKey = LocalPolicyStore.autoBlockKey()
+        // Runs the one-way legacy migration before any policy state is read. When it cannot
+        // complete, the runtime keeps the legacy single-user state instead of bricking the TV.
+        FamilyHub.initialize(ctx)
+        // The legacy mirror is the migration source for the default member only. A later child
+        // without a subject document must boot unconfigured instead of inheriting the first
+        // child's rules, activation or usage.
+        val family = FamilyHub.state.value
+        val isDefaultSubject = !family.ready || family.activeUserId == family.defaultUserId
+        val subjectConfig = FamilyHub.activeConfig()
+        // Execution is manual-only; a stored AUTO cursor is never restored.
+        activation = Activation.MANUAL
+        loadRuleSets(subjectConfig, allowLegacyFallback = isDefaultSubject)
+        restoreRuntimePartition(allowLegacyFallback = isDefaultSubject)
+        recoveryComplete = true
+        initialized = true
+        checkpointRuntime(durable = true, forceSync = true)
+        publish()
+    }
 
-        // Load the two atomic partitions before deriving anything. The repository performs the
-        // one-time migration from the pre-V37 scattered keys and reports the source it used.
+    /**
+     * Reads one execution partition into memory. LOCAL is the TV's own child mode (subject cache
+     * plus legacy mirror); HOSTED is the cloud rule guard's private partition. They share no key:
+     * binding, unbinding or switching modes must never convert one into the other.
+     */
+    private fun restoreRuntimePartition(allowLegacyFallback: Boolean) {
+        val hosted = hostedStorage
+        policyEpoch = LocalPolicyStore.policyEpoch(hosted = hosted, hostedScope = hostedScope)
+        settledGrantRecords.clear()
+        settledGrantRecords.addAll(
+            LocalPolicyStore.settledGrantRecordIds(hosted = hosted, hostedScope = hostedScope),
+        )
+
         val nowWall = System.currentTimeMillis()
-        val runtimeLoad = PolicyStateRepository.loadRuntimeOrMigrate()
-        val savedRuntime = runtimeLoad.snapshot
-        dayKey = LocalDate.now().toString()
-        dayUsage.clear()
-        savedRuntime.ledger.days.forEach { (date, seconds) ->
-            if (USAGE_DATE.matches(date)) dayUsage[date] = seconds
+        val savedRuntime = if (hosted) {
+            PolicyStateRepository.loadRuntimeOrMigrate(
+                hosted = true,
+                hostedScope = hostedScope,
+            ).snapshot
+        } else {
+            // The subject cache is authoritative after migration; the repository is the fallback
+            // only for the default member (including a family that could not be created or
+            // repaired), and still performs the pre-V37 key migration.
+            val legacyRuntime = if (allowLegacyFallback) {
+                PolicyStateRepository.loadRuntimeOrMigrate().snapshot
+            } else {
+                null
+            }
+            freshestRuntime(FamilyHub.activeRuntime()?.runtime, legacyRuntime)
+                ?: RuntimeSnapshot()
         }
-        usedSeconds = dayUsage[dayKey] ?: 0L
+        dayKey = LocalDate.now().toString()
+        loadLedgers(savedRuntime.ledger)
+        routeUsage = savedRuntime.ledger.routeUsage?.normalizedFor(dayKey)
         breakUntil = savedRuntime.ledger.breakUntilEpochMs.takeIf { it > nowWall } ?: 0L
         lastSessionEndedAt = savedRuntime.ledger.lastEndedAtEpochMs
         settledSessions.clear()
@@ -508,7 +623,10 @@ object LocalPolicyRuntime {
         }
         restorePendingGrant(savedRuntime.ledger.pendingGrant, nowWall)
 
-        guardSnapshot = PolicyStateRepository.loadGuard().snapshot
+        guardSnapshot = PolicyStateRepository.loadGuard(
+            hosted = hosted,
+            hostedScope = hostedScope,
+        ).snapshot
         val now = recoveryNow(nowWall)
         val screenInteractive = isScreenInteractive()
         val savedSession = savedRuntime.session
@@ -524,9 +642,10 @@ object LocalPolicyRuntime {
             activeRemoteRecordId = 0
             sessionReportUsage = false
             lastUsageReportedSeconds = 0L
-            if (savedSession != null && rules?.isUsable != true) {
+            if (savedSession != null && rules?.isUsable != true && !hosted) {
                 // The plan cannot be rebuilt without its rules. Drop it rather than charge time
-                // that cannot be reported; the legacy path behaved the same way.
+                // that cannot be reported; the legacy path behaved the same way. The legacy
+                // session keys belong to LOCAL and are never touched by a hosted restore.
                 LocalPolicyStore.clearSession()
             }
         } else {
@@ -537,22 +656,6 @@ object LocalPolicyRuntime {
                 (restored.totalSeconds - restored.remainingSeconds).coerceAtLeast(0L)
             // The dead gap up to this moment is now reflected in the budget and this checkpoint.
             markCheckpoint(nowWall)
-        }
-
-        // Older builds closed the whole window after a parent stop. Convert that block to the
-        // rest interval derived from the last recorded session, so the child waits only until
-        // the configured rest is over instead of until the next window.
-        if (blockedWindowKey.isNotEmpty()) {
-            val availableAt = legacyBlockAvailableAt(nowWall)
-            blockedWindowKey = ""
-            LocalPolicyStore.saveAutoBlockKey("")
-            if (availableAt != null && availableAt > nowWall && breakUntil <= nowWall) {
-                breakUntil = availableAt
-            } else if (activation == Activation.AUTO && session == null && breakUntil == 0L) {
-                // The rest is already over (or there is no record to derive one from): wait for
-                // the child to press the start button instead of auto-starting behind the lock.
-                LocalPolicyStore.saveAutoReady(true)
-            }
         }
 
         val guardRestored = restoreGuard(
@@ -566,6 +669,7 @@ object LocalPolicyRuntime {
             parentOverrideUntil = 0L
             studyMode = false
         }
+        restoreStudyRound()
 
         // Recover the rest cursor if the process died after recording the session end but
         // before writing BREAK_UNTIL. V37 writes both in one snapshot; this only fills the gap
@@ -573,17 +677,12 @@ object LocalPolicyRuntime {
         if (session == null && breakUntil == 0L && lastSessionEndedAt > 0L) {
             recoverRestFromLastEnd(nowWall)
         }
-        // AUTO_READY is a lock-screen state, not a transient tick value: after a reboot the
-        // child must still see "开始计时" instead of the scheduler starting a segment by itself.
-        val persistedAutoReady = LocalPolicyStore.autoReady()
-        autoReady = activation == Activation.AUTO &&
-            session == null &&
-            rules?.isUsable == true &&
-            persistedAutoReady
-        if (persistedAutoReady && !autoReady) LocalPolicyStore.saveAutoReady(false)
-
-        // The v2 phase is authoritative; the old boolean is kept in sync only for rollback.
-        LocalPolicyStore.saveParentOverrideActive(guardStatus == GuardStatus.PARENT_OVERRIDE)
+        if (!hosted) {
+            // The v2 phase is authoritative; the old boolean is kept in sync only for rollback.
+            LocalPolicyStore.saveParentOverrideActive(
+                guardStatus == GuardStatus.PARENT_OVERRIDE,
+            )
+        }
         saveGuardState(
             phase = guardStatus,
             override = guardSnapshot.override.takeIf {
@@ -591,10 +690,21 @@ object LocalPolicyRuntime {
             },
             study = guardSnapshot.study.takeIf { guardStatus == GuardStatus.STUDY_MODE },
         )
-        recoveryComplete = true
-        initialized = true
-        checkpointRuntime(durable = true, forceSync = true)
-        publish()
+    }
+
+    /** Loads the entertainment and study ledgers; the study ledger never feeds [usedSeconds]. */
+    private fun loadLedgers(ledger: RuntimeLedger) {
+        dayUsage.clear()
+        ledger.days.entries
+            .filter { (date, seconds) -> USAGE_DATE.matches(date) && seconds >= 0L }
+            .takeLast(LEDGER_RETENTION_DAYS)
+            .forEach { (date, seconds) -> dayUsage[date] = seconds }
+        usedSeconds = dayUsage[dayKey] ?: 0L
+        studyDays.clear()
+        ledger.studyDays.entries
+            .filter { (date, seconds) -> USAGE_DATE.matches(date) && seconds >= 0L }
+            .takeLast(LEDGER_RETENTION_DAYS)
+            .forEach { (date, seconds) -> studyDays[date] = seconds }
     }
 
     /**
@@ -642,7 +752,12 @@ object LocalPolicyRuntime {
         // A process restart is not a screen-on action: resume a paused session silently when the
         // screen is lit, otherwise keep it paused so the budget stays untouched.
         val paused = saved.phase == SessionPhase.PAUSED || !screenInteractive
-        return restoreSession(saved, remaining, paused, now.wallMs)
+        val pauseReason = if (!paused) {
+            null
+        } else {
+            if (!screenInteractive) SessionPauseReason.SCREEN_OFF else saved.pauseReason
+        }
+        return restoreSession(saved, remaining, paused, now.wallMs, pauseReason)
     }
 
     /**
@@ -676,6 +791,103 @@ object LocalPolicyRuntime {
             userIconUrl = saved.userIconUrl,
         )
         lockReason = LockReason.NONE
+    }
+
+    /**
+     * Restores a focus round only on the same boot and only while its study app is still enabled
+     * for redemption. A restart drops it (the child must study again); dead time is never charged,
+     * so a restored round can only be shorter, never a free reward.
+     *
+     * A restored round is always paused. The process cannot prove the child was still in the study
+     * app while it was dead, and Aerial is in front at restore time, so counting would charge the
+     * child for sitting on the focus desktop. 继续学习 resumes it explicitly.
+     */
+    private fun restoreStudyRound() {
+        studyRound = null
+        studyRoundSavedTick = 0L
+        val hosted = hostedStorage
+        // Once the subject cache exists it is authoritative even when it holds no round: falling
+        // back to the legacy key would resurrect a round this subject already canceled. Only
+        // the default member (or a family that failed to load) may read that legacy key.
+        // The hosted partition has no subject cache: its round lives only under HOSTED_*.
+        val family = FamilyHub.state.value
+        val isDefaultSubject = !family.ready || family.activeUserId == family.defaultUserId
+        val subjectRuntime = if (hosted) null else FamilyHub.activeRuntime()
+        val saved: SavedStudyRound? = when {
+            hosted -> LocalPolicyStore.loadStudyRound(hosted = true, hostedScope = hostedScope)
+            subjectRuntime != null -> subjectRuntime.studyRound
+            isDefaultSubject -> LocalPolicyStore.loadStudyRound()
+            else -> null
+        }
+        if (saved == null) {
+            // The subject document is authoritative even when it holds no round. Drop a stale
+            // default-member mirror so a later downgrade cannot resurrect a canceled round.
+            if (!hosted && isDefaultSubject && subjectRuntime != null) {
+                LocalPolicyStore.clearStudyRound()
+            }
+            return
+        }
+        val configured = rules?.normalized()
+        val sameDay = saved.usageDate == LocalDate.now().toString()
+        val studyLimit = configured?.studyDailyLimitFor(LocalDate.now().dayOfWeek.value)
+        val usedStudy = studyDays[saved.usageDate] ?: 0L
+        val valid = configured != null &&
+            configured.isUsable &&
+            saved.boot.sameBoot(bootEvidence()) &&
+            sameDay &&
+            saved.remainingSeconds > 0L &&
+            saved.studiedSeconds <= saved.totalSeconds &&
+            configured.studyRouteActive &&
+            saved.studyPackage in configured.effectiveStudyPackages &&
+            (studyLimit == null || usedStudy < studyLimit * 60L) &&
+            session == null &&
+            pendingRemoteStart == null &&
+            guardStatus == GuardStatus.ENFORCING &&
+            activation == Activation.MANUAL &&
+            !studyMode
+        if (!valid) {
+            LocalPolicyStore.clearStudyRound(hosted = hosted, hostedScope = hostedScope)
+            return
+        }
+        val timedPackages = configured?.timedPackages().orEmpty()
+        val rewardEnabled = saved.rewardEnabled &&
+            saved.studyPackage in configured.effectiveStudyEarnPackages
+        val target = saved.targetPackage
+            ?.takeIf { rewardEnabled && it in timedPackages }
+        // An old saved round may carry a reward above the current cap or above the current
+        // effective Y; clamp it on restore so the attempt and the study UI agree.
+        val savedRewardSeconds = if (rewardEnabled) {
+            saved.rewardSeconds.coerceIn(
+                0L,
+                configured.effectiveStudyRewardMinutes.toLong() * 60L,
+            )
+        } else {
+            0L
+        }
+        studyRound = LocalStudyRound(
+            studyPackage = saved.studyPackage,
+            targetPackage = target,
+            totalSeconds = saved.totalSeconds,
+            remainingSeconds = saved.remainingSeconds,
+            studiedSeconds = saved.studiedSeconds,
+            rewardSeconds = savedRewardSeconds,
+            rewardEnabled = rewardEnabled,
+            rewardAttempted = saved.rewardAttempted,
+            rewardGranted = saved.rewardGranted,
+            usageDate = saved.usageDate,
+            startedAtEpochMs = saved.startedAtEpochMs,
+            boot = saved.boot,
+            pausedAtEpochMs = System.currentTimeMillis(),
+        )
+        LockLaunchPermit.setRoundPackage(saved.studyPackage)
+        PolicyFlowTrace.event(
+            "study.round.restore",
+            "study" to saved.studyPackage,
+            "remaining" to saved.remainingSeconds,
+            "reward" to rewardEnabled,
+            "target" to target,
+            "paused" to true,
+        )
     }
 
     /**
@@ -737,36 +949,40 @@ object LocalPolicyRuntime {
     }
 
     /**
-     * Loads both stored time-rule sets. A pre-v2 install is migrated once from its single v1
-     * set (rest preserved); a corrupt v2 document fails closed to setup-required and is never
-     * silently replaced by the v1 snapshot, which would discard the inactive set unnoticed.
+     * Loads the stored manual time-rule set. A pre-v2 install is migrated once from its single
+     * v1 set (rest preserved); a corrupt v2 document fails closed to setup-required and is never
+     * silently replaced by the v1 snapshot.
      */
-    private fun loadRuleSets() {
+    private fun loadRuleSets(
+        subjectConfig: com.planyourtv.policy.SubjectConfigDocument? = null,
+        /**
+         * Only the default member may fall back to the legacy mirror. A later child without a
+         * subject document must start unconfigured instead of inheriting the first child's rules.
+         */
+        allowLegacyFallback: Boolean = true,
+    ) {
+        if (subjectConfig != null && subjectConfig.ruleSets.isUsable) {
+            ruleSets = subjectConfig.ruleSets
+            rules = subjectConfig.ruleSets.rules()
+            return
+        }
+        if (!allowLegacyFallback) {
+            ruleSets = null
+            rules = null
+            return
+        }
         when (val loaded = LocalPolicyStore.loadRuleSets()) {
             is LocalRuleSetsLoad.Loaded -> {
                 ruleSets = loaded.ruleSets
-                rules = loaded.ruleSets.rulesFor(activation)
-                // Rewrite the v1 write-through with the activation actually in effect.
-                LocalPolicyStore.saveRuleSets(loaded.ruleSets, activation)
+                rules = loaded.ruleSets.rules()
+                // Rewrite the v1 write-through with the manual set.
+                persistRuleSets(loaded.ruleSets)
             }
             LocalRuleSetsLoad.Missing -> {
-                val legacy = LocalPolicyStore.loadRules()
-                if (legacy == null) {
-                    ruleSets = null
-                    rules = null
-                } else {
-                    // Fresh install / pre-v2 upgrade: the inactive set gets its own first-use
-                    // rest default instead of inheriting the active mode's value.
-                    val migrated = LocalRuleSets.from(legacy, activation)
-                    ruleSets = migrated
-                    rules = migrated.rulesFor(activation)
-                    LocalPolicyStore.saveRuleSets(migrated, activation)
-                    PolicyFlowTrace.event(
-                        "local.ruleSets.migrate",
-                        "activation" to activation,
-                        "rest" to legacy.restMinutes,
-                    )
-                }
+                // Schema 3 has no migration path: a fresh install or an older document is
+                // unconfigured until the parent saves the new contract.
+                ruleSets = null
+                rules = null
             }
             is LocalRuleSetsLoad.Corrupt -> {
                 ruleSets = null
@@ -780,11 +996,25 @@ object LocalPolicyRuntime {
     }
 
     /**
+     * Writes the local rule set to the legacy mirror and to the active subject. A hosted rule
+     * template belongs to the device mirror, not to the local family cache, so only LOCAL mode
+     * owns the subject document.
+     */
+    private fun persistRuleSets(sets: LocalRuleSets) {
+        // Only LOCAL owns the local rule template. A hosted template is cached by the cloud
+        // policy store (REMOTE_POLICY), and NONE has no configuration owner at all.
+        if (source != PolicySource.LOCAL) return
+        LocalPolicyStore.saveRuleSets(sets)
+        FamilyHub.saveActiveConfig(Activation.MANUAL, sets)
+    }
+
+    /**
      * Clears guard state for a real mode switch; a cold start restore must not call this or it
      * would erase a parent unlock that [initialize] just recovered with evidence.
      */
     @Synchronized
     fun resetGuardForModeSwitch() {
+        cancelStudyRound("MODE_CHANGED", bringHome = true)
         guardStatus = GuardStatus.ENFORCING
         parentOverrideUntil = 0L
         studyMode = false
@@ -801,7 +1031,7 @@ object LocalPolicyRuntime {
         publish()
     }
 
-    /** Starts evaluating and auto-starting sessions; called only while the local guard is active. */
+    /** Starts evaluating the lock state; called only while the local guard is active. */
     @Synchronized
     fun activate() {
         if (!initialized) return
@@ -819,6 +1049,7 @@ object LocalPolicyRuntime {
 
     @Synchronized
     fun deactivate() {
+        cancelStudyRound("GUARD_INACTIVE", bringHome = false)
         active = false
         ticker?.cancel()
         ticker = null
@@ -833,84 +1064,15 @@ object LocalPolicyRuntime {
     fun setSource(newSource: PolicySource) {
         if (source == newSource) return
         source = newSource
+        // Leaving the hosted partition invalidates its in-memory cursor; the next cloud rule
+        // pass must read the partition again instead of reusing LOCAL state.
+        if (newSource != PolicySource.HOSTED) hostedExecutionLoaded = false
         val hadPending = pendingRemoteStart != null
         if (newSource != PolicySource.HOSTED) pendingRemoteStart = null
         if (initialized && hadPending && pendingRemoteStart == null) {
             checkpointRuntime(durable = true, forceSync = true)
         }
         publish()
-    }
-
-    /**
-     * V29 removes the automatic/manual choice from every local surface. An upgraded TV may still
-     * have AUTO persisted, so entering LOCAL forces MANUAL without touching either stored rule
-     * set: the old automatic values remain available if this model ever returns.
-     */
-    @Synchronized
-    fun ensureLocalManualActivation(): Boolean {
-        if (!initialized) return false
-        return if (activation == Activation.MANUAL) true else setActivation(Activation.MANUAL)
-    }
-
-    /**
-     * The only activation switch. AUTO follows the scheduler and may start immediately; MANUAL
-     * only changes the lock state because every manual segment needs a parent action. A real
-     * switch also ends the rest cursor earned by the previous activation.
-     */
-    @Synchronized
-    fun setActivation(newActivation: Activation): Boolean {
-        if (!initialized) return false
-        if (activation == newActivation) return true
-        // End with the old activation still in effect, so rest/lock decisions are made under the
-        // mode the session actually ran in. The switch itself must never auto-start a new plan.
-        if (session != null) {
-            finishSession(
-                parentStop = false,
-                emitCue = false,
-                forSwitch = true,
-                reasonOverride = PolicyEndReason.ACTIVATION_SWITCH,
-            )
-        }
-        // A rest cursor belongs to the activation that earned it. End it before persisting the
-        // new activation, so the target mode never waits out a break it did not configure and a
-        // process restart cannot inherit the old mode's break.
-        endRestForActivationSwitch()
-        activation = newActivation
-        LocalPolicyStore.saveActivation(newActivation)
-        // Each activation owns its own time-rule set: the switch only swaps which stored set is
-        // materialized for the executor. Neither set is rewritten (rest included).
-        ruleSets?.let { sets ->
-            rules = sets.rulesFor(newActivation)
-            LocalPolicyStore.saveRuleSets(sets, newActivation)
-        }
-        policyEpoch = LocalPolicyStore.policyEpoch()
-        // A switch invalidates any armed remote grant; only MANUAL accepts one, and its old
-        // epoch can no longer be confirmed.
-        pendingRemoteStart = null
-        setAutoReady(false)
-        lockReason = LockReason.NONE
-        checkpointRuntime(durable = true, forceSync = true)
-        if (guardStatus == GuardStatus.ENFORCING && session == null && !studyMode) {
-            evaluateNow(allowAutoStart = false)
-        }
-        publish()
-        return true
-    }
-
-    /**
-     * A mode switch ends the timing state that belongs to the old activation. The caller settles
-     * any running session; this clears its rest cursor so the new mode starts without the old
-     * mode's break. The recovery timestamp is cleared first: if the process dies between the two
-     * writes, initialize() must not rebuild the old rest from it. Daily usage and the configured
-     * windows belong to the day, not the activation, and are deliberately left untouched.
-     */
-    private fun endRestForActivationSwitch() {
-        lastSessionEndedAt = 0L
-        breakUntil = 0L
-        restRemainingSeconds = 0L
-        lockReason = LockReason.NONE
-        nextWindowLabel = ""
-        if (initialized) checkpointRuntime(durable = true, forceSync = true)
     }
 
     /**
@@ -927,7 +1089,16 @@ object LocalPolicyRuntime {
         when (guardStatus) {
             GuardStatus.PARENT_OVERRIDE -> endParentOverride()
             GuardStatus.STUDY_MODE -> exitStudyMode()
-            GuardStatus.ENFORCING -> pauseSession(System.currentTimeMillis(), emitCue = true)
+            GuardStatus.ENFORCING -> {
+                pauseSession(
+                    System.currentTimeMillis(),
+                    emitCue = true,
+                    reason = SessionPauseReason.SCREEN_OFF,
+                )
+                // A study round is not a session, but it must freeze with the screen too. It
+                // stays paused after the screen lights until the child presses 继续学习.
+                pauseStudyRound("SCREEN_OFF")
+            }
         }
     }
 
@@ -940,7 +1111,11 @@ object LocalPolicyRuntime {
             boot = bootEvidence(),
         )
         guardSnapshot = guardSnapshot.copy(screenOff = evidence)
-        PolicyStateRepository.saveGuard(guardSnapshot)
+        PolicyStateRepository.saveGuard(
+            guardSnapshot,
+            hosted = hostedStorage,
+            hostedScope = hostedScope,
+        )
         context?.let { BootOpen.noteScreenOff(it) }
     }
 
@@ -964,16 +1139,47 @@ object LocalPolicyRuntime {
             return
         }
         if (current.isPaused) {
-            resumeSession(now, emitCue = true)
+            // An unlimited app still in front is not a screen-on action; the guard's foreground
+            // report resumes the session when the child returns to a timed app. Screen-off
+            // outranked that pause while the screen was dark, so restore the unlimited reason
+            // here instead of resuming behind an app that must not charge the session.
+            val unlimitedForeground = foregroundPackage?.let {
+                it in rules?.normalized()?.effectiveUnlimitedPackages.orEmpty()
+            } == true
+            if (current.pauseReason == SessionPauseReason.SCREEN_OFF && unlimitedForeground) {
+                session = current.copy(pauseReason = SessionPauseReason.UNLIMITED_APP)
+                checkpointRuntime(durable = true, forceSync = true)
+                publish()
+                return
+            }
+            if (current.pauseReason != SessionPauseReason.UNLIMITED_APP) {
+                resumeSession(now, emitCue = true)
+            }
         } else {
             onTick()
         }
     }
 
-    private fun pauseSession(nowMs: Long, emitCue: Boolean) {
+    private fun pauseSession(
+        nowMs: Long,
+        emitCue: Boolean,
+        reason: SessionPauseReason = SessionPauseReason.SCREEN_OFF,
+    ) {
         val current = session ?: return
-        if (current.isPaused) return
-        session = current.copy(pausedAtEpochMs = nowMs)
+        // Screen-off outranks an unlimited app in front. Upgrade the reason without moving the
+        // pause instant, so turning the screen back on cannot resume behind the unlimited app.
+        if (current.isPaused) {
+            if (reason == SessionPauseReason.SCREEN_OFF &&
+                current.pauseReason != SessionPauseReason.SCREEN_OFF
+            ) {
+                session = current.copy(pauseReason = SessionPauseReason.SCREEN_OFF)
+                markCheckpoint(nowMs)
+                checkpointRuntime(durable = true, forceSync = true)
+                publish()
+            }
+            return
+        }
+        session = current.copy(pausedAtEpochMs = nowMs, pauseReason = reason)
         markCheckpoint(nowMs)
         checkpointRuntime(durable = true, forceSync = true)
         if (emitCue) PolicyVoiceBus.emit(PolicyVoiceCue.PAUSED)
@@ -994,11 +1200,45 @@ object LocalPolicyRuntime {
         }
         // Never write the effective remaining back into the budget: pauses must not change
         // settlement, only what the child is shown and when voice thresholds fire.
-        session = current.copy(pausedAtEpochMs = 0L)
+        session = current.copy(pausedAtEpochMs = 0L, pauseReason = null)
         markCheckpoint(nowMs)
         checkpointRuntime(durable = true, forceSync = true)
         if (emitCue) PolicyVoiceBus.emit(PolicyVoiceCue.RESUMED)
         publish()
+    }
+
+    /**
+     * The guard saw a new foreground activity. An unlimited app freezes the entertainment
+     * session without consuming its budget; returning to any app in the session scope (or
+     * Aerial itself) resumes it. Screen-off pause is handled separately and always wins.
+     */
+    @Synchronized
+    fun onForegroundChanged(pkg: String) {
+        if (!initialized || pkg.isBlank()) return
+        foregroundPackage = pkg
+        val configured = rules?.normalized()
+        val unlimited = pkg in configured?.effectiveUnlimitedPackages.orEmpty()
+        if (unlimited) {
+            pauseStudyRound("UNLIMITED_APP")
+            if (guardStatus == GuardStatus.ENFORCING) {
+                pauseSession(
+                    System.currentTimeMillis(),
+                    emitCue = true,
+                    reason = SessionPauseReason.UNLIMITED_APP,
+                )
+            }
+            return
+        }
+        val current = session ?: return
+        if (!current.isPaused ||
+            current.pauseReason != SessionPauseReason.UNLIMITED_APP ||
+            !isScreenInteractive()
+        ) {
+            return
+        }
+        if (pkg == context?.packageName || pkg in current.plan.allowedPackages) {
+            resumeSession(System.currentTimeMillis(), emitCue = true)
+        }
     }
 
     /** Parent PIN from the lock screen: child mode pauses until the override ends. */
@@ -1044,19 +1284,18 @@ object LocalPolicyRuntime {
         if (!normalized.isUsable) return null
         refreshInstalledPackages()
         LocalPolicyStore.setPin(pin)
-        // First-run setup has one editor; both sets start from its values, but the inactive
-        // activation keeps its own first-use rest default (manual 0 / automatic 10).
-        val sets = LocalRuleSets.from(normalized, activation)
+        // First-run setup has one manual editor.
+        val sets = LocalRuleSets.from(normalized)
         ruleSets = sets
         rules = normalized
-        LocalPolicyStore.saveRuleSets(sets, activation)
+        persistRuleSets(sets)
         policyEpoch = LocalPolicyStore.bumpEpoch()
         val code = recoveryCode?.takeIf { LocalRecovery.normalize(it) != null }
             ?: LocalRecovery.newCode()
         LocalPolicyStore.setRecovery(code)
         lockReason = LockReason.NONE
         publish()
-        evaluateNow(allowAutoStart = activation == Activation.AUTO)
+        evaluateNow()
         return code
     }
 
@@ -1075,7 +1314,6 @@ object LocalPolicyRuntime {
         saveGuardState(phase = GuardStatus.ENFORCING, override = null, study = null)
         LocalPolicyStore.saveParentOverrideActive(false)
         pendingRemoteStart = null
-        setAutoReady(false)
         checkpointRuntime(durable = true, forceSync = true)
         publish()
         return true
@@ -1102,13 +1340,17 @@ object LocalPolicyRuntime {
         val normalized = newRules.normalized()
         if (!normalized.isUsable) return false
         refreshInstalledPackages()
-        val updatedSets = (ruleSets ?: LocalRuleSets.from(normalized, activation))
-            .withActiveRules(normalized, activation)
+        val updatedSets = (ruleSets ?: LocalRuleSets.from(normalized))
+            .withRules(normalized)
         ruleSets = updatedSets
         rules = normalized
         templateVersion = version.coerceAtLeast(0L)
-        LocalPolicyStore.saveRuleSets(updatedSets, activation)
-        policyEpoch = LocalPolicyStore.bumpEpoch()
+        persistRuleSets(updatedSets)
+        cancelStudyRound("RULES_CHANGED", bringHome = true)
+        policyEpoch = LocalPolicyStore.bumpEpoch(
+            hosted = hostedStorage,
+            hostedScope = hostedScope,
+        )
         // A pending grant was admitted against the old window/scope and epoch. Dropping it here
         // avoids leaving an orange button that the confirm check can only reject as stale.
         if (pendingRemoteStart != null) {
@@ -1121,37 +1363,36 @@ object LocalPolicyRuntime {
             pendingRemoteStart == null
         ) {
             // A configuration edit must not surprise the child by starting a session.
-            evaluateNow(allowAutoStart = false)
+            evaluateNow()
         }
         publish()
         return true
     }
 
     /**
-     * Applies the cloud's two rule sets. Only the materialized rules of the current activation
-     * (including the shared app scope and buffer) may interrupt a session; a change confined to
-     * the inactive set is persisted silently and takes effect when that activation is selected.
+     * Applies the cloud's manual rule set. The materialized rules (including the shared app
+     * scope and buffer) may interrupt a session when they actually changed.
      */
     @Synchronized
     fun setRuleSetsWithVersion(newSets: LocalRuleSets, version: Long): Boolean {
         if (!initialized) return false
-        val materialized = newSets.rulesFor(activation)
+        val materialized = newSets.rules()
         if (!materialized.isUsable) return false
         refreshInstalledPackages()
         val activeChanged = rules != materialized
         ruleSets = newSets
         rules = materialized
         templateVersion = version.coerceAtLeast(0L)
-        // The v1 write-through always carries the activation the executor is in right now; a
-        // later setActivation rewrites it again for the new activation.
-        LocalPolicyStore.saveRuleSets(newSets, activation)
+        persistRuleSets(newSets)
         if (!activeChanged) {
-            // Inactive-set-only change: stored for the next switch, no epoch bump and no
-            // interruption of the running session.
             publish()
             return true
         }
-        policyEpoch = LocalPolicyStore.bumpEpoch()
+        cancelStudyRound("RULES_CHANGED", bringHome = true)
+        policyEpoch = LocalPolicyStore.bumpEpoch(
+            hosted = hostedStorage,
+            hostedScope = hostedScope,
+        )
         // A pending grant was admitted against the old window/scope and epoch. Dropping it here
         // avoids leaving an orange button that the confirm check can only reject as stale.
         if (pendingRemoteStart != null) {
@@ -1164,10 +1405,225 @@ object LocalPolicyRuntime {
             pendingRemoteStart == null
         ) {
             // A configuration edit must not surprise the child by starting a session.
-            evaluateNow(allowAutoStart = false)
+            evaluateNow()
         }
         publish()
         return true
+    }
+
+    /** True once the cloud execution partition has been read into memory. */
+    @Synchronized
+    fun isHostedExecutionLoaded(): Boolean = hostedExecutionLoaded
+
+    /**
+     * Switches the executor to the cloud (hosted) partition and loads its own runtime. The
+     * local child-mode rules, ledger, guard and study round are never read or written here: a
+     * later unbind or manual LOCAL start must restore exactly what the parent configured on
+     * the TV.
+     */
+    @Synchronized
+    fun enterHostedMode(
+        newSets: LocalRuleSets,
+        version: Long,
+        subjectId: Long = 0L,
+    ): Boolean {
+        if (!initialized) return false
+        val materialized = newSets.rules()
+        if (!materialized.isUsable) return false
+        if (hostedExecutionLoaded) {
+            if (subjectId > 0L) ensureHostedSubject(subjectId)
+            return setRuleSetsWithVersion(newSets, version)
+        }
+        // Direct assignment, not setSource(): setSource may checkpoint a dropped pending grant,
+        // and that checkpoint must never write LOCAL state into the hosted keys.
+        source = PolicySource.HOSTED
+        hostedSubjectId = subjectId.coerceAtLeast(0L)
+        if (hostedSubjectId > 0L) {
+            LocalPolicyStore.rememberHostedSubject(hostedSubjectId)
+            val adopted = LocalPolicyStore.adoptUnscopedHostedPartition(hostedSubjectId)
+            PolicyFlowTrace.event(
+                "hosted.subject.scope",
+                "member" to hostedSubjectId,
+                "adopted" to adopted,
+            )
+            if (adopted) {
+                Log.i(TAG, "adopted pre-scope hosted partition into member $hostedSubjectId")
+            }
+        }
+        refreshInstalledPackages()
+        // Drop every in-memory cursor left by the previous partition before reading the hosted
+        // snapshot; otherwise the first hosted checkpoint would persist local data.
+        session = null
+        sessionOrigin = null
+        activeRemoteRecordId = 0
+        sessionReportUsage = false
+        lastUsageReportedSeconds = 0L
+        sessionBoot = BootEvidence()
+        checkpointWallMs = 0L
+        checkpointElapsedMs = 0L
+        checkpointAsleepMs = 0L
+        checkpointFlushCounter = 0
+        screenOffEvidenceForEpisode = false
+        lastSavedTick = 0L
+        spokenThresholds.clear()
+        studyRound = null
+        studyRoundSavedTick = 0L
+        LockLaunchPermit.clearRoundPackage()
+        studyMode = false
+        lockReason = LockReason.NONE
+        nextWindowLabel = ""
+        restRemainingSeconds = 0L
+        pendingRemoteStart = null
+        ruleSets = newSets
+        rules = materialized
+        templateVersion = version.coerceAtLeast(0L)
+        policyEpoch = LocalPolicyStore.bumpEpoch(hosted = true, hostedScope = hostedScope)
+        // A hosted round belongs to the previous hosted template; never resume it after a rule
+        // change, and never touch the local round in the same step.
+        LocalPolicyStore.clearStudyRound(hosted = true, hostedScope = hostedScope)
+        restoreRuntimePartition(allowLegacyFallback = false)
+        hostedExecutionLoaded = true
+        recoveryComplete = true
+        checkpointRuntime(durable = true, forceSync = true)
+        if (guardStatus == GuardStatus.ENFORCING && session == null && !studyMode &&
+            pendingRemoteStart == null
+        ) {
+            evaluateNow()
+        }
+        publish()
+        return true
+    }
+
+    /**
+     * Points the hosted executor at the cloud member that currently owns the TV desktop.
+     *
+     * The backend re-projects the member's apps when the desktop user changes, but usage,
+     * rest and study state live only on the TV. Keeping them in one device-global partition is
+     * what let 佳奇's rest leak into another child; each member now has their own snapshot.
+     * The outgoing member is settled and checkpointed before the pointer moves, and the target
+     * partition is read back exactly like a cold start.
+     */
+    @Synchronized
+    fun ensureHostedSubject(subjectId: Long): Boolean {
+        if (!initialized || !hostedExecutionLoaded || subjectId <= 0L) return false
+        if (hostedSubjectId == subjectId) return false
+
+        if (hostedSubjectId <= 0L) {
+            // The hosted engine was entered without a member id (cold boot restores the cached
+            // cloud policy before the roster is fetched), so it read the bare pre-scope keys.
+            // That bootstrap view may belong to whoever was active before the restart — it must
+            // never be written back as this member's state. Adopt the bare partition once (the
+            // upgrade path), then re-read this member's own scoped snapshot so a cold boot also
+            // lands on their real ledger/rest cursor instead of the un-scoped leftover.
+            hostedSubjectId = subjectId
+            LocalPolicyStore.rememberHostedSubject(subjectId)
+            val adopted = LocalPolicyStore.adoptUnscopedHostedPartition(subjectId)
+            PolicyFlowTrace.event(
+                "hosted.subject.scope",
+                "member" to subjectId,
+                "adopted" to adopted,
+            )
+            resetTransientForHostedSwitch()
+            restoreRuntimePartition(allowLegacyFallback = false)
+            // A session recovered here is this member's own crash/boot artifact, so it is kept
+            // exactly like enterHostedMode does; only a live switch settles the outgoing one.
+            checkpointRuntime(durable = true, forceSync = true)
+            PolicyFlowTrace.event(
+                "hosted.subject.restore",
+                "member" to subjectId,
+                "session" to (session != null),
+                "rest" to LocalRestPolicy.remainingSeconds(breakUntil, System.currentTimeMillis()),
+            )
+            if (guardStatus == GuardStatus.ENFORCING && session == null && !studyMode &&
+                pendingRemoteStart == null
+            ) {
+                evaluateNow()
+            } else {
+                publish()
+            }
+            return true
+        }
+
+        val previous = hostedSubjectId
+        endSessionForSwitch()
+        checkpointRuntime(durable = true, forceSync = true)
+        // Drop every cursor that belonged to [previous] before the scope changes; storage is
+        // untouched here so the outgoing member's own document stays intact.
+        resetTransientForHostedSwitch()
+        hostedSubjectId = subjectId
+        LocalPolicyStore.rememberHostedSubject(subjectId)
+        restoreRuntimePartition(allowLegacyFallback = false)
+
+        // A switch is not a cold boot: a session or round recovered from a crash artifact
+        // belongs to a moment when this child was not the desktop user. Settle the session
+        // honestly into their ledger, and drop the round with a log instead of resurrecting it.
+        val restoredSession = session
+        if (restoredSession != null) {
+            Log.w(
+                TAG,
+                "settling stale hosted session on member switch member=$subjectId " +
+                    "id=${restoredSession.plan.sessionId}",
+            )
+            finishSession(parentStop = false, emitCue = false, forSwitch = true)
+        }
+        if (studyRound != null) {
+            Log.w(TAG, "dropping stale hosted study round on member switch member=$subjectId")
+            clearStudyRoundState()
+        }
+        checkpointRuntime(durable = true, forceSync = true)
+        PolicyFlowTrace.event(
+            "hosted.subject.switch",
+            "from" to previous,
+            "member" to subjectId,
+            "rest" to LocalRestPolicy.remainingSeconds(breakUntil, System.currentTimeMillis()),
+        )
+        // Republish the target member's lock state in the same transition. Without this the
+        // desktop keeps the previous frame (no rest) until the next tick, so a child switching
+        // back briefly sees themselves as usable while their rest cursor is still running.
+        if (guardStatus == GuardStatus.ENFORCING && session == null && !studyMode &&
+            pendingRemoteStart == null
+        ) {
+            evaluateNow()
+        } else {
+            publish()
+        }
+        return true
+    }
+
+    /** Memory-only reset used before the hosted scope moves to another member. */
+    private fun resetTransientForHostedSwitch() {
+        session = null
+        sessionOrigin = null
+        activeRemoteRecordId = 0
+        sessionReportUsage = false
+        lastUsageReportedSeconds = 0L
+        sessionBoot = BootEvidence()
+        checkpointWallMs = 0L
+        checkpointElapsedMs = 0L
+        checkpointAsleepMs = 0L
+        checkpointFlushCounter = 0
+        screenOffEvidenceForEpisode = false
+        lastSavedTick = 0L
+        spokenThresholds.clear()
+        studyRound = null
+        studyRoundSavedTick = 0L
+        LockLaunchPermit.clearRoundPackage()
+        studyMode = false
+        lockReason = LockReason.NONE
+        nextWindowLabel = ""
+        restRemainingSeconds = 0L
+        pendingRemoteStart = null
+    }
+
+    /**
+     * Drops the cloud partition after an unbind. The TV keeps its local child mode intact; the
+     * cloud execution state (ledger/guard/round) must not resurrect on a later rebind.
+     */
+    @Synchronized
+    fun clearHostedExecution() {
+        LocalPolicyStore.clearHostedExecution()
+        hostedSubjectId = 0L
+        hostedExecutionLoaded = false
     }
 
     /** Reporting is optional. Without a sink the local engine still runs entirely offline. */
@@ -1182,15 +1638,16 @@ object LocalPolicyRuntime {
         }
     }
 
-    /** AUTO_READY crosses ticks and process restarts; persist only when it actually changes. */
-    private fun setAutoReady(value: Boolean) {
-        if (autoReady == value) return
-        autoReady = value
-        LocalPolicyStore.saveAutoReady(value)
-    }
-
     val currentRules: LocalRules?
         get() = rules
+
+    /**
+     * V45 manual timer summary for the parent Web page. Counts are computed against the current
+     * launchable scan so an all-apps scope reports the same number the TV can actually launch.
+     */
+    @Synchronized
+    fun manualTimerScope(): ManualTimerScope? =
+        rules?.normalized()?.takeIf { it.isUsable }?.manualTimerScope(installedPackages)
 
     /**
      * Monotonic revision of the materialized rule configuration. Every legitimate write
@@ -1210,8 +1667,17 @@ object LocalPolicyRuntime {
         @Synchronized get() = session?.plan
 
     val isSetupRequired: Boolean
-        get() = recoveryComplete &&
-            (!LocalPolicyStore.pinConfigured || rules?.isUsable != true)
+        get() {
+            if (!recoveryComplete) return false
+            if (!LocalPolicyStore.pinConfigured) return true
+            // The first-run wizard also sets the family PIN. A secondary member with missing or
+            // corrupt rules must not reach it, or switching to that child could reset the PIN.
+            // Such a member stays on the lock screen until the parent repairs its rules.
+            val family = FamilyHub.state.value
+            val isDefaultMember = !family.ready ||
+                family.activeUserId == family.defaultUserId
+            return isDefaultMember && rules?.isUsable != true
+        }
 
     val isActive: Boolean
         get() = session != null
@@ -1234,7 +1700,100 @@ object LocalPolicyRuntime {
 
     fun isStudyMode(): Boolean = studyMode
 
-    /** Parent center action: end the current session. Auto mode blocks the rest of the window. */
+    /**
+     * True while the active child owns a running session, focus round, pending grant or
+     * temporary unlock. A member switch must wait: moving the pointer under any of them would
+     * charge or unlock the wrong child.
+     */
+    @Synchronized
+    fun canSwitchSubject(): Boolean =
+        initialized &&
+            session == null &&
+            studyRound == null &&
+            pendingRemoteStart == null &&
+            guardStatus == GuardStatus.ENFORCING &&
+            !studyMode
+
+    /** Commits the outgoing child's runtime before the active pointer moves. */
+    @Synchronized
+    fun prepareSubjectSwitch(): Boolean {
+        if (!canSwitchSubject()) return false
+        checkpointRuntime(durable = true, forceSync = true)
+        return true
+    }
+
+    /**
+     * Replaces the in-memory subject after the active pointer moved. The switch is only allowed
+     * while idle, so this reloads the ledger, rules and activation from the newly active subject
+     * and never resumes a leftover session. A non-default member without a subject document
+     * starts unconfigured rather than inheriting the first child's rules or usage.
+     */
+    @Synchronized
+    fun reloadActiveSubject() {
+        if (!initialized) return
+        val family = FamilyHub.state.value
+        val isDefault = !family.ready || family.activeUserId == family.defaultUserId
+        val subjectConfig = FamilyHub.activeConfig()
+        // A switch only runs in LOCAL mode, where the model executes MANUAL. Reading the target
+        // document's stored activation would let a copied or migrated AUTO cursor resurrect;
+        // every transient timer is reset below, so MANUAL is the only safe activation here.
+        activation = Activation.MANUAL
+        loadRuleSets(subjectConfig, allowLegacyFallback = isDefault)
+        policyEpoch = LocalPolicyStore.policyEpoch()
+        settledGrantRecords.clear()
+        settledGrantRecords.addAll(LocalPolicyStore.settledGrantRecordIds())
+
+        val nowWall = System.currentTimeMillis()
+        val savedRuntime = FamilyHub.activeRuntime()?.runtime
+            ?: if (isDefault) {
+                PolicyStateRepository.loadRuntimeOrMigrate().snapshot
+            } else {
+                RuntimeSnapshot()
+            }
+        dayKey = LocalDate.now().toString()
+        loadLedgers(savedRuntime.ledger)
+        routeUsage = savedRuntime.ledger.routeUsage?.normalizedFor(dayKey)
+        breakUntil = savedRuntime.ledger.breakUntilEpochMs.takeIf { it > nowWall } ?: 0L
+        lastSessionEndedAt = savedRuntime.ledger.lastEndedAtEpochMs
+        settledSessions.clear()
+        settledSessions.putAll(savedRuntime.ledger.settled)
+        while (settledSessions.size > SETTLED_SESSION_LIMIT) {
+            settledSessions.remove(settledSessions.keys.first())
+        }
+        restorePendingGrant(savedRuntime.ledger.pendingGrant, nowWall)
+
+        // Subject switches happen between rounds. Keep every transient timer idle even when the
+        // stored runtime of the target is missing or carries a crash artifact.
+        session = null
+        sessionOrigin = null
+        activeRemoteRecordId = 0
+        sessionReportUsage = false
+        lastUsageReportedSeconds = 0L
+        sessionBoot = BootEvidence()
+        checkpointWallMs = 0L
+        checkpointElapsedMs = 0L
+        checkpointAsleepMs = 0L
+        checkpointFlushCounter = 0
+        screenOffEvidenceForEpisode = false
+        lastSavedTick = 0L
+        spokenThresholds.clear()
+        studyRound = null
+        studyRoundSavedTick = 0L
+        LocalPolicyStore.clearStudyRound()
+        LockLaunchPermit.clearRoundPackage()
+        guardStatus = GuardStatus.ENFORCING
+        parentOverrideUntil = 0L
+        studyMode = false
+        saveGuardState(GuardStatus.ENFORCING, override = null, study = null)
+        lockReason = LockReason.NONE
+        nextWindowLabel = ""
+        restRemainingSeconds = 0L
+        recoveryComplete = true
+        checkpointRuntime(durable = true, forceSync = true)
+        publish()
+    }
+
+    /** Parent center action: end the current session. */
     @Synchronized
     fun endSessionByParent() {
         if (session == null) return
@@ -1243,8 +1802,8 @@ object LocalPolicyRuntime {
 
     /**
      * Child action in the TV control center. The used time is settled and the session ends
-     * immediately. Automatic mode still takes one normal rest so “exit” cannot be used to skip
-     * the rest protection; manual mode returns to the parent waiting state.
+     * immediately. A rest still applies so “exit” cannot be used to skip the rest protection;
+     * afterwards the lock returns to the parent waiting state.
      */
     @Synchronized
     fun endSessionByUser(): Boolean {
@@ -1266,30 +1825,423 @@ object LocalPolicyRuntime {
     }
 
     /**
-     * Lock-screen "start timing": only automatic mode and only after a completed rest. Manual
-     * time is a separate parent action and never starts from this path.
+     * Starts the study timer for one study app. Every package in the study scope is timed by the
+     * group's study windows and study quota; only membership in [LocalRules.studyEarnPackages]
+     * controls the optional entertainment reward.
+     *
+     * The round allowance is the rest of the study window, capped by the remaining study quota.
+     * Entertainment availability is deliberately not part of admission: a reward that cannot be
+     * used is skipped when its one attempt fires, while studying continues.
      */
     @Synchronized
-    fun startAutoSession(): SessionStartResult {
+    fun startStudyRound(
+        studyPackage: String,
+        targetPackage: String?,
+        /** A tile on the study launcher: a valid round leaves the launcher for the app. */
+        fromStudyMode: Boolean = false,
+    ): SessionStartResult {
+        if (!initialized || !active) {
+            return rejectStudyRound(RejectReason.GUARD_DISABLED)
+        }
+        // 2026-11-21: the hosted cloud rule guard runs the same focus-study route as LOCAL
+        // mode. The cloud projection carries the member's study apps, X/Y and windows.
+        if (source != PolicySource.LOCAL && source != PolicySource.HOSTED) {
+            return rejectStudyRound(RejectReason.INVALID_COMMAND)
+        }
+        val leavingStudyMode = fromStudyMode &&
+            studyMode &&
+            guardStatus == GuardStatus.STUDY_MODE
+        if ((guardStatus != GuardStatus.ENFORCING && !leavingStudyMode) ||
+            activation != Activation.MANUAL ||
+            (studyMode && !leavingStudyMode)
+        ) {
+            return rejectStudyRound(RejectReason.BUSY)
+        }
+        if (session != null || pendingRemoteStart != null || studyRound != null) {
+            return rejectStudyRound(RejectReason.BUSY)
+        }
+        if (!isScreenInteractive()) return rejectStudyRound(RejectReason.SCREEN_OFF)
+        val configured = rules?.normalized()?.takeIf { it.isUsable }
+            ?: return rejectStudyRound(RejectReason.INVALID_COMMAND)
+        // The master switch pauses study mode and study-to-earn without clearing their lists.
+        if (!configured.studyRouteActive) {
+            return rejectStudyRound(RejectReason.INVALID_COMMAND, "studyRouteOff")
+        }
+        if (studyPackage !in configured.effectiveStudyPackages) {
+            return rejectStudyRound(RejectReason.INVALID_COMMAND, "studyAppNotAllowed")
+        }
+        val now = LocalDateTime.now()
+        val allowance = studyAllowance(configured, now)
+            ?: return rejectStudyRound(RejectReason.OUTSIDE_WINDOW, "windowClosed")
+        if (allowance <= 0L) {
+            return rejectStudyRound(
+                if (configured.studyDailyLimitFor(now.dayOfWeek.value) != null) {
+                    RejectReason.DAILY_LIMIT
+                } else {
+                    RejectReason.OUTSIDE_WINDOW
+                },
+                "noAllowance",
+            )
+        }
+        val rewardEnabled = studyPackage in configured.effectiveStudyEarnPackages
+        val rewardSeconds = if (rewardEnabled) {
+            configured.effectiveStudyRewardMinutes.toLong() * 60L
+        } else {
+            0L
+        }
+        val target = targetPackage
+            ?.takeIf { rewardEnabled && it in configured.timedPackages() }
+        val nowMs = System.currentTimeMillis()
+        val round = LocalStudyRound(
+            studyPackage = studyPackage,
+            targetPackage = target,
+            totalSeconds = allowance,
+            remainingSeconds = allowance,
+            rewardSeconds = rewardSeconds,
+            rewardEnabled = rewardEnabled,
+            usageDate = dayKey,
+            startedAtEpochMs = nowMs,
+            boot = bootEvidence(),
+        )
+        studyRound = round
+        studyRoundSavedTick = 0L
+        if (leavingStudyMode) {
+            studyMode = false
+            guardStatus = GuardStatus.ENFORCING
+            saveGuardState(phase = GuardStatus.ENFORCING, override = null, study = null)
+        }
+        persistStudyRound(round)
+        LockLaunchPermit.setRoundPackage(studyPackage)
+        PolicyFlowTrace.event(
+            "study.round.start",
+            "study" to studyPackage,
+            "target" to target,
+            "seconds" to allowance,
+            "reward" to rewardEnabled,
+            "rewardMinutes" to configured.effectiveStudyRewardMinutes,
+            "source" to source,
+        )
+        publish()
+        return SessionStartResult.Started
+    }
+
+    /** One log line per refused study round; the lock screen shows the same reason. */
+    private fun rejectStudyRound(
+        reason: RejectReason,
+        detail: String = "-",
+    ): SessionStartResult {
+        PolicyFlowTrace.event(
+            "study.round.reject",
+            "reason" to reason,
+            "detail" to detail,
+            "source" to source,
+            "guard" to guardStatus,
+            "activation" to activation,
+            "session" to (session != null),
+            "round" to (studyRound != null),
+            "screen" to isScreenInteractive(),
+        )
+        return SessionStartResult.Rejected(reason)
+    }
+
+    /**
+     * Freezes a running round. Aerial coming back to the front, screen off and a launch that never
+     * covered the focus desktop all land here. Idempotent, and the pause is written at once: a
+     * process killed in standby must not restore a round with more time than the child saw.
+     */
+    @Synchronized
+    fun pauseStudyRound(reason: String): Boolean {
+        val round = studyRound ?: return false
+        if (round.isPaused) return false
+        val paused = round.copy(pausedAtEpochMs = System.currentTimeMillis())
+        studyRound = paused
+        studyRoundSavedTick = 0L
+        persistStudyRound(paused)
+        PolicyFlowTrace.event(
+            "study.round.pause",
+            "reason" to reason,
+            "remaining" to paused.remainingSeconds,
+        )
+        publish()
+        return true
+    }
+
+    /**
+     * Child-confirmed resume from the focus desktop. Time spent paused must not let a round cross
+     * a closing study window or a quota that was already used up; entertainment availability is
+     * checked only when the one reward attempt fires. A running round is already started.
+     */
+    @Synchronized
+    fun resumeStudyRound(): SessionStartResult {
+        val round = studyRound ?: return SessionStartResult.Rejected(RejectReason.INVALID_COMMAND)
+        if (!round.isPaused) return SessionStartResult.Started
         if (!initialized || !active) {
             return SessionStartResult.Rejected(RejectReason.GUARD_DISABLED)
         }
-        if (activation != Activation.AUTO) {
-            return SessionStartResult.Rejected(RejectReason.ACTIVATION_MISMATCH)
+        // Hosted rounds resume on the same path; the cloud projection supplied the round.
+        if (source != PolicySource.LOCAL && source != PolicySource.HOSTED) {
+            return SessionStartResult.Rejected(RejectReason.INVALID_COMMAND)
         }
-        if (guardStatus != GuardStatus.ENFORCING) {
-            return SessionStartResult.Rejected(RejectReason.PARENT_OVERRIDE)
+        if (guardStatus != GuardStatus.ENFORCING || activation != Activation.MANUAL || studyMode) {
+            return SessionStartResult.Rejected(RejectReason.BUSY)
         }
-        if (session != null) return SessionStartResult.Rejected(RejectReason.BUSY)
-        if (studyMode) return SessionStartResult.Rejected(RejectReason.BUSY)
+        if (session != null || pendingRemoteStart != null) {
+            return SessionStartResult.Rejected(RejectReason.BUSY)
+        }
         if (!isScreenInteractive()) return SessionStartResult.Rejected(RejectReason.SCREEN_OFF)
-        setAutoReady(false)
-        evaluateNow(allowAutoStart = true)
-        return if (session != null) {
-            SessionStartResult.Started
-        } else {
-            SessionStartResult.Rejected(rejectForLock(lockReason))
+        val configured = rules?.normalized()?.takeIf { it.isUsable }
+            ?: return SessionStartResult.Rejected(RejectReason.INVALID_COMMAND)
+        if (!configured.studyRouteActive ||
+            round.studyPackage !in configured.effectiveStudyPackages
+        ) {
+            return SessionStartResult.Rejected(RejectReason.INVALID_COMMAND)
         }
+        if (round.usageDate != dayKey) {
+            return SessionStartResult.Rejected(RejectReason.OUTSIDE_WINDOW)
+        }
+        val now = LocalDateTime.now()
+        currentStudyWindow(configured, now)
+            ?: return SessionStartResult.Rejected(RejectReason.OUTSIDE_WINDOW)
+        val limit = configured.studyDailyLimitFor(now.dayOfWeek.value)
+        if (limit != null && studyUsedSeconds(round.usageDate) >= limit * 60L) {
+            return SessionStartResult.Rejected(RejectReason.DAILY_LIMIT)
+        }
+        val resumed = round.copy(pausedAtEpochMs = 0L)
+        studyRound = resumed
+        studyRoundSavedTick = 0L
+        persistStudyRound(resumed)
+        PolicyFlowTrace.event(
+            "study.round.resume",
+            "study" to resumed.studyPackage,
+            "remaining" to resumed.remainingSeconds,
+        )
+        publish()
+        return SessionStartResult.Started
+    }
+
+    /**
+     * Ends a focus round without a reward. Idempotent; repeated calls only clear once. The caller
+     * decides whether the guard must bring Aerial back (mode/rule changes) or the child is
+     * already on the lock screen behind the focus desktop.
+     */
+    @Synchronized
+    fun cancelStudyRound(reason: String, bringHome: Boolean = false): Boolean {
+        val round = studyRound ?: return false
+        clearStudyRoundState()
+        PolicyFlowTrace.event(
+            "study.round.cancel",
+            "reason" to reason,
+            "study" to round.studyPackage,
+            "remaining" to round.remainingSeconds,
+        )
+        publish()
+        if (bringHome) PolicyRuntime.bringHome()
+        return true
+    }
+
+    private fun clearStudyRoundState() {
+        studyRound = null
+        studyRoundSavedTick = 0L
+        LocalPolicyStore.clearStudyRound(
+            hosted = hostedStorage,
+            hostedScope = hostedScope,
+        )
+        if (!hostedStorage) {
+            // The subject cache carries its own copy of the round; clear it in the same
+            // transition so a restart cannot restore a round that was just completed or
+            // canceled. The hosted partition never writes the subject cache.
+            FamilyHub.saveActiveRuntime(runtimeSnapshot(), null)
+        }
+        LockLaunchPermit.clearRoundPackage()
+    }
+
+    private fun currentSavedStudyRound(): SavedStudyRound? = studyRound?.let { it.toSavedRound() }
+
+    private fun LocalStudyRound.toSavedRound(): SavedStudyRound = SavedStudyRound(
+        studyPackage = studyPackage,
+        targetPackage = targetPackage,
+        totalSeconds = totalSeconds,
+        remainingSeconds = remainingSeconds,
+        studiedSeconds = studiedSeconds,
+        rewardSeconds = rewardSeconds,
+        rewardEnabled = rewardEnabled,
+        rewardAttempted = rewardAttempted,
+        rewardGranted = rewardGranted,
+        usageDate = usageDate,
+        startedAtEpochMs = startedAtEpochMs,
+        boot = boot,
+    )
+
+    private fun persistStudyRound(round: LocalStudyRound) {
+        val saved = round.toSavedRound()
+        LocalPolicyStore.saveStudyRound(
+            saved,
+            hosted = hostedStorage,
+            hostedScope = hostedScope,
+        )
+        if (!hostedStorage) FamilyHub.saveActiveRuntime(runtimeSnapshot(), saved)
+    }
+
+    /**
+     * The round's study allowance or quota ran out without a reward. Clear it and return to the
+     * lock screen; the study app must not stay usable after its time is gone.
+     */
+    private fun completeStudyRound(round: LocalStudyRound) {
+        clearStudyRoundState()
+        PolicyFlowTrace.event(
+            "study.round.complete",
+            "study" to round.studyPackage,
+            "studied" to round.studiedSeconds,
+            "reward" to (round.rewardGranted || round.rewardAttempted),
+        )
+        checkpointRuntime(durable = true, forceSync = true)
+        publish()
+        PolicyRuntime.bringHome()
+    }
+
+    /**
+     * One tick of the study timer. The study ledger is credited every tick so a crash cannot
+     * refund already-studied time. A paused round still verifies that its window and app are
+     * valid; screen-off pauses before this runs, and this check covers a missed broadcast.
+     */
+    private fun tickStudyRound(round: LocalStudyRound) {
+        val configured = rules?.normalized()
+        val now = LocalDateTime.now()
+        val windowOpen = configured != null &&
+            configured.isUsable &&
+            currentStudyWindow(configured, now) != null &&
+            round.studyPackage in configured.effectiveStudyPackages
+        if (!windowOpen || round.usageDate != dayKey) {
+            cancelStudyRound(
+                if (round.usageDate != dayKey) "DAY_ROLLOVER" else "WINDOW_CLOSED",
+                bringHome = true,
+            )
+            return
+        }
+        if (round.isPaused) return
+        val limit = configured.studyDailyLimitFor(now.dayOfWeek.value)
+        val used = studyUsedSeconds(round.usageDate)
+        if (limit != null && used >= limit * 60L) {
+            completeStudyRound(round)
+            return
+        }
+        val remaining = (round.remainingSeconds - 1L).coerceAtLeast(0L)
+        val studied = round.studiedSeconds + 1L
+        creditStudy(round.usageDate, 1L)
+        var updated = round.copy(remainingSeconds = remaining, studiedSeconds = studied)
+        if (updated.rewardEnabled && !updated.rewardAttempted) {
+            val rewardAt = configured.studyEarnStudyMinutes * 60L
+            if (updated.studiedSeconds >= rewardAt) {
+                if (attemptStudyReward(updated)) return
+                updated = updated.copy(rewardAttempted = true)
+            }
+        }
+        val limitReached = limit != null && studyUsedSeconds(round.usageDate) >= limit * 60L
+        if (updated.remainingSeconds <= 0L || limitReached) {
+            completeStudyRound(updated)
+            return
+        }
+        studyRound = updated
+        studyRoundSavedTick += 1L
+        if (studyRoundSavedTick >= SAVE_EVERY_TICKS) {
+            studyRoundSavedTick = 0L
+            persistStudyRound(updated)
+        }
+        publish()
+    }
+
+    /**
+     * The one reward attempt for a round. It is deliberately pre-checked before the round is
+     * cleared: an unavailable entertainment window/quota/target skips this reward and study
+     * continues, while a successful attempt starts the normal, fully admitted session.
+     */
+    private fun attemptStudyReward(round: LocalStudyRound): Boolean {
+        val configured = rules?.normalized() ?: return false
+        val now = LocalDateTime.now()
+        val nowMs = System.currentTimeMillis()
+        if (breakUntil > nowMs || !isScreenInteractive()) return false
+        if (round.rewardSeconds <= 0L || round.usageDate != dayKey) return false
+        // A saved round from an older build may carry Y above the current cap. Clamp at
+        // attempt time; the rules keep their original stored values. X never caps Y.
+        val rewardSeconds = minOf(
+            round.rewardSeconds,
+            configured.effectiveStudyRewardMinutes.toLong() * 60L,
+        ).coerceAtLeast(1L)
+        // The entertainment window must be open, but a short remaining window is not a refusal:
+        // V44 lets the grant deploy and the session ends with the window, like the other routes.
+        currentWindow(configured, now) ?: return false
+        // The target only chooses which app opens after the reward. The session itself grants
+        // every authorized app, not just that target. Without any entertainment app there is
+        // nothing to reward, so the round keeps waiting instead of starting an empty session.
+        val target = round.targetPackage?.takeIf { it in configured.timedPackages() }
+        if (configured.timedPackages().isEmpty()) return false
+        clearStudyRoundState()
+        when (
+            val result = startEntertainment(
+                origin = SessionOrigin.LOCAL,
+                durationSeconds = rewardSeconds,
+                expectedEpoch = null,
+                expiresAtEpochMs = null,
+                route = UnlockRoute.STUDY_REWARD,
+            )
+        ) {
+            SessionStartResult.Started -> {
+                if (target != null) QuizLaunchTarget.confirm(target)
+                PolicyFlowTrace.event(
+                    "study.round.reward",
+                    "study" to round.studyPackage,
+                    "target" to target,
+                    "requested" to rewardSeconds,
+                    "granted" to (session?.totalSeconds ?: rewardSeconds),
+                )
+                // The child may still be inside the study app; the reward session and its
+                // target live on the lock desktop.
+                PolicyRuntime.bringHome()
+                publish()
+                return true
+            }
+            is SessionStartResult.Rejected -> {
+                PolicyFlowTrace.event(
+                    "study.round.reward.skip",
+                    "reason" to result.reason,
+                    "reward" to rewardSeconds,
+                )
+                Log.w(TAG, "study reward rejected: ${result.reason}")
+            }
+            SessionStartResult.Pending -> Unit
+        }
+        // The admission lost a race (for example the screen turned off); put the round back as
+        // running so the refused attempt cannot cost the child its focus time.
+        val restored = round.copy(rewardAttempted = true)
+        studyRound = restored
+        LockLaunchPermit.setRoundPackage(restored.studyPackage)
+        persistStudyRound(restored)
+        publish()
+        return false
+    }
+
+    /** The remaining study allowance for [now], or null when the study window is closed. */
+    private fun studyAllowance(configured: LocalRules, now: LocalDateTime): Long? {
+        val window = currentStudyWindow(configured, now) ?: return null
+        val windowRemaining = (window.endSecond - secondOfDay(now)).coerceAtLeast(0).toLong()
+        if (windowRemaining <= 0L) return null
+        val limit = configured.studyDailyLimitFor(now.dayOfWeek.value)
+        return if (limit == null) {
+            windowRemaining
+        } else {
+            minOf(windowRemaining, (limit * 60L - studyUsedSeconds(dayKey)).coerceAtLeast(0L))
+        }
+    }
+
+    private fun currentStudyWindow(configured: LocalRules, now: LocalDateTime): LocalTimeWindow? =
+        configured.studyWindowsFor(now.dayOfWeek.value)
+            .firstOrNull { it.contains(secondOfDay(now)) }
+
+    private fun studyUsedSeconds(date: String): Long = studyDays[date] ?: 0L
+
+    private fun creditStudy(date: String, seconds: Long) {
+        if (seconds <= 0L) return
+        studyDays[date] = (studyDays[date] ?: 0L) + seconds
     }
 
     /**
@@ -1301,6 +2253,11 @@ object LocalPolicyRuntime {
     fun startManualSession(
         durationSeconds: Long,
         expiresAtEpochMs: Long? = null,
+        /**
+         * V45 parent Web timer: a deliberate out-of-plan authorization. It uses the manual
+         * visible scope and never touches the daily ledger, route counts or rest.
+         */
+        outsidePlan: Boolean = false,
     ): SessionStartResult {
         // Leaving study mode is a separate parent action. A manual start (including the parent
         // web page) must not clear it as a side effect of commitStart.
@@ -1309,9 +2266,128 @@ object LocalPolicyRuntime {
             origin = SessionOrigin.LOCAL,
             durationSeconds = durationSeconds,
             expectedEpoch = null,
-            requestedScope = null,
             expiresAtEpochMs = expiresAtEpochMs,
+            outsidePlan = outsidePlan,
         )
+    }
+
+    /**
+     * Child-started session for the direct-start route: tapping an entertainment app starts one
+     * session without a quiz or study round. Only [LocalRules.directStartEnabled] authorizes it;
+     * the duration is the parent's single-session value, then [admitStart] caps it to the day's
+     * remaining quota and the window deadline.
+     */
+    @Synchronized
+    fun startDirectSession(): SessionStartResult {
+        if (!initialized || !active) {
+            return rejectDirectSession(RejectReason.GUARD_DISABLED)
+        }
+        // Hosted rule guard (2026-11-21): the cloud projects directStartEnabled, the watch
+        // duration (sessionLimitMinutes) and the daily count, so the same route runs here.
+        if ((source != PolicySource.LOCAL && source != PolicySource.HOSTED) ||
+            activation != Activation.MANUAL
+        ) {
+            return rejectDirectSession(RejectReason.INVALID_COMMAND)
+        }
+        // Study mode is a separate child surface. A direct start must not clear it implicitly.
+        if (studyMode) return rejectDirectSession(RejectReason.BUSY)
+        val configured = rules?.normalized()?.takeIf { it.isUsable }
+            ?: return rejectDirectSession(RejectReason.INVALID_COMMAND)
+        if (!configured.directRouteActive) {
+            return rejectDirectSession(RejectReason.INVALID_COMMAND)
+        }
+        // The direct input is its own "per viewing" value; the public cap is a ceiling only.
+        // Legacy values above the cap are truncated on read, not rewritten here.
+        val seconds = configured.effectiveDirectMinutes.toLong() * 60L
+        PolicyFlowTrace.event(
+            "session.direct.start",
+            "seconds" to seconds,
+            "session" to (session != null),
+            "source" to source,
+        )
+        return startEntertainment(
+            origin = SessionOrigin.LOCAL,
+            durationSeconds = seconds,
+            expectedEpoch = null,
+            expiresAtEpochMs = null,
+            route = UnlockRoute.DIRECT,
+        )
+    }
+
+    /**
+     * Child quiz route. The report has already shown the capped value; admission repeats the
+     * same planner calculation so the session cannot exceed the public cap, the leftover
+     * quota, or the route's daily count.
+     */
+    @Synchronized
+    fun startQuizRewardSession(earnedSeconds: Long): SessionStartResult {
+        if (!initialized || !active) {
+            return rejectQuizSession(RejectReason.GUARD_DISABLED, earnedSeconds)
+        }
+        // Hosted rule guard (2026-11-21): the cloud projects quizGateEnabled, the daily count and
+        // the shared cap, so the quiz route is admitted here exactly like in LOCAL mode.
+        if ((source != PolicySource.LOCAL && source != PolicySource.HOSTED) ||
+            activation != Activation.MANUAL
+        ) {
+            return rejectQuizSession(RejectReason.INVALID_COMMAND, earnedSeconds)
+        }
+        if (studyMode) return rejectQuizSession(RejectReason.BUSY, earnedSeconds)
+        val configured = rules?.normalized()?.takeIf { it.isUsable }
+            ?: return rejectQuizSession(RejectReason.INVALID_COMMAND, earnedSeconds)
+        if (!configured.quizGateEnabled) {
+            return rejectQuizSession(RejectReason.INVALID_COMMAND, earnedSeconds, "quizGateOff")
+        }
+        if (earnedSeconds <= 0L) {
+            return rejectQuizSession(RejectReason.INVALID_COMMAND, earnedSeconds, "nothingEarned")
+        }
+        PolicyFlowTrace.event(
+            "session.quiz.start",
+            "earned" to earnedSeconds,
+            "cap" to configured.effectiveSessionCapMinutes * 60L,
+            "source" to source,
+        )
+        return startEntertainment(
+            origin = SessionOrigin.LOCAL,
+            durationSeconds = earnedSeconds,
+            expectedEpoch = null,
+            expiresAtEpochMs = null,
+            route = UnlockRoute.QUIZ,
+        )
+    }
+
+    /** One log line per refused direct start; the lock screen shows the same reason. */
+    private fun rejectDirectSession(reason: RejectReason, detail: String = "-"): SessionStartResult {
+        PolicyFlowTrace.event(
+            "session.direct.reject",
+            "reason" to reason,
+            "detail" to detail,
+            "source" to source,
+            "activation" to activation,
+            "guard" to guardStatus,
+            "studyMode" to studyMode,
+            "session" to (session != null),
+        )
+        return SessionStartResult.Rejected(reason)
+    }
+
+    /** One log line per refused quiz reward; the lock screen shows the same reason. */
+    private fun rejectQuizSession(
+        reason: RejectReason,
+        earnedSeconds: Long,
+        detail: String = "-",
+    ): SessionStartResult {
+        PolicyFlowTrace.event(
+            "session.quiz.reject",
+            "reason" to reason,
+            "detail" to detail,
+            "earned" to earnedSeconds,
+            "source" to source,
+            "activation" to activation,
+            "guard" to guardStatus,
+            "studyMode" to studyMode,
+            "session" to (session != null),
+        )
+        return SessionStartResult.Rejected(reason)
     }
 
     /**
@@ -1692,21 +2768,26 @@ object LocalPolicyRuntime {
         origin: SessionOrigin,
         durationSeconds: Long,
         expectedEpoch: Long?,
-        requestedScope: Set<String>?,
         expiresAtEpochMs: Long?,
+        route: UnlockRoute? = null,
+        outsidePlan: Boolean = false,
     ): SessionStartResult = when (
         val admission = admitStart(
             origin = origin,
             durationSeconds = durationSeconds,
             expectedEpoch = expectedEpoch,
-            requestedScope = requestedScope,
+            // Every local route uses the session-wide app scope, so it has no requested subset.
+            // Remote grants call admitStart directly with their explicit scope.
+            requestedScope = null,
             expiresAtEpochMs = expiresAtEpochMs,
             confirmingPending = false,
+            route = route,
+            outsidePlan = outsidePlan,
         )
     ) {
         is StartAdmission.Refused -> SessionStartResult.Rejected(admission.reason)
         is StartAdmission.Ready -> {
-            commitStart(admission, origin)
+            commitStart(admission, origin, route = route, outsidePlan = outsidePlan)
             SessionStartResult.Started
         }
     }
@@ -1723,9 +2804,16 @@ object LocalPolicyRuntime {
         requestedScope: Set<String>?,
         expiresAtEpochMs: Long?,
         confirmingPending: Boolean,
+        route: UnlockRoute? = null,
+        outsidePlan: Boolean = false,
     ): StartAdmission {
         if (!initialized || !active) return StartAdmission.Refused(RejectReason.GUARD_DISABLED)
         if (durationSeconds <= 0) {
+            return StartAdmission.Refused(RejectReason.INVALID_COMMAND)
+        }
+        // The out-of-plan timer is a parent action on the TV lock surface only; remote grants
+        // and redemption keep their existing in-plan behavior.
+        if (outsidePlan && (origin != SessionOrigin.LOCAL || route != null)) {
             return StartAdmission.Refused(RejectReason.INVALID_COMMAND)
         }
         val configured = rules?.normalized()?.takeIf { it.isUsable }
@@ -1738,9 +2826,6 @@ object LocalPolicyRuntime {
         if (origin == SessionOrigin.REMOTE && source != PolicySource.HOSTED) {
             return StartAdmission.Refused(RejectReason.INVALID_COMMAND)
         }
-        if (activation != Activation.MANUAL) {
-            return StartAdmission.Refused(RejectReason.ACTIVATION_MISMATCH)
-        }
         if (expectedEpoch != null && expectedEpoch != policyEpoch) {
             return StartAdmission.Refused(RejectReason.STALE_EPOCH)
         }
@@ -1748,43 +2833,82 @@ object LocalPolicyRuntime {
             return StartAdmission.Refused(RejectReason.PARENT_OVERRIDE)
         }
         if (session != null) return StartAdmission.Refused(RejectReason.BUSY)
+        if (studyRound != null) return StartAdmission.Refused(RejectReason.BUSY)
         if (!confirmingPending && pendingRemoteStart != null) {
             return StartAdmission.Refused(RejectReason.BUSY)
         }
         val nowMs = System.currentTimeMillis()
-        if (breakUntil > nowMs) return StartAdmission.Refused(RejectReason.RESTING)
+        // V45: the parent timer deliberately ignores rest, the entertainment window, the daily
+        // quota, route counts and the public cap. It still requires the child lock surface, a lit
+        // screen and a single active session.
+        if (!outsidePlan && breakUntil > nowMs) {
+            return StartAdmission.Refused(RejectReason.RESTING)
+        }
         if (!isScreenInteractive()) return StartAdmission.Refused(RejectReason.SCREEN_OFF)
         val now = LocalDateTime.now()
-        val window = currentWindow(configured, now)
-            ?: return StartAdmission.Refused(RejectReason.OUTSIDE_WINDOW)
+        val window = if (outsidePlan) null else {
+            currentWindow(configured, now)
+                ?: return StartAdmission.Refused(RejectReason.OUTSIDE_WINDOW)
+        }
         if (expiresAtEpochMs != null && nowMs > expiresAtEpochMs) {
             return StartAdmission.Refused(RejectReason.EXPIRED)
         }
-        if (!configured.hasTimedApps()) {
+        if (!outsidePlan && !configured.hasTimedApps()) {
             return StartAdmission.Refused(RejectReason.NO_TIMED_APPS)
         }
-        val scope = resolveScope(configured, requestedScope)
-            ?: return StartAdmission.Refused(RejectReason.INVALID_SCOPE)
-        val secondsLeft = (window.endSecond - secondOfDay(now)).coerceAtLeast(1)
-        // V29 has no automatic/manual switch on the page: the local rules are the manual rules.
-        // The web page no longer exposes a per-session cap; a quiz reward is already capped by
-        // its own maxEarnedMinutes, and a parent-chosen duration still obeys the daily quota.
-        // Remote hosted grants keep their own server-side budget.
-        val budgetSeconds = if (origin == SessionOrigin.LOCAL) {
-            val dailyRemaining = (configured.autoDailyLimitMinutes * 60L - usedSeconds)
-                .coerceAtLeast(0L)
-            if (dailyRemaining <= 0L) return StartAdmission.Refused(RejectReason.DAILY_LIMIT)
-            minOf(durationSeconds, dailyRemaining)
+        // Unlimited-only scope never needs a countdown; the parent page shows this as its own
+        // hint, while the runtime keeps the admission closed even if an old client asks.
+        if (outsidePlan && !configured.hasManualTimedApps(installedPackages)) {
+            return StartAdmission.Refused(RejectReason.NO_TIMED_APPS)
+        }
+        // Every local route (quiz, study reward, direct start, the lock-screen timer and the
+        // parent Web timer) shares one visible app scope: entertainment, unlimited, and the
+        // study apps the parent authorized. Remote grants keep their own explicit scope.
+        val scope = if (origin == SessionOrigin.LOCAL) {
+            resolveSessionScope(configured)
         } else {
-            durationSeconds
+            resolveScope(configured, requestedScope)
+        } ?: return StartAdmission.Refused(RejectReason.INVALID_SCOPE)
+        val secondsLeft = window?.let { (it.endSecond - secondOfDay(now)).coerceAtLeast(1) } ?: 0
+        // V29 has no automatic/manual switch on the page: the local rules are the manual rules.
+        // The web page no longer exposes a per-session or per-round cap; a parent-chosen
+        // duration and a quiz reward both obey the day's quota. Remote hosted grants keep
+        // their own server-side budget.
+        val budgetSeconds = when {
+            outsidePlan -> durationSeconds.coerceAtMost(ManualSessionLimits.MAX_MINUTES * 60L)
+            // V44 child routes share one planner with the TV/Web projection. The planner owns
+            // the cap/quota/count arithmetic; this call is the final authorization.
+            origin == SessionOrigin.LOCAL && route != null -> {
+                val decision = routeDecision(
+                    configured = configured,
+                    route = route,
+                    now = now,
+                    quizEarnedSeconds = durationSeconds.takeIf { route == UnlockRoute.QUIZ },
+                    busy = false,
+                )
+                if (!decision.available) {
+                    return StartAdmission.Refused(decision.reason.toRejectReason())
+                }
+                decision.grantSeconds
+            }
+            origin == SessionOrigin.LOCAL -> {
+                val limit = configured.dailyLimitFor(now.dayOfWeek.value)
+                val dailyRemaining = limit?.let { (it * 60L - usedSeconds).coerceAtLeast(0L) }
+                    ?: Long.MAX_VALUE
+                if (dailyRemaining <= 0L) return StartAdmission.Refused(RejectReason.DAILY_LIMIT)
+                minOf(durationSeconds, dailyRemaining)
+            }
+            else -> durationSeconds
         }
         return StartAdmission.Ready(
             configured = configured,
             scope = scope,
             budgetSeconds = budgetSeconds,
-            restAfterSeconds = configured.restMinutes * 60L,
+            restAfterSeconds = if (outsidePlan) 0L else {
+                configured.restFor(now.dayOfWeek.value) * 60L
+            },
             nowMs = nowMs,
-            windowEndEpochMs = nowMs + secondsLeft * 1_000L,
+            windowEndEpochMs = if (window == null) 0L else nowMs + secondsLeft * 1_000L,
         )
     }
 
@@ -1792,6 +2916,8 @@ object LocalPolicyRuntime {
         admission: StartAdmission.Ready,
         origin: SessionOrigin,
         remoteRecordId: Int = 0,
+        route: UnlockRoute? = null,
+        outsidePlan: Boolean = false,
     ) {
         // Commit only after every check passes and the scope is resolved. A rejected command
         // must leave study mode intact.
@@ -1811,6 +2937,8 @@ object LocalPolicyRuntime {
             nowMs = admission.nowMs,
             origin = origin,
             remoteRecordId = remoteRecordId,
+            route = route,
+            outsidePlan = outsidePlan,
         )
     }
 
@@ -1845,7 +2973,6 @@ object LocalPolicyRuntime {
             userName = userName,
             userIconUrl = userIconUrl,
         )
-        setAutoReady(false)
         lockReason = LockReason.NONE
         restRemainingSeconds = 0L
         PolicyFlowTrace.event(
@@ -1882,7 +3009,7 @@ object LocalPolicyRuntime {
         lockReason = LockReason.NONE
         checkpointRuntime(durable = true, forceSync = true)
         if (guardStatus == GuardStatus.ENFORCING && !studyMode) {
-            evaluateNow(allowAutoStart = false)
+            evaluateNow()
         } else {
             publish()
         }
@@ -1894,7 +3021,11 @@ object LocalPolicyRuntime {
         while (settledGrantRecords.size > SETTLED_GRANT_LIMIT) {
             settledGrantRecords.remove(settledGrantRecords.first())
         }
-        LocalPolicyStore.saveSettledGrantRecordIds(settledGrantRecords)
+        LocalPolicyStore.saveSettledGrantRecordIds(
+            settledGrantRecords,
+            hosted = hostedStorage,
+            hostedScope = hostedScope,
+        )
     }
 
     private fun pendingMatches(
@@ -1928,6 +3059,16 @@ object LocalPolicyRuntime {
         return if (timed.isEmpty()) null else ResolvedScope(AccessMode.APPS, timed)
     }
 
+    /**
+     * Local-session scope: configured entertainment, unlimited and (when enabled) study apps.
+     * The parent Web timer keeps it fixed for the session; the other local routes publish the
+     * live union so a rule edit is visible at once.
+     */
+    private fun resolveSessionScope(configured: LocalRules): ResolvedScope? {
+        val visible = configured.sessionVisiblePackages(installedPackages)
+        return if (visible.isEmpty()) null else ResolvedScope(AccessMode.APPS, visible)
+    }
+
     @Synchronized
     fun onTick() {
         if (!initialized || !active) return
@@ -1939,15 +3080,17 @@ object LocalPolicyRuntime {
             if (session != null) {
                 finishSession(parentStop = false, emitCue = false, crossDay = true)
             }
+            // A round cannot settle into a reward on a new day's rules.
+            cancelStudyRound("DAY_ROLLOVER", bringHome = true)
             dayKey = today.toString()
             usedSeconds = dayUsage[dayKey] ?: 0L
-            setAutoReady(false)
+            // V44 counts are scoped to one local day. Any session that crossed midnight was
+            // already settled above into the date it started, so the new day starts at zero.
+            routeUsage = routeUsage?.normalizedFor(dayKey)
             // The armed grant's window/deadline belongs to the old day; never carry an orange
             // confirm button into a new quota day.
             pendingRemoteStart?.let { rememberSettledGrantRecord(it.recordId) }
             pendingRemoteStart = null
-            blockedWindowKey = ""
-            LocalPolicyStore.saveAutoBlockKey("")
             checkpointRuntime(durable = true, forceSync = true)
         }
         if (breakUntil > 0 && now >= breakUntil) {
@@ -1957,8 +3100,8 @@ object LocalPolicyRuntime {
             if (guardStatus == GuardStatus.ENFORCING && session == null && !studyMode &&
                 isScreenInteractive()
             ) {
-                // Rest is over. AUTO_READY is only entered with the screen on; while the screen
-                // is off the lock keeps its rest state and transitions after the screen lights.
+                // Rest is over. Re-evaluate only with the screen on; while the screen is off
+                // the lock keeps its rest state and transitions after the screen lights.
                 enterRestCompletedState()
                 publish()
             }
@@ -1971,11 +3114,10 @@ object LocalPolicyRuntime {
             val configured = rules?.normalized()
             val windowOpen = configured != null && currentWindow(configured, LocalDateTime.now()) != null
             val deadlinePassed = armed.deadlineEpochMs > 0L && now >= armed.deadlineEpochMs
-            if (activation != Activation.MANUAL || !windowOpen || deadlinePassed) {
+            if (!windowOpen || deadlinePassed) {
                 PolicyFlowTrace.event(
                     "grant.expire",
                     "recordId" to armed.recordId,
-                    "activation" to activation,
                     "windowOpen" to windowOpen,
                     "deadlinePassed" to deadlinePassed,
                 )
@@ -1984,7 +3126,7 @@ object LocalPolicyRuntime {
                 lockReason = LockReason.NONE
                 checkpointRuntime(durable = true, forceSync = true)
                 if (guardStatus == GuardStatus.ENFORCING && !studyMode) {
-                    evaluateNow(allowAutoStart = false)
+                    evaluateNow()
                 } else {
                     publish()
                 }
@@ -2011,8 +3153,9 @@ object LocalPolicyRuntime {
             // evidence here before pausing/ending anything; one marker per episode is enough.
             if (!screenOffEvidenceForEpisode) notePolicyScreenOff()
             if (guardStatus == GuardStatus.ENFORCING && session != null) {
-                pauseSession(now, emitCue = true)
+                pauseSession(now, emitCue = true, reason = SessionPauseReason.SCREEN_OFF)
             }
+            studyRound?.takeIf { !it.isPaused }?.let { pauseStudyRound("SCREEN_OFF") }
             when (guardStatus) {
                 GuardStatus.PARENT_OVERRIDE -> endParentOverride()
                 GuardStatus.STUDY_MODE -> exitStudyMode()
@@ -2054,11 +3197,20 @@ object LocalPolicyRuntime {
             return
         }
 
+        studyRound?.let { round ->
+            tickStudyRound(round)
+            return
+        }
+
         val current = session
         if (current != null) {
             if (current.isPaused) {
-                // Covers a missed screen-on broadcast. Both this path and the broadcast path
-                // clear pausedAt under the same lock, so the resume cue plays at most once.
+                // Covers a missed screen-on broadcast. An unlimited app in front stays paused
+                // until the foreground report names a timed app again.
+                if (current.pauseReason == SessionPauseReason.UNLIMITED_APP) {
+                    publish()
+                    return
+                }
                 resumeSession(now, emitCue = true)
                 return
             }
@@ -2103,17 +3255,14 @@ object LocalPolicyRuntime {
             return
         }
 
-        // AUTO_READY waits for the child. Passing false here keeps a tick from starting a
-        // session behind the lock screen; the explicit start button passes true.
-        evaluateNow(allowAutoStart = activation == Activation.AUTO && !autoReady)
+        evaluateNow()
     }
 
     @Synchronized
-    private fun evaluateNow(allowAutoStart: Boolean) {
+    private fun evaluateNow() {
         if (guardStatus != GuardStatus.ENFORCING || studyMode) return
         val configured = rules?.normalized()
         if (configured == null || !configured.isUsable || !LocalPolicyStore.pinConfigured) {
-            setAutoReady(false)
             lockReason = LockReason.SETUP_REQUIRED
             nextWindowLabel = ""
             restRemainingSeconds = 0
@@ -2121,90 +3270,21 @@ object LocalPolicyRuntime {
             return
         }
         if (!configured.hasTimedApps()) {
-            setAutoReady(false)
             lockReason = LockReason.NO_TIMED_APPS
             nextWindowLabel = ""
             restRemainingSeconds = 0
             publish()
             return
         }
-        if (activation == Activation.MANUAL) {
-            lockManualWaiting(configured)
-            publish()
-            return
-        }
-
-        val now = LocalDateTime.now()
-        val nowMs = System.currentTimeMillis()
-        val breakSeconds = LocalRestPolicy.remainingSeconds(breakUntil, nowMs)
-        if (breakSeconds > 0) {
-            setAutoReady(false)
-            lockReason = LockReason.RESTING
-            restRemainingSeconds = breakSeconds
-            publish()
-            return
-        }
-        val windowKey = windowKey(configured, now)
-        if (blockedWindowKey.isNotEmpty() && blockedWindowKey != windowKey) {
-            blockedWindowKey = ""
-            LocalPolicyStore.saveAutoBlockKey("")
-        }
-        if (windowKey.isNotEmpty() && blockedWindowKey == windowKey) {
-            setAutoReady(false)
-            lockReason = LockReason.AUTO_BLOCKED
-            nextWindowLabel = nextWindowLabelFor(configured, now)
-            restRemainingSeconds = 0
-            publish()
-            return
-        }
-
-        val decision = RulePlanScheduler.decide(
-            dayOfWeek = now.dayOfWeek.value,
-            secondOfDay = secondOfDay(now),
-            rules = configured,
-            templateVersion = templateVersion,
-            sessionId = newRuleSessionId(),
-            usedSecondsToday = usedSeconds,
-            breakRemainingSeconds = breakSeconds,
-            accessMode = AccessMode.APPS,
-            allowedPackages = configured.timedPackages(),
-        )
-        when (decision) {
-            is RulePlanDecision.SetupRequired -> {
-                setAutoReady(false)
-                lockReason = LockReason.SETUP_REQUIRED
-                nextWindowLabel = ""
-                restRemainingSeconds = 0
-            }
-            is RulePlanDecision.Locked -> {
-                setAutoReady(false)
-                lockReason = decision.reason
-                nextWindowLabel = labelFor(
-                    decision.nextWindowDayOffset,
-                    decision.nextWindowMinuteOfDay,
-                )
-                restRemainingSeconds = decision.breakRemainingSeconds
-            }
-            is RulePlanDecision.Start -> {
-                lockReason = LockReason.NONE
-                nextWindowLabel = ""
-                restRemainingSeconds = 0
-                if (allowAutoStart && isScreenInteractive()) {
-                    startPlanFromScheduler(decision.plan, nowMs)
-                } else {
-                    setAutoReady(true)
-                    lockReason = LockReason.AUTO_READY
-                }
-            }
-        }
+        lockManualWaiting(configured)
         publish()
     }
 
-    /** Rest completed with the screen on: re-decide instead of blindly enabling a start. */
+    /** Rest completed with the screen on: re-evaluate the manual waiting state. */
     private fun enterRestCompletedState() {
         // The window may have closed or the daily quota may have run out while the child was
-        // resting, so let the scheduler choose between the start button and the next lock.
-        evaluateNow(allowAutoStart = false)
+        // resting, so the lock state must be recomputed rather than blindly kept.
+        evaluateNow()
     }
 
     private fun lockManualWaiting(configured: LocalRules) {
@@ -2213,26 +3293,6 @@ object LocalPolicyRuntime {
         restRemainingSeconds = LocalRestPolicy.remainingSeconds(breakUntil, nowMs)
         lockReason = if (restRemainingSeconds > 0) LockReason.RESTING else LockReason.MANUAL_WAITING
         nextWindowLabel = nextWindowLabelFor(configured, now)
-    }
-
-    private fun startPlanFromScheduler(plan: PolicyExecutionPlan, nowMs: Long) {
-        sessionOrigin = null
-        activeRemoteRecordId = 0
-        sessionReportUsage = usageSink != null
-        session = LocalActiveSession(
-            plan = plan,
-            remainingSeconds = plan.budgetSeconds,
-            startedAtEpochMs = nowMs,
-            usageDate = dayKey,
-            wallDeadlineEpochMs = wallDeadlineFor(plan, nowMs),
-        )
-        setAutoReady(false)
-        spokenThresholds.clear()
-        lastUsageReportedSeconds = 0L
-        markCheckpoint(nowMs)
-        checkpointRuntime(durable = true, forceSync = true)
-        emitUsage(session!!, RuleUsageEventType.START, 0L, usedTodayFor(session!!, 0L))
-        PolicyVoiceBus.emit(PolicyVoiceCue.START)
     }
 
     private fun startPlan(
@@ -2246,6 +3306,8 @@ object LocalPolicyRuntime {
         nowMs: Long,
         origin: SessionOrigin? = null,
         remoteRecordId: Int = 0,
+        route: UnlockRoute? = null,
+        outsidePlan: Boolean = false,
     ) {
         // A started plan is the only state that owns the timer; never leave an armed grant
         // beside it (a confirm already cleared it, this is the defensive path).
@@ -2254,7 +3316,8 @@ object LocalPolicyRuntime {
         // Set before the durable write so a process death cannot lose a parent-confirmed local
         // start or the grant record that owns the session.
         sessionOrigin = origin?.toSessionOrigin(remoteRecordId)
-        sessionReportUsage = usageSink != null
+        // The parent's out-of-plan timer is deliberately absent from the hosted usage ledger.
+        sessionReportUsage = !outsidePlan && usageSink != null
         val sessionId = newRuleSessionId()
         val plan = PolicyExecutionPlan(
             id = sessionId,
@@ -2268,6 +3331,7 @@ object LocalPolicyRuntime {
             restAfterSeconds = restAfterSeconds,
             templateVersion = templateVersion,
             sessionId = sessionId,
+            outsidePlan = outsidePlan,
         )
         session = LocalActiveSession(
             plan = plan,
@@ -2276,7 +3340,12 @@ object LocalPolicyRuntime {
             usageDate = dayKey,
             wallDeadlineEpochMs = wallDeadlineFor(plan, nowMs),
         )
-        setAutoReady(false)
+        // V44: the session and its route count become durable in the same snapshot below.
+        // Only a successfully established session consumes one count; every finish path keeps
+        // the increment, so leaving early never refunds it.
+        if (route != null) {
+            routeUsage = normalizedRouteUsage().withGrant(route, dayKey)
+        }
         lockReason = LockReason.NONE
         restRemainingSeconds = 0L
         nextWindowLabel = ""
@@ -2284,7 +3353,9 @@ object LocalPolicyRuntime {
         lastUsageReportedSeconds = 0L
         markCheckpoint(nowMs)
         checkpointRuntime(durable = true, forceSync = true)
-        emitUsage(session!!, RuleUsageEventType.START, 0L, usedTodayFor(session!!, 0L))
+        if (!outsidePlan) {
+            emitUsage(session!!, RuleUsageEventType.START, 0L, usedTodayFor(session!!, 0L))
+        }
         PolicyVoiceBus.emit(PolicyVoiceCue.START)
         publish()
     }
@@ -2294,10 +3365,11 @@ object LocalPolicyRuntime {
     fun enterStudyMode(): Boolean {
         if (!initialized || studyMode) return false
         if (guardStatus != GuardStatus.ENFORCING || session != null) return false
-        // The runtime accepts an empty scope, but the lock screen must not open it: the entry
-        // stays visible as a no-op and the focused footer explains the missing setup.
+        if (studyRound != null) return false
+        // An empty study scope or the study master switch off keeps the launcher closed; the
+        // lock-screen entry becomes a no-op and the focused footer explains the missing setup.
         val configured = rules?.normalized() ?: return false
-        if (!configured.isUsable) return false
+        if (!configured.isUsable || !configured.studyRouteActive) return false
         val nowWall = System.currentTimeMillis()
         val nowElapsed = SystemClock.elapsedRealtime()
         val lease = StudyLease(
@@ -2330,7 +3402,7 @@ object LocalPolicyRuntime {
             publish()
             return
         }
-        evaluateNow(allowAutoStart = false)
+        evaluateNow()
         publish()
     }
 
@@ -2340,6 +3412,9 @@ object LocalPolicyRuntime {
      */
     @Synchronized
     fun beginParentOverride(durationMs: Long = 0L) {
+        // A parent taking over ends the child's focus round; it must not keep counting behind
+        // the parent's back or leave a reward armed.
+        cancelStudyRound("PARENT_OVERRIDE", bringHome = false)
         if (session != null) {
             // The parent is taking over, so this stop must not start the child's rest interval.
             finishSession(parentStop = true, emitCue = false, suppressRest = true)
@@ -2376,10 +3451,6 @@ object LocalPolicyRuntime {
     }
 
     private fun applyParentOverrideLocked(durationMs: Long = 0L) {
-        // A parent takeover is not the child's window ending. finishSession() marks the window
-        // blocked on a parent stop; leaving that block would strand the child on "this session
-        // has ended" after the unlock, even with time and quota left.
-        clearAutoBlockForOpenWindow()
         val nowWall = System.currentTimeMillis()
         val nowElapsed = SystemClock.elapsedRealtime()
         val untilWall = if (durationMs > 0) nowWall + durationMs else 0L
@@ -2404,7 +3475,6 @@ object LocalPolicyRuntime {
         parentOverrideUntil = untilWall
         saveGuardState(phase = GuardStatus.PARENT_OVERRIDE, override = lease, study = null)
         LocalPolicyStore.saveParentOverrideActive(true)
-        setAutoReady(false)
         lockReason = LockReason.NONE
         publish()
     }
@@ -2416,7 +3486,6 @@ object LocalPolicyRuntime {
         parentOverrideUntil = 0L
         saveGuardState(phase = GuardStatus.ENFORCING, override = null, study = null)
         LocalPolicyStore.saveParentOverrideActive(false)
-        setAutoReady(false)
         // A pending grant survives the parent takeover; returning must show its confirm gate
         // again instead of the waiting copy.
         if (pendingRemoteStart != null) {
@@ -2427,36 +3496,7 @@ object LocalPolicyRuntime {
         // Recompute the child's normal lock: rest if it is still running, otherwise the start
         // button when the window and quota allow a session. A parent's unlock must not close
         // the rest of the child's window.
-        evaluateNow(allowAutoStart = false)
-    }
-
-    /**
-     * Latest rest end for a window block written by an older build. Those blocks carried no
-     * timestamp, so recover the last session end from the usage ledger and add the configured
-     * rest. Null means there is no usable end; the caller treats the rest as already over.
-     */
-    private fun legacyBlockAvailableAt(nowMs: Long): Long? {
-        val configured = rules?.normalized() ?: return null
-        val today = LocalDate.now().toString()
-        val lastEnd = RuleUsageStore.load().snapshot()
-            .asSequence()
-            .filter { it.type == RuleUsageEventType.END && it.usageDate == today }
-            .mapNotNull { it.endedAtEpochMs }
-            .filter { it > 0L && it <= nowMs }
-            .maxOrNull()
-            ?: return null
-        return lastEnd + configured.restMinutes.toLong() * 60_000L
-    }
-
-    /** Drop a window block that belongs to the open window; parent actions do not close it. */
-    private fun clearAutoBlockForOpenWindow() {
-        if (activation != Activation.AUTO || blockedWindowKey.isEmpty()) return
-        val configured = rules?.normalized() ?: return
-        val key = windowKey(configured, LocalDateTime.now())
-        if (key.isNotEmpty() && blockedWindowKey == key) {
-            blockedWindowKey = ""
-            LocalPolicyStore.saveAutoBlockKey("")
-        }
+        evaluateNow()
     }
 
     /** Remote temporary unlock is the same override path as the lock-screen PIN. */
@@ -2470,8 +3510,7 @@ object LocalPolicyRuntime {
         if (lastSessionEndedAt <= 0L) return
         val configured = rules?.normalized() ?: return
         val restSeconds = LocalRestPolicy.restSeconds(
-            activation = activation,
-            configuredRestMinutes = configured.restMinutes,
+            configuredRestMinutes = configured.restFor(LocalDate.now().dayOfWeek.value),
             // This path only needs the configured duration, not a particular end reason.
             endReason = PolicyEndReason.SESSION_LIMIT,
         )
@@ -2487,12 +3526,7 @@ object LocalPolicyRuntime {
 
     /** The normal lock state after a segment with no active rest. */
     private fun enterPostSessionWaiting() {
-        if (activation == Activation.AUTO) {
-            setAutoReady(true)
-            lockReason = LockReason.AUTO_READY
-        } else {
-            lockReason = LockReason.MANUAL_WAITING
-        }
+        lockReason = LockReason.MANUAL_WAITING
     }
 
     @Synchronized
@@ -2515,12 +3549,12 @@ object LocalPolicyRuntime {
             else -> current.plan.endReason
         }
         val endReason = current.endReason
-        val endBySwitch = forSwitch || crossDay ||
-            reportedEnd == PolicyEndReason.ACTIVATION_SWITCH
+        val outsidePlan = current.plan.outsidePlan
+        val endBySwitch = forSwitch || crossDay
         // A rest belongs to the mode that earned it. computeRest decides from the same rules
         // the old post-settlement branch used, but the cursor now rides in the settlement
         // snapshot, so a process death cannot separate the end from its rest.
-        val restApplies = !endBySwitch && when {
+        val restApplies = !outsidePlan && !endBySwitch && when {
             parentStop -> !suppressRest
             reportedEnd == PolicyEndReason.USER_EXIT -> true
             reportedEnd == PolicyEndReason.SCREEN_OFF_TIMEOUT -> true
@@ -2538,27 +3572,36 @@ object LocalPolicyRuntime {
         } else {
             0L
         }
-        val usedToday = recordSettlement(
-            sessionId = current.plan.sessionId ?: current.plan.id,
-            usageDate = current.usageDate,
-            consumedSeconds = consumed,
-            endedAtEpochMs = endedAt,
-            reason = reportedEnd,
-            remoteRecordId = activeRemoteRecordId,
-        )
-        lastSessionEndedAt = if (restUntil > 0L) endedAt else 0L
-        breakUntil = restUntil
+        // V45: an out-of-plan parent timer writes neither the daily ledger nor rest. The
+        // original plan state is intentionally left as it was before the timer started.
+        val usedToday = if (outsidePlan) {
+            usedSeconds
+        } else {
+            recordSettlement(
+                sessionId = current.plan.sessionId ?: current.plan.id,
+                usageDate = current.usageDate,
+                consumedSeconds = consumed,
+                endedAtEpochMs = endedAt,
+                reason = reportedEnd,
+                remoteRecordId = activeRemoteRecordId,
+            )
+        }
+        if (!outsidePlan) {
+            lastSessionEndedAt = if (restUntil > 0L) endedAt else 0L
+            breakUntil = restUntil
+        }
         session = null
         sessionOrigin = null
         activeRemoteRecordId = 0
         sessionReportUsage = false
         spokenThresholds.clear()
         lastUsageReportedSeconds = 0L
-        setAutoReady(false)
         // One durable commit carries session=null, the daily total, the settlement record and
         // the rest cursor. A crash after this point can no longer resurrect the session.
         checkpointRuntime(durable = true, forceSync = true)
-        emitUsage(current, RuleUsageEventType.END, consumed, usedToday, reportedEnd, endedAt)
+        if (!outsidePlan) {
+            emitUsage(current, RuleUsageEventType.END, consumed, usedToday, reportedEnd, endedAt)
+        }
         if (endBySwitch) {
             lockReason = LockReason.NONE
             restRemainingSeconds = 0
@@ -2568,23 +3611,29 @@ object LocalPolicyRuntime {
         }
         Log.i(
             TAG,
-            "session end mode=$activation reason=$reportedEnd end=$endedAt consumed=$consumed",
+            "session end reason=$reportedEnd end=$endedAt consumed=$consumed outside=$outsidePlan",
         )
+        if (outsidePlan) {
+            // Return to the child's current plan state: the same window/quota/rest facts that
+            // were true before the timer started decide the next screen.
+            restRemainingSeconds = 0
+            guardStatus = GuardStatus.ENFORCING
+            evaluateNow()
+            publish()
+            if (emitCue && reasonOverride == null) PolicyVoiceBus.emit(PolicyVoiceCue.TIME_UP)
+            return
+        }
         when {
             parentStop -> {
                 restRemainingSeconds = 0
-                when {
-                    // Both modes rest after a parent ends the segment. Only a parent takeover
-                    // (which is about to unlock the TV for the parent) skips the child's break.
-                    restUntil > 0L -> lockReason = LockReason.RESTING
-                    activation == Activation.AUTO && suppressRest ->
-                        lockReason = LockReason.NONE
-                    else -> enterPostSessionWaiting()
-                }
+                // Only a parent takeover (which is about to unlock the TV for the parent)
+                // skips the child's break.
+                if (restUntil > 0L) lockReason = LockReason.RESTING
+                else enterPostSessionWaiting()
             }
             reportedEnd == PolicyEndReason.USER_EXIT -> {
                 restRemainingSeconds = 0
-                // Leaving early must not be a way to skip the break in either mode.
+                // Leaving early must not be a way to skip the break.
                 if (restUntil > 0L) lockReason = LockReason.RESTING
                 else enterPostSessionWaiting()
             }
@@ -2595,32 +3644,17 @@ object LocalPolicyRuntime {
             }
             reportedEnd == PolicyEndReason.WINDOW_END -> {
                 restRemainingSeconds = 0
-                if (activation == Activation.AUTO) {
-                    lockReason = LockReason.OUTSIDE_WINDOW
-                } else {
-                    lockReason = LockReason.MANUAL_WAITING
-                }
+                lockReason = LockReason.MANUAL_WAITING
             }
             endReason == LocalSessionEnd.SESSION_LIMIT -> {
                 restRemainingSeconds = 0
-                // The plan's snapshot covers a natural end; both modes take the same rest.
+                // The plan's snapshot covers a natural end.
                 if (restUntil > 0L) lockReason = LockReason.RESTING
                 else enterPostSessionWaiting()
             }
             else -> {
                 restRemainingSeconds = 0
-                if (activation == Activation.AUTO) {
-                    if (endReason == LocalSessionEnd.DAILY_LIMIT) {
-                        lockReason = LockReason.TIME_UP
-                    } else if (endReason == LocalSessionEnd.WINDOW_END) {
-                        lockReason = LockReason.OUTSIDE_WINDOW
-                    } else {
-                        setAutoReady(true)
-                        lockReason = LockReason.AUTO_READY
-                    }
-                } else {
-                    lockReason = LockReason.MANUAL_WAITING
-                }
+                lockReason = LockReason.MANUAL_WAITING
             }
         }
         if (restUntil > 0L) {
@@ -2634,6 +3668,87 @@ object LocalPolicyRuntime {
                 if (parentStop) PolicyVoiceCue.PARENT_STOP else PolicyVoiceCue.TIME_UP,
             )
         }
+    }
+
+    /** Today's route counts, using the current local day even if a stale value was restored. */
+    private fun normalizedRouteUsage(): RouteUsage =
+        (routeUsage ?: RouteUsage(date = dayKey)).normalizedFor(dayKey)
+
+    /**
+     * The one V44 projection used by admission and by the published UI state. [busy] is false
+     * when the caller has already checked session/study/rest gates; the entry checks below
+     * remain in [admitStart] so the planner never becomes the only gate.
+     */
+    private fun routeDecision(
+        configured: LocalRules,
+        route: UnlockRoute,
+        now: LocalDateTime,
+        quizEarnedSeconds: Long? = null,
+        busy: Boolean = false,
+    ): UnlockRouteDecision {
+        val plan = UnlockRoutePlanner.plan(
+            rules = configured,
+            usage = normalizedRouteUsage(),
+            usedSeconds = usedSeconds,
+            date = dayKey,
+            dayOfWeek = now.dayOfWeek.value,
+            secondOfDay = secondOfDay(now),
+            facts = UnlockRouteFacts(
+                resting = breakUntil > System.currentTimeMillis(),
+                busy = busy,
+            ),
+            quizEarnedSeconds = quizEarnedSeconds,
+        )
+        return plan.decision(route)
+    }
+
+    private fun unlockRoutePlan(now: LocalDateTime): UnlockRoutePlan? {
+        val configured = rules?.normalized()?.takeIf { it.isUsable } ?: return null
+        return UnlockRoutePlanner.plan(
+            rules = configured,
+            usage = normalizedRouteUsage(),
+            usedSeconds = usedSeconds,
+            date = dayKey,
+            dayOfWeek = now.dayOfWeek.value,
+            secondOfDay = secondOfDay(now),
+            facts = UnlockRouteFacts(
+                resting = breakUntil > System.currentTimeMillis(),
+                busy = session != null || studyRound != null || pendingRemoteStart != null,
+            ),
+        )
+    }
+
+    /**
+     * The quiz route's actual grant for [earnedSeconds], in seconds. The report and the start
+     * must show/consume this same value so a 60-minute result cannot promise more than the
+     * public cap or the leftover quota.
+     */
+    @Synchronized
+    fun quizGrantSeconds(earnedSeconds: Long): Long {
+        val configured = rules?.normalized()?.takeIf { it.isUsable } ?: return earnedSeconds
+        return routeDecision(
+            configured = configured,
+            route = UnlockRoute.QUIZ,
+            now = LocalDateTime.now(),
+            quizEarnedSeconds = earnedSeconds,
+            busy = false,
+        ).grantSeconds
+    }
+
+    private fun UnlockRouteReason.toRejectReason(): RejectReason = when (this) {
+        UnlockRouteReason.READY -> RejectReason.INVALID_COMMAND
+        UnlockRouteReason.OUTSIDE_WINDOW -> RejectReason.OUTSIDE_WINDOW
+        UnlockRouteReason.RESTING -> RejectReason.RESTING
+        UnlockRouteReason.BUSY -> RejectReason.BUSY
+        UnlockRouteReason.QUOTA_EXHAUSTED -> RejectReason.DAILY_LIMIT
+        UnlockRouteReason.COUNT_ZERO,
+        UnlockRouteReason.COUNT_EXHAUSTED,
+        -> RejectReason.ROUTE_LIMIT
+        UnlockRouteReason.SWITCH_OFF,
+        UnlockRouteReason.INVALID_RULES,
+        UnlockRouteReason.STUDY_NOT_CONFIGURED,
+        UnlockRouteReason.NOT_EARNED,
+        -> RejectReason.INVALID_COMMAND
     }
 
     private fun usedTodayFor(current: LocalActiveSession, sessionUsedSeconds: Long): Long =
@@ -2727,15 +3842,41 @@ object LocalPolicyRuntime {
             userIconUrl = userIconUrl,
         )
 
+    /**
+     * The default member's legacy repository absorbs every tick, while its subject document is
+     * written on durable transitions. Prefer the newer session checkpoint so a killed process
+     * does not lose up to one flush interval of already-used time. A session present on only one
+     * side wins: a durable clear writes both, so a one-sided session means the other copy lagged.
+     * Without a session the subject document stays canonical.
+     */
+    private fun freshestRuntime(
+        subject: RuntimeSnapshot?,
+        legacy: RuntimeSnapshot?,
+    ): RuntimeSnapshot? {
+        if (subject == null) return legacy
+        if (legacy == null) return subject
+        val subjectSession = subject.session
+        val legacySession = legacy.session
+        if (subjectSession == null) return legacySession?.let { legacy } ?: subject
+        if (legacySession == null) return subject
+        return if (legacySession.checkpointWallMs > subjectSession.checkpointWallMs) {
+            legacy
+        } else {
+            subject
+        }
+    }
+
     /** The single durable runtime document: session, ledger and armed grant together. */
     private fun runtimeSnapshot(): RuntimeSnapshot = RuntimeSnapshot(
         session = sessionSnapshot(),
         ledger = RuntimeLedger(
             days = LinkedHashMap(dayUsage),
+            studyDays = LinkedHashMap(studyDays),
             breakUntilEpochMs = breakUntil,
             lastEndedAtEpochMs = lastSessionEndedAt,
             settled = LinkedHashMap(settledSessions),
             pendingGrant = pendingRemoteStart?.toPendingSnapshot(),
+            routeUsage = routeUsage,
         ),
     )
 
@@ -2752,6 +3893,7 @@ object LocalPolicyRuntime {
             planDeadlineEpochMs = current.plan.deadlineEpochMs ?: 0L,
             wallDeadlineEpochMs = current.wallDeadlineEpochMs,
             pausedAtEpochMs = current.pausedAtEpochMs,
+            pauseReason = current.pauseReason.takeIf { current.isPaused },
             checkpointWallMs = checkpointWallMs,
             checkpointElapsedMs = checkpointElapsedMs,
             checkpointAsleepMs = checkpointAsleepMs,
@@ -2764,6 +3906,7 @@ object LocalPolicyRuntime {
             reportUsage = sessionReportUsage,
             templateVersion = current.plan.templateVersion,
             restAfterSeconds = current.plan.restAfterSeconds,
+            outsidePlan = current.plan.outsidePlan,
         )
     }
 
@@ -2774,10 +3917,14 @@ object LocalPolicyRuntime {
      */
     private fun checkpointRuntime(durable: Boolean = false, forceSync: Boolean = false) {
         if (!TvStore.isReady) return
+        val hosted = hostedStorage
+        val snapshot = runtimeSnapshot()
         val written = PolicyStateRepository.saveRuntime(
-            snapshot = runtimeSnapshot(),
+            snapshot = snapshot,
             durable = durable,
             forceSync = forceSync,
+            hosted = hosted,
+            hostedScope = hostedScope,
         )
         if (!written) {
             Log.w(TAG, "runtime checkpoint failed")
@@ -2785,7 +3932,14 @@ object LocalPolicyRuntime {
         }
         if (durable) {
             checkpointFlushCounter = 0
-            mirrorRuntimeLegacy()
+            if (!hosted) {
+                // The subject document is the canonical V40 copy. It is only committed on
+                // durable transitions for now; the legacy mirror still absorbs the
+                // high-frequency ticks. The hosted partition never writes either: those keys
+                // belong to the TV's own child mode and must survive an unbind untouched.
+                FamilyHub.saveActiveRuntime(snapshot, currentSavedStudyRound())
+                mirrorRuntimeLegacy()
+            }
         } else {
             checkpointFlushCounter += 1
             if (checkpointFlushCounter >= RUNTIME_SYNC_EVERY_CHECKPOINTS) {
@@ -2820,6 +3974,7 @@ object LocalPolicyRuntime {
                     activation = current.plan.activation,
                     accessMode = current.plan.accessMode,
                     allowedPackages = current.plan.allowedPackages,
+                    outsidePlan = current.plan.outsidePlan,
                 ),
             )
         }
@@ -2840,7 +3995,11 @@ object LocalPolicyRuntime {
             study = study,
             screenOff = guardSnapshot.screenOff,
         )
-        PolicyStateRepository.saveGuard(guardSnapshot)
+        PolicyStateRepository.saveGuard(
+            guardSnapshot,
+            hosted = hostedStorage,
+            hostedScope = hostedScope,
+        )
     }
 
     private fun publish() {
@@ -2856,6 +4015,9 @@ object LocalPolicyRuntime {
             ?.let { (it.endSecond - secondOfDay(nowDateTime)).toLong().coerceAtLeast(0L) }
             ?: 0L
         val nextWindowIn = configured?.let { secondsUntilNextWindow(it, nowDateTime) } ?: 0L
+        val studyUsed = studyUsedSeconds(dayKey)
+        val studyLimit = configured?.studyDailyLimitFor(nowDateTime.dayOfWeek.value)
+        val entertainmentUnlimited = configured?.effectiveUnlimitedPackages.orEmpty()
         val effectiveRemaining = current?.let {
             SessionTiming.effectiveRemainingSeconds(
                 budgetRemainingSeconds = it.remainingSeconds,
@@ -2875,30 +4037,73 @@ object LocalPolicyRuntime {
             activation = activation,
             source = source,
             policyEpoch = policyEpoch,
-            studyModeAvailable = configured?.hasStudyMode == true,
+            // V44 routes are independent. The study master switch still hides its launcher tiles
+            // while keeping the stored app lists. The web reads the raw switches from the rules
+            // projection, not from here.
+            quizGateEnabled = configured?.quizRouteActive == true,
+            studyEarnEnabled = configured?.studyRouteActive == true,
+            directStartEnabled = configured?.directRouteActive == true,
+            unlockRoutePlan = unlockRoutePlan(nowDateTime),
+            studyModeAvailable = configured?.studyRouteActive == true,
             studyModeActive = studyMode,
-            studyPackages = configured?.effectiveStudyPackages.orEmpty(),
-            autoReady = autoReady && pending == null,
+            studyPackages = configured?.takeIf { it.studyRouteActive }
+                ?.effectiveStudyPackages.orEmpty(),
+            studyEarnPackages = configured?.takeIf { it.studyRouteActive }
+                ?.effectiveStudyEarnPackages.orEmpty(),
+            studyEarnStudyMinutes = configured?.studyEarnStudyMinutes
+                ?: LocalRules.DEFAULT_STUDY_EARN_STUDY_MINUTES,
+            // The reward shown to the child is the effective Y, never an old value above X
+            // or above the public cap.
+            studyEarnRewardMinutes = configured?.effectiveStudyRewardMinutes
+                ?: LocalRules.DEFAULT_STUDY_EARN_REWARD_MINUTES,
+            studyRound = studyRound?.let { round ->
+                StudyRoundUi(
+                    studyPackage = round.studyPackage,
+                    targetPackage = round.targetPackage,
+                    totalSeconds = round.totalSeconds,
+                    remainingSeconds = round.remainingSeconds,
+                    studiedSeconds = round.studiedSeconds,
+                    studyLimitSeconds = round.totalSeconds,
+                    studyLimitUnlimited = studyLimit == null,
+                    rewardSeconds = round.rewardSeconds,
+                    rewardEnabled = round.rewardEnabled,
+                    rewardAtSeconds = (configured?.studyEarnStudyMinutes ?: 0) * 60L,
+                    rewardAttempted = round.rewardAttempted,
+                    rewardGranted = round.rewardGranted,
+                    paused = round.isPaused,
+                )
+            },
             noTimedApps = configured != null && configured.isUsable && !configured.hasTimedApps(),
             // Study mode and entertainment both publish a concrete APPS scope. A SCREEN scope
             // would let a study app launch during entertainment (and anything launch in study).
             accessMode = if (configured != null) AccessMode.APPS else AccessMode.SCREEN,
             allowedPackages = when {
-                studyMode -> configured?.effectiveStudyPackages.orEmpty()
-                pending != null -> pending.allowedPackages
+                studyMode -> configured?.effectiveStudyPackages.orEmpty() + entertainmentUnlimited
+                pending != null -> pending.allowedPackages + entertainmentUnlimited
+                // The parent timer's scope is fixed at start (entertainment + unlimited +
+                // enabled study-reward apps); a later rule edit must not widen it.
+                current != null && current.plan.outsidePlan -> current.plan.allowedPackages
                 // A hosted manual segment is one concrete grant. The base rule may allow more
                 // apps, so falling through would widen the grant after the child confirms.
-                // Automatic and unbound local sessions keep the live base scope below.
+                // Unbound local sessions keep the live base scope below.
                 current != null &&
                     source == PolicySource.HOSTED &&
                     current.plan.activation == PolicyActivation.MANUAL &&
                     current.plan.accessMode == AccessMode.APPS &&
-                    current.plan.allowedPackages.isNotEmpty() -> current.plan.allowedPackages
-                else -> configured?.timedPackages().orEmpty()
+                    current.plan.allowedPackages.isNotEmpty() ->
+                    current.plan.allowedPackages + entertainmentUnlimited
+                // A local session shows every authorized app: entertainment, unlimited and
+                // (when the study switch is on) study apps. Idle keeps the narrower base scope
+                // so the lock-screen gateway and the quiz target list stay unchanged.
+                current != null && source == PolicySource.LOCAL ->
+                    configured?.sessionVisiblePackages(installedPackages).orEmpty()
+                else -> configured?.timedPackages().orEmpty() + entertainmentUnlimited
             },
+            unlimitedPackages = entertainmentUnlimited,
             totalSeconds = current?.totalSeconds ?: pending?.durationSeconds ?: 0L,
             remainingSeconds = current?.remainingSeconds ?: pending?.durationSeconds ?: 0L,
             effectiveRemainingSeconds = effectiveRemaining,
+            activeSessionOutsidePlan = current?.plan?.outsidePlan == true,
             userName = pending?.userName.orEmpty(),
             userIconUrl = pending?.userIconUrl.orEmpty(),
             pinConfigured = LocalPolicyStore.pinConfigured,
@@ -2908,10 +4113,24 @@ object LocalPolicyRuntime {
             localRulesConfigured = configured?.isUsable == true,
             setupRequired = isSetupRequired,
             dailyUsedSeconds = usedSeconds,
-            dailyLimitSeconds = (configured?.autoDailyLimitMinutes ?: 0).toLong() * 60L,
-            sessionLimitSeconds = (configured?.sessionLimitMinutes ?: 0).toLong() * 60L,
-            configuredRestMinutes = configured?.restMinutes ?: 0,
-            configuredBufferMinutes = configured?.sessionScreenOffBufferMinutes ?: 0,
+            dailyLimitSeconds = (configured?.dailyLimitFor(nowDateTime.dayOfWeek.value) ?: 0)
+                .toLong() * 60L,
+            studyDailyUsedSeconds = studyUsed,
+            studyDailyLimitSeconds = (studyLimit ?: 0).toLong() * 60L,
+            studyRemainingSeconds = studyLimit
+                ?.let { (it * 60L - studyUsed).coerceAtLeast(0L) }
+                ?: 0L,
+            studyLimitUnlimited = configured != null && studyLimit == null,
+            currentDayGroupLabel = configured?.let {
+                dayGroupLabel(it, nowDateTime.dayOfWeek.value)
+            }.orEmpty(),
+            sessionLimitSeconds = configured?.effectiveDirectMinutes?.toLong()?.times(60L) ?: 0L,
+            sessionCapSeconds = configured?.effectiveSessionCapMinutes?.toLong()?.times(60L)
+                ?: 0L,
+            configuredRestMinutes =
+                configured?.restFor(nowDateTime.dayOfWeek.value) ?: 0,
+            configuredBufferMinutes =
+                configured?.screenOffBufferFor(nowDateTime.dayOfWeek.value) ?: 0,
             nextWindowLabel = nextWindowLabel,
             todayWindowsLabel = windowsLabel(todayWindows),
             windowRemainingSeconds = windowRemaining,
@@ -2944,12 +4163,35 @@ object LocalPolicyRuntime {
     }
 
     private fun nextWindowLabelFor(configured: LocalRules, now: LocalDateTime): String {
-        val next = com.planyourtv.policy.LocalScheduleEngine.nextWindow(
-            dayOfWeek = now.dayOfWeek.value,
-            secondOfDay = secondOfDay(now),
-            rules = configured,
-        ) ?: return ""
+        val next = nextWindow(configured, now) ?: return ""
         return labelFor(next.first, next.second)
+    }
+
+    /**
+     * The next window start after [now], including a later window today. Returns
+     * (dayOffset, minuteOfDay), or null if every template has no windows.
+     */
+    private fun nextWindow(configured: LocalRules, now: LocalDateTime): Pair<Int, Int>? {
+        val currentSecond = secondOfDay(now)
+        val today = now.dayOfWeek.value
+        for (offset in 0..7) {
+            val day = ((today - 1 + offset) % 7) + 1
+            val windows = configured.windowsFor(day).sortedBy { it.startMinute }
+            val candidate = if (offset == 0) {
+                windows.firstOrNull { it.startSecond > currentSecond }
+            } else {
+                windows.firstOrNull()
+            } ?: continue
+            return offset to candidate.startMinute
+        }
+        return null
+    }
+
+    private fun dayGroupLabel(configured: LocalRules, dayOfWeek: Int): String {
+        val group = configured.groupForDay(dayOfWeek) ?: return ""
+        return group.days.joinToString(" ") {
+            DayOfWeek.of(it).getDisplayName(TextStyle.SHORT, Locale.getDefault())
+        }
     }
 
     /** Whole minutes are enough here; the lock screen renders the value as "18:00–20:00". */
@@ -2966,11 +4208,7 @@ object LocalPolicyRuntime {
         }
 
     private fun secondsUntilNextWindow(configured: LocalRules, now: LocalDateTime): Long {
-        val next = com.planyourtv.policy.LocalScheduleEngine.nextWindow(
-            dayOfWeek = now.dayOfWeek.value,
-            secondOfDay = secondOfDay(now),
-            rules = configured,
-        ) ?: return 0L
+        val next = nextWindow(configured, now) ?: return 0L
         val target = now.toLocalDate()
             .plusDays(next.first.toLong())
             .atStartOfDay()
@@ -2983,7 +4221,7 @@ object LocalPolicyRuntime {
         SessionTiming.wallDeadlineEpochMs(
             startedAtEpochMs = startedAtEpochMs,
             budgetSeconds = plan.budgetSeconds,
-            bufferMinutes = rules?.sessionScreenOffBufferMinutes
+            bufferMinutes = rules?.screenOffBufferFor(LocalDate.now().dayOfWeek.value)
                 ?: LocalRules.DEFAULT_SESSION_BUFFER_MINUTES,
             planDeadlineEpochMs = plan.deadlineEpochMs,
             nextMidnightEpochMs = nextMidnightEpochMs(LocalDateTime.now()),
@@ -3011,18 +4249,12 @@ object LocalPolicyRuntime {
         configured.windowsFor(now.dayOfWeek.value)
             .firstOrNull { it.contains(secondOfDay(now)) }
 
-    private fun windowKey(configured: LocalRules, now: LocalDateTime): String {
-        val window = currentWindow(configured, now) ?: return ""
-        return "${now.toLocalDate()}:${window.startMinute}"
-    }
-
     private fun secondOfDay(now: LocalDateTime): Int =
         now.hour * 3600 + now.minute * 60 + now.second
 
     private fun rejectForLock(reason: LockReason): RejectReason = when (reason) {
         LockReason.RESTING -> RejectReason.RESTING
-        LockReason.OUTSIDE_WINDOW, LockReason.TIME_UP, LockReason.AUTO_BLOCKED ->
-            RejectReason.OUTSIDE_WINDOW
+        LockReason.OUTSIDE_WINDOW, LockReason.TIME_UP -> RejectReason.OUTSIDE_WINDOW
         LockReason.NO_TIMED_APPS -> RejectReason.NO_TIMED_APPS
         else -> RejectReason.INVALID_COMMAND
     }
@@ -3044,7 +4276,10 @@ object LocalPolicyRuntime {
         settledGrantRecords.clear()
         dayKey = ""
         usedSeconds = 0L
+        routeUsage = null
         dayUsage.clear()
+        studyDays.clear()
+        foregroundPackage = null
         breakUntil = 0L
         lastSessionEndedAt = 0L
         settledSessions.clear()
@@ -3054,11 +4289,13 @@ object LocalPolicyRuntime {
         recoveryComplete = false
         activation = Activation.MANUAL
         source = PolicySource.LOCAL
+        hostedExecutionLoaded = false
         policyEpoch = 0L
         studyMode = false
-        autoReady = false
+        studyRound = null
+        studyRoundSavedTick = 0L
+        LockLaunchPermit.clearRoundPackage()
         installedPackages = emptySet()
-        blockedWindowKey = ""
         lockReason = LockReason.NONE
         nextWindowLabel = ""
         restRemainingSeconds = 0L
@@ -3079,8 +4316,12 @@ object LocalPolicyRuntime {
     @Synchronized
     internal fun debugResetForTest() {
         resetInMemoryForTest()
+        // The V40 subject cache survives an in-memory reset; without this the next initialize()
+        // restores the previous test's session and ledger.
+        FamilyHub.resetSubjectDocumentsForTest()
         LocalPolicyStore.resetLocalSetup()
         LocalPolicyStore.clearSettledGrantRecordIds()
+        LocalPolicyStore.clearHostedExecution()
         PolicyStateRepository.clearAll()
         val today = LocalDate.now().toString()
         LocalPolicyStore.saveUsed(today, 0L)
@@ -3108,16 +4349,12 @@ object LocalPolicyRuntime {
         studyMode = false
         saveGuardState(phase = GuardStatus.ENFORCING, override = null, study = null)
         startPlan(
-            activation = if (activation == Activation.AUTO) {
-                PolicyActivation.AUTO
-            } else {
-                PolicyActivation.MANUAL
-            },
+            activation = PolicyActivation.MANUAL,
             budgetSeconds = seconds.coerceAtLeast(1L),
             endReason = PolicyEndReason.SESSION_LIMIT,
             restAfterSeconds = 0L,
             accessMode = AccessMode.APPS,
-            allowedPackages = rules?.timedPackages().orEmpty(),
+            allowedPackages = rules?.sessionVisiblePackages(installedPackages).orEmpty(),
             deadlineEpochMs = null,
             nowMs = System.currentTimeMillis(),
         )
@@ -3154,6 +4391,7 @@ object LocalPolicyRuntime {
         usedSeconds = seconds.coerceAtLeast(0L)
         dayUsage.clear()
         dayUsage[dayKey] = usedSeconds
+        studyDays.clear()
         settledSessions.clear()
         breakUntil = 0L
         lastSessionEndedAt = 0L
@@ -3167,29 +4405,29 @@ object LocalPolicyRuntime {
         saveGuardState(phase = GuardStatus.ENFORCING, override = null, study = null)
         LocalPolicyStore.saveParentOverrideActive(false)
         pendingRemoteStart = null
-        setAutoReady(false)
         checkpointRuntime(durable = true, forceSync = true)
         publish()
-        evaluateNow(allowAutoStart = activation == Activation.AUTO)
+        evaluateNow()
     }
 
     /**
      * Effective entertainment scope. All-apps expands to the installed launchers minus the study
-     * list, so study apps stay blocked during entertainment; explicit empty stays empty.
+     * and unlimited lists. A package in more than one category follows study > unlimited >
+     * entertainment.
      */
     private fun LocalRules.timedPackages(): Set<String> =
         if (allowsAllEntertainmentApps) {
-            installedPackages - studyPackages
+            installedPackages - studyPackages - unlimitedPackages
         } else {
-            allowedPackages - studyPackages
+            allowedPackages - studyPackages - unlimitedPackages
         }
 
-    /** True when at least one entertainment app can start; study-only does not count. */
+    /** True when at least one entertainment app can start; study/unlimited-only does not count. */
     private fun LocalRules.hasTimedApps(): Boolean =
         if (allowsAllEntertainmentApps) {
-            installedPackages.any { it !in studyPackages }
+            installedPackages.any { it !in studyPackages && it !in unlimitedPackages }
         } else {
-            (allowedPackages - studyPackages).isNotEmpty()
+            (allowedPackages - studyPackages - unlimitedPackages).isNotEmpty()
         }
 
     /**

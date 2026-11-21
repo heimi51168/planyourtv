@@ -1,12 +1,15 @@
 package app.orchard.tv.quiz
 
+import app.orchard.tv.policy.FamilyHub
 import app.orchard.tv.policy.PolicyModeCoordinator
 import com.planyourtv.policy.PolicyMode
+import com.planyourtv.policy.PolicyRuntime
 import com.planyourtv.policy.quiz.QuizAnswerScope
 import com.planyourtv.policy.quiz.QuizConfig
 import com.planyourtv.policy.quiz.QuizConfigDocument
 import com.planyourtv.policy.quiz.QuizLevelPackage
 import com.planyourtv.policy.quiz.QuizPackageSource
+import com.planyourtv.policy.quiz.QuizPresetBank
 import com.planyourtv.policy.quiz.QuizRewardProfile
 import com.planyourtv.policy.quiz.QuizSession
 import com.planyourtv.policy.quiz.QuizSessionStatus
@@ -48,6 +51,8 @@ object QuizRuntime {
         val questionCount: Int? = null,
         /** The optional local level that re-asks every wrong answer in the bank. */
         val wrongReview: Boolean = false,
+        /** Set only for a single bundled bank shared by every member. */
+        val presetBank: QuizPresetBank? = null,
     ) {
         val isCustom: Boolean get() = collectionId != null
         val isCloud: Boolean get() = qbLevelId != null
@@ -212,10 +217,12 @@ object QuizRuntime {
         } else {
             cloudPlan?.document?.enabled ?: false
         }
+        // 设备级「入口展示 → 答题闯关」（2026-11-21）：云端开关与云文档 enabled 取交集。
+        // null = 旧后端未投影该字段，沿用既有行为（只看 enabled）；本地模式仍由本机开关决定。
         val lockEntryVisible = if (localMode) {
             QuizSessionStore.lockEntryVisible()
         } else {
-            enabled
+            enabled && cloudQuizEntryVisible()
         }
         val sourceConfig = QuizSessionStore.loadSourceConfig()
         val defaultConfig = if (localMode) {
@@ -223,11 +230,26 @@ object QuizRuntime {
         } else {
             cloudPlan?.config ?: QuizConfig()
         }
-        val bankCounts = QuizQuestionCache.bankCounts(QuizQuestionCache.LOCAL_SCOPE)
+        // V41: every bank read is narrowed to the active child. The public
+        // bundled rows stay visible; another member's private rows never leak
+        // into this child's wheel, counts or levels.
+        val family = FamilyHub.state.value
+        val activeSubject = family.activeUserId.takeIf { family.ready }
+        val bankCounts = QuizQuestionCache.bankCounts(
+            QuizQuestionCache.LOCAL_SCOPE,
+            subjectUserId = activeSubject,
+            activeSubjectUserId = activeSubject,
+        )
         val activeScope = session?.let {
             QuizRecovery.scopeFor(it, PolicyModeCoordinator.state.value.deviceNo)
         }
-        val activeAvailable = activeScope?.let { QuizQuestionCache.availableCount(it) } ?: 0
+        val activeAvailable = activeScope?.let {
+            QuizQuestionCache.availableCount(
+                it,
+                subjectUserId = activeSubject,
+                activeSubjectUserId = activeSubject,
+            )
+        } ?: 0
         // Level packages are the local source of truth. An absent extension is
         // migrated once; a broken one blocks the bank instead of falling back
         // to legacy keys the parent can no longer see.
@@ -275,9 +297,14 @@ object QuizRuntime {
                         },
                     collectionId = collectionId,
                     tagName = collectionId?.let { tagNames[it] }.orEmpty(),
-                    available = QuizQuestionCache.packageAvailability(pkg).available,
+                    available = QuizQuestionCache.packageAvailability(
+                        pkg,
+                        subjectUserId = activeSubject,
+                        activeSubjectUserId = activeSubject,
+                    ).available,
                     packageSourceCount = pkg.sources.size,
                     wrongReview = only == QuizPackageSource.WrongReview,
+                    presetBank = (only as? QuizPackageSource.Preset)?.bank,
                 )
             }
         } else {
@@ -350,4 +377,11 @@ object QuizRuntime {
         val status = refresh().session?.status ?: return false
         return status in ACTIVE_ROUND_STATUSES
     }
+
+    /**
+     * 云端「入口展示 → 答题闯关」（2026-11-21）。null（旧后端未投影该字段）保持历史行为：
+     * 是否显示由云文档 enabled 决定；只有显式 false 才隐藏入口。
+     */
+    private fun cloudQuizEntryVisible(): Boolean =
+        PolicyRuntime.remotePolicy.value?.quizEntryVisible != false
 }

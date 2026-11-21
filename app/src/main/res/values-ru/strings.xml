@@ -11,6 +11,7 @@
     <string name="cc_settings">Настройки</string>
     <string name="cc_volume">Громкость</string>
     <string name="cc_muted">Звук выключен</string>
+    <string name="cc_volume_external">На аудиосистеме</string>
     <string name="cc_home_default">PlanYourTV — ваш главный экран</string>
     <string name="cc_home_guarded">Home Guard включён</string>
     <string name="cc_home_not_default">Не главный экран по умолчанию</string>
@@ -293,6 +294,8 @@
     <string name="st_play_hint">В покое: через 10 секунд на верхнем ряду (в двухрядном виде — на любом из двух); любая кнопка останавливает. Всегда: кнопки не останавливают, фон чуть затемнён; останавливается, когда вы переходите к приложениям ниже.</string>
     <string name="ss_show_time">Время</string>
     <string name="ss_show_time_hint">Время на заставках с аэросъёмкой и фото. Время и название места время от времени слегка сдвигаются, чтобы не выгорал экран.</string>
+    <string name="ss_show_caption">Место</string>
+    <string name="ss_show_caption_hint">Название места слева внизу на заставке с аэросъёмкой и название снимка на заставке с фото.</string>
 
     <!-- Kids and Elders mode (settings/Restricted) -->
     <string name="kids_title">Дети и пожилые</string>
@@ -359,6 +362,7 @@
     <string name="about_built_on">PlanYourTV — независимый проект на основе лаунчера Aerial с открытым исходным кодом. Спасибо автору Aerial pengchujin и всем участникам.</string>
     <string name="about_not_official">Это не официальная сборка Aerial. Проект не связан с Apple, Xiaomi, TCL и другими компаниями и не имеет их одобрения.</string>
     <string name="about_project">planyourtv.me · github.com/heimi51168/planyourtv</string>
+    <string name="about_app_record">Номер регистрации приложения: %1$s\nПроверка: https://beian.miit.gov.cn/</string>
     <string name="about_license_title">Лицензия MIT</string>
     <string name="about_license_hint">Aerial распространяется по лицензии MIT. Листайте текст стрелками вверх и вниз.</string>
     <string name="about_license_missing">Текст лицензии недоступен.</string>

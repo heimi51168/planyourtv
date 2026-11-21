@@ -20,7 +20,7 @@
     <string name="policy_v6_off_body">Нажмите OK, чтобы включить. Настройте локальные правила или привяжите телефон.</string>
 
     <string name="policy_v6_local_title">Локальные правила</string>
-    <string name="policy_v6_local_note">После привязки правила перейдут в облако, а настройки на телевизоре станут только для чтения.</string>
+    <string name="policy_v6_local_note">После привязки настройки телевизора станут только для чтения; локальная и облачная конфигурации остаются независимыми.</string>
     <string name="policy_v6_edit_hint">Влево/вправо — изменить; OK/Назад — готово</string>
     <string name="policy_v6_nav_hint">Вверх/вниз — выбор, OK — изменить, влево — назад</string>
     <string name="policy_v6_rail_hint">Вверх/вниз — выбор · OK — подтвердить · → — открыть</string>
@@ -48,10 +48,7 @@
     <string name="policy_v6_mode_rule">Режим правил</string>
     <string name="policy_v6_mode_redeem">Режим обмена</string>
     <string name="policy_v6_today_usage">Сегодня</string>
-    <string name="policy_v6_usage_value">%1$d / %2$d мин</string>
-    <string name="policy_v6_remaining">Осталось %1$d мин</string>
     <string name="policy_v6_rule_time">Часы правил</string>
-    <string name="policy_v6_session_rest">Сеанс / отдых</string>
     <string name="policy_v6_apps">Развлекательные приложения</string>
     <string name="policy_v6_apps_all">Все приложения</string>
     <string name="policy_v6_apps_count">Выбрано приложений: %1$d</string>
@@ -65,20 +62,10 @@
     <string name="policy_v6_rule_template_saved">Шаблон правил сохранён; сейчас не выполняется</string>
     <string name="policy_v6_phone_only">Изменяйте правила и обмен в приложении PlanYourTV.</string>
 
-    <string name="policy_v6_activation_section">Режим учёта</string>
+    <string name="policy_v6_activation_section">Учёт времени</string>
     <string name="policy_v6_activation">Режим</string>
-    <string name="policy_v6_activation_auto">Автоматический</string>
-    <string name="policy_v6_activation_auto_hint">Запускается по расписанию при включённом экране; после перерыва нажмите «Начать отсчёт».</string>
     <string name="policy_v6_activation_manual">Ручной</string>
     <string name="policy_v6_activation_manual_hint">Разблокировка квизом или разовым запуском от родителя; длительность сеанса задаёт родитель.</string>
-    <string name="policy_v6_activation_tab_hint">Каждый режим хранит собственное расписание, лимиты, отдых и буфер выключения экрана. Выберите вкладку — параметры ниже относятся только к ней.</string>
-    <string name="policy_v6_activation_confirm_auto_title">Переключиться на автоматический режим?</string>
-    <string name="policy_v6_activation_confirm_auto_body">В автоматическом режиме телевизор не может начать викторину. Текущие автоматические правила: до %1$d мин в день, до %2$d мин за сеанс, перерыв %3$d мин между сеансами.</string>
-    <string name="policy_v6_activation_confirm_manual_title">Переключиться на ручной режим?</string>
-    <string name="policy_v6_activation_confirm_manual_body">В ручном режиме родитель запускает каждый сеанс на экране блокировки; доступны викторины.</string>
-    <string name="policy_v6_activation_confirm_end_session">Текущий сеанс и обратный отсчёт перерыва немедленно завершатся.</string>
-    <string name="policy_v6_activation_confirm_cancel">Отмена</string>
-    <string name="policy_v6_activation_confirm_switch">Переключить</string>
     <string name="policy_v6_quiz_challenge">Показывать вход в тесты</string>
     <string name="policy_v6_quiz_hint">Если включено, значок тестов показывается первым на экране блокировки. Выключение не мешает входить в тесты из приложений развлечений.</string>
     <string name="policy_v6_quiz_setup">Банк вопросов</string>
@@ -91,11 +78,11 @@
     <string name="policy_v6_quiz_web_unlock">Веб-страница может временно разблокировать телевизор, пока он заблокирован.</string>
     <string name="policy_v29_qr_pane_title">Центр для родителей</string>
     <string name="policy_v29_qr_pane_status">Настройка с телефона</string>
-    <string name="policy_v29_qr_pane_summary">Локальные настройки теперь на телефоне. На телевизоре остались только переключатель детского режима и удалённое управление.</string>
+    <string name="policy_v29_qr_pane_summary">Отсканируйте код браузером, чтобы открыть центр для родителей на телефоне</string>
     <string name="policy_v6_study_apps">Учебные приложения</string>
     <string name="policy_v6_study_none">Нет</string>
     <string name="policy_v6_study_hint">Учебные приложения не учитываются и открываются только в режиме учёбы.</string>
-    <string name="policy_v6_apps_shared_hint">Развлекательные и учебные приложения общие для автоматического и ручного режимов; смена режима их не меняет.</string>
+    <string name="policy_v6_apps_shared_hint">Развлекательные и учебные приложения задаются один раз для детского режима.</string>
     <string name="policy_v6_study_saved">Учебные приложения сохранены</string>
     <string name="policy_v6_apps_in_study">Это приложение уже учебное. Сначала уберите его из учебных.</string>
 
@@ -109,11 +96,11 @@
     <string name="policy_v6_switch_off_confirm">Нажмите OK ещё раз, чтобы выключить</string>
     <string name="policy_v6_switch_off_migrating">Перенос не завершён. Включите снова, чтобы продолжить.</string>
     <string name="policy_v6_remove_confirm">Нажмите OK ещё раз, чтобы удалить интервал</string>
-    <string name="policy_v6_bind_note">После привязки локальные правила копируются на телефон; правила и пароль на телевизоре станут только для чтения.</string>
+    <string name="policy_v6_bind_note">После привязки правила и вход в пароль на телевизоре станут только для чтения; локальная и облачная конфигурации независимы. Управляйте ими на телефоне.</string>
     <string name="policy_v6_upload_done">Локальные настройки загружены. Теперь на телевизоре доступен только просмотр.</string>
 
     <string name="policy_v6_consent_title">Удалённое управление и конфиденциальность</string>
-    <string name="policy_v6_consent_body">При включённом удалённом управлении телевизор загружает в облако PlanYourTV настройки родительского центра (включая проверочное значение родительского пароля), прогресс времени и записи викторин для удалённого управления и просмотра записей на телефоне, не для рекламы или иных целей. Ключ модели ИИ (API Key), сохранённый на телевизоре, не загружается. Вы можете отвязать устройство в любой момент; загрузка прекратится, а локальные настройки останутся. Продолжая, вы подтверждаете право управлять этим телевизором.</string>
+    <string name="policy_v6_consent_body">При включённом удалённом управлении телевизор передаёт в облако PlanYourTV состояние устройства, прогресс времени и записи викторин для удалённого управления и просмотра записей на телефоне, не для рекламы или иных целей. Правила, родительский пароль и ключ модели ИИ (API Key), сохранённые на телевизоре, не загружаются; облачная и локальная конфигурации независимы. Вы можете отвязать устройство в любой момент; передача прекратится, а локальные настройки останутся. Продолжая, вы подтверждаете право управлять этим телевизором.</string>
     <string name="policy_v6_consent_agree">Согласиться и показать QR-код</string>
     <string name="policy_v6_consent_cancel">Не сейчас</string>
 

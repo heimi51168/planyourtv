@@ -81,23 +81,28 @@ object CloudLevelsClient {
         }
     }
 
-    fun selectedLearner(): CloudLevelsResult {
+    fun selectedLearner(): CloudLevelsResult = resolveForMember(null)
+
+    /**
+     * 解析电视当前应使用的 QB 孩子。
+     *
+     * - [memberId] == null：沿用 QB 上次的选择（旧后端未投影 `activeMemberId`）。
+     * - [memberId] != null：必须能找到该 `memberId` 对应的 QB 孩子；不是 QB 当前选择时
+     *   先 `select`，否则 `/next` 仍按上一个孩子取题。找不到（家长 / 未建档案）显式拒绝，
+     *   绝不回退到「QB 上次选择」——那会把别的孩子的题库下发给当前用户。
+     */
+    fun resolveForMember(memberId: Long?): CloudLevelsResult {
         return try {
             val selection = QbClient.deviceLearners()
-            val selected = selection.learners.firstOrNull { it.selected }
-            if (selected == null) {
-                return CloudLevelsResult.Rejected("NO_SELECTED_LEARNER")
+            if (memberId == null) {
+                val selected = selection.learners.firstOrNull { it.selected }
+                    ?: return CloudLevelsResult.Rejected("NO_SELECTED_LEARNER")
+                return CloudLevelsResult.Ok(bundleOf(selected))
             }
-            CloudLevelsResult.Ok(
-                CloudLevelsBundle(
-                    learnerId = selected.learnerId,
-                    memberId = selected.memberId,
-                    levels = emptyList(),
-                    checkin = JSONObject(),
-                    revision = "",
-                    levelsSource = "",
-                ),
-            )
+            val target = selection.learners.firstOrNull { it.memberId == memberId }
+                ?: return CloudLevelsResult.Rejected("NO_LEARNER_FOR_MEMBER")
+            if (!target.selected) QbClient.selectDeviceLearner(target.learnerId)
+            CloudLevelsResult.Ok(bundleOf(target))
         } catch (error: QbClient.QbContractException) {
             // 契约不符是确定性失败：重试不会变好，按 INVALID_DOCUMENT 处理并保留上一版。
             CloudLevelsResult.Invalid(error.message.orEmpty())
@@ -107,6 +112,15 @@ object CloudLevelsClient {
             CloudLevelsResult.Retryable(error.message.orEmpty())
         }
     }
+
+    private fun bundleOf(learner: CloudLearner): CloudLevelsBundle = CloudLevelsBundle(
+        learnerId = learner.learnerId,
+        memberId = learner.memberId,
+        levels = emptyList(),
+        checkin = JSONObject(),
+        revision = "",
+        levelsSource = "",
+    )
 
     internal fun classify(error: QbClient.QbException): CloudLevelsResult = when {
         error.httpCode == 401 || error.httpCode == 403 ||

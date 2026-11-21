@@ -14,7 +14,7 @@ class RuleUsageEventFactoryTest {
     ) = PolicyExecutionPlan(
         id = "rule-session-1",
         source = PolicyPlanSource.RULE,
-        activation = PolicyActivation.AUTO,
+        activation = PolicyActivation.MANUAL,
         endReason = PolicyEndReason.SESSION_LIMIT,
         budgetSeconds = budget,
         deadlineEpochMs = null,

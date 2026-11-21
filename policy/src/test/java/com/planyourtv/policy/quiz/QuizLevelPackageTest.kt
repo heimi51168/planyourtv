@@ -119,6 +119,78 @@ class QuizLevelPackageTest {
     }
 
     @Test
+    fun missingOriginMeansAllAndExplicitOriginsRoundTrip() {
+        val json = JSONObject()
+            .put("id", "lvl-a")
+            .put(
+                "sources",
+                JSONArray().put(
+                    JSONObject()
+                        .put("type", "course")
+                        .put("scope", scope().encode()),
+                ),
+            )
+        assertEquals(
+            CourseOrigin.ALL,
+            (QuizLevelPackage.parse(json)!!.sources.single() as QuizPackageSource.Course).origin,
+        )
+
+        val preset = QuizPackageSource.Course(scope(), QuizTypeFilter.ANY, CourseOrigin.PRESET)
+        val ai = QuizPackageSource.Course(scope(), QuizTypeFilter.ANY, CourseOrigin.AI)
+        val encoded = QuizLevelPackage("lvl-b", "", listOf(preset, ai)).encode()
+        val sources = encoded.getJSONArray("sources")
+        assertEquals("preset", sources.getJSONObject(0).getString("origin"))
+        assertEquals("ai", sources.getJSONObject(1).getString("origin"))
+        assertEquals(
+            listOf(preset, ai),
+            QuizLevelPackage.parse(encoded)!!.sources,
+        )
+
+        // A legacy source keeps the combined behavior and writes no field.
+        val legacy = QuizPackageSource.Course(scope())
+        assertFalse(
+            QuizLevelPackage("lvl-c", "", listOf(legacy)).encode()
+                .getJSONArray("sources").getJSONObject(0).has("origin"),
+        )
+
+        json.getJSONArray("sources").getJSONObject(0).put("origin", "cloud")
+        assertNull(QuizLevelPackage.parse(json))
+    }
+
+    @Test
+    fun sameScopeCanAppearWithDifferentOriginsButNotTwiceWithTheSame() {
+        val preset = QuizPackageSource.Course(scope(), QuizTypeFilter.ANY, CourseOrigin.PRESET)
+        val ai = QuizPackageSource.Course(scope(), QuizTypeFilter.ANY, CourseOrigin.AI)
+        assertNotNull(QuizLevelPackage.create(listOf(preset, ai)))
+        assertEquals(
+            SourceIssue.DUPLICATE_COURSE,
+            QuizLevelPackage.sourceIssue(listOf(preset, preset)),
+        )
+    }
+
+    @Test
+    fun presetBankSourceRoundTripsAndRejectsUnknownBanks() {
+        val preset = QuizPackageSource.Preset(QuizPresetBank.PARENT_LIFE)
+        val level = QuizLevelPackage("lvl-life", "生活常识", listOf(preset))
+        val encoded = level.encode()
+        val source = encoded.getJSONArray("sources").getJSONObject(0)
+        assertEquals("preset", source.getString("type"))
+        assertEquals("parent-life", source.getString("bankId"))
+        assertEquals(level, QuizLevelPackage.parse(encoded))
+
+        assertNull(
+            QuizLevelPackage.parseSource(
+                JSONObject().put("type", "preset").put("bankId", "parent-fun"),
+            ),
+        )
+        assertEquals(
+            SourceIssue.DUPLICATE_PRESET,
+            QuizLevelPackage.sourceIssue(listOf(preset, preset)),
+        )
+        assertNull(QuizLevelPackage.create(listOf(preset, preset)))
+    }
+
+    @Test
     fun duplicateTagsAndWrongSourcesAreRejected() {
         assertEquals(
             SourceIssue.DUPLICATE_COLLECTION,

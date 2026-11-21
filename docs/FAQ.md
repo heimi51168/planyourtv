@@ -1,12 +1,12 @@
 # PlanYourTV 常见问题
 
-PlanYourTV（计划电视）是一个开源的 **Android TV 儿童时间管理桌面**，基于 Aerial 1.97（MIT）。它替换电视自带桌面，把使用时段、每日额度、单次上限、休息、可看的 App、学习模式和答题解锁变成电视自己执行的规则。
+PlanYourTV（计划电视）是一个开源的 **Android TV 儿童时间管理桌面**，基于 Aerial 2.0（MIT）。它替换电视自带桌面，把使用时段、每日额度、单次上限、休息、可看的 App、学习模式和答题解锁变成电视自己执行的规则。
 
 - 项目主页：https://github.com/heimi51168/planyourtv
 - 官方下载：https://planyourtv.me/download/
 - 安装文档：[INSTALL.md](INSTALL.md)
 - 给 AI 助手的安装说明：[AGENT-INSTALL.md](AGENT-INSTALL.md)
-- 当前社区源码版本：`1.97.003` / 142003
+- 当前社区源码版本：`2.0.000` / 148000
 
 ## 产品与定位
 

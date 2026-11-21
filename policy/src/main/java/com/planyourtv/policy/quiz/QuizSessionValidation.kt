@@ -201,10 +201,15 @@ object QuizSessionValidation {
                 if (run.earnedPoints !in 0..session.items.sumOf { it.points }) {
                     errors += "run.earnedPoints: out of range"
                 }
-                val maxEarned = if (session.originSchemaVersion >= 4) {
-                    minOf(session.config.maxEarnedMinutes, QUIZ_MAX_EARNED_MINUTES)
-                } else {
-                    session.config.maxEarnedMinutes
+                // Local v5+ rounds have no per-round reward cap; the day's quota limits the
+                // session they can start. Hosted rounds keep the server-agreed cap.
+                val localUncapped = session.cloudMemberId == null &&
+                    session.originSchemaVersion >= 5
+                val maxEarned = when {
+                    localUncapped -> QUIZ_MAX_EARNED_MINUTES
+                    session.originSchemaVersion >= 4 ->
+                        minOf(session.config.maxEarnedMinutes, QUIZ_MAX_EARNED_MINUTES)
+                    else -> session.config.maxEarnedMinutes
                 }
                 if (run.earnedMinutes !in 0..maxEarned) {
                     errors += "run.earnedMinutes: out of range"

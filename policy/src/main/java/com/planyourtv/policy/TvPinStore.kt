@@ -30,6 +30,10 @@ internal object TvPinStore {
             !TvStore.getString(PolicyKeys.LOCAL_PIN_SALT, null).isNullOrEmpty() &&
             !TvStore.getString(PolicyKeys.LOCAL_PIN_HASH, null).isNullOrEmpty()
 
+    /** True when the local store holds a PIN other than the factory default. */
+    fun hasCustomLocalPin(): Boolean =
+        localConfigured() && !isDefaultConfigured(local = true)
+
     /**
      * Non-mutating first-run hint. Two fresh installs start with 123456; the parent center
      * should suggest changing it without incrementing a failed-attempt counter. The two

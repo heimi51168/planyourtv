@@ -1,5 +1,6 @@
 package app.orchard.tv.quiz
 
+import app.orchard.tv.policy.FamilyHub
 import app.orchard.tv.policy.PolicyCloud
 import app.orchard.tv.policy.PolicyModeCoordinator
 import app.orchard.tv.policy.QuizSettlementAnswer
@@ -270,12 +271,18 @@ object QuizChallenge {
         levelId: String?,
         packages: List<QuizLevelPackage>,
         nowMs: Long,
+        subjectUserId: String?,
     ): QuizLevelPackage? {
         if (!levelId.isNullOrBlank()) {
             return packages.firstOrNull { it.id == levelId && it.enabled }
         }
         return packages.firstOrNull {
-            it.enabled && QuizQuestionCache.packageAvailability(it, nowMs).available > 0
+            it.enabled && QuizQuestionCache.packageAvailability(
+                it,
+                nowMs,
+                subjectUserId = subjectUserId,
+                activeSubjectUserId = subjectUserId,
+            ).available > 0
         }
     }
 
@@ -302,6 +309,10 @@ object QuizChallenge {
             is QuizLocalPlanResult.Ready -> planned.plan
             is QuizLocalPlanResult.Rejected -> return BeginResult.Rejected(planned.code)
         }
+        // The round runs for the child the TV is switched to. Public seed rows
+        // are shared; every private row belongs to exactly one member.
+        val family = FamilyHub.state.value
+        val subject = family.activeUserId.takeIf { family.ready }
         val config = plan.config
         // A paused level that is still selected on a stale dialog gets its own
         // reason instead of looking like a deleted level. Without an id, take
@@ -311,11 +322,16 @@ object QuizChallenge {
         ) {
             return BeginResult.Rejected("LEVEL_PAUSED")
         }
-        val target = resolveLocalLevel(levelId, plan.packages, nowMs)
+        val target = resolveLocalLevel(levelId, plan.packages, nowMs, subject)
             ?: return BeginResult.Rejected("NO_LEVELS")
         val explicitLevel = !levelId.isNullOrBlank()
         val scope = QuizQuestionCache.LOCAL_SCOPE
-        val unused = QuizQuestionCache.packageAvailability(target, nowMs).available
+        val unused = QuizQuestionCache.packageAvailability(
+            target,
+            nowMs,
+            subjectUserId = subject,
+            activeSubjectUserId = subject,
+        ).available
         if (unused <= 0) return BeginResult.Rejected("LOCAL_BANK_EMPTY")
         // Any level the child explicitly picked, including wrong review, must
         // supply the full configured round. Only the legacy caller without a
@@ -335,6 +351,7 @@ object QuizChallenge {
                 minRequired = required,
                 nowMs = nowMs,
                 scopeKey = scope,
+                subjectUserId = subject,
             )
         } catch (_: QuizQuestionCache.CacheException) {
             return BeginResult.Rejected("CACHE_UNAVAILABLE")
@@ -743,7 +760,10 @@ object QuizChallenge {
         }
 
         val startResult = runCatching {
-            PolicyModeCoordinator.startLocalManualSession(earnedSeconds.toLong())
+            // V44: a local quiz reward is its own route. Admission caps the value and consumes
+            // one quiz count only after the session is established; a recovered STARTING round
+            // that finds the session already running gets BUSY and is reconciled below.
+            PolicyModeCoordinator.startLocalQuizSession(earnedSeconds.toLong())
         }.getOrElse { SessionStartResult.Rejected(RejectReason.INVALID_COMMAND) }
         return when (startResult) {
             SessionStartResult.Started -> {

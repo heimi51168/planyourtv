@@ -3,12 +3,14 @@ package app.orchard.tv.policy
 import android.content.Context
 import app.orchard.tv.policy.media.PolicyVideoLibrary
 import app.orchard.tv.policy.web.ParentWebCenter
+import app.orchard.tv.quiz.QuizOwnershipMigration
 import app.orchard.tv.quiz.QuizQuestionCache
 import app.orchard.tv.quiz.QuizRecovery
 import app.orchard.tv.quiz.QuizRuntime
 import app.orchard.tv.quiz.QuizSeedBank
 import app.orchard.tv.BuildConfig
 import com.planyourtv.log.TvLog
+import com.planyourtv.policy.PolicyRuntime
 import com.planyourtv.policy.quiz.QuizUnitCatalog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -37,19 +39,54 @@ object PolicyProduct {
         // community build keep it off so field formatting and logcat writes cost nothing.
         TvLog.setEnabled(
             BuildConfig.DEBUG ||
+                // A diagnostic release build (preview/pro with --diag) keeps the structured
+                // trace available for field checks; ordinary official builds stay quiet.
+                BuildConfig.DIAG ||
                 (BuildConfig.TV_API_BASE.isNotBlank() && !BuildConfig.OFFICIAL_BUILD),
         )
         // Voice cues are local policy feedback and must work without a backend too.
         PolicyVoicePlayer.install(context.applicationContext)
         // Read the source-entry display switch before Home builds its first list.
         SourceEntrySettings.install(context.applicationContext)
+        // The member switch password defaults off for upgraded and fresh devices.
+        MemberSwitchAuth.install(context.applicationContext)
+        // Extra parent-PIN prompts inside the web user-configuration tab default on.
+        UserConfigPinSettings.install(context.applicationContext)
+        // The family roster must exist before any quiz key is resolved: the QCD, session and
+        // question state are namespaced by the active child. FamilyHub initializes TvStore
+        // itself; when it fails the quiz keeps its legacy single-user keys.
+        val familyReady = FamilyHub.initialize(context.applicationContext)
+        // Wallpaper and quiz-intro selections are child-mode member settings, not device
+        // settings. The provider lets the media library resolve them without depending on the
+        // runtime; an unready roster keeps the legacy device-wide keys until a member is known.
+        PolicyVideoLibrary.installMemberScope {
+            FamilyHub.state.value.activeUserId.takeIf { it.isNotBlank() }
+        }
         // The quiz engine reads only this cache. A failure here is logged by the
         // caller at first use (CACHE_UNAVAILABLE); it is never silently replaced.
         QuizQuestionCache.init(context.applicationContext)
+        // The shared content rows carry one child's answer state. Adopt the upgraded
+        // single-child state, or repair a pointer/state mismatch, before recovery reads it.
+        if (familyReady) {
+            QuizQuestionCache.reconcileSubjectState(FamilyHub.state.value.activeUserId)
+        }
         // Finish or import whatever the previous process left behind before
-        // the lock screen reads the quiz entry.
+        // the lock screen reads the quiz entry. Recovery may import a pre-V41
+        // READY session, so it must run before the one-time ownership split.
         QuizRecovery.reconcile()
+        // Historical generated and imported rows were shared by the whole
+        // family. The confirmed V41 decision gives them to the default member
+        // ("大宝"); only the bundled seed rows stay public.
+        if (familyReady) {
+            QuizQuestionCache.migrateContentOwnership(FamilyHub.state.value.defaultUserId)
+            // Siblings never inherit the pre-V41 global tags. Remove their
+            // packages that reference those tags exactly once.
+            QuizOwnershipMigration.reconcile()
+        }
         if (cloudEnabled) PolicyCloud.install(context)
+        // One product-owned bring-home path for installs without a Home Guard.
+        AerialHome.install(context.applicationContext)
+        PolicyRuntime.attachFallbackHost(AerialHome.policyHost)
         PolicyAppInventory.start(context)
         PolicyModeCoordinator.start(
             context,
@@ -57,6 +94,7 @@ object PolicyProduct {
         )
         // Stop media an app left playing once the lock desktop is in front.
         LockAudioGate.install(context.applicationContext)
+        PolicyLockWatcher.install(context.applicationContext)
         ParentWebCenter.install(context.applicationContext)
         // Ship a usable local bank so the quiz works before an AI key or the
         // network exists. After the coordinator because the durable marker

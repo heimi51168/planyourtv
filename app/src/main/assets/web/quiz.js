@@ -309,8 +309,8 @@
       aiNotConfigured: "未配置",
       aiUnavailableShort: "不可用",
       candidateTitle: "候选题",
-      privacyTitle: "开始前，请了解数据如何保存",
-      privacyIntro: "确认后才能进入；只需确认一次。",
+      privacyTitle: "使用 AI 出题前，请了解数据如何保存",
+      privacyIntro: "只有使用 AI 出题或配置 AI 服务时才需要确认；手动出题和预置题库不需要 API 密钥。",
       privacyLocalTitle: "保存在电视本地",
       privacyLocal: "题目、答案和进度只保存在电视上，闯关结束即删除。",
       privacyAiTitle: "AI 出题",
@@ -649,8 +649,8 @@
       aiNotConfigured: "Not configured",
       aiUnavailableShort: "Unavailable",
       candidateTitle: "Generated questions",
-      privacyTitle: "Before you start",
-      privacyIntro: "Confirm to continue. This is asked once.",
+      privacyTitle: "Before using AI questions",
+      privacyIntro: "Confirm only when you generate with AI or configure an AI service. Manual questions and preset banks need no API key.",
       privacyLocalTitle: "Stored on the TV",
       privacyLocal: "Questions, answers, and progress stay on the TV and are deleted when the challenge ends.",
       privacyAiTitle: "AI questions",
@@ -989,8 +989,8 @@
       aiNotConfigured: "Не настроено",
       aiUnavailableShort: "Недоступно",
       candidateTitle: "Созданные вопросы",
-      privacyTitle: "Перед началом",
-      privacyIntro: "Подтвердите, чтобы продолжить. Это нужно сделать один раз.",
+      privacyTitle: "Перед использованием ИИ-вопросов",
+      privacyIntro: "Подтверждение нужно только для генерации ИИ или настройки ИИ-сервиса. Ручные вопросы и готовые наборы не требуют ключа API.",
       privacyLocalTitle: "Хранится на телевизоре",
       privacyLocal: "Вопросы, ответы и прогресс остаются на телевизоре и удаляются после завершения викторины.",
       privacyAiTitle: "Вопросы ИИ",
@@ -1329,8 +1329,8 @@
       aiNotConfigured: "Не налаштовано",
       aiUnavailableShort: "Недоступно",
       candidateTitle: "Створені питання",
-      privacyTitle: "Перед початком",
-      privacyIntro: "Підтвердьте, щоб продовжити. Це потрібно зробити лише раз.",
+      privacyTitle: "Перед використанням ШІ-питань",
+      privacyIntro: "Підтвердження потрібне лише для генерації ШІ або налаштування ШІ-сервісу. Ручні питання й готові набори не потребують ключа API.",
       privacyLocalTitle: "Зберігається на телевізорі",
       privacyLocal: "Питання, відповіді та поступ залишаються на телевізорі й видаляються після завершення вікторини.",
       privacyAiTitle: "Питання ШІ",
@@ -1669,8 +1669,8 @@
       aiNotConfigured: "Бапталмаған",
       aiUnavailableShort: "Қолжетімсіз",
       candidateTitle: "Жасалған сұрақтар",
-      privacyTitle: "Бастамас бұрын",
-      privacyIntro: "Жалғастыру үшін растаңыз. Бұл бір рет сұралады.",
+      privacyTitle: "AI сұрақтарын пайдалану алдында",
+      privacyIntro: "Растау тек AI арқылы сұрақ жасау немесе AI қызметін баптау үшін қажет. Қолмен қосылған сұрақтар мен дайын жинақтарға API кілті қажет емес.",
       privacyLocalTitle: "Теледидарда сақталады",
       privacyLocal: "Сұрақтар, жауаптар және барыс тек теледидарда қалады және викторина аяқталғанда жойылады.",
       privacyAiTitle: "AI сұрақтары",
@@ -1708,7 +1708,7 @@
   // keys; the older keys above remain for the modals carried over unchanged.
   const V17_TEXTS = {
     zh: {
-      tabGenerate: "出题",
+      tabGenerate: "首页",
       tabBank: "题库",
       tabWrong: "错题",
       tabControl: "控制",
@@ -1781,10 +1781,6 @@
       confirmClearWrong: "删除所有错题记录？此操作不能撤销。",
       confirmClearAll: "清空整个本地题库？此操作不能撤销。",
       clearDone: "已清理。",
-      bankFilterAll: "全部",
-      bankFilterUnused: "未使用",
-      bankFilterWrong: "回答错误",
-      bankFilterAnswered: "已回答",
       bankCountsLine: "共 {total} 道 · 未使用 {unused} · 已回答 {answered}",
       bankEmptyAll: "本地题库还没有题目。到「出题」生成一批吧。",
       bankEmptyUnused: "没有未使用的题目。",
@@ -1809,7 +1805,7 @@
       err_BANK_FULL: "本地题库容量不足，请先清理已答题目。",
     },
     en: {
-      tabGenerate: "Create",
+      tabGenerate: "Home",
       tabBank: "Bank",
       tabWrong: "Mistakes",
       tabControl: "Control",
@@ -1882,10 +1878,6 @@
       confirmClearWrong: "Delete all mistake records? This cannot be undone.",
       confirmClearAll: "Clear the entire local bank? This cannot be undone.",
       clearDone: "Cleared.",
-      bankFilterAll: "All",
-      bankFilterUnused: "Unused",
-      bankFilterWrong: "Wrong",
-      bankFilterAnswered: "Answered",
       bankCountsLine: "{total} total · {unused} unused · {answered} answered",
       bankEmptyAll: "The local bank is empty. Create a batch from Create.",
       bankEmptyUnused: "No unused questions.",
@@ -1910,7 +1902,7 @@
       err_BANK_FULL: "The local bank is full. Clear answered questions first.",
     },
     ru: {
-      tabGenerate: "Создать",
+      tabGenerate: "Главная",
       tabBank: "Банк",
       tabWrong: "Ошибки",
       tabControl: "Пульт",
@@ -1983,10 +1975,6 @@
       confirmClearWrong: "Удалить все записи об ошибках? Это нельзя отменить.",
       confirmClearAll: "Очистить весь локальный банк? Это нельзя отменить.",
       clearDone: "Очищено.",
-      bankFilterAll: "Все",
-      bankFilterUnused: "Не использованные",
-      bankFilterWrong: "Неверные",
-      bankFilterAnswered: "Отвеченные",
       bankCountsLine: "Всего: {total} · не использовано: {unused} · отвечено: {answered}",
       bankEmptyAll: "Локальный банк пуст. Создайте вопросы на вкладке «Создать».",
       bankEmptyUnused: "Нет неиспользованных вопросов.",
@@ -2011,7 +1999,7 @@
       err_BANK_FULL: "В локальном банке не хватает места. Сначала очистите отвеченные вопросы.",
     },
     uk: {
-      tabGenerate: "Створити",
+      tabGenerate: "Головна",
       tabBank: "Банк",
       tabWrong: "Помилки",
       tabControl: "Пульт",
@@ -2084,10 +2072,6 @@
       confirmClearWrong: "Видалити всі записи про помилки? Це неможливо скасувати.",
       confirmClearAll: "Очистити весь локальний банк? Це неможливо скасувати.",
       clearDone: "Очищено.",
-      bankFilterAll: "Усі",
-      bankFilterUnused: "Невикористані",
-      bankFilterWrong: "Неправильні",
-      bankFilterAnswered: "Відповіді",
       bankCountsLine: "Усього: {total} · не використано: {unused} · відповідей: {answered}",
       bankEmptyAll: "Локальний банк порожній. Створіть питання на вкладці «Створити».",
       bankEmptyUnused: "Немає невикористаних питань.",
@@ -2112,7 +2096,7 @@
       err_BANK_FULL: "У локальному банку не вистачає місця. Спершу очистіть відповіді.",
     },
     kk: {
-      tabGenerate: "Жасау",
+      tabGenerate: "Басты бет",
       tabBank: "Банк",
       tabWrong: "Қателер",
       tabControl: "Қашықтан",
@@ -2185,10 +2169,6 @@
       confirmClearWrong: "Барлық қате жазбаларын жою керек пе? Бұны қайтару мүмкін емес.",
       confirmClearAll: "Бүкіл жергілікті банкті тазалау керек пе? Бұны қайтару мүмкін емес.",
       clearDone: "Тазаланды.",
-      bankFilterAll: "Барлығы",
-      bankFilterUnused: "Пайдаланылмаған",
-      bankFilterWrong: "Қате жауаптар",
-      bankFilterAnswered: "Жауапталған",
       bankCountsLine: "Барлығы: {total} · пайдаланылмаған: {unused} · жауапталған: {answered}",
       bankEmptyAll: "Жергілікті банк бос. «Жасау» бөлімінде сұрақ жасаңыз.",
       bankEmptyUnused: "Пайдаланылмаған сұрақ жоқ.",
@@ -2219,11 +2199,15 @@
   // four-tab table above stays untouched for cached markup and rollback.
   const V19_TEXTS = {
     zh: {
-      genConfigTitle: "题目生成",
+      genConfigTitle: "AI课时同步出题",
+      genScopeUnsetTitle: "尚未设置本成员的出题范围",
+      genScopeUnsetHint: "点击设置年级、学期、学科和教材",
+      genScopeSetupHint: "请选择年级、学期、学科和教材；不会套用默认参数。",
+      err_GEN_SCOPE_REQUIRED: "请先选择年级、学期、学科和教材。",
       answerConfigTitle: "答题闯关配置",
       answerRulesTitle: "答题规则",
       generateCardTitle: "开始生成",
-      scopeBound: "和题目生成一致",
+      scopeBound: "和 AI 课时同步出题一致",
       scopeCustomMode: "自定义配置",
       genRequirementLabel: "题目要求",
       genRequirementSamples: "常用要求",
@@ -2247,13 +2231,6 @@
       alignToAnswerScope: "按答题范围生成",
       editGenerationScope: "调整生成范围",
       alignReplacesRequirement: "将使用电视答题范围，并替换当前题目要求。",
-      scopeMismatchTitle: "生成范围与答题范围不一致",
-      scopeMismatchIntro: "电视答题范围题目不足，当前生成范围又与它不一致。",
-      scopeMismatchAnswerLine: "电视答题范围：{scope}",
-      scopeMismatchGenerateLine: "本次生成范围：{scope}",
-      scopeMismatchBody: "电视可用 {available}/{pull} 题。按当前范围生成后，新题不会进入电视答题范围。",
-      scopeMismatchNote: "将替换当前生成范围和题目要求；电视答题配置不会改变。",
-      keepCurrentScope: "仍然按当前范围生成",
       generateAdding: "正在加入题库…",
       saving: "保存中…",
       settingsLoading: "正在读取答题配置…",
@@ -2285,7 +2262,7 @@
       err_SCOPE_INCOMPLETE: "请先完成答题范围选择。",
       err_SCOPE_EMPTY: "当前范围没有题库题目，请调整条件或先生成题目。",
       goGenerate: "去生成题目",
-      goGenerationConfig: "调整题目生成",
+      goGenerationConfig: "调整 AI 课时同步出题",
       questionListTitle: "题目清单",
       questionListMeta: "{total} 道 · 已选 {selected}",
       selectAll: "全选",
@@ -2302,7 +2279,11 @@
       generateDoNotRefresh: "生成中，请不要刷新页面。",
     },
     en: {
-      genConfigTitle: "Question generation",
+      genConfigTitle: "AI lesson-synced questions",
+      genScopeUnsetTitle: "This member's question range is not set",
+      genScopeUnsetHint: "Tap to choose grade, semester, subject and textbook",
+      genScopeSetupHint: "Choose grade, semester, subject and textbook. Defaults are not applied.",
+      err_GEN_SCOPE_REQUIRED: "Choose grade, semester, subject and textbook first.",
       answerConfigTitle: "Quiz challenge settings",
       answerRulesTitle: "Rules",
       generateCardTitle: "Start generating",
@@ -2330,13 +2311,6 @@
       alignToAnswerScope: "Generate for TV range",
       editGenerationScope: "Edit generation range",
       alignReplacesRequirement: "Uses the TV quiz range and replaces the current question topic.",
-      scopeMismatchTitle: "Generation range does not match the TV quiz range",
-      scopeMismatchIntro: "The TV quiz range is short of questions, and the current generation range does not match it.",
-      scopeMismatchAnswerLine: "TV quiz range: {scope}",
-      scopeMismatchGenerateLine: "Current generation range: {scope}",
-      scopeMismatchBody: "TV has {available}/{pull} questions ready. New questions from the current range will not appear in the TV quiz.",
-      scopeMismatchNote: "This replaces the current generation range and question topic. The TV quiz setup will not change.",
-      keepCurrentScope: "Generate with current range",
       generateAdding: "Adding to the bank…",
       saving: "Saving…",
       settingsLoading: "Loading quiz setup…",
@@ -2385,7 +2359,11 @@
       generateDoNotRefresh: "Generating. Do not refresh this page.",
     },
     ru: {
-      genConfigTitle: "Генерация вопросов",
+      genConfigTitle: "Вопросы ИИ по уроку",
+      genScopeUnsetTitle: "Диапазон вопросов для этого участника не задан",
+      genScopeUnsetHint: "Нажмите, чтобы выбрать класс, полугодие, предмет и учебник",
+      genScopeSetupHint: "Выберите класс, полугодие, предмет и учебник. Значения по умолчанию не подставляются.",
+      err_GEN_SCOPE_REQUIRED: "Сначала выберите класс, полугодие, предмет и учебник.",
       answerConfigTitle: "Настройки квиз-испытания",
       answerRulesTitle: "Правила",
       generateCardTitle: "Начать генерацию",
@@ -2413,13 +2391,6 @@
       alignToAnswerScope: "Создать для диапазона ТВ",
       editGenerationScope: "Изменить диапазон генерации",
       alignReplacesRequirement: "Будет использован диапазон викторины на ТВ; текущая тема вопросов заменится.",
-      scopeMismatchTitle: "Диапазон генерации не совпадает с диапазоном викторины",
-      scopeMismatchIntro: "В диапазоне викторины на ТВ не хватает вопросов, а текущий диапазон генерации с ним не совпадает.",
-      scopeMismatchAnswerLine: "Диапазон викторины на ТВ: {scope}",
-      scopeMismatchGenerateLine: "Текущий диапазон генерации: {scope}",
-      scopeMismatchBody: "На ТВ доступно {available} из {pull}. Новые вопросы текущего диапазона не попадут в викторину.",
-      scopeMismatchNote: "Текущий диапазон генерации и тема вопросов будут заменены. Настройка викторины на ТВ не изменится.",
-      keepCurrentScope: "Создать в текущем диапазоне",
       generateAdding: "Добавляем в банк…",
       saving: "Сохранение…",
       settingsLoading: "Загружаем настройку викторины…",
@@ -2468,7 +2439,11 @@
       generateDoNotRefresh: "Идёт генерация. Не обновляйте страницу.",
     },
     uk: {
-      genConfigTitle: "Генерація питань",
+      genConfigTitle: "Питання ШІ за уроком",
+      genScopeUnsetTitle: "Діапазон питань для цього учасника не задано",
+      genScopeUnsetHint: "Натисніть, щоб вибрати клас, семестр, предмет і підручник",
+      genScopeSetupHint: "Виберіть клас, семестр, предмет і підручник. Типові значення не застосовуються.",
+      err_GEN_SCOPE_REQUIRED: "Спочатку виберіть клас, семестр, предмет і підручник.",
       answerConfigTitle: "Налаштування вікторини-випробування",
       answerRulesTitle: "Правила",
       generateCardTitle: "Почати генерацію",
@@ -2496,13 +2471,6 @@
       alignToAnswerScope: "Згенерувати для діапазону ТБ",
       editGenerationScope: "Змінити діапазон генерації",
       alignReplacesRequirement: "Буде використано діапазон вікторини на ТБ; поточну тему питань буде замінено.",
-      scopeMismatchTitle: "Діапазон генерації не збігається з діапазоном вікторини",
-      scopeMismatchIntro: "У діапазоні вікторини на ТБ бракує питань, а поточний діапазон генерації з ним не збігається.",
-      scopeMismatchAnswerLine: "Діапазон вікторини на ТБ: {scope}",
-      scopeMismatchGenerateLine: "Поточний діапазон генерації: {scope}",
-      scopeMismatchBody: "На ТБ доступно {available} з {pull}. Нові питання поточного діапазону не потраплять у вікторину.",
-      scopeMismatchNote: "Поточний діапазон генерації й тему питань буде замінено. Налаштування вікторини на ТБ не зміниться.",
-      keepCurrentScope: "Згенерувати в поточному діапазоні",
       generateAdding: "Додаємо до банку…",
       saving: "Збереження…",
       settingsLoading: "Завантажуємо налаштування вікторини…",
@@ -2551,7 +2519,11 @@
       generateDoNotRefresh: "Триває генерація. Не оновлюйте сторінку.",
     },
     kk: {
-      genConfigTitle: "Сұрақ жасау",
+      genConfigTitle: "AI сабаққа сай сұрақтар",
+      genScopeUnsetTitle: "Бұл қатысушының сұрақ ауқымы орнатылмаған",
+      genScopeUnsetHint: "Сынып, семестр, пән және оқулықты таңдау үшін түртіңіз",
+      genScopeSetupHint: "Сынып, семестр, пән және оқулықты таңдаңыз. Әдепкі мәндер қолданылмайды.",
+      err_GEN_SCOPE_REQUIRED: "Алдымен сынып, семестр, пән және оқулықты таңдаңыз.",
       answerConfigTitle: "Викторина-сынақ баптаулары",
       answerRulesTitle: "Ережелер",
       generateCardTitle: "Жасауды бастау",
@@ -2579,13 +2551,6 @@
       alignToAnswerScope: "ТВ ауқымы бойынша жасау",
       editGenerationScope: "Жасау ауқымын өзгерту",
       alignReplacesRequirement: "ТВ викторина ауқымы қолданылып, ағымдағы сұрақ тақырыбы ауыстырылады.",
-      scopeMismatchTitle: "Жасау ауқымы ТВ викторина ауқымына сәйкес емес",
-      scopeMismatchIntro: "ТВ викторина ауқымында сұрақ жеткіліксіз, ал ағымдағы жасау ауқымы оған сәйкес емес.",
-      scopeMismatchAnswerLine: "ТВ викторина ауқымы: {scope}",
-      scopeMismatchGenerateLine: "Ағымдағы жасау ауқымы: {scope}",
-      scopeMismatchBody: "ТВ-де {available}/{pull} сұрақ бар. Ағымдағы ауқым бойынша жасалған жаңа сұрақтар ТВ викторинасына қосылмайды.",
-      scopeMismatchNote: "Ағымдағы жасау ауқымы мен сұрақ тақырыбы ауыстырылады. ТВ викторина баптауы өзгермейді.",
-      keepCurrentScope: "Ағымдағы ауқыммен жасау",
       generateAdding: "Банкке қосылуда…",
       saving: "Сақталуда…",
       settingsLoading: "Викторина баптауы жүктелуде…",
@@ -2929,8 +2894,7 @@
   const V22_TEXTS = {
     zh: {
       bankImport: "导入题库",
-      bankEmptyImportTitle: "题库还是空的。可以手动导入题目，或让 AI 生成。",
-      bankSourceLine: "教材/AI {course} 道 · 自定义 {custom} 道 · 错题 {wrong} 道 · 总 {total} / {capacity}",
+      bankSourceLine: "预置 + AI {course} 道 · 手动导入 {custom} 道 · 错题 {wrong} 道 · 总 {total} / {capacity}",
       bankSourceCustomTag: "标签：{name}",
       goImportBank: "导入题库",
       importTitle: "导入题库",
@@ -2953,6 +2917,7 @@
       importInputLabel: "题目内容",
       importChooseFile: "选择 .json 或 .txt 文件",
       importPasteLabel: "也可以直接粘贴题目",
+      importPasteClear: "清空",
       importTextPlaceholder: "粘贴规范 JSON，或编号文本（1. 题干 / A. 选项 / 答案：B 或 A、C）",
       importCopyConvertPrompt: "复制格式转换提示词",
       importCopyGeneratePrompt: "复制出题提示词",
@@ -3245,8 +3210,7 @@ difficulty 只能是 easy、medium、hard。
     },
     en: {
       bankImport: "Import bank",
-      bankEmptyImportTitle: "The bank is empty. Import questions manually or generate them with AI.",
-      bankSourceLine: "Textbook/AI {course} · Custom {custom} · Wrong {wrong} · Total {total} / {capacity}",
+      bankSourceLine: "Preset + AI {course} · Manual {custom} · Wrong {wrong} · Total {total} / {capacity}",
       bankSourceCustomTag: "Tag: {name}",
       goImportBank: "Import bank",
       importTitle: "Import question bank",
@@ -3269,6 +3233,7 @@ difficulty 只能是 easy、medium、hard。
       importInputLabel: "Question content",
       importChooseFile: "Choose a .json or .txt file",
       importPasteLabel: "Or paste questions directly",
+      importPasteClear: "Clear",
       importTextPlaceholder: "Paste canonical JSON or numbered text (1. question / A. option / Answer: B or A, C)",
       importCopyConvertPrompt: "Copy format-conversion prompt",
       importCopyGeneratePrompt: "Copy question-generation prompt",
@@ -3561,8 +3526,7 @@ Extra requirements: none`,
     },
     ru: {
       bankImport: "Импорт банка",
-      bankEmptyImportTitle: "Банк пуст. Импортируйте вопросы вручную или создайте их с помощью ИИ.",
-      bankSourceLine: "Учебник/ИИ {course} · Свои {custom} · Ошибки {wrong} · Всего {total} / {capacity}",
+      bankSourceLine: "Готовые + ИИ {course} · Ручной импорт {custom} · Ошибки {wrong} · Всего {total} / {capacity}",
       bankSourceCustomTag: "Тег: {name}",
       goImportBank: "Импортировать банк",
       importTitle: "Импорт банка вопросов",
@@ -3585,6 +3549,7 @@ Extra requirements: none`,
       importInputLabel: "Содержимое вопросов",
       importChooseFile: "Выбрать файл .json или .txt",
       importPasteLabel: "Или вставьте вопросы",
+      importPasteClear: "Очистить",
       importTextPlaceholder: "Вставьте канонический JSON или нумерованный текст (1. вопрос / A. вариант / Ответ: B или A, C)",
       importCopyConvertPrompt: "Копировать промпт для преобразования формата",
       importCopyGeneratePrompt: "Копировать промпт для создания вопросов",
@@ -3877,8 +3842,7 @@ difficulty — только easy, medium или hard.
     },
     uk: {
       bankImport: "Імпорт банку",
-      bankEmptyImportTitle: "Банк порожній. Імпортуйте питання вручну або створіть їх за допомогою ШІ.",
-      bankSourceLine: "Підручник/ШІ {course} · Власні {custom} · Помилки {wrong} · Усього {total} / {capacity}",
+      bankSourceLine: "Готові + ШІ {course} · Ручне імпортування {custom} · Помилки {wrong} · Усього {total} / {capacity}",
       bankSourceCustomTag: "Тег: {name}",
       goImportBank: "Імпортувати банк",
       importTitle: "Імпорт банку питань",
@@ -3901,6 +3865,7 @@ difficulty — только easy, medium или hard.
       importInputLabel: "Вміст питань",
       importChooseFile: "Вибрати файл .json або .txt",
       importPasteLabel: "Або вставте питання",
+      importPasteClear: "Очистити",
       importTextPlaceholder: "Вставте канонічний JSON або нумерований текст (1. питання / A. варіант / Відповідь: B або A, C)",
       importCopyConvertPrompt: "Копіювати промпт для перетворення формату",
       importCopyGeneratePrompt: "Копіювати промпт для створення питань",
@@ -4193,8 +4158,7 @@ difficulty — лише easy, medium або hard.
     },
     kk: {
       bankImport: "Банкіні импорттау",
-      bankEmptyImportTitle: "Банк бос. Сұрақтарды қолмен импорттаңыз немесе AI арқылы жасаңыз.",
-      bankSourceLine: "Оқулық/AI {course} · Жеке {custom} · Қателер {wrong} · Барлығы {total} / {capacity}",
+      bankSourceLine: "Дайын + ЖИ {course} · Қолмен импорт {custom} · Қателер {wrong} · Барлығы {total} / {capacity}",
       bankSourceCustomTag: "Тег: {name}",
       goImportBank: "Банкіні импорттау",
       importTitle: "Сұрақ банкін импорттау",
@@ -4217,6 +4181,7 @@ difficulty — лише easy, medium або hard.
       importInputLabel: "Сұрақ мазмұны",
       importChooseFile: ".json немесе .txt файлын таңдау",
       importPasteLabel: "Немесе сұрақтарды тікелей қойыңыз",
+      importPasteClear: "Тазалау",
       importTextPlaceholder: "Канондық JSON немесе нөмірленген мәтін қойыңыз (1. сұрақ / A. нұсқа / Жауап: B немесе A, C)",
       importCopyConvertPrompt: "Форматты түрлендіру промптын көшіру",
       importCopyGeneratePrompt: "Сұрақ құрастыру промптын көшіру",
@@ -4533,11 +4498,11 @@ difficulty — тек easy, medium немесе hard.
       manualReason_ALREADY_UNLOCKED: "电视已临时解锁，不能开始计时。",
       manualReason_SESSION_ACTIVE: "电视正在计时，不能重复开始。",
       manualReason_SESSION_PENDING: "电视正在等待确认一次计时，不能重复开始。",
-      manualReason_AUTO_MODE: "电视当前是自动模式，单次使用只在手动模式可用。",
       manualReason_RESTING: "电视正在休息，稍后再试。",
       manualReason_OUTSIDE_WINDOW: "当前不在允许使用的时段。",
       manualReason_DAILY_LIMIT: "今天的可用时长已经用完。",
       manualReason_NO_TIMED_APPS: "电视还没有设置可计时的应用。",
+      manualReason_ONLY_UNLIMITED: "当前只有不限时应用，无需开始计时。",
       manualRestWait: "电视正在休息，约 {minutes} 分钟后可以开始。",
       manualSessionActive: "电视正在计时，剩余约 {minutes} 分钟。",
       manualError_INVALID_DURATION: "时长不正确，请重新选择。",
@@ -4585,11 +4550,11 @@ difficulty — тек easy, medium немесе hard.
       manualReason_ALREADY_UNLOCKED: "The TV is temporarily unlocked. A timed session cannot start.",
       manualReason_SESSION_ACTIVE: "The TV timer is already running.",
       manualReason_SESSION_PENDING: "The TV is waiting to confirm a session. Try again shortly.",
-      manualReason_AUTO_MODE: "The TV is in automatic mode. One session is available only in manual mode.",
       manualReason_RESTING: "The TV is resting. Try again later.",
       manualReason_OUTSIDE_WINDOW: "The current time is outside the allowed window.",
       manualReason_DAILY_LIMIT: "Today's time allowance is used up.",
       manualReason_NO_TIMED_APPS: "No timed apps are configured on the TV.",
+      manualReason_ONLY_UNLIMITED: "Only unlimited apps are in scope; no timer is needed.",
       manualRestWait: "The TV is resting; a session can start in about {minutes} minutes.",
       manualSessionActive: "The TV timer is running with about {minutes} minutes left.",
       manualError_INVALID_DURATION: "That duration is not valid. Choose another.",
@@ -4637,11 +4602,11 @@ difficulty — тек easy, medium немесе hard.
       manualReason_ALREADY_UNLOCKED: "Телевизор временно разблокирован. Запустить таймер нельзя.",
       manualReason_SESSION_ACTIVE: "Таймер на телевизоре уже идёт.",
       manualReason_SESSION_PENDING: "Телевизор ждёт подтверждения сеанса. Повторите позже.",
-      manualReason_AUTO_MODE: "Телевизор в автоматическом режиме. Один сеанс доступен только в ручном режиме.",
       manualReason_RESTING: "Телевизор отдыхает. Повторите позже.",
       manualReason_OUTSIDE_WINDOW: "Сейчас время вне разрешённого интервала.",
       manualReason_DAILY_LIMIT: "Дневной лимит времени уже израсходован.",
       manualReason_NO_TIMED_APPS: "На телевизоре не выбраны приложения для таймера.",
+      manualReason_ONLY_UNLIMITED: "В области только приложения без ограничений; таймер не нужен.",
       manualRestWait: "Телевизор отдыхает; сеанс можно начать примерно через {minutes} мин.",
       manualSessionActive: "Таймер идёт, осталось около {minutes} мин.",
       manualError_INVALID_DURATION: "Недопустимая длительность. Выберите другую.",
@@ -4689,11 +4654,11 @@ difficulty — тек easy, medium немесе hard.
       manualReason_ALREADY_UNLOCKED: "Телевізор тимчасово розблокований. Запустити таймер не можна.",
       manualReason_SESSION_ACTIVE: "Таймер на телевізорі вже працює.",
       manualReason_SESSION_PENDING: "Телевізор чекає підтвердження сеансу. Спробуйте пізніше.",
-      manualReason_AUTO_MODE: "Телевізор в автоматичному режимі. Один сеанс доступний лише в ручному режимі.",
       manualReason_RESTING: "Телевізор відпочиває. Спробуйте пізніше.",
       manualReason_OUTSIDE_WINDOW: "Зараз час поза дозволеним інтервалом.",
       manualReason_DAILY_LIMIT: "Денний ліміт часу вже використано.",
       manualReason_NO_TIMED_APPS: "На телевізорі не вибрано застосунки для таймера.",
+      manualReason_ONLY_UNLIMITED: "У зоні лише застосунки без обмежень; таймер не потрібен.",
       manualRestWait: "Телевізор відпочиває; сеанс можна почати приблизно через {minutes} хв.",
       manualSessionActive: "Таймер працює, лишилося близько {minutes} хв.",
       manualError_INVALID_DURATION: "Неприпустима тривалість. Виберіть іншу.",
@@ -4741,11 +4706,11 @@ difficulty — тек easy, medium немесе hard.
       manualReason_ALREADY_UNLOCKED: "Теледидар уақытша ашық. Таймерді бастауға болмайды.",
       manualReason_SESSION_ACTIVE: "Теледидарда таймер әлдеқашан жүріп жатыр.",
       manualReason_SESSION_PENDING: "Теледидар сеансты растауды күтіп тұр. Сәл кейінірек қайталаңыз.",
-      manualReason_AUTO_MODE: "Теледидар автоматты режимде. Бір сеанс тек қолмен режимінде қолжетімді.",
       manualReason_RESTING: "Теледидар демалып тұр. Кейінірек қайталаңыз.",
       manualReason_OUTSIDE_WINDOW: "Қазір рұқсат етілген уақыт аралығынан тыс.",
       manualReason_DAILY_LIMIT: "Күнделікті уақыт шегі таусылды.",
       manualReason_NO_TIMED_APPS: "Теледидарда таймерге арналған қолданбалар таңдалмаған.",
+      manualReason_ONLY_UNLIMITED: "Аумақта тек шектеусіз қолданбалар бар; таймер қажет емес.",
       manualRestWait: "Теледидар демалып тұр; сеансты шамамен {minutes} минуттан кейін бастауға болады.",
       manualSessionActive: "Таймер жүріп жатыр, шамамен {minutes} минут қалды.",
       manualError_INVALID_DURATION: "Ұзақтық жарамсыз. Басқа мәнді таңдаңыз.",
@@ -4914,9 +4879,9 @@ difficulty — тек easy, medium немесе hard.
   const V34_TEXTS = {
     zh: {
       bankManageEntry: "题库管理",
-      bankManageEntryState: "教材/AI {course} · 自定义 {custom} · 错题 {wrong}",
+      bankManageEntryState: "预置 + AI {course} · 手动导入 {custom} · 错题 {wrong}",
       bankManageTitle: "题库管理",
-      bankManageLead: "教材/AI、每个自定义标签和错题可分别清空；清空会永久删除题目和作答记录，每次需要两步确认。",
+      bankManageLead: "预置题库、AI 题、每个手动导入标签和错题可分别清空；清空会永久删除题目和作答记录，每次需要两步确认。",
       bankManageCourseTitle: "教材 / AI 题库",
       bankManageCourseMeta: "共 {n} 道",
       bankManageCourseStateLead: "按状态单独清除（同样会永久删除）：",
@@ -4957,9 +4922,9 @@ difficulty — тек easy, medium немесе hard.
     },
     en: {
       bankManageEntry: "Manage banks",
-      bankManageEntryState: "Textbook/AI {course} · Custom {custom} · Wrong {wrong}",
+      bankManageEntryState: "Preset + AI {course} · Manual {custom} · Wrong {wrong}",
       bankManageTitle: "Manage banks",
-      bankManageLead: "Textbook/AI, each custom tag, and wrong questions can be cleared separately. Clearing permanently deletes questions and answer history; every clear needs two confirmations.",
+      bankManageLead: "The preset bank, AI questions, each manual-import tag, and wrong questions can be cleared separately. Clearing permanently deletes questions and answer history; every clear needs two confirmations.",
       bankManageCourseTitle: "Textbook / AI bank",
       bankManageCourseMeta: "{n} questions",
       bankManageCourseStateLead: "Clear by state instead (also permanent):",
@@ -5000,9 +4965,9 @@ difficulty — тек easy, medium немесе hard.
     },
     ru: {
       bankManageEntry: "Управление банками",
-      bankManageEntryState: "Учебник/ИИ {course} · Свои {custom} · Ошибки {wrong}",
+      bankManageEntryState: "Готовые + ИИ {course} · Ручной импорт {custom} · Ошибки {wrong}",
       bankManageTitle: "Управление банками",
-      bankManageLead: "Банк учебника/ИИ, каждый свой тег и ошибки можно очищать отдельно. Очистка навсегда удаляет вопросы и историю ответов; каждая требует двух подтверждений.",
+      bankManageLead: "Готовый банк, вопросы ИИ, каждый тег ручного импорта и ошибки можно очищать отдельно. Очистка навсегда удаляет вопросы и историю ответов; каждая требует двух подтверждений.",
       bankManageCourseTitle: "Банк учебника / ИИ",
       bankManageCourseMeta: "Всего: {n}",
       bankManageCourseStateLead: "Можно очистить по состоянию (тоже необратимо):",
@@ -5043,9 +5008,9 @@ difficulty — тек easy, medium немесе hard.
     },
     uk: {
       bankManageEntry: "Керування банками",
-      bankManageEntryState: "Підручник/ШІ {course} · Власні {custom} · Помилки {wrong}",
+      bankManageEntryState: "Готові + ШІ {course} · Ручне імпортування {custom} · Помилки {wrong}",
       bankManageTitle: "Керування банками",
-      bankManageLead: "Банк підручника/ШІ, кожен власний тег і помилки можна очищати окремо. Очищення назавжди видаляє питання й історію відповідей; кожне потребує двох підтверджень.",
+      bankManageLead: "Готовий банк, питання ШІ, кожен тег ручного імпорту й помилки можна очищати окремо. Очищення назавжди видаляє питання й історію відповідей; кожне потребує двох підтверджень.",
       bankManageCourseTitle: "Банк підручника / ШІ",
       bankManageCourseMeta: "Усього: {n}",
       bankManageCourseStateLead: "Можна очистити за станом (також незворотно):",
@@ -5086,9 +5051,9 @@ difficulty — тек easy, medium немесе hard.
     },
     kk: {
       bankManageEntry: "Банктерді басқару",
-      bankManageEntryState: "Оқулық/AI {course} · Жеке {custom} · Қателер {wrong}",
+      bankManageEntryState: "Дайын + ЖИ {course} · Қолмен импорт {custom} · Қателер {wrong}",
       bankManageTitle: "Банктерді басқару",
-      bankManageLead: "Оқулық/AI банкін, әр жеке тегті және қателерді бөлек тазалауға болады. Тазалау сұрақтар мен жауап тарихын біржола жояды; әрқайсысы екі рет растауды қажет етеді.",
+      bankManageLead: "Дайын банкіні, ЖИ сұрақтарын, әр қолмен импорттау тегін және қателерді бөлек тазалауға болады. Тазалау сұрақтар мен жауап тарихын біржола жояды; әрқайсысы екі рет растауды қажет етеді.",
       bankManageCourseTitle: "Оқулық / AI банкі",
       bankManageCourseMeta: "Барлығы: {n}",
       bankManageCourseStateLead: "Күйі бойынша да тазалауға болады (қайтарылмайды):",
@@ -5214,7 +5179,7 @@ difficulty — тек easy, medium немесе hard.
   const V36_TEXTS = {
     zh: {
       levelAddPackageTitle: "添加关卡",
-      levelAddPackageMeta: "一个关卡可组合教材、自定义标签和错题",
+      levelAddPackageMeta: "一个关卡可组合预置题库、家长趣味题、AI 题、手动导入和错题",
       levelSourcesTitle: "题目来源",
       levelSourcesLead: "答题时从每个来源轮流抽题；某个来源用完就跳过，直到抽满一轮。可继续添加来源，点底部「创建关卡」后才会生成关卡。",
       levelDraftBadge: "待保存",
@@ -5222,10 +5187,22 @@ difficulty — тек easy, medium немесе hard.
       levelCreate: "创建关卡",
       levelSourceCourse: "教材题目",
       levelSourceCourseMeta: "按年级、学期、学科和单元选择",
-      levelSourceCustom: "自定义题库",
-      levelSourceCustomMeta: "选择导入题目时创建的标签",
+      levelSourcePreset: "预置题库",
+      levelSourcePresetMeta: "电视自带 · 全员共享",
+      levelSourceAi: "AI生成",
+      levelSourceAiMeta: "当前成员生成",
+      levelSourceLegacy: "教材题目（预置 + AI）",
+      levelSourcePresetTag: "预置",
+      levelSourceAiTag: "AI",
+      levelSourceLegacyTag: "预置 + AI",
+      levelSourceCustom: "手动导入",
+      levelSourceCustomMeta: "导入时创建的标签",
       levelSourceWrong: "错题复习",
-      levelSourceWrongMeta: "自动收录本机所有错题",
+      levelSourceWrongMeta: "自动收录本机错题",
+      levelSourceLife: "家长趣味题",
+      levelSourceLifeMeta: "生活常识 · 单选与多选",
+      levelSourceLifeCount: "趣味题 {n} 道",
+      levelSourceDuplicatePreset: "家长趣味题已在关卡中。",
       levelTypeFilterTitle: "题目类型",
       levelTypeAny: "混合",
       levelTypeSingle: "单选",
@@ -5235,7 +5212,7 @@ difficulty — тек easy, medium немесе hard.
       levelTypeEmpty: "当前范围没有{kind}题，请换一个范围或类型。",
       levelSourceSave: "保存来源",
       levelSourceLimit: "每个关卡最多 {n} 个来源。",
-      levelSourceDuplicateCourse: "这个范围和类型的教材来源已存在。",
+      levelSourceDuplicateCourse: "这个范围、类型和来源已在关卡中。",
       levelSourceDuplicateTag: "这个标签已在关卡中。",
       levelSourceDuplicateWrong: "错题复习已在关卡中。",
       levelSourceMissingTag: "请选择一个标签。",
@@ -5262,7 +5239,7 @@ difficulty — тек easy, medium немесе hard.
     },
     en: {
       levelAddPackageTitle: "Add level",
-      levelAddPackageMeta: "Combine textbook, custom tags, and mistakes in one level",
+      levelAddPackageMeta: "Combine the preset bank, the parent life quiz, AI questions, imports, and mistakes in one level",
       levelSourcesTitle: "Question sources",
       levelSourcesLead: "Questions rotate between sources. A source that runs out is skipped until the round is full. Add as many sources as you need; the level is created only after you tap Create level.",
       levelDraftBadge: "Unsaved",
@@ -5270,10 +5247,22 @@ difficulty — тек easy, medium немесе hard.
       levelCreate: "Create level",
       levelSourceCourse: "Textbook questions",
       levelSourceCourseMeta: "Pick grade, semester, subject, and unit",
-      levelSourceCustom: "Custom bank",
-      levelSourceCustomMeta: "Pick a tag created when questions were imported",
+      levelSourcePreset: "Preset bank",
+      levelSourcePresetMeta: "Bundled · shared by all",
+      levelSourceAi: "AI questions",
+      levelSourceAiMeta: "Made by this member",
+      levelSourceLegacy: "Textbook (preset + AI)",
+      levelSourcePresetTag: "Preset",
+      levelSourceAiTag: "AI",
+      levelSourceLegacyTag: "Preset + AI",
+      levelSourceCustom: "Manual import",
+      levelSourceCustomMeta: "Tags from imports",
       levelSourceWrong: "Wrong review",
-      levelSourceWrongMeta: "Automatically covers every mistake on this TV",
+      levelSourceWrongMeta: "All mistakes here",
+      levelSourceLife: "Parent life quiz",
+      levelSourceLifeMeta: "Everyday life · single & multiple",
+      levelSourceLifeCount: "{n} life questions",
+      levelSourceDuplicatePreset: "The parent life quiz is already in the level.",
       levelTypeFilterTitle: "Question type",
       levelTypeAny: "Mixed",
       levelTypeSingle: "Single choice",
@@ -5283,7 +5272,7 @@ difficulty — тек easy, medium немесе hard.
       levelTypeEmpty: "No {kind} questions in this range. Choose another range or type.",
       levelSourceSave: "Save source",
       levelSourceLimit: "A level can hold at most {n} sources.",
-      levelSourceDuplicateCourse: "This range and type are already in the level.",
+      levelSourceDuplicateCourse: "This range, type, and source are already in the level.",
       levelSourceDuplicateTag: "This tag is already in the level.",
       levelSourceDuplicateWrong: "Wrong review is already in the level.",
       levelSourceMissingTag: "Choose a tag.",
@@ -5310,7 +5299,7 @@ difficulty — тек easy, medium немесе hard.
     },
     ru: {
       levelAddPackageTitle: "Добавить уровень",
-      levelAddPackageMeta: "Объедините учебник, свои теги и ошибки в одном уровне",
+      levelAddPackageMeta: "Объедините готовый банк, семейную викторину, вопросы ИИ, ручной импорт и ошибки в одном уровне",
       levelSourcesTitle: "Источники вопросов",
       levelSourcesLead: "Вопросы чередуются между источниками. Исчерпанный источник пропускается до конца раунда. Добавляйте источники по одному: уровень создаётся только после нажатия «Создать уровень».",
       levelDraftBadge: "Не сохранено",
@@ -5318,10 +5307,22 @@ difficulty — тек easy, medium немесе hard.
       levelCreate: "Создать уровень",
       levelSourceCourse: "Вопросы учебника",
       levelSourceCourseMeta: "Выберите класс, полугодие, предмет и раздел",
-      levelSourceCustom: "Свой банк",
-      levelSourceCustomMeta: "Выберите тег, созданный при импорте вопросов",
+      levelSourcePreset: "Готовый банк",
+      levelSourcePresetMeta: "Встроены · общие для всех",
+      levelSourceAi: "Вопросы ИИ",
+      levelSourceAiMeta: "Создано этим участником",
+      levelSourceLegacy: "Учебник (готовые + ИИ)",
+      levelSourcePresetTag: "Готовые",
+      levelSourceAiTag: "ИИ",
+      levelSourceLegacyTag: "Готовые + ИИ",
+      levelSourceCustom: "Ручной импорт",
+      levelSourceCustomMeta: "Теги из импорта",
       levelSourceWrong: "Повторение ошибок",
-      levelSourceWrongMeta: "Автоматически включает все ошибки на этом ТВ",
+      levelSourceWrongMeta: "Все ошибки этого ТВ",
+      levelSourceLife: "Семейная викторина",
+      levelSourceLifeMeta: "Быт и здоровье · один или несколько ответов",
+      levelSourceLifeCount: "Бытовых вопросов: {n}",
+      levelSourceDuplicatePreset: "Семейная викторина уже есть в уровне.",
       levelTypeFilterTitle: "Тип вопроса",
       levelTypeAny: "Смешанные",
       levelTypeSingle: "Один ответ",
@@ -5331,7 +5332,7 @@ difficulty — тек easy, medium немесе hard.
       levelTypeEmpty: "В этом диапазоне нет вопросов типа «{kind}». Выберите другой диапазон или тип.",
       levelSourceSave: "Сохранить источник",
       levelSourceLimit: "В уровне может быть не более {n} источников.",
-      levelSourceDuplicateCourse: "Этот диапазон и тип уже есть в уровне.",
+      levelSourceDuplicateCourse: "Этот диапазон, тип и источник уже есть в уровне.",
       levelSourceDuplicateTag: "Этот тег уже есть в уровне.",
       levelSourceDuplicateWrong: "Повторение ошибок уже есть в уровне.",
       levelSourceMissingTag: "Выберите тег.",
@@ -5358,7 +5359,7 @@ difficulty — тек easy, medium немесе hard.
     },
     uk: {
       levelAddPackageTitle: "Додати рівень",
-      levelAddPackageMeta: "Поєднайте підручник, власні теги й помилки в одному рівні",
+      levelAddPackageMeta: "Поєднайте готовий банк, сімейну вікторину, питання ШІ, ручний імпорт і помилки в одному рівні",
       levelSourcesTitle: "Джерела питань",
       levelSourcesLead: "Питання чергуються між джерелами. Вичерпане джерело пропускається до кінця раунду. Додавайте джерела по одному: рівень створюється лише після натискання «Створити рівень».",
       levelDraftBadge: "Не збережено",
@@ -5366,10 +5367,22 @@ difficulty — тек easy, medium немесе hard.
       levelCreate: "Створити рівень",
       levelSourceCourse: "Питання підручника",
       levelSourceCourseMeta: "Виберіть клас, семестр, предмет і розділ",
-      levelSourceCustom: "Власний банк",
-      levelSourceCustomMeta: "Виберіть тег, створений під час імпорту питань",
+      levelSourcePreset: "Готовий банк",
+      levelSourcePresetMeta: "Вбудовані · спільні для всіх",
+      levelSourceAi: "Питання ШІ",
+      levelSourceAiMeta: "Створено цим учасником",
+      levelSourceLegacy: "Підручник (готові + ШІ)",
+      levelSourcePresetTag: "Готові",
+      levelSourceAiTag: "ШІ",
+      levelSourceLegacyTag: "Готові + ШІ",
+      levelSourceCustom: "Ручне імпортування",
+      levelSourceCustomMeta: "Теги з імпорту",
       levelSourceWrong: "Повторення помилок",
-      levelSourceWrongMeta: "Автоматично включає всі помилки на цьому ТБ",
+      levelSourceWrongMeta: "Усі помилки цього ТБ",
+      levelSourceLife: "Сімейна вікторина",
+      levelSourceLifeMeta: "Побут і здоров'я · одна або кілька відповідей",
+      levelSourceLifeCount: "Побутових питань: {n}",
+      levelSourceDuplicatePreset: "Сімейна вікторина вже є в рівні.",
       levelTypeFilterTitle: "Тип питання",
       levelTypeAny: "Змішані",
       levelTypeSingle: "Одна відповідь",
@@ -5379,7 +5392,7 @@ difficulty — тек easy, medium немесе hard.
       levelTypeEmpty: "У цьому діапазоні немає питань типу «{kind}». Виберіть інший діапазон або тип.",
       levelSourceSave: "Зберегти джерело",
       levelSourceLimit: "У рівні може бути не більше {n} джерел.",
-      levelSourceDuplicateCourse: "Цей діапазон і тип уже є в рівні.",
+      levelSourceDuplicateCourse: "Цей діапазон, тип і джерело вже є в рівні.",
       levelSourceDuplicateTag: "Цей тег уже є в рівні.",
       levelSourceDuplicateWrong: "Повторення помилок уже є в рівні.",
       levelSourceMissingTag: "Виберіть тег.",
@@ -5406,7 +5419,7 @@ difficulty — тек easy, medium немесе hard.
     },
     kk: {
       levelAddPackageTitle: "Деңгей қосу",
-      levelAddPackageMeta: "Оқулық, өз тегтеріңіз және қателерді бір деңгейге біріктіріңіз",
+      levelAddPackageMeta: "Дайын банкіні, отбасылық викторинаны, ЖИ сұрақтарын, қолмен импортты және қателерді бір деңгейге біріктіріңіз",
       levelSourcesTitle: "Сұрақ көздері",
       levelSourcesLead: "Сұрақтар көздер арасында кезектеседі. Таусылған көз айналым толғанша өткізіледі. Көздерді біртіндеп қосыңыз: деңгей «Деңгей жасау» түймесін басқаннан кейін ғана жасалады.",
       levelDraftBadge: "Сақталмаған",
@@ -5414,10 +5427,22 @@ difficulty — тек easy, medium немесе hard.
       levelCreate: "Деңгей жасау",
       levelSourceCourse: "Оқулық сұрақтары",
       levelSourceCourseMeta: "Сынып, семестр, пән және тарауды таңдаңыз",
-      levelSourceCustom: "Өз банкі",
-      levelSourceCustomMeta: "Сұрақтарды импорттау кезінде жасалған тегті таңдаңыз",
+      levelSourcePreset: "Дайын банк",
+      levelSourcePresetMeta: "Кіріктірілген · ортақ",
+      levelSourceAi: "ЖИ сұрақтары",
+      levelSourceAiMeta: "Осы қатысушы жасаған",
+      levelSourceLegacy: "Оқулық (дайын + ЖИ)",
+      levelSourcePresetTag: "Дайын",
+      levelSourceAiTag: "ЖИ",
+      levelSourceLegacyTag: "Дайын + ЖИ",
+      levelSourceCustom: "Қолмен импорттау",
+      levelSourceCustomMeta: "Импорттағы тегтер",
       levelSourceWrong: "Қателерді қайталау",
-      levelSourceWrongMeta: "Осы ТВ-дегі барлық қателерді автоматты қамтиды",
+      levelSourceWrongMeta: "Осы ТВ қателері",
+      levelSourceLife: "Отбасылық викторина",
+      levelSourceLifeMeta: "Тұрмыс және денсаулық · бір немесе бірнеше жауап",
+      levelSourceLifeCount: "Тұрмыстық сұрақ: {n}",
+      levelSourceDuplicatePreset: "Отбасылық викторина деңгейде бар.",
       levelTypeFilterTitle: "Сұрақ түрі",
       levelTypeAny: "Аралас",
       levelTypeSingle: "Бір жауап",
@@ -5427,7 +5452,7 @@ difficulty — тек easy, medium немесе hard.
       levelTypeEmpty: "Бұл ауқымда «{kind}» сұрақтары жоқ. Басқа ауқым немесе түр таңдаңыз.",
       levelSourceSave: "Көзді сақтау",
       levelSourceLimit: "Деңгейде ең көбі {n} көз болуы мүмкін.",
-      levelSourceDuplicateCourse: "Бұл ауқым мен түр деңгейде бар.",
+      levelSourceDuplicateCourse: "Бұл ауқым, түр және дереккөз деңгейде бар.",
       levelSourceDuplicateTag: "Бұл тег деңгейде бар.",
       levelSourceDuplicateWrong: "Қателерді қайталау деңгейде бар.",
       levelSourceMissingTag: "Тег таңдаңыз.",
@@ -5503,6 +5528,297 @@ difficulty — тек easy, medium немесе hard.
     },
   };
 
+  // V41: four-nav labels, the editing-member picker, and the four bank
+  // subpages. Built-in content is public; AI, imports and mistakes belong to
+  // one member and must say whose they are.
+  const V41_TEXTS = {
+    zh: {
+      tabUser: "用户配置",
+      tabSystem: "系统配置",
+      editingSubjectLabel: "编辑对象",
+      subjectDialogTitle: "选择编辑对象",
+      subjectDialogLead: "只切换网页正在编辑的成员；电视仍由当前成员使用。",
+      subjectDialogHint: "要让电视也切换，请到「用户配置 → 切换到当前用户」。",
+      subjectCurrentTag: "电视当前",
+      subjectDefaultTag: "默认成员",
+      subjectSwitchBlocked: "正在生成或导入时不能切换成员，请先完成或停止。",
+      subjectNoMembers: "暂无家庭成员。",
+      memberHeaderSubtitle: "{member} · 电视当前：{name}",
+      bankScopeBuiltin: "预置题库",
+      bankScopeAi: "AI生成",
+      bankScopeManual: "手动导入",
+      bankScopeWrong: "错题",
+      bankScopeSummaryBuiltin: "公共内容 · 共 {total} 道",
+      bankScopeSummaryAi: "{name} 的 AI 题 · 共 {total} 道",
+      bankScopeSummaryManual: "{name} 的手动导入 · 共 {total} 道 · {tags} 个标签",
+      bankScopeSummaryWrong: "{name} 的错题本 · {n} 道待复习",
+      bankScopeClear: "清空",
+      bankScopeTagAll: "全部标签",
+      bankPrivateCapacity: "私有题 {used}/{capacity} · 剩余 {remaining}",
+      bankRuleBuiltin: "预置题库是公共内容，只能整体清空。",
+      bankManageTitleBuiltin: "预置题库",
+      bankManageTitleManual: "手动导入",
+      bankManageLeadBuiltin: "删除所有预置题；不影响 AI 生成和手动导入。",
+      bankManageLeadManual: "删除 {name} 的手动导入；可按标签清理。",
+      bankManageBuiltinMeta: "共 {n} 道预置题",
+      bankManageManualMeta: "共 {n} 道 · {tags} 个标签",
+      bankManageBuiltinTitle: "清空预置题库",
+      bankManageBuiltinLead: "清除所有成员共享的预置题。此操作不能撤销。",
+      bankManageBuiltinClear: "清空预置题库",
+      bankManageManualTitle: "手动导入标签",
+      bankManageManualLead: "这些标签只属于 {name}，其他成员看不到。",
+      bankManageManualClear: "清空全部手动导入",
+      bankManageTagEmpty: "还没有手动导入的标签。",
+      bankManageTagMeta: "{n} 道 · 未使用 {unused} 道",
+      bankManageTagClear: "清空",
+      bankEmptyBuiltin: "预置题库还没有题目。",
+      bankWrongRemove: "移出错题本",
+      bankWrongRemoveTitle: "移出错题本",
+      bankWrongRemoveLead: "只清除这道题的错题状态，不删除题目。",
+      clearWrongOneDone: "已移出错题本。",
+      bankClearScopeBuiltin: "预置题库",
+      bankClearScopeAi: "AI 题库",
+      bankClearScopeManual: "手动导入",
+      bankClearScopeManualTag: "手动导入「{name}」",
+      bankClearScopeWrong: "错题本",
+      bankClearBuiltinDetail: "将清空预置题库中的 {n} 道公共题。",
+      bankClearAiDetail: "将清空 {name} 的 {n} 道 AI 题。",
+      bankClearManualDetail: "将清空 {name} 的 {n} 道手动导入。",
+      bankClearWrongDetail: "将清除 {n} 道题的错题状态，题目保留。",
+      bankClearWrongOneDetail: "只清除这道题的错题状态，题目保留。",
+      err_INVALID_SUBJECT: "成员不存在或已失效，请重新选择。",
+      err_SCOPE_REQUIRED: "请指定要清理的题库分类。",
+    },
+    en: {
+      tabUser: "Users",
+      tabSystem: "System",
+      editingSubjectLabel: "Editing",
+      subjectDialogTitle: "Choose who to edit",
+      subjectDialogLead: "Only changes which member this page edits. The TV stays with its current member.",
+      subjectDialogHint: "To switch the TV too, use Users → Switch to this user.",
+      subjectCurrentTag: "On TV",
+      subjectDefaultTag: "Default member",
+      subjectSwitchBlocked: "Finish or stop the current generation/import before switching members.",
+      subjectNoMembers: "No family members yet.",
+      memberHeaderSubtitle: "{member} · On TV: {name}",
+      bankScopeBuiltin: "Preset",
+      bankScopeAi: "AI",
+      bankScopeManual: "Imported",
+      bankScopeWrong: "Mistakes",
+      bankScopeSummaryBuiltin: "Public content · {total} questions",
+      bankScopeSummaryAi: "{name}'s AI questions · {total}",
+      bankScopeSummaryManual: "{name}'s imports · {total} · {tags} tags",
+      bankScopeSummaryWrong: "{name}'s mistakes · {n} to review",
+      bankScopeClear: "Clear",
+      bankScopeTagAll: "All tags",
+      bankPrivateCapacity: "Private {used}/{capacity} · {remaining} left",
+      bankRuleBuiltin: "Preset questions are shared; only a whole clear is allowed.",
+      bankManageTitleBuiltin: "Preset bank",
+      bankManageTitleManual: "Manual imports",
+      bankManageLeadBuiltin: "Delete every preset question. AI and imported questions are not affected.",
+      bankManageLeadManual: "Delete {name}'s imports; you can clear one tag at a time.",
+      bankManageBuiltinMeta: "{n} preset questions",
+      bankManageManualMeta: "{n} questions · {tags} tags",
+      bankManageBuiltinTitle: "Clear preset bank",
+      bankManageBuiltinLead: "Removes the preset questions shared by every member. This cannot be undone.",
+      bankManageBuiltinClear: "Clear preset bank",
+      bankManageManualTitle: "Import tags",
+      bankManageManualLead: "These tags belong only to {name}; other members cannot see them.",
+      bankManageManualClear: "Clear all imports",
+      bankManageTagEmpty: "No import tags yet.",
+      bankManageTagMeta: "{n} questions · {unused} unused",
+      bankManageTagClear: "Clear",
+      bankEmptyBuiltin: "The preset bank has no questions.",
+      bankWrongRemove: "Remove from mistakes",
+      bankWrongRemoveTitle: "Remove from mistakes",
+      bankWrongRemoveLead: "Only this question's mistake state is cleared; the question stays.",
+      clearWrongOneDone: "Removed from mistakes.",
+      bankClearScopeBuiltin: "Preset bank",
+      bankClearScopeAi: "AI bank",
+      bankClearScopeManual: "Manual imports",
+      bankClearScopeManualTag: "Import tag \"{name}\"",
+      bankClearScopeWrong: "Mistakes",
+      bankClearBuiltinDetail: "This clears {n} public preset questions.",
+      bankClearAiDetail: "This clears {n} AI questions for {name}.",
+      bankClearManualDetail: "This clears {n} manual imports for {name}.",
+      bankClearWrongDetail: "This clears the mistake state of {n} questions; the questions stay.",
+      bankClearWrongOneDetail: "Only this question's mistake state is cleared; the question stays.",
+      err_INVALID_SUBJECT: "That member no longer exists. Choose another.",
+      err_SCOPE_REQUIRED: "Choose which bank to clear.",
+    },
+    ru: {
+      tabUser: "Пользователь",
+      tabSystem: "Система",
+      editingSubjectLabel: "Редактируется",
+      subjectDialogTitle: "Кого редактировать",
+      subjectDialogLead: "Меняется только объект редактирования страницы. Телевизор остаётся у текущего участника.",
+      subjectDialogHint: "Чтобы переключить и телевизор, откройте «Пользователь → Переключить на этого пользователя».",
+      subjectCurrentTag: "На ТВ",
+      subjectDefaultTag: "По умолчанию",
+      subjectSwitchBlocked: "Завершите или остановите генерацию/импорт, прежде чем менять участника.",
+      subjectNoMembers: "В семье пока нет участников.",
+      memberHeaderSubtitle: "{member} · Сейчас на ТВ: {name}",
+      bankScopeBuiltin: "Готовые",
+      bankScopeAi: "ИИ",
+      bankScopeManual: "Импорт",
+      bankScopeWrong: "Ошибки",
+      bankScopeSummaryBuiltin: "Общие вопросы · {total}",
+      bankScopeSummaryAi: "ИИ-вопросы: {name} · {total}",
+      bankScopeSummaryManual: "Импорт: {name} · {total} · тегов {tags}",
+      bankScopeSummaryWrong: "Ошибки: {name} · к повторению {n}",
+      bankScopeClear: "Очистить",
+      bankScopeTagAll: "Все теги",
+      bankPrivateCapacity: "Личные {used}/{capacity} · осталось {remaining}",
+      bankRuleBuiltin: "Готовые вопросы общие; можно только очистить весь банк.",
+      bankManageTitleBuiltin: "Готовый банк",
+      bankManageTitleManual: "Ручной импорт",
+      bankManageLeadBuiltin: "Удалить все готовые вопросы. ИИ и импорт не затрагиваются.",
+      bankManageLeadManual: "Удалить импорт участника {name}; можно очистить один тег.",
+      bankManageBuiltinMeta: "Готовых вопросов: {n}",
+      bankManageManualMeta: "Вопросов: {n} · тегов: {tags}",
+      bankManageBuiltinTitle: "Очистить готовый банк",
+      bankManageBuiltinLead: "Удаляет готовые вопросы, общие для всех. Отменить нельзя.",
+      bankManageBuiltinClear: "Очистить готовый банк",
+      bankManageManualTitle: "Теги импорта",
+      bankManageManualLead: "Эти теги принадлежат только {name}; другие их не видят.",
+      bankManageManualClear: "Очистить весь импорт",
+      bankManageTagEmpty: "Тегов импорта пока нет.",
+      bankManageTagMeta: "{n} вопросов · не использовано {unused}",
+      bankManageTagClear: "Очистить",
+      bankEmptyBuiltin: "В готовом банке нет вопросов.",
+      bankWrongRemove: "Убрать из ошибок",
+      bankWrongRemoveTitle: "Убрать из ошибок",
+      bankWrongRemoveLead: "Сбрасывается только статус ошибки; вопрос остаётся.",
+      clearWrongOneDone: "Убрано из ошибок.",
+      bankClearScopeBuiltin: "Готовый банк",
+      bankClearScopeAi: "Банк ИИ",
+      bankClearScopeManual: "Ручной импорт",
+      bankClearScopeManualTag: "Тег импорта «{name}»",
+      bankClearScopeWrong: "Ошибки",
+      bankClearBuiltinDetail: "Будет очищено {n} общих готовых вопросов.",
+      bankClearAiDetail: "Будет очищено {n} ИИ-вопросов участника {name}.",
+      bankClearManualDetail: "Будет очищено {n} импортированных вопросов участника {name}.",
+      bankClearWrongDetail: "Будет сброшен статус ошибки у {n} вопросов; вопросы останутся.",
+      bankClearWrongOneDetail: "Сбрасывается только статус ошибки; вопрос остаётся.",
+      err_INVALID_SUBJECT: "Участник не найден. Выберите другого.",
+      err_SCOPE_REQUIRED: "Укажите, какой банк очистить.",
+    },
+    uk: {
+      tabUser: "Користувач",
+      tabSystem: "Система",
+      editingSubjectLabel: "Редагується",
+      subjectDialogTitle: "Кого редагувати",
+      subjectDialogLead: "Змінюється лише об'єкт редагування сторінки. Телевізор залишається в поточного учасника.",
+      subjectDialogHint: "Щоб перемкнути й телевізор, відкрийте «Користувач → Перемкнути на цього користувача».",
+      subjectCurrentTag: "На ТБ",
+      subjectDefaultTag: "За замовчуванням",
+      subjectSwitchBlocked: "Завершіть або зупиніть генерацію/імпорт, перш ніж змінювати учасника.",
+      subjectNoMembers: "У сім'ї ще немає учасників.",
+      memberHeaderSubtitle: "{member} · Зараз на ТБ: {name}",
+      bankScopeBuiltin: "Готові",
+      bankScopeAi: "ШІ",
+      bankScopeManual: "Імпорт",
+      bankScopeWrong: "Помилки",
+      bankScopeSummaryBuiltin: "Спільні питання · {total}",
+      bankScopeSummaryAi: "ШІ-питання: {name} · {total}",
+      bankScopeSummaryManual: "Імпорт: {name} · {total} · тегів {tags}",
+      bankScopeSummaryWrong: "Помилки: {name} · до повторення {n}",
+      bankScopeClear: "Очистити",
+      bankScopeTagAll: "Усі теги",
+      bankPrivateCapacity: "Особисті {used}/{capacity} · залишилось {remaining}",
+      bankRuleBuiltin: "Готові питання спільні; можна лише очистити весь банк.",
+      bankManageTitleBuiltin: "Готовий банк",
+      bankManageTitleManual: "Ручний імпорт",
+      bankManageLeadBuiltin: "Видалити всі готові питання. ШІ та імпорт не змінюються.",
+      bankManageLeadManual: "Видалити імпорт учасника {name}; можна очистити один тег.",
+      bankManageBuiltinMeta: "Готових питань: {n}",
+      bankManageManualMeta: "Питань: {n} · тегів: {tags}",
+      bankManageBuiltinTitle: "Очистити готовий банк",
+      bankManageBuiltinLead: "Видаляє готові питання, спільні для всіх. Скасувати не можна.",
+      bankManageBuiltinClear: "Очистити готовий банк",
+      bankManageManualTitle: "Теги імпорту",
+      bankManageManualLead: "Ці теги належать лише {name}; інші їх не бачать.",
+      bankManageManualClear: "Очистити весь імпорт",
+      bankManageTagEmpty: "Тегів імпорту ще немає.",
+      bankManageTagMeta: "{n} питань · не використано {unused}",
+      bankManageTagClear: "Очистити",
+      bankEmptyBuiltin: "У готовому банку немає питань.",
+      bankWrongRemove: "Прибрати з помилок",
+      bankWrongRemoveTitle: "Прибрати з помилок",
+      bankWrongRemoveLead: "Скидається лише статус помилки; питання залишається.",
+      clearWrongOneDone: "Прибрано з помилок.",
+      bankClearScopeBuiltin: "Готовий банк",
+      bankClearScopeAi: "Банк ШІ",
+      bankClearScopeManual: "Ручний імпорт",
+      bankClearScopeManualTag: "Тег імпорту «{name}»",
+      bankClearScopeWrong: "Помилки",
+      bankClearBuiltinDetail: "Буде очищено {n} спільних готових питань.",
+      bankClearAiDetail: "Буде очищено {n} ШІ-питань учасника {name}.",
+      bankClearManualDetail: "Буде очищено {n} імпортованих питань учасника {name}.",
+      bankClearWrongDetail: "Буде скинуто статус помилки в {n} питань; питання залишаться.",
+      bankClearWrongOneDetail: "Скидається лише статус помилки; питання залишається.",
+      err_INVALID_SUBJECT: "Учасника не знайдено. Виберіть іншого.",
+      err_SCOPE_REQUIRED: "Укажіть, який банк очистити.",
+    },
+    kk: {
+      tabUser: "Пайдаланушы",
+      tabSystem: "Жүйе",
+      editingSubjectLabel: "Өңделуде",
+      subjectDialogTitle: "Кімді өңдеу керек",
+      subjectDialogLead: "Тек осы беттің өңдеу нысаны ауысады. Теледидар ағымдағы қатысушыда қалады.",
+      subjectDialogHint: "Теледидарды да ауыстыру үшін «Пайдаланушы → Осы пайдаланушыға ауысу» бөлімін ашыңыз.",
+      subjectCurrentTag: "ТД-де",
+      subjectDefaultTag: "Әдепкі қатысушы",
+      subjectSwitchBlocked: "Қатысушыны ауыстыру алдында генерацияны/импортты аяқтаңыз немесе тоқтатыңыз.",
+      subjectNoMembers: "Отбасында әзірге қатысушы жоқ.",
+      memberHeaderSubtitle: "{member} · Қазір ТВ-де: {name}",
+      bankScopeBuiltin: "Дайын",
+      bankScopeAi: "ИИ",
+      bankScopeManual: "Импорт",
+      bankScopeWrong: "Қателер",
+      bankScopeSummaryBuiltin: "Ортақ сұрақтар · {total}",
+      bankScopeSummaryAi: "ИИ сұрақтары: {name} · {total}",
+      bankScopeSummaryManual: "Импорт: {name} · {total} · тег {tags}",
+      bankScopeSummaryWrong: "Қателер: {name} · қайталауға {n}",
+      bankScopeClear: "Тазалау",
+      bankScopeTagAll: "Барлық тегтер",
+      bankPrivateCapacity: "Жеке {used}/{capacity} · қалғаны {remaining}",
+      bankRuleBuiltin: "Дайын сұрақтар ортақ; тек бүкіл банкті тазалауға болады.",
+      bankManageTitleBuiltin: "Дайын банк",
+      bankManageTitleManual: "Қолмен импорт",
+      bankManageLeadBuiltin: "Барлық дайын сұрақтарды жою. ЖИ мен импортқа әсер етпейді.",
+      bankManageLeadManual: "{name} импортын жою; бір тегті бөлек тазалауға болады.",
+      bankManageBuiltinMeta: "Дайын сұрақ: {n}",
+      bankManageManualMeta: "Сұрақ: {n} · тег: {tags}",
+      bankManageBuiltinTitle: "Дайын банкті тазалау",
+      bankManageBuiltinLead: "Барлық қатысушыға ортақ дайын сұрақтарды жояды. Қайтару мүмкін емес.",
+      bankManageBuiltinClear: "Дайын банкті тазалау",
+      bankManageManualTitle: "Импорт тегтері",
+      bankManageManualLead: "Бұл тегтер тек {name} үшін; басқалар көрмейді.",
+      bankManageManualClear: "Барлық импортты тазалау",
+      bankManageTagEmpty: "Импорт тегтері әзірге жоқ.",
+      bankManageTagMeta: "{n} сұрақ · пайдаланылмаған {unused}",
+      bankManageTagClear: "Тазалау",
+      bankEmptyBuiltin: "Дайын банкте сұрақ жоқ.",
+      bankWrongRemove: "Қателерден алу",
+      bankWrongRemoveTitle: "Қателерден алу",
+      bankWrongRemoveLead: "Тек осы сұрақтың қате мәртебесі тазаланады; сұрақ қалады.",
+      clearWrongOneDone: "Қателерден алынды.",
+      bankClearScopeBuiltin: "Дайын банк",
+      bankClearScopeAi: "ИИ банкі",
+      bankClearScopeManual: "Қолмен импорт",
+      bankClearScopeManualTag: "Импорт тегі «{name}»",
+      bankClearScopeWrong: "Қателер",
+      bankClearBuiltinDetail: "{n} ортақ дайын сұрақ тазаланады.",
+      bankClearAiDetail: "{name} үшін {n} ИИ сұрағы тазаланады.",
+      bankClearManualDetail: "{name} үшін {n} импортталған сұрақ тазаланады.",
+      bankClearWrongDetail: "{n} сұрақтың қате мәртебесі тазаланады; сұрақтар қалады.",
+      bankClearWrongOneDetail: "Тек осы сұрақтың қате мәртебесі тазаланады; сұрақ қалады.",
+      err_INVALID_SUBJECT: "Қатысушы табылмады. Басқасын таңдаңыз.",
+      err_SCOPE_REQUIRED: "Қай банкті тазалау керегін көрсетіңіз.",
+    },
+  };
+
   const LANGS = ["zh", "en", "ru", "uk", "kk"];
   for (const code of LANGS) {
     Object.assign(
@@ -5520,6 +5836,7 @@ difficulty — тек easy, medium немесе hard.
       V35_TEXTS[code],
       V36_TEXTS[code],
       V37_TEXTS[code],
+      V41_TEXTS[code],
     );
   }
 
@@ -5599,6 +5916,7 @@ difficulty — тек easy, medium немесе hard.
     home: "generateHome",
     gen: "genConfigPage",
     answer: "answerConfigPage",
+    package: "packageEditorPage",
     level: "levelEditorPage",
     questions: "questionsPage",
   };
@@ -5733,9 +6051,20 @@ difficulty — тек easy, medium немесе hard.
   const TAB_VIEWS = {
     generate: "view-generate",
     bank: "view-bank",
-    control: "view-control",
-    me: "view-me",
+    user: "view-user",
+    system: "view-system",
   };
+  // The member header names the page it belongs to, the way DingTalk puts the
+  // page title next to the profile avatar. System keeps its own device header.
+  const TAB_TITLE_KEYS = {
+    generate: "tabGenerate",
+    bank: "tabBank",
+    user: "tabUser",
+  };
+  // V41: the member this page edits is independent of the member the TV runs.
+  // The key is deliberately not tied to the TV's random path token so the
+  // choice survives a TV restart.
+  const EDITING_SUBJECT_KEY = "quiz.editingSubject:" + location.host;
   const $ = (id) => document.getElementById(id);
   let lang = detectLang();
   let adminToken = null;
@@ -5756,7 +6085,8 @@ difficulty — тек easy, medium немесе hard.
   let openParentAfterLogin = false;
   // Re-entering from the Control tab's login gate returns to Control, not to the
   // generation tab. The parent center is served by the TV, so both flags stay local.
-  let openControlAfterLogin = false;
+  // The overlay tab the PIN gate must return to after a quiz login.
+  let openOverlayAfterLogin = null;
   let forceTakeover = false;
   let gateShown = false;
   let gateOccupied = false;
@@ -5782,6 +6112,21 @@ difficulty — тек easy, medium немесе hard.
   let cloudManaged = false;
   let bankCapacity = 100000;
   let bankCounts = null;
+  // V41 editing subject. `editingSubjectUserId` is the member the phone edits;
+  // `activeUserId` is the member the TV currently runs. They are allowed to
+  // differ, and only the explicit TV switch changes the latter.
+  let editingSubjectUserId = readEditingSubject();
+  let familyMembers = [];
+  let activeUserId = "";
+  let privateCapacity = 20000;
+  let privateRemaining = 20000;
+  let bankScope = "builtin";
+  let bankScopeCounts = { builtin: 0, ai: 0, manual: 0, wrong: 0 };
+  let bankScopeStats = null;
+  let bankManualCollectionId = "";
+  let bankManageScope = "builtin";
+  let bankManageReturnOverlay = false;
+  let subjectSwitching = false;
   let providerState = { aiSupported: true, consentAccepted: false, configured: false, baseUrl: "", model: "", speech: null };
   const DEFAULT_SPEECH = {
     initialized: false,
@@ -5794,15 +6139,14 @@ difficulty — тек easy, medium немесе hard.
   let speechDirty = false;
   let providerMsg = null;
   let pendingGenerate = false;
-  // The privacy notice is a gate, not a dismissible hint: the editor stays
-  // hidden until a parent confirms it on this TV.
-  let pendingEnter = false;
+  // The privacy notice is only raised by an AI action; the read-only copy stays
+  // under settings. First entry must not look like AI setup is required.
+  let pendingProviderAction = "";
   let activeTab = "generate";
   let bankPage = "home";
   // Manage-banks is reachable from More as well as from the Bank tab. Remember
   // the page that opened it so its back button does not strand the user on Bank.
   let bankManageReturnTab = null;
-  let bankFilter = "all";
   let bankItems = [];
   let bankOffset = 0;
   let bankHasMore = false;
@@ -5832,6 +6176,9 @@ difficulty — тек easy, medium немесе hard.
   // Which prompt (convert or generate) the copy buttons currently show below.
   let importPromptKind = "";
   let bankSourceCounts = { course: 0, custom: 0 };
+// The bundled parent life bank is outside the curriculum scopes; its count
+// drives the extra source card and is independent of the builtin tab total.
+let presetBank = { bankId: "", total: 0, available: 0 };
   let localBankActive = true;
   let bankClearPending = null;
   let bankClearBusy = false;
@@ -5863,6 +6210,10 @@ difficulty — тек easy, medium немесе hard.
   let genOptionsValue = 4;
   let genAutoAddValue = true;
   let genPromptDirty = false;
+  // A second or later member starts with an empty generation scope: the parent
+  // picks grade/semester/subject/textbook for that child. The default member
+  // keeps the install defaults so a fresh TV can generate immediately.
+  let genScopeSetup = false;
   let genPrefsSaveTimer = null;
   let genPage = "home";
   let answerTab = "scope";
@@ -5915,6 +6266,9 @@ difficulty — тек easy, medium немесе hard.
   // The course-source editor edits one source of packageDraftSources. A null
   // index means the source will be appended; -1 is reserved for "not editing".
   let courseSourceEditingIndex = null;
+  // Which bank a course source draws from: "preset", "ai", or "all" for a
+  // level saved before the split. New sources can never choose "all".
+  let courseSourceOrigin = "all";
   let courseSourceAnswerKind = "any";
   // A new source reveals the type filter only after the parent has answered
   // the difficulty step, even when that answer is "any difficulty".
@@ -5931,6 +6285,9 @@ difficulty — тек easy, medium немесе hard.
   let answerDirty = false;
   // Custom scope draft may be partial while the parent picks step by step.
   let customScope = null;
+  // A new level source starts on the edited member's grade/semester and shows no
+  // other values. Editing an existing source leaves every step changeable.
+  let courseSourceScopeLock = null;
   // Per-step facet cache: { counts, unrestricted, matched }. Values are keyed
   // by the upstream selections only, so changing one step never rewrites
   // earlier choices.
@@ -5938,7 +6295,6 @@ difficulty — тек easy, medium немесе hard.
   let scopeOptionsLoading = {};
   let scopeRequestToken = 0;
   let scopeMatched = null;
-  let scopeMismatchAckKey = "";
   let selectedBatch = new Set();
   // The page lives under the TV's random token path. A leading "/" would make
   // fetch resolve the API from the host root, which PhoneServer answers with 404.
@@ -5950,6 +6306,9 @@ difficulty — тек easy, medium немесе hard.
       phase: "idle",
       jobId: null,
       batchId: null,
+      // Resolved when the job starts. Follow-the-TV mode must keep polling the
+      // member the job was created for, even if the TV becomes active later.
+      subjectUserId: "",
       target: targetCount,
       generated: 0,
       unique: 0,
@@ -6661,6 +7020,130 @@ difficulty — тек easy, medium немесе hard.
     };
   }
 
+  function applyClearStats(data) {
+    if (!data) return;
+    applyBankCounts(data.counts);
+    if (data.scopeCounts) bankScopeCounts = subjectScopeCounts(data.scopeCounts);
+    if (data.privateCapacity !== undefined) {
+      privateCapacity = Math.max(0, Number(data.privateCapacity || 0));
+    }
+    if (data.privateRemaining !== undefined) {
+      privateRemaining = Math.max(0, Number(data.privateRemaining || 0));
+    }
+    if (data.sourceCounts) {
+      bankSourceCounts = {
+        course: Math.max(0, Number(data.sourceCounts.course || 0)),
+        custom: Math.max(0, Number(data.sourceCounts.custom || 0)),
+      };
+    }
+    applyPresetBank(data.presetBank);
+    if (publicState && data.bankState) publicState.bankState = data.bankState;
+  }
+
+  function readEditingSubject() {
+    try {
+      return localStorage.getItem(EDITING_SUBJECT_KEY) || "";
+    } catch (_) {
+      return "";
+    }
+  }
+
+  function saveEditingSubject(userId) {
+    const next = userId || "";
+    // A debounced preference save was captured for the old member, but api() attaches
+    // whatever subject the page points at when the request finally fires. Drop it on an
+    // identity change so it can never be written into the next member's settings.
+    if (next !== editingSubjectUserId && genPrefsSaveTimer) {
+      clearTimeout(genPrefsSaveTimer);
+      genPrefsSaveTimer = null;
+    }
+    editingSubjectUserId = next;
+    try {
+      if (editingSubjectUserId) localStorage.setItem(EDITING_SUBJECT_KEY, editingSubjectUserId);
+      else localStorage.removeItem(EDITING_SUBJECT_KEY);
+    } catch (_) {
+      // Private mode still allows editing for this page load.
+    }
+  }
+
+  function findFamilyMember(userId) {
+    return familyMembers.find((member) => member.userId === userId) || null;
+  }
+
+  function editingMember() {
+    return findFamilyMember(editingSubjectUserId);
+  }
+
+  function editingMemberName() {
+    const member = editingMember();
+    return member && member.name ? member.name : "";
+  }
+
+  function activeMember() {
+    return findFamilyMember(activeUserId);
+  }
+
+  function activeMemberName() {
+    const member = activeMember();
+    return member && member.name ? member.name : "";
+  }
+
+  /**
+   * The edited member's optional study scope. A missing value means "all grades" or
+   * "all semesters", which is also how members created before these fields existed
+   * behave, so an old member keeps today's unrestricted pickers.
+   */
+  function memberScopeChoice() {
+    const member = editingMember() || activeMember();
+    if (!member) return { grade: null, semester: null };
+    const grade = Number(member.grade);
+    const semester = Number(member.semester);
+    const usableGrade = Number.isInteger(grade) && grade >= 1 &&
+      gradeNos().includes(grade) && !cloudJuniorBlocked(grade);
+    if (!usableGrade) return { grade: null, semester: null };
+    return {
+      grade: grade,
+      semester: semester === 1 || semester === 2 ? semester : null,
+    };
+  }
+
+  function privateUsed() {
+    return Math.max(0, Number(privateCapacity || 0) - Number(privateRemaining || 0));
+  }
+
+  function subjectSwitchBlocked() {
+    return subjectSwitching ||
+      importRunning ||
+      genState.phase === "running" ||
+      genState.phase === "adding" ||
+      genState.stopping;
+  }
+
+  function subjectWriteScope() {
+    return editingSubjectUserId ? "member" : "default";
+  }
+
+  function subjectScopeCounts(value) {
+    const source = value || {};
+    return {
+      builtin: Math.max(0, Number(source.builtin || 0)),
+      ai: Math.max(0, Number(source.ai || 0)),
+      manual: Math.max(0, Number(source.manual || 0)),
+      wrong: Math.max(0, Number(source.wrong || 0)),
+    };
+  }
+
+  function applyPresetBank(value) {
+    if (!value || typeof value !== "object") return;
+    const bankId = String(value.bankId || "").trim();
+    if (!bankId) return;
+    presetBank = {
+      bankId,
+      total: Math.max(0, Number(value.total || 0)),
+      available: Math.max(0, Number(value.available || 0)),
+    };
+  }
+
   function formatDate(ms) {
     if (!ms) return "";
     try {
@@ -6943,8 +7426,8 @@ difficulty — тек easy, medium немесе hard.
     document.querySelectorAll("[data-i18n-aria]").forEach((el) => {
       el.setAttribute("aria-label", t(el.dataset.i18nAria));
     });
-    $("langSelect").value = lang;
-    $("langSelectMe").value = lang;
+    // V41: language moved into 系统配置; the old header select is gone.
+    if ($("langSelectMe")) $("langSelectMe").value = lang;
     if (!$("gateCard").classList.contains("hidden")) {
       if (gateShown) {
         renderGateOccupation();
@@ -6967,6 +7450,8 @@ difficulty — тек easy, medium немесе hard.
     renderBankCounts();
     renderBank();
     renderBankImport();
+    renderSubjectChip();
+    renderSubjectDialog();
     renderUnlockState();
     renderManualState();
     if (activeModal === "manualDialog") {
@@ -7105,21 +7590,28 @@ difficulty — тек easy, medium немесе hard.
 
   function renderHome() {
     if (!$("homeGenMain")) return;
-    const subject = subjectLabel(genSubjectValue);
-    const book = genSubjectValue === "all" ? "" : textbookLabel(genTextbookId);
-    const requirement = normalizeRequirement(genRequirementValue);
-    $("homeGenMain").textContent = [
-      gradeText(genGradeValue, genSemesterValue),
-      subject,
-      book,
-      requirement || t("genRequirementMissing"),
-    ].filter(Boolean).join(" · ");
-    $("homeGenSub").textContent = [
-      generationQuestionTypeText(),
-      generationDifficultyText(),
-      t("targetN", { n: targetCount }),
-      genAutoAddValue ? t("genAutoAddShort") : t("genManualAddShort"),
-    ].join(" · ");
+    if (!generationScopeReady()) {
+      // A later member has not picked a grade/subject yet. Never show the
+      // gallery defaults as if they belonged to this child.
+      $("homeGenMain").textContent = t("genScopeUnsetTitle");
+      $("homeGenSub").textContent = t("genScopeUnsetHint");
+    } else {
+      const subject = subjectLabel(genSubjectValue);
+      const book = genSubjectValue === "all" ? "" : textbookLabel(genTextbookId);
+      const requirement = normalizeRequirement(genRequirementValue);
+      $("homeGenMain").textContent = [
+        gradeText(genGradeValue, genSemesterValue),
+        subject,
+        book,
+        requirement || t("genRequirementMissing"),
+      ].filter(Boolean).join(" · ");
+      $("homeGenSub").textContent = [
+        generationQuestionTypeText(),
+        generationDifficultyText(),
+        t("targetN", { n: targetCount }),
+        genAutoAddValue ? t("genAutoAddShort") : t("genManualAddShort"),
+      ].join(" · ");
+    }
 
     const config = currentConfig();
     const pull = Number(config.pullCount || 5);
@@ -7177,17 +7669,23 @@ difficulty — тек easy, medium немесе hard.
     $("generateIdle").classList.toggle("hidden", running || done);
     $("generateRunning").classList.toggle("hidden", !running);
     $("generateDone").classList.toggle("hidden", !done);
-    $("generate").disabled = running;
+    const scopeReady = generationScopeReady();
+    $("generate").disabled = running || !scopeReady;
     const providerBlocked = providerState.aiSupported === false ||
       !providerState.consentAccepted || !providerState.configured;
     if ($("generateSetupHint")) {
-      const showHint = providerBlocked && !running && !done;
+      const showScope = !scopeReady && !running && !done;
+      const showProvider = providerBlocked && !running && !done;
+      const showHint = showScope || showProvider;
       $("generateSetupHint").classList.toggle("hidden", !showHint);
-      $("generateSetupHint").textContent = !showHint ? "" : providerState.aiSupported === false
-        ? t("aiUnsupported")
-        : !providerState.consentAccepted
-          ? t("err_CONSENT_REQUIRED")
-          : t("generateProviderRequired");
+      $("generateSetupHint").textContent = !showHint ? ""
+        : showScope
+          ? t("genScopeSetupHint")
+          : providerState.aiSupported === false
+            ? t("aiUnsupported")
+            : !providerState.consentAccepted
+              ? t("err_CONSENT_REQUIRED")
+              : t("generateProviderRequired");
     }
     $("cancelGenerate").classList.toggle("hidden", adding);
     $("cancelGenerate").disabled = genState.stopping;
@@ -7337,6 +7835,7 @@ difficulty — тек easy, medium немесе hard.
     syncSubpageClass();
     if (page === "questions") renderQuestions();
     if (page === "answer") renderAnswerPage();
+    if (page === "package") renderPackageEditor();
     if (page === "level") renderLevelEditor();
     window.scrollTo({ top: 0 });
   }
@@ -7404,8 +7903,7 @@ difficulty — тек easy, medium немесе hard.
       courseSourceCountsKey = "";
       courseSourceCountsToken++;
       resetScopeOptions();
-      showGenPage("answer");
-      renderAnswerPage();
+      showGenPage("package");
       return;
     }
     discardPackageDraft();
@@ -7446,12 +7944,17 @@ difficulty — тек easy, medium немесе hard.
     }
     $("questionError").textContent = "";
     $("addSelected").disabled = true;
+    const jobId = genState.jobId;
+    const subjectUserId = genState.subjectUserId;
+    const token = generationToken;
     try {
       const data = await api("/api/quiz/admin/generate/add", {
         method: "POST",
         admin: true,
-        body: { jobId: genState.jobId, indexes },
+        subjectUserId,
+        body: { jobId, indexes },
       });
+      if (token !== generationToken) return;
       applyBankCounts(data.counts);
       selectedBatch.clear();
       genState = idleGeneration();
@@ -7652,11 +8155,10 @@ difficulty — тек easy, medium немесе hard.
       scoring.mediumRewardMinutes * 2 + scoring.hardRewardMinutes;
     const penalty = scoring.mediumPenaltyMinutes;
     const net = Math.max(0, gross - penalty);
-    const capped = Math.min(net, scoring.maxEarnedMinutes);
-    let example = penalty > 0
-      ? t("scoringExample", { gross, penalty, net: capped })
-      : t("scoringExampleNoPenalty", { net: capped });
-    if (net > capped) example += " " + t("scoringExampleCapped", { cap: capped });
+    // Local rounds have no per-round reward cap; the daily quota limits the session.
+    const example = penalty > 0
+      ? t("scoringExample", { gross, penalty, net })
+      : t("scoringExampleNoPenalty", { net });
     $("scoringExample").textContent = example;
 
     const warning = $("scoringWarning");
@@ -7665,12 +8167,6 @@ difficulty — тек easy, medium немесе hard.
     if (scoring.easyRewardMinutes + scoring.mediumRewardMinutes +
         scoring.hardRewardMinutes === 0) {
       text = t("scoringWarnNoReward");
-    } else if (scoring.minUnlockMinutes > 0 &&
-        scoring.minUnlockMinutes > scoring.maxEarnedMinutes) {
-      text = t("scoringWarnThreshold", {
-        threshold: scoring.minUnlockMinutes,
-        cap: scoring.maxEarnedMinutes,
-      });
     } else if (
       (scoring.easyRewardMinutes > 0 &&
         scoring.easyPenaltyMinutes >= scoring.easyRewardMinutes) ||
@@ -7731,16 +8227,9 @@ difficulty — тек easy, medium немесе hard.
   }
 
   function renderSettings() {
-    if (!$("maxEarned")) return;
+    if (!$("easyReward")) return;
     const config = currentConfig();
     renderScoringInputs(config);
-    renderStepper(
-      "maxEarned",
-      configMaxEarned(config),
-      MAX_EARNED_MIN_MINUTES, MAX_EARNED_MAX_MINUTES, MAX_EARNED_STEP_MINUTES,
-      "maxEarned",
-    );
-    $("shuffle").checked = config.shuffleOptions !== false;
     renderSettingsChrome();
     renderSettingsAttention();
   }
@@ -7924,6 +8413,267 @@ difficulty — тек easy, medium немесе hard.
     }
   }
 
+  // ------------------------------------------------------- V41 editing subject
+  // The chip is the only place this page changes which member it edits. It
+  // never moves the TV's active member; that is an explicit TV-side action.
+
+  // Uploaded avatars: the quiz page holds a quiz-admin session, not the parent
+  // editor lease, so /api/parent/avatar cannot be used here. This cache keeps one
+  // object URL per member and refetches only when the TV reports a new revision.
+  const subjectAvatarCache = new Map();
+  const subjectAvatarPending = new Map();
+
+  function subjectAvatarObjectUrl(member, revision) {
+    const cached = subjectAvatarCache.get(member.userId);
+    if (cached && cached.revision === revision) return Promise.resolve(cached.url);
+    const key = member.userId + ":" + revision;
+    const pending = subjectAvatarPending.get(key);
+    if (pending) return pending;
+    if (!adminToken) return Promise.resolve(null);
+    const task = fetch(
+      API_ROOT + "api/quiz/admin/member/avatar?userId=" +
+        encodeURIComponent(member.userId) + "&rev=" + encodeURIComponent(revision),
+      {
+        headers: {
+          "X-Quiz-Admin": "1",
+          "X-Quiz-Admin-Token": adminToken,
+        },
+        cache: "no-store",
+        credentials: "omit",
+      }
+    ).then((response) => response.ok ? response.blob() : null)
+      .then((blob) => {
+        if (!blob) return null;
+        const url = URL.createObjectURL(blob);
+        const previous = subjectAvatarCache.get(member.userId);
+        if (previous && previous.url !== url) URL.revokeObjectURL(previous.url);
+        subjectAvatarCache.set(member.userId, { revision: revision, url: url });
+        return url;
+      })
+      .catch(() => null)
+      .finally(() => subjectAvatarPending.delete(key));
+    subjectAvatarPending.set(key, task);
+    return task;
+  }
+
+  function paintSubjectAvatar(node, member) {
+    if (!node) return;
+    const preset = String((member && member.avatarPreset) || "rabbit");
+    const revision = String((member && member.avatarRevision) || 0);
+    node.dataset.member = member ? member.userId : "";
+    node.dataset.revision = revision;
+    node.dataset.avatar = member && member.avatarUrl ? "1" : "0";
+    node.dataset.preset = preset;
+
+    function paintPreset() {
+      // parent.js owns the family avatar artwork; reusing it keeps the header
+      // consistent with the picker and the user page. The fallback keeps the
+      // header usable if either script is served on its own.
+      const shared = window.ParentCenterUI && window.ParentCenterUI.avatarHtml;
+      if (typeof shared === "function") {
+        node.innerHTML = shared(preset);
+      } else {
+        const name = String((member && member.name) || "").trim();
+        node.textContent = name ? Array.from(name)[0].toUpperCase() : "?";
+      }
+    }
+
+    function paintImage(url) {
+      const image = document.createElement("img");
+      image.src = url;
+      image.alt = "";
+      node.replaceChildren(image);
+    }
+
+    if (!member || !member.avatarUrl) {
+      const stale = member && subjectAvatarCache.get(member.userId);
+      if (stale) {
+        URL.revokeObjectURL(stale.url);
+        subjectAvatarCache.delete(member.userId);
+      }
+      paintPreset();
+      return;
+    }
+    const cached = subjectAvatarCache.get(member.userId);
+    if (cached && cached.revision === revision) {
+      paintImage(cached.url);
+      return;
+    }
+    paintPreset();
+    subjectAvatarObjectUrl(member, revision).then((url) => {
+      if (!url || !node.isConnected) return;
+      if (node.dataset.member !== member.userId || node.dataset.revision !== revision ||
+          node.dataset.avatar !== "1") return;
+      paintImage(url);
+    });
+  }
+
+  function subjectAvatarNode(member) {
+    const node = document.createElement("span");
+    node.className = "subject-avatar";
+    paintSubjectAvatar(node, member);
+    return node;
+  }
+
+  function renderSubjectChip() {
+    const chip = $("subjectChip");
+    if (!chip) return;
+    // System settings belong to the TV, not to a member, so the device tab
+    // never shows a member header.
+    const visible = !webDisabled &&
+      document.body.classList.contains("editor-open") &&
+      familyMembers.length > 0 &&
+      activeTab !== "system";
+    chip.classList.toggle("hidden", !visible);
+    // The bank's import plus shares the avatar's header row; other tabs have
+    // no create action of their own.
+    const add = $("openBankImport");
+    if (add) add.classList.toggle("hidden", !(visible && activeTab === "bank"));
+    if (!visible) return;
+    const member = editingMember() || activeMember();
+    // The chat-style header carries the page title beside the avatar; the
+    // member name and the member the TV is actually running sit below it.
+    const titleNode = chip.querySelector("[data-page-title]");
+    if (titleNode) {
+      titleNode.textContent = t(TAB_TITLE_KEYS[activeTab] || "tabGenerate");
+    }
+    const subNode = chip.querySelector("[data-subject-sub]");
+    if (subNode) {
+      subNode.textContent = t("memberHeaderSubtitle", {
+        member: member ? member.name : "—",
+        name: activeMemberName() || "—",
+      });
+    }
+    const avatar = chip.querySelector("[data-subject-avatar]");
+    if (avatar) {
+      // The ring means "the member edited here is the member the TV is running".
+      // Compare member identity, not the avatar image: two members can share a preset.
+      avatar.classList.toggle("is-tv-current", Boolean(member && member.isActive));
+      paintSubjectAvatar(avatar, member);
+    }
+    chip.setAttribute("aria-label", member
+      ? t("subjectDialogTitle") + " · " + member.name
+      : t("subjectDialogTitle"));
+  }
+
+  function renderSubjectDialog() {
+    const list = $("subjectList");
+    if (!list) return;
+    list.replaceChildren();
+    if (!familyMembers.length) {
+      list.appendChild(elNode("p", "empty", t("subjectNoMembers")));
+      return;
+    }
+    familyMembers.forEach((member) => {
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = "subject-row";
+      row.setAttribute("role", "option");
+      // An empty preference means "follow the TV's active member", so that member is
+      // the one currently selected in the dialog.
+      row.setAttribute("aria-selected", String(
+        member.userId === (editingSubjectUserId || activeUserId)
+      ));
+      row.dataset.subjectUserId = member.userId;
+      const avatar = subjectAvatarNode(member);
+      // The TV's current member keeps the same green ring as the header; the row's
+      // selected border already marks which member this page edits.
+      avatar.classList.toggle("is-tv-current", Boolean(member.isActive));
+      row.appendChild(avatar);
+
+      const main = elNode("span", "subject-row-main");
+      main.appendChild(elNode("span", "subject-row-name", member.name || ""));
+      const subParts = [];
+      if (member.isActive) subParts.push(t("subjectCurrentTag"));
+      if (member.isDefault) subParts.push(t("subjectDefaultTag"));
+      if (subParts.length) main.appendChild(elNode("span", "subject-row-sub", subParts.join(" · ")));
+      row.appendChild(main);
+
+      row.addEventListener("click", () => switchEditingSubject(member.userId));
+      list.appendChild(row);
+    });
+  }
+
+  // Small DOM helper kept local so bank/subject code does not depend on parent.js.
+  function elNode(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined && text !== null) node.textContent = String(text);
+    return node;
+  }
+
+  function openSubjectDialog() {
+    if (!familyMembers.length) return;
+    $("subjectDialogError").textContent = "";
+    renderSubjectDialog();
+    openModal("subjectDialog");
+  }
+
+  function setSubjectDialogBusy(busy) {
+    document.querySelectorAll("#subjectList .subject-row").forEach((row) => {
+      row.disabled = busy;
+    });
+  }
+
+  async function switchEditingSubject(userId) {
+    if (!userId || userId === editingSubjectUserId || subjectSwitching) {
+      if (userId === editingSubjectUserId) closeModal();
+      return;
+    }
+    if (subjectSwitchBlocked()) {
+      $("subjectDialogError").textContent = t("subjectSwitchBlocked");
+      return;
+    }
+    const previous = editingSubjectUserId;
+    subjectSwitching = true;
+    setSubjectDialogBusy(true);
+    $("subjectDialogError").textContent = "";
+    // saveEditingSubject drops a debounced preference save owned by the old member.
+    saveEditingSubject(userId);
+    try {
+      await loadAdminSession();
+      try {
+        await loadGenerationPrefsFromTv(true);
+      } catch (_) {
+        // Preferences are a convenience; the session switch already succeeded.
+      }
+      // A generation batch or an import preview belongs to the previous member.
+      // It is never carried across, and no request is in flight here.
+      clearGenTimer();
+      generationToken += 1;
+      genState = idleGeneration();
+      pendingGenerate = false;
+      resetImportState();
+      bankItems = [];
+      bankOffset = 0;
+      bankHasMore = false;
+      bankManualCollectionId = "";
+      bankRequest += 1;
+      showGenPage("home");
+      showBankPage("home");
+      renderSubjectChip();
+      renderGenerate();
+      renderHome();
+      renderBank();
+      if (activeTab === "bank") loadBank(true);
+      if (window.ParentCenterUI && window.ParentCenterUI.onSubjectChanged) {
+        window.ParentCenterUI.onSubjectChanged();
+      }
+      closeModal();
+    } catch (error) {
+      saveEditingSubject(previous);
+      $("subjectDialogError").textContent = errorText(error);
+      try {
+        await loadAdminSession();
+      } catch (_) {
+        // The old data stays on screen; the next heartbeat or refresh retries.
+      }
+    } finally {
+      subjectSwitching = false;
+      setSubjectDialogBusy(false);
+    }
+  }
+
   function renderBankCounts() {
     const counts = currentCounts();
     if ($("bankCounts")) {
@@ -8060,13 +8810,48 @@ difficulty — тек easy, medium немесе hard.
       meta.appendChild(span);
     }
     if (meta.childElementCount) card.appendChild(meta);
+    if (bankScope === "wrong" && item.cacheId) {
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "btn danger small bank-wrong-remove";
+      remove.textContent = t("bankWrongRemove");
+      remove.addEventListener("click", () => removeWrongItem(item));
+      card.appendChild(remove);
+    }
     return card;
+  }
+
+  /**
+   * Removing one row from the wrong book clears only that member's answer
+   * state. The question itself stays in whichever bank owns it.
+   */
+  async function removeWrongItem(item) {
+    if (!item || !item.cacheId || bankClearBusy) return;
+    bankClearBusy = true;
+    try {
+      const data = await api("/api/quiz/admin/bank/clear", {
+        method: "POST",
+        admin: true,
+        body: { scope: "wrong", mode: "wrong", cacheId: item.cacheId },
+      });
+      applyClearStats(data);
+      $("bankError").textContent = t("clearWrongOneDone");
+      await loadAdminSession();
+      if (activeTab === "bank") loadBank(true);
+    } catch (error) {
+      $("bankError").textContent = errorText(error);
+    } finally {
+      bankClearBusy = false;
+    }
   }
 
   function renderBankList(list, items, emptyKey, hasMore, loading) {
     if (!list) return;
     list.replaceChildren();
     if (!items.length) {
+      // AI and manual scopes show their single empty-state action below; a
+      // second card with the member's name would only repeat the summary.
+      if (!loading && !emptyKey) return;
       const empty = document.createElement("p");
       empty.className = "empty";
       empty.textContent = loading ? "…" : t(emptyKey);
@@ -8078,86 +8863,193 @@ difficulty — тек easy, medium немесе hard.
 
   function renderBank() {
     if (!$("bankList")) return;
-    const emptyKey = bankFilter === "unused" ? "bankEmptyUnused"
-      : bankFilter === "wrong" ? "bankEmptyWrong" : "bankEmptyAll";
+    if (!["builtin", "ai", "manual", "wrong"].includes(bankScope)) bankScope = "builtin";
+    document.querySelectorAll("#bankScopes [data-bank-scope]").forEach((button) => {
+      button.setAttribute("aria-selected", String(button.dataset.bankScope === bankScope));
+    });
+    const name = editingMemberName() || activeMemberName();
+    const count = bankScopeCounts[bankScope] || 0;
+    const summaryKey = bankScope === "builtin" ? "bankScopeSummaryBuiltin"
+      : bankScope === "ai" ? "bankScopeSummaryAi"
+        : bankScope === "manual" ? "bankScopeSummaryManual" : "bankScopeSummaryWrong";
+    if ($("bankScopeSummary")) {
+      $("bankScopeSummary").textContent = t(summaryKey, {
+        name,
+        total: count,
+        tags: importCollections.length,
+        n: bankScopeCounts.wrong,
+      });
+    }
+    renderBankManualFilters();
+    renderBankScopeActions();
+    if ($("bankSourceCounts")) {
+      $("bankSourceCounts").textContent =
+        bankScope === "ai" || bankScope === "manual"
+          ? t("bankPrivateCapacity", {
+            used: privateUsed(),
+            capacity: privateCapacity,
+            remaining: privateRemaining,
+          })
+          : "";
+    }
+    // Built-in and wrong-book scopes keep a plain empty line. AI and manual
+    // scopes replace it with one action: generate or import.
+    const emptyKey = bankScope === "builtin" ? "bankEmptyBuiltin"
+      : bankScope === "wrong" ? "bankEmptyWrong" : "";
     renderBankList($("bankList"), bankItems, emptyKey, bankHasMore, bankLoading);
     $("bankMore").classList.toggle("hidden", !bankHasMore);
     $("bankMore").disabled = bankLoading;
     const empty = !bankItems.length && !bankLoading;
     if ($("bankEmptyActions")) {
-      $("bankEmptyActions").classList.toggle("hidden", !empty || bankFilter !== "all");
+      const actionScope = bankScope === "ai" || bankScope === "manual";
+      $("bankEmptyActions").classList.toggle(
+        "hidden",
+        !empty || !actionScope,
+      );
+      const generate = $("bankEmptyGenerate");
+      if (generate) generate.classList.toggle("hidden", bankScope !== "ai");
+      const importButton = $("bankEmptyImport");
+      if (importButton) importButton.classList.toggle("hidden", bankScope !== "manual");
     }
-    document.querySelectorAll("#bankFilters [data-filter]").forEach((button) => {
-      button.setAttribute("aria-pressed", String(button.dataset.filter === bankFilter));
+  }
+
+  function renderBankManualFilters() {
+    const row = $("bankManualFilters");
+    if (!row) return;
+    row.replaceChildren();
+    if (bankScope !== "manual") return;
+    const makeChip = (id, label, count) => {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "choice-chip";
+      chip.setAttribute("aria-pressed", String((bankManualCollectionId || "") === id));
+      chip.textContent = label + " · " + count;
+      chip.addEventListener("click", () => {
+        bankManualCollectionId = id;
+        renderBank();
+        loadBank(true);
+      });
+      row.appendChild(chip);
+    };
+    makeChip("", t("bankScopeTagAll"), bankScopeCounts.manual);
+    importCollections.forEach((collection) => {
+      makeChip(collection.id, collection.name, collection.total);
     });
+  }
+
+  function renderBankScopeActions() {
+    const actions = $("bankScopeActions");
+    if (!actions) return;
+    actions.replaceChildren();
+    const add = (label, className, count, onClick) => {
+      // An empty scope has nothing to clear; do not leave a dead red button
+      // above the empty-state action.
+      if (count <= 0) return;
+      const node = document.createElement("button");
+      node.type = "button";
+      node.className = "btn " + className + " small";
+      node.textContent = label;
+      node.addEventListener("click", onClick);
+      actions.appendChild(node);
+    };
+    if (bankScope === "builtin") {
+      add(t("bankScopeClear"), "danger", bankScopeCounts.builtin, () => requestBankClear({
+        scope: "builtin", count: bankScopeCounts.builtin,
+      }));
+      return;
+    }
+    if (bankScope === "ai") {
+      add(t("bankScopeClear"), "danger", bankScopeCounts.ai, () => requestBankClear({
+        scope: "ai", count: bankScopeCounts.ai,
+      }));
+      return;
+    }
+    if (bankScope === "manual") {
+      const selected = importCollections.find((item) => item.id === bankManualCollectionId);
+      add(t("bankScopeClear"), "danger",
+        selected ? selected.total : bankScopeCounts.manual,
+        () => requestBankClear({
+          scope: "manual",
+          collectionId: selected ? selected.id : null,
+          name: selected ? selected.name : "",
+          count: selected ? selected.total : bankScopeCounts.manual,
+        }));
+      return;
+    }
+    add(t("bankScopeClear"), "danger", bankScopeCounts.wrong, () => requestBankClear({
+      scope: "wrong", count: bankScopeCounts.wrong,
+    }));
   }
 
   function renderBankManage() {
     if (!$("bankManagePage")) return;
-    const course = Math.max(0, Number(bankSourceCounts.course || 0));
-    const custom = Math.max(0, Number(bankSourceCounts.custom || 0));
-    const total = course + custom;
-    $("bankManageCourseMeta").textContent = t("bankManageCourseMeta", { n: course });
-    $("bankManageCustomMeta").textContent = t("bankManageCustomMeta", {
-      n: custom,
-      tags: importCollections.length,
-    });
-    const wrong = Math.max(0, Number(currentCounts().wrong || 0));
-    $("bankManageWrongMeta").textContent = t("bankManageWrongMeta", { n: wrong });
-    $("bankManageWrongClear").disabled = wrong <= 0;
-    $("bankManageAllMeta").textContent = t("bankManageAllMeta", {
-      n: total,
-      wrong,
-    });
-    ["bankManageCourseUnused", "bankManageCourseAnswered",
-      "bankManageCourseWrong", "bankManageCourseClear"].forEach((id) => {
-      $(id).disabled = course <= 0;
-    });
-    const list = $("bankManageCustomList");
-    list.replaceChildren();
-    importCollections.forEach((collection) => {
-      const row = document.createElement("div");
-      row.className = "setting-row static";
-      const main = document.createElement("span");
-      main.className = "setting-main";
-      const name = document.createElement("span");
-      name.textContent = collection.name;
-      const meta = document.createElement("span");
-      meta.className = "setting-value";
-      meta.textContent = t("bankManageTagMeta", {
-        n: collection.total,
-        unused: collection.unused,
+    const manual = bankManageScope === "manual";
+    const name = editingMemberName() || activeMemberName();
+    $("bankManageTitle").textContent =
+      t(manual ? "bankManageTitleManual" : "bankManageTitleBuiltin");
+    $("bankManageLead").textContent =
+      t(manual ? "bankManageLeadManual" : "bankManageLeadBuiltin", { name });
+    $("bankManageBuiltinCard").classList.toggle("hidden", manual);
+    $("bankManageManualCard").classList.toggle("hidden", !manual);
+    if (manual) {
+      $("bankManageManualMeta").textContent = t("bankManageManualMeta", {
+        n: bankScopeCounts.manual,
+        tags: importCollections.length,
       });
-      main.append(name, meta);
-      const clear = document.createElement("button");
-      clear.type = "button";
-      clear.className = "btn danger small";
-      clear.textContent = t("bankManageClear");
-      clear.setAttribute("aria-label", t("bankManageClearTag", { name: collection.name }));
-      clear.disabled = collection.total <= 0;
-      clear.addEventListener("click", () => requestBankClear({
-        mode: "all",
-        source: "custom",
-        collectionId: collection.id,
-        name: collection.name,
-        count: collection.total,
-      }));
-      row.append(main, clear);
-      list.appendChild(row);
-    });
-    $("bankManageCustomEmpty").classList.toggle("hidden", importCollections.length > 0);
-    const customClear = $("bankManageCustomClear");
-    // Each bank keeps one whole-bank clear even with a single tag, so the three
-    // source cards read the same: clear this bank, or drill into its rows.
-    customClear.classList.toggle("hidden", custom <= 0);
-    customClear.disabled = custom <= 0;
-    $("bankManageAllClear").disabled = total <= 0;
+      const list = $("bankManageTagList");
+      list.replaceChildren();
+      importCollections.forEach((collection) => {
+        const row = document.createElement("div");
+        row.className = "setting-row static";
+        const main = document.createElement("span");
+        main.className = "setting-main";
+        const label = document.createElement("span");
+        label.textContent = collection.name;
+        const meta = document.createElement("span");
+        meta.className = "setting-value";
+        meta.textContent = t("bankManageTagMeta", {
+          n: collection.total,
+          unused: collection.unused,
+        });
+        main.append(label, meta);
+        const clear = document.createElement("button");
+        clear.type = "button";
+        clear.className = "btn danger small";
+        clear.textContent = t("bankManageTagClear");
+        clear.setAttribute("aria-label", t("bankClearScopeManualTag", { name: collection.name }));
+        clear.disabled = collection.total <= 0;
+        clear.addEventListener("click", () => requestBankClear({
+          scope: "manual",
+          collectionId: collection.id,
+          name: collection.name,
+          count: collection.total,
+        }));
+        row.append(main, clear);
+        list.appendChild(row);
+      });
+      $("bankManageTagEmpty").classList.toggle("hidden", importCollections.length > 0);
+      const clearAll = $("bankManageManualClear");
+      clearAll.classList.toggle("hidden", bankScopeCounts.manual <= 0);
+      clearAll.disabled = bankScopeCounts.manual <= 0;
+    } else {
+      $("bankManageBuiltinMeta").textContent = t("bankManageBuiltinMeta", {
+        n: bankScopeCounts.builtin,
+      });
+      $("bankManageBuiltinClear").disabled = bankScopeCounts.builtin <= 0;
+    }
     renderBankCounts();
   }
 
-  function openBankManage() {
-    bankManageReturnTab =
-      activeTab === "me" || activeTab === "control" ? activeTab : null;
+  function openBankManage(scope) {
+    bankManageScope = scope === "manual" ? "manual" : "builtin";
+    bankManageReturnOverlay = parentTabOpen();
+    if (bankManageReturnOverlay) {
+      if (window.ParentCenterUI && window.ParentCenterUI.suspend) {
+        window.ParentCenterUI.suspend();
+      } else if (window.ParentCenterUI && window.ParentCenterUI.close) {
+        window.ParentCenterUI.close();
+      }
+    }
     setTab("bank", true);
     showBankPage("manage");
     $("bankManageState").textContent = "";
@@ -8172,13 +9064,13 @@ difficulty — тек easy, medium немесе hard.
   function backFromBankManage() {
     $("bankManageState").textContent = "";
     $("bankManageError").textContent = "";
-    const returnTab = bankManageReturnTab;
-    bankManageReturnTab = null;
-    if (returnTab) {
-      // Reopen More/Control with the existing quiz session; setTab reacquires
-      // the editor lease without asking for the PIN again.
-      setTab(returnTab, true);
-      return;
+    if (bankManageReturnOverlay) {
+      bankManageReturnOverlay = false;
+      // Reopen the suspended parent overlay; the quiz session is still valid.
+      if (window.ParentCenterUI && window.ParentCenterUI.open) {
+        window.ParentCenterUI.open();
+        return;
+      }
     }
     showBankPage("home");
     loadBank(true);
@@ -8494,7 +9386,7 @@ difficulty — тек easy, medium немесе hard.
     $("parseImport").textContent = t(importBusy ? "importParsing" : "importParse");
     // Leaving the page mid-import would drop the remaining batches and hide
     // the progress, so the whole form stays frozen until the run finishes.
-    ["importText", "importFile", "importTagName", "backFromImport"]
+    ["importText", "importFile", "importTagName", "backFromImport", "clearImportText"]
       .forEach((id) => {
         if ($(id)) $(id).disabled = importRunning;
       });
@@ -8524,6 +9416,17 @@ difficulty — тек easy, medium немесе hard.
     $("importCopyState").textContent = "";
     setImportError("", []);
     renderImportPrompt();
+  }
+
+  // Clear both the paste box and any chosen file so a rejected batch can be
+  // regenerated and pasted without the old source coming back. The target tag
+  // and default difficulty stay selected for the retry.
+  function clearImportInput() {
+    if (importRunning) return;
+    clearImportPayload();
+    invalidateImportPreview();
+    renderBankImport();
+    $("importText").focus();
   }
 
   function openBankImport() {
@@ -9383,33 +10286,32 @@ difficulty — тек easy, medium немесе hard.
   }
 
   function bankClearScopeText(item) {
-    if (item.mode === "wrong" && item.source === "all") {
-      return t("bankClearScopeAllWrong");
+    switch (item.scope) {
+      case "builtin": return t("bankClearScopeBuiltin");
+      case "ai": return t("bankClearScopeAi");
+      case "manual":
+        return item.collectionId
+          ? t("bankClearScopeManualTag", { name: item.name || "" })
+          : t("bankClearScopeManual");
+      case "wrong": return t("bankClearScopeWrong");
+      default: return t("bankScopeClear");
     }
-    if (item.source === "all") return t("bankClearScopeAll");
-    if (item.source === "custom") {
-      return item.collectionId
-        ? t("bankClearScopeCustomTag", { name: item.name || "" })
-        : t("bankClearScopeCustomAll");
-    }
-    return t("bankClearScopeCourse");
   }
 
   function renderBankClearDialog() {
     if (!bankClearPending) return;
     const item = bankClearPending;
     const scope = bankClearScopeText(item);
-    const detailKey = item.mode === "wrong" && item.source === "all"
-      ? "bankClearWrongAllDetail"
-      : item.mode === "unused" ? "bankClearUnusedDetail"
-        : item.mode === "answered" ? "bankClearAnsweredDetail"
-          : item.mode === "wrong" ? "bankClearWrongDetail" : "bankClearAllDetail";
+    const detailKey = item.scope === "builtin" ? "bankClearBuiltinDetail"
+      : item.scope === "ai" ? "bankClearAiDetail"
+        : item.scope === "manual" ? "bankClearManualDetail" : "bankClearWrongDetail";
     $("bankClearTitle").textContent = t(
       item.step === 1 ? "bankClearTitleFirst" : "bankClearTitleFinal",
       { scope },
     );
     $("bankClearLead").textContent = t(detailKey, {
       scope,
+      name: editingMemberName() || activeMemberName(),
       n: Math.max(0, Number(item.count || 0)),
     });
     $("bankClearWarning").textContent = t(
@@ -9442,27 +10344,24 @@ difficulty — тек easy, medium немесе hard.
     bankClearBusy = true;
     renderBankClearDialog();
     try {
-      const body = { mode: item.mode, source: item.source };
+      const body = {
+        scope: item.scope,
+        mode: item.scope === "wrong" ? "wrong" : "all",
+      };
       if (item.collectionId) body.collectionId = item.collectionId;
       const data = await api("/api/quiz/admin/bank/clear", {
         method: "POST",
         admin: true,
         body,
       });
-      applyBankCounts(data.counts);
-      if (data.sourceCounts) {
-        bankSourceCounts = {
-          course: Math.max(0, Number(data.sourceCounts.course || 0)),
-          custom: Math.max(0, Number(data.sourceCounts.custom || 0)),
-        };
-      }
-      if (publicState && data.bankState) publicState.bankState = data.bankState;
+      applyClearStats(data);
       closeModal();
       bankClearPending = null;
       bankClearBusy = false;
       $("bankManageState").textContent = t("clearDone");
       $("bankManageError").textContent = "";
       renderBankManage();
+      renderBank();
       renderStock();
       await refreshStatus();
       try {
@@ -9476,6 +10375,7 @@ difficulty — тек easy, medium немесе hard.
       bankClearPending = null;
       closeModal();
       $("bankManageError").textContent = errorText(error);
+      $("bankError").textContent = errorText(error);
     }
   }
 
@@ -9489,9 +10389,20 @@ difficulty — тек easy, medium немесе hard.
       headers["X-Quiz-Admin"] = "1";
       headers["X-Quiz-Admin-Token"] = adminToken;
     }
+    let requestPath = path.startsWith("/api/") ? API_ROOT + path.slice(1) : path;
+    // Every admin endpoint resolves its subject from this query parameter. The
+    // TV still answers with the active member by default, so an old page and a
+    // first load before the roster arrives keep working. A generation job
+    // passes its pinned subject so a TV-side member change cannot retarget it.
+    const subjectUserId = Object.prototype.hasOwnProperty.call(options, "subjectUserId")
+      ? (options.subjectUserId || "")
+      : editingSubjectUserId;
+    if (options.admin && subjectUserId && requestPath.indexOf("subjectUserId=") < 0) {
+      requestPath += (requestPath.indexOf("?") >= 0 ? "&" : "?") +
+        "subjectUserId=" + encodeURIComponent(subjectUserId);
+    }
     let response;
     try {
-      const requestPath = path.startsWith("/api/") ? API_ROOT + path.slice(1) : path;
       response = await fetch(requestPath, {
         method,
         headers,
@@ -9601,9 +10512,11 @@ difficulty — тек easy, medium немесе hard.
    * the TV can write it straight to disk. Content-Length is set by the browser from the File.
    * XHR is used instead of fetch because only XHR reports upload progress to the page.
    */
-  function parentUpload(path, file, editorToken, onProgress) {
+  function parentUpload(path, file, editorToken, onProgress, contentType) {
     const headers = parentHeaders({ editorToken });
-    headers["Content-Type"] = "application/octet-stream";
+    // Media uploads keep the octet-stream contract; the avatar route accepts image/* only and
+    // gets the selected file's own mime type so the TV can reject a non-image before decoding.
+    headers["Content-Type"] = contentType || "application/octet-stream";
     const requestPath = path.startsWith("/api/") ? API_ROOT + path.slice(1) : API_ROOT + path;
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
@@ -9651,12 +10564,36 @@ difficulty — тек easy, medium немесе hard.
         refreshStatus();
         heartbeat();
       },
+      // The parent center edits a member's grade/semester in place; reload the
+      // session so the generation and level pickers see the new default scope.
+      // A deletion can also discard the member this page was editing; in that case
+      // reload the generation form for whichever member the session now points at.
+      memberProfileChanged: () => {
+        const previous = editingSubjectUserId;
+        loadAdminSession()
+          .then(() => {
+            if (editingSubjectUserId !== previous) {
+              return loadGenerationPrefsFromTv(true);
+            }
+            return null;
+          })
+          .catch(() => {});
+      },
       openQuizLogin: (mode) => {
-        openControlAfterLogin = mode === "control";
+        openOverlayAfterLogin = mode === "user" || mode === "system" ? mode : "system";
         openParentAfterLogin = false;
         if (!gateShown) showPinGate();
       },
-      openQuizBank: () => openBankManage(),
+      openSubjectPicker: () => openSubjectDialog(),
+      editingSubjectId: () => editingSubjectUserId,
+      suspendParent: () => {
+        if (window.ParentCenterUI && window.ParentCenterUI.suspend) {
+          window.ParentCenterUI.suspend();
+        } else if (window.ParentCenterUI && window.ParentCenterUI.close) {
+          window.ParentCenterUI.close();
+        }
+      },
+      closeOverlayTab: () => setTab("generate", true),
       openUnlockDialog: () => parentUnlockDialog(),
       openManualDialog: () => openManualDialog(),
       controlManualReason: (state) => (state ? manualReasonText(state.reason, state) : ""),
@@ -9737,6 +10674,7 @@ difficulty — тек easy, medium немесе hard.
     $("editor").classList.add("hidden");
     $("bottomNav").classList.add("hidden");
     $("modalRoot").classList.add("hidden");
+    renderSubjectChip();
     $("webDisabledCard").classList.remove("hidden");
     $("webDisabledError").classList.add("hidden");
     renderWebDisabled(bootstrap);
@@ -9872,7 +10810,6 @@ difficulty — тек easy, medium немесе hard.
     bankCounts = null;
     bankCapacity = 100000;
     bankItems = [];
-    bankFilter = "all";
     bankOffset = 0;
     bankHasMore = false;
     bankLoading = false;
@@ -9898,13 +10835,14 @@ difficulty — тек easy, medium немесе hard.
     courseSourceCountsKey = "";
     courseSourceCountsToken++;
     bankSourceCounts = { course: 0, custom: 0 };
+    presetBank = { bankId: "", total: 0, available: 0 };
     localBankActive = true;
     providerState = { aiSupported: true, consentAccepted: false, configured: false, baseUrl: "", model: "", speech: null };
     speechState = Object.assign({}, DEFAULT_SPEECH);
     speechDirty = false;
     providerMsg = null;
     pendingGenerate = false;
-    pendingEnter = false;
+    pendingProviderAction = "";
     genState = idleGeneration();
     targetCount = 20;
     levelSaving = false;
@@ -9922,6 +10860,11 @@ difficulty — тек easy, medium немесе hard.
     resetScopeOptions();
     selectedBatch = new Set();
     answerTab = "scope";
+    genScopeSetup = false;
+    genGradeValue = 4;
+    genSemesterValue = 1;
+    genSubjectValue = "math";
+    genTextbookId = "renjiao";
     genRequirementValue = DEFAULT_GEN_REQUIREMENT;
     genQuestionTypeValue = "single";
     genOptionsValue = 4;
@@ -9972,6 +10915,7 @@ difficulty — тек easy, medium немесе hard.
     document.body.classList.remove("editor-open");
     $("editor").classList.add("hidden");
     $("bottomNav").classList.add("hidden");
+    renderSubjectChip();
     gateShown = true;
     unlockState = null;
     unlockBusy = false;
@@ -9993,7 +10937,10 @@ difficulty — тек easy, medium немесе hard.
     $("gateCard").classList.add("hidden");
     $("editor").classList.remove("hidden");
     $("bottomNav").classList.remove("hidden");
-    setTab(activeTab, true);
+    renderSubjectChip();
+    // The post-login tab is decided by enterPostLoginTab; never auto-open an
+    // overlay tab left over from the previous session.
+    setTab(activeTab === "user" || activeTab === "system" ? "generate" : activeTab, true);
   }
 
   // A second phone sees the same PIN gate. When the first phone still owns
@@ -10134,19 +11081,20 @@ difficulty — тек easy, medium немесе hard.
 
   function setTab(tab, force) {
     if (!TAB_VIEWS[tab]) tab = "generate";
-    if (tab !== "me" && tab !== "control" && parentTabOpen()) {
-      // Leaving More/Control releases the editor lease; returning reacquires it with the same
-      // quiz PIN session, so no second password prompt is needed.
+    const overlayTab = tab === "user" || tab === "system";
+    if (!overlayTab && parentTabOpen()) {
+      // Leaving the overlay releases the editor lease; returning reacquires it
+      // with the same quiz PIN session, so no second password prompt is needed.
       window.ParentCenterUI.close();
     }
     if (!force && activeTab === tab) {
-      if (tab === "me") openParentTab();
-      else if (tab === "control") openControlTab();
+      if (tab === "user") openUserTab();
+      else if (tab === "system") openSystemTab();
       return;
     }
     if (!force) showGenPage("home");
     // Leaving or re-entering the bank always returns to its list; the import
-    // subpage is reached only through its own button.
+    // and manage subpages are reached only through their own buttons.
     showBankPage("home");
     activeTab = tab;
     for (const name of Object.keys(TAB_VIEWS)) {
@@ -10155,41 +11103,36 @@ difficulty — тек easy, medium немесе hard.
     document.querySelectorAll(".nav-item[data-tab]").forEach((button) => {
       button.setAttribute("aria-pressed", String(button.dataset.tab === tab));
     });
+    renderSubjectChip();
     if (tab === "bank") {
       loadBank(true);
-    } else if (tab === "me") {
-      refreshSync();
-      updateParentAppDownloadRow();
-      // Refresh the lock state on entry so the action reflects the TV now,
-      // not the last heartbeat from another tab.
-      heartbeat();
-      if (window.ParentCenterUI && window.ParentCenterUI.refreshEntry) {
-        window.ParentCenterUI.refreshEntry();
-      }
-      openParentTab();
-    } else if (tab === "control") {
-      if ($("controlPageState")) $("controlPageState").textContent = "";
-      openControlTab();
+    } else if (tab === "user") {
+      openUserTab();
+    } else if (tab === "system") {
+      openSystemTab();
     }
     window.scrollTo({ top: 0 });
   }
 
-  function openParentTab() {
+  function openUserTab() {
     if (parentBootstrap && parentWebAvailable(parentBootstrap) &&
-        window.ParentCenterUI && window.ParentCenterUI.open) {
-      window.ParentCenterUI.open();
-    }
-  }
-
-  function openControlTab() {
-    if (parentBootstrap && parentWebAvailable(parentBootstrap) &&
-        window.ParentCenterUI && window.ParentCenterUI.openControl) {
-      window.ParentCenterUI.openControl();
+        window.ParentCenterUI && window.ParentCenterUI.openUser) {
+      window.ParentCenterUI.openUser();
       return;
     }
-    if ($("controlPageState")) {
-      $("controlPageState").textContent = t("controlUnavailable");
+    // Without a working parent center there is nothing to configure here.
+    activeTab = "generate";
+    setTab("generate", true);
+  }
+
+  function openSystemTab() {
+    if (parentBootstrap && parentWebAvailable(parentBootstrap) &&
+        window.ParentCenterUI && window.ParentCenterUI.openSystem) {
+      window.ParentCenterUI.openSystem();
+      return;
     }
+    activeTab = "generate";
+    setTab("generate", true);
   }
 
   async function loadUnitCatalog() {
@@ -10203,11 +11146,40 @@ difficulty — тек easy, medium немесе hard.
   }
 
   async function loadAdminSession() {
+    try {
+      return await loadAdminSessionOnce();
+    } catch (error) {
+      // A member removed or disabled on the TV must not dead-end the page. Drop
+      // the stale preference and fall back to the TV's active member once.
+      if (error && error.code === "INVALID_SUBJECT" && editingSubjectUserId) {
+        saveEditingSubject("");
+        return loadAdminSessionOnce();
+      }
+      throw error;
+    }
+  }
+
+  async function loadAdminSessionOnce() {
     const [data] = await Promise.all([
       api("/api/quiz/admin/session", { admin: true }),
       loadUnitCatalog(),
     ]);
     adminSession = data.session || null;
+    familyMembers = Array.isArray(data.members) ? data.members : [];
+    activeUserId = data.activeUserId ? String(data.activeUserId) : "";
+    // No stored preference means "follow the TV's active member". Do not persist the
+    // resolved id here, or the phone would stay pinned to that member after the TV
+    // switches. A real explicit choice is rewritten only when the server resolves it
+    // to a different member (for example after a migration).
+    if (editingSubjectUserId && data.subjectUserId) {
+      const resolved = String(data.subjectUserId);
+      if (resolved !== editingSubjectUserId) saveEditingSubject(resolved);
+    }
+    privateCapacity = Math.max(0, Number(data.privateCapacity || privateCapacity || 0));
+    privateRemaining = Math.max(0, Number(data.privateRemaining || 0));
+    bankScopeCounts = subjectScopeCounts(data.bankScopeCounts);
+    renderSubjectChip();
+    renderSubjectDialog();
     applyCurriculum(data.curriculum, data.cloudJuniorReady);
     // Re-resolve a saved requirement now that unit titles are available; a
     // title without "第N单元" could not map before this point.
@@ -10253,6 +11225,7 @@ difficulty — тек easy, medium немесе hard.
       course: Math.max(0, Number(data.bankSourceCounts && data.bankSourceCounts.course || 0)),
       custom: Math.max(0, Number(data.bankSourceCounts && data.bankSourceCounts.custom || 0)),
     };
+    applyPresetBank(data.presetBank);
     localBankActive = data.localBankActive !== false;
     syncState = data.syncState || null;
     cloudManaged = Boolean(data.cloudManaged);
@@ -10261,6 +11234,7 @@ difficulty — тек easy, medium немесе hard.
     renderSync();
     renderStock();
     renderBankCounts();
+    renderBank();
     renderBankManage();
     renderGenConfig(false);
     renderGenerate();
@@ -10407,9 +11381,11 @@ difficulty — тек easy, medium немесе hard.
     renderProvider();
     aiReturnTab = TAB_VIEWS[activeTab] ? activeTab : "generate";
     aiReturnParentCenter = parentTabOpen();
-    if (aiReturnParentCenter && window.ParentCenterUI && window.ParentCenterUI.close) {
-      // The parent center overlay would otherwise cover the full-page form.
-      window.ParentCenterUI.close();
+    if (aiReturnParentCenter && window.ParentCenterUI) {
+      // The overlay would otherwise cover the full-page form. Suspend it so the
+      // close button returns to the same page it was opened from.
+      if (window.ParentCenterUI.suspend) window.ParentCenterUI.suspend();
+      else if (window.ParentCenterUI.close) window.ParentCenterUI.close();
     }
     aiPageOpen = true;
     document.querySelectorAll("#editor > .view").forEach((view) => view.classList.add("hidden"));
@@ -10449,8 +11425,8 @@ difficulty — тек easy, medium немесе hard.
       return;
     }
     if (!providerState.consentAccepted) {
-      providerMsg = { kind: "error", key: "err_CONSENT_REQUIRED" };
-      renderProviderMessages();
+      pendingProviderAction = "save";
+      openConsent();
       return;
     }
     if (!$("apiKey").value.trim() && !providerState.configured) {
@@ -10505,8 +11481,8 @@ difficulty — тек easy, medium немесе hard.
       return;
     }
     if (!providerState.consentAccepted) {
-      providerMsg = { kind: "error", key: "err_CONSENT_REQUIRED" };
-      renderProviderMessages();
+      pendingProviderAction = "test";
+      openConsent();
       return;
     }
     if (!$("apiKey").value.trim() && !providerState.configured) {
@@ -10550,10 +11526,15 @@ difficulty — тек easy, medium немесе hard.
       providerState.consentAccepted = true;
       closeModal();
       renderProvider();
-      if (pendingEnter) {
-        pendingEnter = false;
-        showEditor();
-        enterPostLoginTab();
+      // A save/test that opened this notice resumes once consent is recorded.
+      const providerAction = pendingProviderAction;
+      pendingProviderAction = "";
+      if (providerAction === "save") {
+        saveProvider();
+        return;
+      }
+      if (providerAction === "test") {
+        testProviderConnection();
         return;
       }
       // Accepting privacy does not force AI setup. Only a pending "generate"
@@ -10580,6 +11561,17 @@ difficulty — тек easy, medium немесе hard.
     openModal("consentDialog");
   }
 
+  /**
+   * Declining AI consent only cancels the AI action. The editor stays open:
+   * manual banks, imports and preset levels do not need a provider key.
+   */
+  function dismissConsent() {
+    pendingGenerate = false;
+    pendingProviderAction = "";
+    closeModal();
+    renderGenerate();
+  }
+
   function clearGenTimer() {
     if (genTimer) clearTimeout(genTimer);
     genTimer = null;
@@ -10589,6 +11581,21 @@ difficulty — тек easy, medium немесе hard.
 
   function generationGradeCode() {
     return String(genGradeValue) + (genSemesterValue === 2 ? "b" : "a");
+  }
+
+  // The scope is ready only when every curriculum choice comes from a real
+  // picker value. Grade 0 / semester 0 / empty subject mean the new member
+  // has not been configured yet; nothing may fall back to grade 4 here.
+  function generationScopeReady() {
+    const grade = Number(genGradeValue);
+    if (!Number.isInteger(grade) || !gradeNos().includes(grade) ||
+        cloudJuniorBlocked(grade)) {
+      return false;
+    }
+    if (genSemesterValue !== 1 && genSemesterValue !== 2) return false;
+    if (!subjectIdsForGrade(grade).includes(genSubjectValue)) return false;
+    if (genSubjectValue === SUBJECT_ALL) return true;
+    return textbooksFor(grade, genSubjectValue).includes(genTextbookId);
   }
 
   function applyGenerationGrade(code) {
@@ -10795,6 +11802,8 @@ difficulty — тек easy, medium немесе hard.
 
   function applyGenerationPrefs(prefs) {
     if (!prefs || typeof prefs !== "object") return;
+    // Saved preferences are already an explicit choice for this member.
+    genScopeSetup = false;
     const version = Number(prefs.presetVersion) || 0;
     const customTopic = normalizeRequirement(prefs.customTopic);
     // 版本 3 起不再有默认值。旧版默认“第三单元”（无版本号）和
@@ -10856,6 +11865,59 @@ difficulty — тек easy, medium немесе hard.
     applyGenerationPrefs(prefs);
   }
 
+  /**
+   * A new non-default member has no generation preferences of its own. Later
+   * members start with an empty scope and an empty topic instead of inheriting
+   * the previous member's choices or the install defaults: a second child can
+   * be in any grade, so a guessed grade is the easiest way to generate the
+   * wrong homework. Only the first/default member keeps the install defaults.
+   * Nothing is persisted here: the first generation save belongs to this
+   * member only.
+   */
+  function resetGenerationPrefsForMember() {
+    const member = editingMember() || activeMember();
+    const setup = Boolean(member && !member.isDefault);
+    const grade = Number(member && member.grade);
+    const semester = Number(member && member.semester);
+    const memberGrade = gradeNos().includes(grade) && !cloudJuniorBlocked(grade)
+      ? grade
+      : 0;
+    genScopeSetup = setup;
+    if (setup) {
+      // The member's own profile grade is an explicit choice, so keep it and
+      // pin the picker. Everything else waits for a parent choice.
+      genGradeValue = memberGrade;
+      genSemesterValue = memberGrade && (semester === 1 || semester === 2)
+        ? semester
+        : 0;
+      genSubjectValue = "";
+      genTextbookId = "";
+    } else {
+      genGradeValue = memberGrade || 4;
+      genSemesterValue = semester === 2 ? 2 : 1;
+      const subjects = subjectIdsForGrade(genGradeValue);
+      genSubjectValue = subjects.includes("math") ? "math" : (subjects[0] || "math");
+      genTextbookId = defaultTextbookFor(genGradeValue, genSubjectValue) || "general";
+    }
+    genScopeValue = "review";
+    genUnitValue = 1;
+    genDifficultyValue = "";
+    genRequirementValue = "";
+    genQuestionTypeValue = "single";
+    genOptionsValue = 4;
+    genAutoAddValue = true;
+    targetCount = 20;
+    genPromptDirty = false;
+    if (genPrefsSaveTimer) {
+      clearTimeout(genPrefsSaveTimer);
+      genPrefsSaveTimer = null;
+    }
+    try {
+      localStorage.removeItem(GEN_PREFS_KEY);
+    } catch (_) { /* private mode */ }
+    syncGenerateComposer(true);
+  }
+
   function readGenerationPrefs() {
     const textbook = genSubjectValue === "all" ? "general" : genTextbookId;
     const prefs = {
@@ -10911,6 +11973,9 @@ difficulty — тек easy, medium немесе hard.
   function saveGeneratePrefs() {
     const prefs = readGenerationPrefs();
     if (!prefs) return null;
+    // A complete scope means the parent has made every choice; normal
+    // auto-fill may resume on the next render.
+    genScopeSetup = false;
     try {
       localStorage.setItem(GEN_PREFS_KEY, JSON.stringify(prefs));
     } catch (_) { /* private mode */ }
@@ -10927,6 +11992,7 @@ difficulty — тек easy, medium немесе hard.
   async function saveGeneratePrefsNow() {
     const prefs = readGenerationPrefs();
     if (!prefs) return null;
+    genScopeSetup = false;
     try {
       localStorage.setItem(GEN_PREFS_KEY, JSON.stringify(prefs));
     } catch (_) { /* private mode */ }
@@ -10937,10 +12003,16 @@ difficulty — тек easy, medium немесе hard.
     return postGenerationPrefs(prefs);
   }
 
-  async function loadGenerationPrefsFromTv() {
+  async function loadGenerationPrefsFromTv(resetWhenAbsent) {
     try {
       const data = await api("/api/quiz/admin/generate/prefs", { admin: true });
-      if (!data || !data.prefs || typeof data.prefs !== "object") return;
+      if (!data || !data.prefs || typeof data.prefs !== "object") {
+        const member = editingMember();
+        if (resetWhenAbsent || (member && !member.isDefault)) {
+          resetGenerationPrefsForMember();
+        }
+        return;
+      }
       applyGenerationPrefs(data.prefs);
       genPromptDirty = false;
       syncGenerateComposer(true);
@@ -10955,7 +12027,16 @@ difficulty — тек easy, medium немесе hard.
         }
       }
     } catch (_) {
-      // Older TV builds have no prefs endpoint; local memory still applies.
+      // Older TV builds have no prefs endpoint; local memory still applies. After an
+      // explicit member switch, reset instead of showing the previous member's form.
+      if (resetWhenAbsent) {
+        resetGenerationPrefsForMember();
+      } else {
+        const member = editingMember();
+        // A later member must never inherit the default/previous form when
+        // its own preferences cannot be read.
+        if (member && !member.isDefault) resetGenerationPrefsForMember();
+      }
     }
   }
 
@@ -11015,7 +12096,11 @@ difficulty — тек easy, medium немесе hard.
     if (input && document.activeElement !== input) input.value = genRequirementValue;
     renderRequirementSamples();
     const hint = $("genRequirementScope");
-    if (hint) {
+    if (hint && !generationScopeReady()) {
+      // Do not classify a topic against a grade the parent has not chosen.
+      hint.classList.remove("error");
+      hint.textContent = "";
+    } else if (hint) {
       const text = normalizeRequirement(genRequirementValue);
       const invalidUnit = outOfRangeRequirementUnit(text);
       hint.classList.toggle("error", invalidUnit !== null);
@@ -11040,7 +12125,7 @@ difficulty — тек easy, medium немесе hard.
     if (input && options.keepInput !== true) input.value = genRequirementValue;
     renderRequirementState();
     if (options.recompose !== false && !genPromptDirty) {
-      $("genPrompt").value = composeGenerationPrompt();
+      $("genPrompt").value = generationScopeReady() ? composeGenerationPrompt() : "";
     }
     updatePromptBadge();
     renderHome();
@@ -11057,10 +12142,55 @@ difficulty — тек easy, medium немесе hard.
       genSemesterValue = 1;
       genUnitValue = 1;
     }
-    keepGenerationSubject();
-    keepGenerationTextbook();
+    // A member profile with a grade pins generation to that grade (and semester when
+    // set). Members created before this feature have no grade and keep every chip.
+    const memberScope = memberScopeChoice();
+    if (memberScope.grade !== null && genGradeValue !== memberScope.grade) {
+      genGradeValue = memberScope.grade;
+      genUnitValue = 1;
+    }
+    if (memberScope.semester !== null && genSemesterValue !== memberScope.semester) {
+      genSemesterValue = memberScope.semester;
+      genUnitValue = 1;
+    }
+    if (genScopeSetup) {
+      // Setup is explicit: never fill a subject/textbook the parent did not
+      // choose. Grade changes invalidate the downstream picks, so clear them.
+      if (genSubjectValue === SUBJECT_ALL) {
+        genTextbookId = "general";
+      } else if (genSubjectValue &&
+          !subjectIdsForGrade(genGradeValue).includes(genSubjectValue)) {
+        genSubjectValue = "";
+        genTextbookId = "";
+      } else if (genSubjectValue && genTextbookId &&
+          !generationTextbookBooks().includes(genTextbookId)) {
+        genTextbookId = "";
+      }
+    } else {
+      keepGenerationSubject();
+      keepGenerationTextbook();
+    }
 
-    renderChipRow($("genGradeChips"), gradeNos(), genGradeValue, "data-grade",
+    const hasGrade = Number.isInteger(genGradeValue) && genGradeValue >= 1 &&
+      gradeNos().includes(genGradeValue);
+    if ($("genSemesterField")) {
+      $("genSemesterField").classList.toggle("hidden", !hasGrade);
+    }
+    if ($("genSubjectField")) {
+      $("genSubjectField").classList.toggle("hidden", !hasGrade);
+    }
+    const setupHint = $("genSetupHint");
+    if (setupHint) {
+      const showSetup = !generationScopeReady();
+      setupHint.classList.toggle("hidden", !showSetup);
+      setupHint.textContent = showSetup ? t("genScopeSetupHint") : "";
+    }
+
+    renderChipRow(
+      $("genGradeChips"),
+      memberScope.grade !== null ? [memberScope.grade] : gradeNos(),
+      genGradeValue,
+      "data-grade",
       (value) => gradeLabel(value),
       (value) => cloudJuniorBlocked(value));
     const gradeHint = $("genGradeHint");
@@ -11069,7 +12199,11 @@ difficulty — тек easy, medium немесе hard.
       gradeHint.textContent = blocked ? t("cloudJuniorUnsupported") : "";
       gradeHint.classList.toggle("hidden", !blocked);
     }
-    renderChipRow($("genSemester"), [1, 2], genSemesterValue, "data-semester",
+    renderChipRow(
+      $("genSemester"),
+      memberScope.semester !== null ? [memberScope.semester] : [1, 2],
+      genSemesterValue,
+      "data-semester",
       (value) => t(Number(value) === 2 ? "semesterSecond" : "semesterFirst"));
 
     renderGenerationSubjects();
@@ -11077,7 +12211,9 @@ difficulty — тек easy, medium немесе hard.
     // picker would be misleading; the field (and its curation hint) is hidden.
     const textbookField = $("genTextbookField");
     if (textbookField) {
-      textbookField.classList.toggle("hidden", genSubjectValue === SUBJECT_ALL);
+      const showTextbook = hasGrade && Boolean(genSubjectValue) &&
+        genSubjectValue !== SUBJECT_ALL;
+      textbookField.classList.toggle("hidden", !showTextbook);
     }
     const books = generationTextbookBooks();
     renderChipRow($("genTextbook"), books, genTextbookId, "data-textbook",
@@ -11102,7 +12238,7 @@ difficulty — тек easy, medium немесе hard.
     renderChipRow($("genOptionsChips"), GEN_OPTIONS_VALUES, genOptionsValue, "data-options",
       (value) => String(value));
     if (recompose && !genPromptDirty) {
-      $("genPrompt").value = composeGenerationPrompt();
+      $("genPrompt").value = generationScopeReady() ? composeGenerationPrompt() : "";
     }
     updatePromptBadge();
     renderHome();
@@ -11211,44 +12347,31 @@ difficulty — тек easy, medium немесе hard.
     return courses.find((source) => !generationFitsSource(source)) || courses[0] || null;
   }
 
-  function generationScopeMismatch() {
-    const target = generationTargetLevel();
-    const source = target ? generationTargetCourseSource(target) : null;
-    return Boolean(source) && !generationFitsSource(source);
-  }
-
-  function answerScopeNeedsQuestions() {
-    return Boolean(publicState) &&
-      publicState.enabled !== false &&
-      publicState.source !== "CLOUD" &&
-      scopeLoaded &&
-      shortLevels(Number(currentConfig().pullCount || 5)).length > 0;
-  }
-
   function canAlignGenerationToAnswerScope(scope) {
     const ans = normalizeAnswerScope(scope);
     if (!ans || cloudJuniorBlocked(ans.grade)) return false;
+    // Generation stays inside the member's grade/semester; a level that conflicts
+    // with it is edited in the level source instead of silently pulling the AI out.
+    const memberScope = memberScopeChoice();
+    if (memberScope.grade !== null &&
+        (ans.grade !== memberScope.grade ||
+         (memberScope.semester !== null && ans.semester !== memberScope.semester))) {
+      return false;
+    }
     if (ans.subject === SUBJECT_ALL) return true;
     if (!subjectIdsForGrade(ans.grade).includes(ans.subject)) return false;
     return ans.textbook === TEXTBOOK_ALL ||
       textbooksFor(ans.grade, ans.subject).includes(ans.textbook);
   }
 
-  function generationScopeSignature() {
-    const target = generationTargetLevel();
-    const source = target ? generationTargetCourseSource(target) : null;
-    const ans = source ? source.scope : null;
-    const answerPart = ans ? levelScopeSignature(ans) : "";
-    const genPart = [
-      genGradeValue, genSemesterValue, genSubjectValue, genTextbookId,
-      genScopeValue, genUnitValue, genDifficultyValue,
-    ].join("/");
-    return (target ? target.id : "none") + "|" + answerPart + "|" + genPart;
-  }
-
   function updateGenerationScopeStatus() {
     const box = $("genScopeStatus");
     if (!box) return;
+    // No range chosen yet, so there is nothing to compare with the TV.
+    if (!generationScopeReady()) {
+      box.classList.add("hidden");
+      return;
+    }
     const pull = Number(currentConfig().pullCount || 5);
     const active = Boolean(publicState) &&
       publicState.enabled !== false &&
@@ -11311,33 +12434,8 @@ difficulty — тек easy, medium немесе hard.
     setRequirement(legacyRequirementLabel(genScopeValue, genUnitValue), { persist: false });
     renderGenConfig(true);
     saveGeneratePrefs();
-    scopeMismatchAckKey = "";
     renderHome();
     renderGenerate();
-    return true;
-  }
-
-  function openScopeMismatchDialog() {
-    const target = generationTargetLevel();
-    const source = target ? generationTargetCourseSource(target) : null;
-    const ans = source ? source.scope : null;
-    if (!ans) return false;
-    const pull = Number(currentConfig().pullCount || 5);
-    const index = levelPackages.indexOf(target);
-    $("scopeMismatchAnswer").textContent = t("scopeMismatchAnswerLine", {
-      scope: levelLabel(target, index) + " · " + scopeSummaryText(ans),
-    });
-    $("scopeMismatchGenerate").textContent =
-      t("scopeMismatchGenerateLine", { scope: generationScopeSummary() });
-    $("scopeMismatchBody").textContent = t("scopeMismatchBody", {
-      available: target.available,
-      pull,
-    });
-    $("scopeMismatchAlign").classList.toggle(
-      "hidden",
-      !canAlignGenerationToAnswerScope(ans),
-    );
-    openModal("scopeMismatchDialog");
     return true;
   }
 
@@ -11472,9 +12570,17 @@ difficulty — тек easy, medium немесе hard.
 
   function scopeCandidateValues(step, draft, counts) {
     if (step === "grade") {
+      if (courseSourceScopeLock && courseSourceScopeLock.grade) {
+        return [String(courseSourceScopeLock.grade)];
+      }
       return gradeNos().filter((no) => !cloudJuniorBlocked(no)).map(String);
     }
-    if (step === "semester") return ["1", "2"];
+    if (step === "semester") {
+      if (courseSourceScopeLock && courseSourceScopeLock.semester) {
+        return [String(courseSourceScopeLock.semester)];
+      }
+      return ["1", "2"];
+    }
     if (step === "subject") {
       return subjectIdsForGrade(draft && draft.grade);
     }
@@ -11635,6 +12741,10 @@ difficulty — тек easy, medium немесе hard.
     // filters. The response still reports every backed type in
     // facets.answerKind so the chips never hide an option that has data.
     if (courseSourceAnswerKind !== "any") add("answerKind", courseSourceAnswerKind);
+    // The picker offers only branches the chosen bank can fill.
+    if (courseSourceOrigin === "preset" || courseSourceOrigin === "ai") {
+      add("origin", courseSourceOrigin);
+    }
     return params.toString();
   }
 
@@ -11730,8 +12840,16 @@ difficulty — тек easy, medium немесе hard.
       const number = Number(value);
       if (step === "grade") {
         if (!gradeNos().includes(number) || cloudJuniorBlocked(number)) return;
-      } else if (number !== 1 && number !== 2) {
-        return;
+        if (courseSourceScopeLock && courseSourceScopeLock.grade &&
+            number !== courseSourceScopeLock.grade) {
+          return;
+        }
+      } else {
+        if (number !== 1 && number !== 2) return;
+        if (courseSourceScopeLock && courseSourceScopeLock.semester &&
+            number !== courseSourceScopeLock.semester) {
+          return;
+        }
       }
       value = number;
     }
@@ -11860,16 +12978,26 @@ difficulty — тек easy, medium немесе hard.
     return { total: single + multiple, single, multiple };
   }
 
+  function courseOriginLabel(origin) {
+    if (origin === "preset") return t("levelSourcePresetTag");
+    if (origin === "ai") return t("levelSourceAiTag");
+    return t("levelSourceLegacyTag");
+  }
+
   function sourceShortLabel(source) {
     if (!source) return "";
     if (source.type === "wrong") return t("wrongLevelFallbackName");
     if (source.type === "collection") {
       return String(source.collectionName || "").trim() || t("customLevelFallbackName");
     }
-    const scope = scopeSummaryText(source.scope);
-    return source.answerKind && source.answerKind !== "any"
-      ? scope + " · " + answerKindLabel(source.answerKind)
-      : scope;
+    if (source.type === "preset") return t("levelSourceLife");
+    const parts = [courseOriginLabel(source.origin)];
+    const summary = scopeSummaryText(source.scope);
+    if (summary) parts.push(summary);
+    if (source.answerKind && source.answerKind !== "any") {
+      parts.push(answerKindLabel(source.answerKind));
+    }
+    return parts.join(" · ");
   }
 
   function packageSummaryText(level) {
@@ -11902,8 +13030,22 @@ difficulty — тек easy, medium немесе hard.
       const value = Number(source.typeCounts.total);
       return Number.isFinite(value) ? Math.max(0, value) : null;
     }
+    if (source.type === "preset") {
+      if (source.total !== undefined && source.total !== null) {
+        const stored = Number(source.total);
+        if (Number.isFinite(stored)) return Math.max(0, stored);
+      }
+      const fromBank = Number(presetBank.total);
+      return Number.isFinite(fromBank) ? Math.max(0, fromBank) : null;
+    }
     if (source.type === "wrong") return sourceAvailable(source);
     return null;
+  }
+
+  // Custom tags and the bundled bank keep a stable total even after consumed
+  // rows reduce what the next round can draw.
+  function sourceShowsTotal(source) {
+    return Boolean(source) && (source.type === "collection" || source.type === "preset");
   }
 
   function sourceTotalSum(sources) {
@@ -12009,7 +13151,7 @@ difficulty — тек easy, medium немесе hard.
         const total = sourceTotal(source);
         const countText = count === null
           ? ""
-          : " · " + (source.type === "collection" && total !== null
+          : " · " + (sourceShowsTotal(source) && total !== null
             ? t("levelSourceTotalAvailable", { total, available: count })
             : t("levelSourceAvailable", { n: count }));
         line.textContent = t("levelSourceIndex", { n: sourceIndex + 1 }) +
@@ -12109,10 +13251,7 @@ difficulty — тек easy, medium немесе hard.
     $("answerPaneScope").classList.toggle("hidden", answerTab !== "scope");
     $("answerPaneRules").classList.toggle("hidden", answerTab !== "rules");
     $("answerSaveBar").classList.toggle("hidden", answerTab !== "rules");
-    if (answerTab === "scope") {
-      renderAnswerLevels();
-      renderPackageEditor();
-    }
+    if (answerTab === "scope") renderAnswerLevels();
     renderSettingsChrome();
   }
 
@@ -12133,7 +13272,10 @@ difficulty — тек easy, medium немесе hard.
           multiple: Math.max(0, Number(rawCounts.multiple || 0)),
         }
         : null;
-      return { type: "course", scope, answerKind, available, typeCounts };
+      // Documents written before the preset/AI split have no origin; they keep
+      // the combined preset + AI behavior instead of silently becoming preset.
+      const origin = raw.origin === "preset" || raw.origin === "ai" ? raw.origin : "all";
+      return { type: "course", scope, answerKind, origin, available, typeCounts };
     }
     if (raw.type === "collection") {
       const collectionId = String(raw.collectionId || "");
@@ -12143,6 +13285,17 @@ difficulty — тек easy, medium немесе hard.
         collectionId,
         collectionName: String(raw.collectionName || ""),
         available,
+      };
+    }
+    if (raw.type === "preset") {
+      const bankId = String(raw.bankId || "").trim();
+      if (!bankId) return null;
+      const total = Number(raw.total);
+      return {
+        type: "preset",
+        bankId,
+        available,
+        total: Number.isFinite(total) ? Math.max(0, total) : null,
       };
     }
     if (raw.type === "wrong") return { type: "wrong", available };
@@ -12300,7 +13453,7 @@ difficulty — тек easy, medium немесе hard.
       delete scopeOptionsLoading.courseCounts;
       return;
     }
-    const key = levelScopeSignature(scope);
+    const key = levelScopeSignature(scope) + "|" + courseSourceOrigin;
     if (key === courseSourceCountsKey &&
         (courseSourceCounts !== null || scopeOptionsLoading.courseCounts)) {
       return;
@@ -12312,7 +13465,7 @@ difficulty — тек easy, medium немесе hard.
     api("/api/quiz/admin/level-counts", {
       method: "POST",
       admin: true,
-      body: { scopes: [scopeToCanonical(scope)] },
+      body: { scopes: [scopeToCanonical(scope)], origin: courseSourceOrigin },
     })
       .then((data) => {
         if (token !== courseSourceCountsToken || courseSourceCountsKey !== key) return;
@@ -12342,7 +13495,11 @@ difficulty — тек easy, medium немесе hard.
   function renderLevelEditor() {
     if (!$("levelEditorPage")) return;
     if (!customScope || typeof customScope !== "object") customScope = {};
-    $("levelEditorTitle").textContent = t("levelSourceCourse");
+    $("levelEditorTitle").textContent = t(
+      courseSourceOrigin === "preset" ? "levelSourcePreset"
+        : courseSourceOrigin === "ai" ? "levelSourceAi"
+          : "levelSourceLegacy",
+    );
     renderCustomScopeControls();
     ensureScopeOptions();
     ensureCourseSourceCounts();
@@ -12372,7 +13529,7 @@ difficulty — тек easy, medium немесе hard.
     renderLevelEditor();
   }
 
-  function openCourseSourceEditor(index, presetScope) {
+  function openCourseSourceEditor(index, presetScope, origin) {
     let source = null;
     if (index !== null && index !== undefined) {
       source = packageDraftSources[index];
@@ -12381,12 +13538,22 @@ difficulty — тек easy, medium немесе hard.
     } else {
       courseSourceEditingIndex = null;
     }
+    courseSourceOrigin = source
+      ? (source.origin === "preset" || source.origin === "ai" ? source.origin : "all")
+      : (origin === "ai" ? "ai" : "preset");
     // A new source starts on the first hierarchy step only; every later step
     // appears after the parent picks an option that the bank proves has data.
     // Editing keeps the full stored scope so any step stays changeable.
+    const memberScope = source ? null : memberScopeChoice();
+    const memberPreset = memberScope && memberScope.grade !== null
+      ? Object.assign(
+        { grade: memberScope.grade },
+        memberScope.semester !== null ? { semester: memberScope.semester } : {})
+      : null;
     customScope = source
       ? Object.assign({}, source.scope)
-      : Object.assign({}, presetScope || {});
+      : Object.assign({}, presetScope || {}, memberPreset || {});
+    courseSourceScopeLock = memberPreset;
     courseSourceAnswerKind = source ? source.answerKind : "any";
     // Editing an existing source already has every step answered; a new
     // source waits for an explicit difficulty choice before showing the type.
@@ -12410,7 +13577,8 @@ difficulty — тек easy, medium немесе hard.
       source.type === "course" &&
       index !== courseSourceEditingIndex &&
       levelScopeSignature(source.scope) === signature &&
-      (source.answerKind || "any") === kind);
+      (source.answerKind || "any") === kind &&
+      (source.origin || "all") === courseSourceOrigin);
   }
 
   function saveLevelDraft() {
@@ -12447,6 +13615,7 @@ difficulty — тек easy, medium немесе hard.
     const source = {
       type: "course",
       scope,
+      origin: courseSourceOrigin,
       answerKind: kind,
       available: count === null ? 0 : count,
       typeCounts: courseSourceCounts
@@ -12462,7 +13631,9 @@ difficulty — тек easy, medium немесе hard.
     const added = courseSourceEditingIndex === null;
     courseSourceEditingIndex = null;
     customScope = null;
+    courseSourceScopeLock = null;
     courseSourceAnswerKind = "any";
+    courseSourceOrigin = "all";
     courseSourceDifficultyPicked = false;
     courseSourceCounts = null;
     courseSourceCountsKey = "";
@@ -12470,7 +13641,7 @@ difficulty — тек easy, medium немесе hard.
     resetScopeOptions();
     // Return to the level draft that owns this source. Saving a source is one
     // step inside the draft, never the creation of the level itself.
-    showGenPage("answer");
+    showGenPage("package");
     // Bring the newly added source into view so the parent sees the result
     // of the save immediately, without hunting for the draft panel.
     const sourceList = $("packageSourceList");
@@ -12502,14 +13673,23 @@ difficulty — тек easy, medium немесе hard.
       enabled: level.enabled !== false,
       sources: (level.sources || []).map((source) => {
         if (source.type === "course") {
-          return {
+          const payload = {
             type: "course",
             scope: scopeToCanonical(source.scope),
             answerKind: source.answerKind || "any",
           };
+          // "all" is the pre-split combined source; omit it so old TV builds
+          // and old documents keep their exact shape.
+          if (source.origin === "preset" || source.origin === "ai") {
+            payload.origin = source.origin;
+          }
+          return payload;
         }
         if (source.type === "collection") {
           return { type: "collection", collectionId: source.collectionId };
+        }
+        if (source.type === "preset") {
+          return { type: "preset", bankId: source.bankId };
         }
         return { type: "wrong" };
       }),
@@ -12531,6 +13711,7 @@ difficulty — тек easy, medium немесе hard.
       return answerKindLabel(source.answerKind);
     }
     if (source.type === "collection") return t("customLevelBadge");
+    if (source.type === "preset") return t("levelSourceLifeMeta");
     return t("wrongLevelMeta");
   }
 
@@ -12565,7 +13746,7 @@ difficulty — тек easy, medium немесе hard.
       const count = sourceAvailable(source);
       const total = sourceTotal(source);
       if (count !== null) {
-        available.textContent = source.type === "collection" && total !== null
+        available.textContent = sourceShowsTotal(source) && total !== null
           ? t("levelSourceTotalAvailable", { total, available: count })
           : t("levelSourceAvailable", { n: count });
         if (count <= 0) available.classList.add("warn");
@@ -12655,12 +13836,7 @@ difficulty — тек easy, medium немесе hard.
   }
 
   function renderPackageEditor() {
-    const panel = $("packageDraftPanel");
-    if (!panel) return;
-    panel.classList.toggle("hidden", !packageEditorActive);
-    if ($("addLevelRow")) {
-      $("addLevelRow").classList.toggle("hidden", packageEditorActive);
-    }
+    if (!$("packageDraftPanel")) return;
     if (!packageEditorActive) {
       tagPickerOpen = false;
       if ($("sourcePickerError")) $("sourcePickerError").textContent = "";
@@ -12708,9 +13884,7 @@ difficulty — тек easy, medium немесе hard.
     $("packageEditorError").classList.remove("ok");
     $("packageEditorError").classList.add("error");
     $("packageName").value = packageNameDraft;
-    showGenPage("answer");
-    const panel = $("packageDraftPanel");
-    if (panel) panel.scrollIntoView({ block: "start" });
+    showGenPage("package");
     return true;
   }
 
@@ -12722,8 +13896,10 @@ difficulty — тек easy, medium немесе hard.
     tagPickerOpen = false;
     courseSourceEditingIndex = null;
     courseSourceAnswerKind = "any";
+    courseSourceOrigin = "all";
     courseSourceDifficultyPicked = false;
     customScope = null;
+    courseSourceScopeLock = null;
     resetScopeOptions();
     answerTab = "scope";
     showGenPage("answer");
@@ -12731,19 +13907,24 @@ difficulty — тек easy, medium немесе hard.
 
   function renderSourcePicker() {
     const hasTag = packageDraftSources.some((source) => source.type === "collection");
+    const hasLife = packageDraftSources.some((source) => source.type === "preset");
     const hasWrong = packageDraftSources.some((source) => source.type === "wrong");
     const atLimit = packageDraftSources.length >= levelLimits.maxSources;
     if (atLimit) tagPickerOpen = false;
-    $("pickCourseSource").disabled = packageSaving || atLimit;
+    $("pickPresetSource").disabled = packageSaving || atLimit;
+    $("pickAiSource").disabled = packageSaving || atLimit;
     $("pickTagSource").disabled = packageSaving || atLimit;
     $("pickTagSource").setAttribute("aria-pressed", String(tagPickerOpen));
+    $("pickLifeSource").disabled = packageSaving || atLimit || hasLife || !presetBank.bankId;
     $("pickWrongSource").disabled = packageSaving || atLimit || hasWrong;
-    // All three source cards carry a count so the picker is readable at a glance.
-    // Course and custom show their whole bank; the exact scope/tag count appears
-    // after one is picked. Wrong review shows the rows currently available.
+    // Every source card carries a count so the picker is readable at a glance.
+    // The curriculum cards use the bank-tab buckets; the life bank has its own
+    // non-curriculum total, and wrong review shows the rows available now.
     [
-      ["courseSourceBankCount", bankSourceCounts.course, "levelSourceBankCount"],
-      ["customSourceBankCount", bankSourceCounts.custom, "levelSourceBankCount"],
+      ["presetSourceBankCount", bankScopeCounts.builtin, "levelSourceBankCount"],
+      ["aiSourceBankCount", bankScopeCounts.ai, "levelSourceBankCount"],
+      ["customSourceBankCount", bankScopeCounts.manual, "levelSourceBankCount"],
+      ["lifeSourceBankCount", presetBank.available, "levelSourceLifeCount"],
       [
         "wrongSourceAvailable",
         Math.max(0, Number(bankCounts && bankCounts.wrong || 0)),
@@ -12803,6 +13984,23 @@ difficulty — тек easy, medium немесе hard.
       collectionName: collection.name,
       total: collection.total,
       available: collection.unused,
+    }]);
+    tagPickerOpen = false;
+    renderPackageEditor();
+    return true;
+  }
+
+  function addPresetSource() {
+    if (packageDraftSources.some((source) => source.type === "preset")) {
+      $("sourcePickerError").textContent = t("levelSourceDuplicatePreset");
+      return false;
+    }
+    if (!presetBank.bankId) return false;
+    packageDraftSources = packageDraftSources.concat([{
+      type: "preset",
+      bankId: presetBank.bankId,
+      total: presetBank.total,
+      available: presetBank.available,
     }]);
     tagPickerOpen = false;
     renderPackageEditor();
@@ -13081,7 +14279,8 @@ difficulty — тек easy, medium немесе hard.
 
   function updatePromptBadge() {
     if (!$("genPromptBadge")) return;
-    const edited = genPromptDirty && $("genPrompt").value.trim() !== composeGenerationPrompt();
+    const auto = generationScopeReady() ? composeGenerationPrompt() : "";
+    const edited = genPromptDirty && $("genPrompt").value.trim() !== auto;
     $("genPromptBadge").textContent = t(edited ? "genPromptBadgeEdited" : "genPromptBadgeAuto");
   }
 
@@ -13145,7 +14344,7 @@ difficulty — тек easy, medium немесе hard.
       return;
     }
     if (!readGenerationPrefs()) {
-      $("rangeError").textContent = t("err_INVALID_CONFIG");
+      $("rangeError").textContent = t("err_GEN_SCOPE_REQUIRED");
       return;
     }
     if (!$("genPrompt").value.trim()) {
@@ -13185,8 +14384,7 @@ difficulty — тек easy, medium немесе hard.
       GEN_QUESTION_TYPE_VALUES.includes(payload.questionType);
   }
 
-  async function startGeneration(options) {
-    const skipScopePrompt = Boolean(options && options.skipScopePrompt);
+  async function startGeneration() {
     if (genState.phase === "running" || genState.phase === "adding") return;
     genRequirementValue = normalizeRequirement(
       $("genRequirement") ? $("genRequirement").value : genRequirementValue,
@@ -13204,6 +14402,15 @@ difficulty — тек easy, medium немесе hard.
       genState = idleGeneration();
       genState.phase = "failed";
       genState.errorCode = "REQUIREMENT_INVALID_UNIT";
+      renderGenerate();
+      return;
+    }
+    // A new member with an unset grade must not fall back to the gallery
+    // defaults. This is also the safety net if the button was re-enabled.
+    if (!readGenerationPrefs()) {
+      genState = idleGeneration();
+      genState.phase = "failed";
+      genState.errorCode = "GEN_SCOPE_REQUIRED";
       renderGenerate();
       return;
     }
@@ -13226,16 +14433,8 @@ difficulty — тек easy, medium немесе hard.
       renderProviderMessages();
       return;
     }
-    // The status action and this fallback share the same alignment helper.
-    // Only prompt when the TV scope is short and the two scopes really differ;
-    // once the parent aligns or accepts the current range, never ask again.
-    if (!skipScopePrompt &&
-        answerScopeNeedsQuestions() &&
-        generationScopeMismatch() &&
-        canAlignGenerationToAnswerScope() &&
-        scopeMismatchAckKey !== generationScopeSignature()) {
-      if (openScopeMismatchDialog()) return;
-    }
+    // Generate directly from the current scope. The TV's levels are a separate
+    // consumer of the bank, so a short level must not block or interrupt this.
     const prompt = $("genPrompt").value.trim() || composeGenerationPrompt();
     const payload = {
       targetCount,
@@ -13285,10 +14484,16 @@ difficulty — тек easy, medium немесе hard.
         api("/api/quiz/admin/generate/cancel", {
           method: "POST",
           admin: true,
+          subjectUserId: data.subjectUserId ? String(data.subjectUserId) : "",
           body: { jobId: data.jobId },
         }).catch(() => {});
         return;
       }
+      // Pin the member resolved for this job. Later status/add requests must
+      // not follow a newly active TV member while this batch is still running.
+      genState.subjectUserId = data.subjectUserId
+        ? String(data.subjectUserId)
+        : (editingSubjectUserId || activeUserId || "");
       genState.jobId = data.jobId;
       genState.batchId = data.batchId || data.jobId;
       genState.target = Number(data.target || targetCount);
@@ -13306,6 +14511,7 @@ difficulty — тек easy, medium немесе hard.
 
   function applyGenerationProgress(data) {
     genState.target = Number(data.target || genState.target);
+    if (data.subjectUserId) genState.subjectUserId = String(data.subjectUserId);
     genState.jobId = data.jobId || genState.jobId;
     genState.batchId = data.batchId || genState.jobId || genState.batchId;
     genState.generated = Number(data.generated || 0);
@@ -13346,6 +14552,7 @@ difficulty — тек easy, medium немесе hard.
       return;
     }
     const jobId = genState.jobId;
+    const subjectUserId = genState.subjectUserId;
     genState.phase = "adding";
     genState.stopping = false;
     renderGenerate();
@@ -13353,6 +14560,7 @@ difficulty — тек easy, medium немесе hard.
       const data = await api("/api/quiz/admin/generate/add", {
         method: "POST",
         admin: true,
+        subjectUserId,
         body: { jobId, indexes },
       });
       if (token !== generationToken) return;
@@ -13382,7 +14590,7 @@ difficulty — тек easy, medium немесе hard.
     try {
       const data = await api(
         "/api/quiz/admin/generate/status?jobId=" + encodeURIComponent(genState.jobId),
-        { admin: true },
+        { admin: true, subjectUserId: genState.subjectUserId },
       );
       if (token !== generationToken) return;
       genState.pollFailures = 0;
@@ -13418,7 +14626,7 @@ difficulty — тек easy, medium немесе hard.
       if (reviewOnReady) openQuestionsPage();
     } catch (error) {
       if (token !== generationToken) return;
-      if (["JOB_EXPIRED", "JOB_LOST", "INVALID_JOB"].includes(error.code) ||
+      if (["JOB_EXPIRED", "JOB_LOST", "INVALID_JOB", "INVALID_SUBJECT"].includes(error.code) ||
           error.code === "ADMIN_EXPIRED" || error.code === "ADMIN_REQUIRED") {
         genState.phase = "failed";
         genState.errorCode = error.code;
@@ -13444,6 +14652,7 @@ difficulty — тек easy, medium немесе hard.
   async function cancelGeneration() {
     if (genState.phase !== "running" || !genState.jobId || genState.stopping) return;
     const jobId = genState.jobId;
+    const subjectUserId = genState.subjectUserId;
     const token = ++generationToken;
     clearGenTimer();
     genState.stopped = true;
@@ -13458,6 +14667,7 @@ difficulty — тек easy, medium немесе hard.
       await api("/api/quiz/admin/generate/cancel", {
         method: "POST",
         admin: true,
+        subjectUserId,
         body: { jobId },
       });
     } catch (_) {
@@ -13466,7 +14676,7 @@ difficulty — тек easy, medium немесе hard.
     try {
       const data = await api(
         "/api/quiz/admin/generate/status?jobId=" + encodeURIComponent(jobId),
-        { admin: true },
+        { admin: true, subjectUserId },
       );
       if (token !== generationToken) return;
       applyGenerationProgress(data);
@@ -13569,19 +14779,15 @@ difficulty — тек easy, medium немесе hard.
    * editor acquire and surface the two-page takeover gate.
    */
   function enterPostLoginTab() {
-    if (openControlAfterLogin && parentBootstrap && parentWebAvailable(parentBootstrap)) {
-      openControlAfterLogin = false;
-      openParentAfterLogin = false;
-      if (activeTab !== "control") setTab("control", true);
-      return;
-    }
-    openControlAfterLogin = false;
-    if (openParentAfterLogin && parentBootstrap && parentWebAvailable(parentBootstrap)) {
-      openParentAfterLogin = false;
-      setTab("me", true);
-      return;
-    }
+    const overlay = openOverlayAfterLogin;
+    openOverlayAfterLogin = null;
+    // The QR opens the home tab: the avatar in its corner is the entry to the
+    // member picker, and the bottom nav carries the other three tabs.
     openParentAfterLogin = false;
+    if (overlay && parentBootstrap && parentWebAvailable(parentBootstrap)) {
+      setTab(overlay, true);
+      return;
+    }
     setTab("generate", true);
   }
 
@@ -13603,20 +14809,17 @@ difficulty — тек easy, medium немесе hard.
     }
     // The editor now owns the slot; keep it alive while this page is visible.
     startHeartbeat();
-    if (!providerState.consentAccepted) {
-      pendingEnter = true;
-      openConsent();
-      return;
-    }
-    pendingEnter = false;
+    // The TV parent center already shows its one-time privacy notice, and the
+    // read-only copy lives under settings. Do not gate the editor on AI consent:
+    // manual banks, imports and preset levels need no API key.
     showEditor();
     enterPostLoginTab();
   }
 
   function logout() {
     // Drop local auth immediately; revoking the token on the TV is best-effort
-    // so declining the privacy gate never waits on the network.
-    openControlAfterLogin = false;
+    // so logout never waits on the network.
+    openOverlayAfterLogin = null;
     stopHeartbeat();
     if (adminToken) {
       api("/api/quiz/auth/logout", { method: "POST", admin: true, body: {} })
@@ -13640,22 +14843,27 @@ difficulty — тек easy, medium немесе hard.
     $("bankError").textContent = "";
     renderBank();
     try {
-      const data = await api(
-        "/api/quiz/admin/bank?filter=" + encodeURIComponent(bankFilter) +
-        "&offset=" + bankOffset + "&limit=" + BANK_PAGE_SIZE,
-        { admin: true },
-      );
+      let query = "/api/quiz/admin/bank?scope=" + encodeURIComponent(bankScope) +
+        "&filter=all&offset=" + bankOffset + "&limit=" + BANK_PAGE_SIZE;
+      if (bankScope === "manual" && bankManualCollectionId) {
+        query += "&collectionId=" + encodeURIComponent(bankManualCollectionId);
+      }
+      const data = await api(query, { admin: true });
       if (request !== bankRequest) return;
       const items = Array.isArray(data.items) ? data.items : [];
       bankItems = reset ? items : bankItems.concat(items);
       bankOffset = bankItems.length;
       bankHasMore = items.length >= Number(data.limit || BANK_PAGE_SIZE);
-      applyBankCounts(data.counts);
-      if (data.sourceCounts) {
-        bankSourceCounts = {
-          course: Math.max(0, Number(data.sourceCounts.course || 0)),
-          custom: Math.max(0, Number(data.sourceCounts.custom || 0)),
-        };
+      // Counts in this response are scoped to the selected tab. Keep them
+      // separate from the header's all-source counts and the manage page's
+      // global source counts.
+      bankScopeStats = data.counts || null;
+      if (data.scopeCounts) bankScopeCounts = subjectScopeCounts(data.scopeCounts);
+      if (data.privateCapacity !== undefined) {
+        privateCapacity = Math.max(0, Number(data.privateCapacity || 0));
+      }
+      if (data.privateRemaining !== undefined) {
+        privateRemaining = Math.max(0, Number(data.privateRemaining || 0));
       }
       renderBankCounts();
       renderBankManage();
@@ -13697,11 +14905,14 @@ difficulty — тек easy, medium немесе hard.
       // rounds settle from the difficulty table below.
       minutesPerPoint: Number(base.minutesPerPoint || DEFAULT_CONFIG.minutesPerPoint),
       minutesPerQuestion: Number(base.minutesPerQuestion || DEFAULT_CONFIG.minutesPerQuestion),
-      maxEarnedMinutes: normalizeMaxEarned($("maxEarned").value, configMaxEarned(base)),
+      // The per-round reward cap is no longer edited; keep the stored legacy value so an
+      // older build or the hosted backend still sees a valid config. Local rounds ignore it.
+      maxEarnedMinutes: configMaxEarned(base),
+      // Answers are always shuffled; older documents may still store false.
+      shuffleOptions: true,
       // Legacy echo only. The v6 hold is feedbackExtraHoldSec.
       answerDisplaySec: base.answerDisplaySec,
       feedbackExtraHoldSec: feedbackHold,
-      shuffleOptions: $("shuffle").checked,
       pointsPerQuestion: 1,
     }, scoring);
   }
@@ -13762,7 +14973,6 @@ difficulty — тек easy, medium немесе hard.
   }
 
   function bind() {
-    $("langSelect").addEventListener("change", () => applyLanguage($("langSelect").value));
     $("langSelectMe").addEventListener("change", () => applyLanguage($("langSelectMe").value));
     $("pinForm").addEventListener("submit", submitPin);
     $("pin").addEventListener("input", () => {
@@ -13784,8 +14994,6 @@ difficulty — тек easy, medium немесе hard.
       renderGateOccupation();
       $("pin").focus();
     });
-    $("syncRetry").addEventListener("click", retrySync);
-    $("syncUseRemote").addEventListener("click", useRemoteConfig);
     $("meAi").addEventListener("click", () => openProviderDialog(false));
     $("backFromAi").addEventListener("click", closeAiPage);
     $("mePrivacy").addEventListener("click", () => openModal("privacyInfoDialog"));
@@ -13798,7 +15006,7 @@ difficulty — тек easy, medium немесе hard.
     });
     $("logout").addEventListener("click", logout);
     $("acceptConsent").addEventListener("click", acceptConsent);
-    $("declineConsent").addEventListener("click", logout);
+    $("declineConsent").addEventListener("click", dismissConsent);
     $("saveProvider").addEventListener("click", saveProvider);
     $("testProvider").addEventListener("click", testProviderConnection);
     $("baseUrl").addEventListener("input", () => {
@@ -13837,19 +15045,9 @@ difficulty — тек easy, medium немесе hard.
     $("cancelGenerate").addEventListener("click", cancelGeneration);
     $("alignGenToAnswer").addEventListener("click", () => {
       if (!alignGenerationToAnswerScope()) return;
-      startGeneration({ skipScopePrompt: true });
+      startGeneration();
     });
     $("editGenScope").addEventListener("click", openGenConfigPage);
-    $("scopeMismatchAlign").addEventListener("click", () => {
-      closeModal();
-      if (!alignGenerationToAnswerScope()) return;
-      startGeneration({ skipScopePrompt: true });
-    });
-    $("scopeMismatchKeep").addEventListener("click", () => {
-      scopeMismatchAckKey = generationScopeSignature();
-      closeModal();
-      startGeneration({ skipScopePrompt: true });
-    });
 
     $("selectAll").addEventListener("click", () => {
       const selectable = genState.batch
@@ -13871,9 +15069,15 @@ difficulty — тек easy, medium немесе hard.
     $("genGradeChips").addEventListener("click", (event) => {
       const chip = event.target.closest("[data-grade]");
       if (!chip || chip.disabled) return;
+      if (memberScopeChoice().grade !== null) return;
       const grade = Number(chip.dataset.grade);
       if (!gradeNos().includes(grade) || cloudJuniorBlocked(grade)) return;
       genGradeValue = grade;
+      if (genScopeSetup) {
+        // The subject/textbook list belongs to the old grade.
+        genSubjectValue = "";
+        genTextbookId = "";
+      }
       genPromptDirty = false;
       renderGenConfig(true);
       saveGeneratePrefs();
@@ -13881,6 +15085,7 @@ difficulty — тек easy, medium немесе hard.
     $("genSemester").addEventListener("click", (event) => {
       const button = event.target.closest("[data-semester]");
       if (!button) return;
+      if (memberScopeChoice().semester !== null) return;
       genSemesterValue = Number(button.dataset.semester) === 2 ? 2 : 1;
       genPromptDirty = false;
       renderGenConfig(true);
@@ -13899,7 +15104,13 @@ difficulty — тек easy, medium немесе hard.
       if (!chip) return;
       if (!subjectIdsForGrade(genGradeValue).includes(chip.dataset.subject)) return;
       genSubjectValue = chip.dataset.subject;
-      keepGenerationTextbook();
+      if (genScopeSetup) {
+        // Keep the textbook pick explicit too; all-subject generation has no
+        // single textbook and uses the wire wildcard instead.
+        genTextbookId = genSubjectValue === SUBJECT_ALL ? "general" : "";
+      } else {
+        keepGenerationTextbook();
+      }
       genPromptDirty = false;
       renderGenConfig(true);
       saveGeneratePrefs();
@@ -13997,7 +15208,7 @@ difficulty — тек easy, medium немесе hard.
     });
     $("levelEmptyConfig").addEventListener("click", openGenConfigPage);
 
-    $("cancelPackage").addEventListener("click", closePackageEditor);
+    $("backFromPackage").addEventListener("click", closePackageEditor);
     $("packageName").addEventListener("input", () => {
       packageNameDraft = $("packageName").value;
       $("packageEditorError").classList.remove("ok");
@@ -14018,14 +15229,22 @@ difficulty — тек easy, medium немесе hard.
     });
     bindReliableTap($("savePackage"), savePackageDraft);
 
-    $("pickCourseSource").addEventListener("click", () => {
-      openCourseSourceEditor(null, null);
+    $("pickPresetSource").addEventListener("click", () => {
+      openCourseSourceEditor(null, null, "preset");
+    });
+    $("pickAiSource").addEventListener("click", () => {
+      openCourseSourceEditor(null, null, "ai");
     });
     $("pickTagSource").addEventListener("click", () => {
       if ($("pickTagSource").disabled) return;
       tagPickerOpen = !tagPickerOpen;
       $("sourcePickerError").textContent = "";
       renderSourcePicker();
+    });
+    $("pickLifeSource").addEventListener("click", () => {
+      if ($("pickLifeSource").disabled) return;
+      $("sourcePickerError").textContent = "";
+      addPresetSource();
     });
     $("pickWrongSource").addEventListener("click", () => {
       $("sourcePickerError").textContent = "";
@@ -14069,24 +15288,7 @@ difficulty — тек easy, medium немесе hard.
       "minUnlock",
     );
     $("resetScoring").addEventListener("click", resetScoringDefaults);
-    bindStepper(
-      "maxEarned",
-      MAX_EARNED_MIN_MINUTES, MAX_EARNED_MAX_MINUTES, MAX_EARNED_STEP_MINUTES,
-      () => configMaxEarned(currentConfig()),
-      (value) => updateRuleConfig({ maxEarnedMinutes: value }),
-      "maxEarned",
-    );
-    $("shuffle").addEventListener("change", () => {
-      updateRuleConfig({ shuffleOptions: $("shuffle").checked });
-    });
 
-    $("bankFilters").addEventListener("click", (event) => {
-      const chip = event.target.closest("[data-filter]");
-      if (!chip) return;
-      bankFilter = chip.dataset.filter;
-      renderBank();
-      loadBank(true);
-    });
     $("refreshBank").addEventListener("click", () => loadBank(true));
     $("bankMore").addEventListener("click", () => loadBank(false));
     $("openBankImport").addEventListener("click", openBankImport);
@@ -14129,6 +15331,7 @@ difficulty — тек easy, medium немесе hard.
     $("importFile").addEventListener("change", () => {
       loadImportFile($("importFile").files && $("importFile").files[0]);
     });
+    $("clearImportText").addEventListener("click", clearImportInput);
     $("importPreviewPrev").addEventListener("click", () => changeImportPreviewPage(-1));
     $("importPreviewNext").addEventListener("click", () => changeImportPreviewPage(1));
     $("importPreviewGo").addEventListener("click", jumpImportPreviewPage);
@@ -14150,33 +15353,25 @@ difficulty — тек easy, medium немесе hard.
     });
     bindReliableTap($("parseImport"), parseImport);
     bindReliableTap($("confirmImport"), confirmImport);
-    $("openBankManage").addEventListener("click", openBankManage);
-    $("bankManageEntry").addEventListener("click", openBankManage);
+    $("bankScopes").addEventListener("click", (event) => {
+      const tab = event.target.closest("[data-bank-scope]");
+      if (!tab || tab.dataset.bankScope === bankScope) return;
+      bankScope = tab.dataset.bankScope;
+      bankManualCollectionId = "";
+      bankItems = [];
+      renderBank();
+      loadBank(true);
+    });
+    $("bankManageEntry").addEventListener("click", () => openBankManage("builtin"));
     $("backFromBankManage").addEventListener("click", backFromBankManage);
-    $("bankManageCourseUnused").addEventListener("click", () => requestBankClear({
-      mode: "unused", source: "course", count: bankSourceCounts.course,
+    $("bankManageBuiltinClear").addEventListener("click", () => requestBankClear({
+      scope: "builtin", count: bankScopeCounts.builtin,
     }));
-    $("bankManageCourseAnswered").addEventListener("click", () => requestBankClear({
-      mode: "answered", source: "course", count: bankSourceCounts.course,
-    }));
-    $("bankManageCourseWrong").addEventListener("click", () => requestBankClear({
-      mode: "wrong", source: "course", count: bankSourceCounts.course,
-    }));
-    $("bankManageCourseClear").addEventListener("click", () => requestBankClear({
-      mode: "all", source: "course", count: bankSourceCounts.course,
-    }));
-    $("bankManageCustomClear").addEventListener("click", () => requestBankClear({
-      mode: "all", source: "custom", count: bankSourceCounts.custom,
-    }));
-    $("bankManageWrongClear").addEventListener("click", () => requestBankClear({
-      mode: "wrong", source: "all", count: currentCounts().wrong,
-    }));
-    $("bankManageAllClear").addEventListener("click", () => requestBankClear({
-      mode: "all",
-      source: "all",
-      count: bankSourceCounts.course + bankSourceCounts.custom,
+    $("bankManageManualClear").addEventListener("click", () => requestBankClear({
+      scope: "manual", count: bankScopeCounts.manual,
     }));
     $("bankClearNext").addEventListener("click", advanceBankClear);
+    $("subjectChip").addEventListener("click", openSubjectDialog);
 
     document.querySelectorAll(".nav-item[data-tab]").forEach((button) => {
       button.addEventListener("click", () => setTab(button.dataset.tab, false));
@@ -14214,7 +15409,7 @@ difficulty — тек easy, medium немесе hard.
       });
     }
     if ($("openControlPanel")) {
-      $("openControlPanel").addEventListener("click", openControlTab);
+      $("openControlPanel").addEventListener("click", () => setTab("system", true));
     }
     if ($("parentAppDownload")) {
       $("parentAppDownload").addEventListener("click", () => {

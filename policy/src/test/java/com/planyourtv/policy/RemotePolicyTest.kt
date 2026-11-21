@@ -6,9 +6,12 @@ import org.junit.Test
 
 class RemotePolicyTest {
     private val rules = LocalRules(
-        weekdayWindows = listOf(LocalTimeWindow(18 * 60, 20 * 60)),
-        weekendWindows = listOf(LocalTimeWindow(9 * 60, 20 * 60)),
-        autoDailyLimitMinutes = 60,
+        dayGroups = LocalRules.fromLegacyWeekdayWeekend(
+            weekdayWindows = listOf(LocalTimeWindow(18 * 60, 20 * 60)),
+            weekendWindows = listOf(LocalTimeWindow(9 * 60, 20 * 60)),
+            weekdayLimitMinutes = 60,
+            weekendLimitMinutes = 60,
+        ),
         sessionLimitMinutes = 20,
         restMinutes = 10,
     )
@@ -49,7 +52,11 @@ class RemotePolicyTest {
 
     @Test
     fun emptyWeekendWindowIsNotUsableForRemoteRules() {
-        val weekdayOnly = rules.copy(weekendWindows = emptyList())
+        val weekdayOnly = rules.copy(
+            dayGroups = rules.dayGroups.map {
+                if (6 in it.days) it.copy(entertainmentWindows = emptyList()) else it
+            },
+        )
         val remote = policy(mode = RemotePolicyMode.RULE, rules = weekdayOnly)
         assertFalse(remote.rulesUsable)
         assertFalse(remote.readyForRule)

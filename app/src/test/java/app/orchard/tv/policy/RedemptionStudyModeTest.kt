@@ -39,8 +39,12 @@ class RedemptionStudyModeTest {
         appliedMode = RemotePolicyMode.REDEEM,
         supportsUnifiedPolicy = true,
         rules = LocalRules(
-            weekdayWindows = listOf(LocalTimeWindow(0, 24 * 60)),
-            weekendWindows = listOf(LocalTimeWindow(0, 24 * 60)),
+            dayGroups = LocalRules.fromLegacyWeekdayWeekend(
+                weekdayWindows = listOf(LocalTimeWindow(0, 24 * 60)),
+                weekendWindows = listOf(LocalTimeWindow(0, 24 * 60)),
+                weekdayLimitMinutes = null,
+                weekendLimitMinutes = null,
+            ),
             allowedPackages = setOf(videoApp),
             studyPackages = study,
         ),

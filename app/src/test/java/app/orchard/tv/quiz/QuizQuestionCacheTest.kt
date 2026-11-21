@@ -2,17 +2,20 @@ package app.orchard.tv.quiz
 
 import android.content.ContentValues
 import android.database.sqlite.SQLiteDatabase
+import com.planyourtv.policy.quiz.CourseOrigin
 import com.planyourtv.policy.quiz.QuizAnswerKind
 import com.planyourtv.policy.quiz.QuizAnswerScope
 import com.planyourtv.policy.quiz.QuizConfig
 import com.planyourtv.policy.quiz.QuizItem
 import com.planyourtv.policy.quiz.QuizLevelPackage
 import com.planyourtv.policy.quiz.QuizPackageSource
+import com.planyourtv.policy.quiz.QuizPresetBank
 import com.planyourtv.policy.quiz.QuizSession
 import com.planyourtv.policy.quiz.QuizSessionCodec
 import com.planyourtv.policy.quiz.QuizSessionStatus
 import com.planyourtv.policy.quiz.QuizTypeFilter
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -1269,5 +1272,223 @@ class QuizQuestionCacheTest {
             ),
         )
         assertEquals(0, QuizQuestionCache.wrongReviewCount())
+    }
+
+    /** Seeds one preset pair plus one AI pair for each of two members. */
+    private fun seedOriginBuckets() {
+        freshSubjectCache()
+        val scope = courseScope("CHINESE", 2)
+        QuizQuestionCache.appendLocalQuestions(
+            "batch_origin_preset",
+            (1..2).map { itemIn(it, scope.subject, 2) },
+            now,
+        )
+        QuizQuestionCache.appendLocalQuestions(
+            "batch_origin_ai_a",
+            (3..4).map { itemIn(it, scope.subject, 2) },
+            now,
+            ownerUserId = "member_a",
+        )
+        QuizQuestionCache.appendLocalQuestions(
+            "batch_origin_ai_b",
+            (5..6).map { itemIn(it, scope.subject, 2) },
+            now,
+            ownerUserId = "member_b",
+        )
+    }
+
+    @Test
+    fun courseOriginCountsOnlyItsOwnBucket() {
+        seedOriginBuckets()
+        val scope = courseScope("CHINESE", 2)
+        fun total(origin: CourseOrigin, subject: String? = null) =
+            QuizQuestionCache.availableTypeCounts(
+                nowMs = now,
+                answerScope = scope,
+                subjectUserId = subject,
+                origin = origin,
+            ).total
+
+        assertEquals(2, total(CourseOrigin.PRESET))
+        assertEquals(2, total(CourseOrigin.PRESET, "member_a"))
+        assertEquals(2, total(CourseOrigin.AI, "member_a"))
+        assertEquals(2, total(CourseOrigin.AI, "member_b"))
+        assertEquals(6, total(CourseOrigin.ALL, null))
+    }
+
+    @Test
+    fun courseOriginDrawsOnlyItsOwnRowsAndProjectsSiblings() {
+        seedOriginBuckets()
+        val scope = courseScope("CHINESE", 2)
+        val preset = QuizLevelPackage.create(
+            listOf(QuizPackageSource.Course(scope, origin = CourseOrigin.PRESET)),
+        )!!
+        val ai = QuizLevelPackage.create(
+            listOf(QuizPackageSource.Course(scope, origin = CourseOrigin.AI)),
+        )!!
+        val legacy = QuizLevelPackage.create(listOf(QuizPackageSource.Course(scope)))!!
+
+        assertEquals(2, QuizQuestionCache.packageAvailability(preset, now).available)
+        assertEquals(
+            2,
+            QuizQuestionCache.packageAvailability(ai, now, subjectUserId = "member_a").available,
+        )
+        // A sibling preview reads the AI rows through the projected alias.
+        assertEquals(
+            2,
+            QuizQuestionCache.packageAvailability(
+                ai,
+                now,
+                subjectUserId = "member_b",
+                activeSubjectUserId = "member_a",
+            ).available,
+        )
+        assertEquals(
+            0,
+            QuizQuestionCache.packageAvailability(ai, now, subjectUserId = "member_c").available,
+        )
+        assertEquals(6, QuizQuestionCache.packageAvailability(legacy, now).available)
+
+        val presetPick = QuizQuestionCache.reservePackageForRound(
+            level = preset,
+            count = 2,
+            sessionId = "sess_origin_preset",
+            minRequired = 2,
+            nowMs = now,
+            random = FixedRandom(0),
+        )
+        assertEquals(setOf("q_0000001", "q_0000002"), presetPick.map { it.question.questionId }.toSet())
+
+        val aiPick = QuizQuestionCache.reservePackageForRound(
+            level = ai,
+            count = 2,
+            sessionId = "sess_origin_ai",
+            minRequired = 2,
+            nowMs = now,
+            subjectUserId = "member_a",
+            random = FixedRandom(0),
+        )
+        assertEquals(setOf("q_0000003", "q_0000004"), aiPick.map { it.question.questionId }.toSet())
+    }
+
+    @Test
+fun presetBankDrawsOnlyItsOwnUnscopedRowsAndCountsIndependently() {
+    QuizQuestionCache.replaceSeedQuestionsStreaming(
+        batchId = "preset:parent-life:1",
+        items = (1..3).map(::item).asSequence(),
+        nowMs = now,
+        sourceRefPrefix = "preset:parent-life:",
+    )
+    // A curriculum seed row sits in the same public bank but must never be
+    // drawn by the preset source (its scope columns exclude unscoped rows).
+    QuizQuestionCache.replaceSeedQuestionsStreaming(
+        batchId = "preset-v4",
+        items = sequenceOf(scopedItem(9)),
+        nowMs = now,
+        sourceRefPrefix = "preset-v",
+    )
+    val life = QuizLevelPackage.create(
+        listOf(QuizPackageSource.Preset(QuizPresetBank.PARENT_LIFE)),
+    )!!
+    fun counts() = QuizQuestionCache.bankCounts(
+        QuizQuestionCache.LOCAL_SCOPE,
+        nowMs = now,
+        presetBank = QuizPresetBank.PARENT_LIFE,
+    )
+
+    assertEquals(3, QuizQuestionCache.packageAvailability(life, now).available)
+    assertEquals(3, counts().total)
+    assertEquals(3, counts().unused)
+    assertEquals(
+        1,
+        QuizQuestionCache.packageAvailability(
+            QuizLevelPackage.create(
+                listOf(QuizPackageSource.Course(courseScope("MATH", 3))),
+            )!!,
+            now,
+        ).available,
+    )
+
+    val picked = QuizQuestionCache.reservePackageForRound(
+        level = life,
+        count = 3,
+        sessionId = "sess_preset_life",
+        minRequired = 3,
+        nowMs = now,
+        random = FixedRandom(0),
+    )
+    assertEquals(3, picked.size)
+    assertTrue(picked.all { it.question.scopeSubject.isEmpty() })
+    assertTrue(QuizQuestionCache.consume("sess_preset_life", now))
+
+    val consumed = counts()
+    assertEquals(3, consumed.total)
+    assertEquals(0, consumed.unused)
+}
+
+/** A private database keeps the subject meta table from leaking between tests. */
+    private fun freshSubjectCache() {
+        QuizQuestionCache.closeForTest()
+        assertTrue(
+            QuizQuestionCache.initForTest(
+                RuntimeEnvironment.getApplication(),
+                "quiz_subject_${UUID.randomUUID()}.db",
+            ),
+        )
+    }
+
+    @Test
+    fun reconcileAdoptsTheUpgradedSingleChildState() {
+        freshSubjectCache()
+        assertTrue(QuizQuestionCache.replaceLocalSession(session("sess_legacy", 3), now))
+        assertEquals(
+            1,
+            QuizQuestionCache.reserve(1, "sess_legacy", QuizQuestionCache.LOCAL_SCOPE, now).size,
+        )
+        assertTrue(QuizQuestionCache.consume("sess_legacy", now))
+        assertEquals(2, QuizQuestionCache.counts(QuizQuestionCache.LOCAL_SCOPE, now).available)
+        assertEquals(1, QuizQuestionCache.counts(QuizQuestionCache.LOCAL_SCOPE, now).consumed)
+        // An upgraded database has rows but no owner: the rows belong to the first child.
+        assertNull(QuizQuestionCache.subjectStateOwner())
+
+        assertTrue(QuizQuestionCache.reconcileSubjectState("member_default"))
+        assertEquals("member_default", QuizQuestionCache.subjectStateOwner())
+        val adopted = QuizQuestionCache.counts(QuizQuestionCache.LOCAL_SCOPE, now)
+        assertEquals(2, adopted.available)
+        assertEquals(1, adopted.consumed)
+
+        // The second child starts from the full, untouched bank...
+        assertTrue(QuizQuestionCache.switchSubjectState("member_second"))
+        val second = QuizQuestionCache.counts(QuizQuestionCache.LOCAL_SCOPE, now)
+        assertEquals(3, second.available)
+        assertEquals(0, second.consumed)
+
+        // ...and switching back restores the first child's state exactly.
+        assertTrue(QuizQuestionCache.switchSubjectState("member_default"))
+        val back = QuizQuestionCache.counts(QuizQuestionCache.LOCAL_SCOPE, now)
+        assertEquals(2, back.available)
+        assertEquals(1, back.consumed)
+    }
+
+    @Test
+    fun subjectSwitchReleasesReservedRowsIntoTheSourceSnapshot() {
+        freshSubjectCache()
+        assertTrue(QuizQuestionCache.replaceLocalSession(session("sess_round", 3), now))
+        assertTrue(QuizQuestionCache.reconcileSubjectState("member_a"))
+        assertEquals(
+            1,
+            QuizQuestionCache.reserve(1, "round_a", QuizQuestionCache.LOCAL_SCOPE, now).size,
+        )
+        assertEquals(1, QuizQuestionCache.counts(QuizQuestionCache.LOCAL_SCOPE, now).reserved)
+
+        assertTrue(QuizQuestionCache.switchSubjectState("member_b"))
+        val other = QuizQuestionCache.counts(QuizQuestionCache.LOCAL_SCOPE, now)
+        assertEquals(3, other.available)
+        assertEquals(0, other.reserved)
+
+        assertTrue(QuizQuestionCache.switchSubjectState("member_a"))
+        val restored = QuizQuestionCache.counts(QuizQuestionCache.LOCAL_SCOPE, now)
+        assertEquals(3, restored.available)
+        assertEquals(0, restored.reserved)
     }
 }

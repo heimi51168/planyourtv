@@ -125,7 +125,10 @@ object QuizConfigDocumentSync {
             return publish(QuizDocSyncStatus(state = STATE_UNBOUND))
         }
 
-        val selection = CloudLevelsClient.selectedLearner()
+        // 跟随果园当前用户（device_list.active_member_id）：用户切换后必须重新解析 QB 孩子，
+        // 否则 QB 上次的选择会继续生效，把上一个孩子的题库下发给新用户。
+        val activeMemberId = cloud.cloudActiveMemberId
+        val selection = CloudLevelsClient.resolveForMember(activeMemberId)
         val selected = when (selection) {
             is CloudLevelsResult.Ok -> selection.bundle
             is CloudLevelsResult.Unauthorized -> return fail(
@@ -136,7 +139,9 @@ object QuizConfigDocumentSync {
             is CloudLevelsResult.Retryable -> return offline("QB_LEARNERS", null)
             is CloudLevelsResult.Rejected -> return fail(
                 STATE_BOUND_NO_LEARNER,
-                "NO_SELECTED_LEARNER",
+                // 只透传自己的稳定状态码；QB 拒绝的 message 可能带 HTTP/API 细节，不进状态。
+                selection.message.takeIf { it == "NO_LEARNER_FOR_MEMBER" }
+                    ?: "NO_SELECTED_LEARNER",
                 null,
             )
             is CloudLevelsResult.Invalid -> return fail(

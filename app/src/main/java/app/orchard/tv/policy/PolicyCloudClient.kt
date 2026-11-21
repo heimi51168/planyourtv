@@ -10,6 +10,7 @@ import app.orchard.tv.quiz.QuizConfigDocumentSync
 import app.orchard.tv.quiz.QuizConfigSync
 import com.planyourtv.policy.AccessMode
 import com.planyourtv.policy.Activation
+import com.planyourtv.policy.CloudMember
 import com.planyourtv.policy.CloudPinApplyResult
 import com.planyourtv.policy.LocalRuleSets
 import com.planyourtv.policy.LocalRules
@@ -217,8 +218,8 @@ object PolicyCloud : PolicySyncHost {
 
     /**
      * Uploads device_info. The backend only accepts this with an ACTIVE credential, so it runs
-     * after binding. The first report after binding also tells the backend to start the
-     * local-rules -> cloud handoff, which is why it must precede fetchConfig.
+     * after binding. This is device status, not local policy: 2026-11-19 binding no longer
+     * uploads the TV's rules or parent password, leaving cloud and local data independent.
      */
     private suspend fun reportDeviceInfo(deviceNo: String): Result<Unit> =
         withContext(Dispatchers.IO) {
@@ -516,14 +517,15 @@ object PolicyCloud : PolicySyncHost {
     }
 
     /**
-     * Uploads the current local rules once, turning the binding into a completed V6 handoff.
-     * The password uses the existing password endpoint; this call only carries LocalRules.
+     * Legacy local-rules upload. 2026-11-19 binding no longer calls this: the cloud config and
+     * the TV's local config are independent. Kept for the rollback path guarded by
+     * [PolicyModeCoordinator.LOCAL_RULES_UPLOAD_ENABLED].
      */
     suspend fun handoff(
         deviceNo: String,
         rules: LocalRules,
         activation: Activation,
-        /** Only sent to a backend that advertises two-set support; old backends seed both. */
+        /** Only sent to a backend that advertises rule-set support. */
         ruleSets: LocalRuleSets? = null,
         quiz: JSONObject? = null,
     ): Result<RemotePolicy?> =
@@ -533,7 +535,6 @@ object PolicyCloud : PolicySyncHost {
                     .put("rules", RemotePolicyCodec.rulesToJson(rules))
                     .put("activation", activation.name)
                 ruleSets?.let { sets ->
-                    body.put("autoRules", RemotePolicyCodec.ruleSetToJson(sets.auto))
                     body.put("manualRules", RemotePolicyCodec.ruleSetToJson(sets.manual))
                 }
                 // The same snapshot as the binding report; the backend merges by localVersion.
@@ -665,6 +666,11 @@ object PolicyCloud : PolicySyncHost {
                     grant = grant,
                     remotePolicy = RemotePolicyCodec.parse(result.optJSONObject("policy")),
                     quiz = RemoteQuizConfig.parse(result.optJSONObject("quiz")),
+                    activeMemberId = result.optLong("activeMemberId", 0L)
+                        .takeIf { it > 0L },
+                    activeMemberName = result.optString("activeMemberName", "").trim(),
+                    activeMemberIcon = result.optString("activeMemberIcon", "").trim(),
+                    members = parseCloudMembers(result.optJSONArray("members")),
                 )
                 // The periodic policy poll and the MQTT-triggered sync both go through this
                 // fetch. Apply the quiz node here so a remote switch reaches the lock screen
@@ -858,6 +864,49 @@ object PolicyCloud : PolicySyncHost {
         )
     }
 
+    /** Garden family roster shipped with the config; absent members stay an empty list. */
+    private fun parseCloudMembers(array: JSONArray?): List<CloudMember> {
+        if (array == null || array.length() == 0) return emptyList()
+        val out = ArrayList<CloudMember>(array.length())
+        for (index in 0 until array.length()) {
+            val row = array.optJSONObject(index) ?: continue
+            val memberId = row.optLong("memberId", 0L)
+            if (memberId <= 0L) continue
+            out.add(
+                CloudMember(
+                    memberId = memberId,
+                    name = row.optString("name", "").trim(),
+                    avatarUrl = row.optString("avatar", "").trim(),
+                    isChild = if (row.has("isChild") && !row.isNull("isChild")) {
+                        row.optBoolean("isChild")
+                    } else {
+                        null
+                    },
+                ),
+            )
+        }
+        return out
+    }
+
+    /**
+     * Switch the desktop user among the bound garden family (2026-11-21).
+     *
+     * <p>The backend re-projects that member's apps onto the next config poll and notifies the
+     * guard after commit, so the caller only needs [PolicyRuntime.requestSync] once this
+     * succeeds. A refusal is shown verbatim: the backend answers with human-readable reasons,
+     * and pretending a failed switch worked would leave the desktop on the wrong member.
+     */
+    suspend fun switchActiveMember(deviceNo: String, memberId: Long): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                require(deviceNo.isNotBlank()) { "missing deviceNo" }
+                require(memberId > 0L) { "missing memberId" }
+                val body = JSONObject().put("memberId", memberId)
+                request("PUT", "/devices/current/active-member", authToken(), body)
+                Unit
+            }
+        }
+
     override suspend fun reportUsage(
         deviceNo: String,
         recordId: Int,
@@ -975,9 +1024,8 @@ object PolicyCloud : PolicySyncHost {
                 if (!bound) {
                     PolicyModeCoordinator.onCloudUnboundFromBackend()
                 } else {
-                    // Also repairs devices bound before the first report reached the backend:
-                    // the report gives the backend the TV_APP device_info it needs to seed the
-                    // local-rules handoff instead of the legacy redeem configuration.
+                    // Re-report metadata on startup so the phone's device page is current.
+                    // This does not upload local rules: cloud and local data are independent.
                     reportDeviceInfo(deviceNo)
                         .onFailure { Log.w(TAG, "startup device info report failed", it) }
                     syncPassword(deviceNo)
@@ -1002,13 +1050,16 @@ object PolicyCloud : PolicySyncHost {
             // A new binding is a new family: drop any previous family's CLOUD quiz source
             // before the backend resets its row.
             QuizConfigSync.onBindingConfirmed(deviceNo)
-            // Must precede reportGuardStatus/fetchConfig: this is what creates device_info for a
-            // TV that was bound before it ever reported, and the backend seeds the PENDING
-            // local-rules handoff on this first report.
+            // 2026-11-19: the scan binds the device and immediately reports its status. Device
+            // metadata, guard status and mode are status only; local rules and the parent
+            // password stay on the TV, so cloud and local configuration remain independent.
+            // Report before fetchConfig so the parent app sees this TV as soon as it scans.
             reportDeviceInfo(deviceNo)
                 .onFailure { Log.w(TAG, "device info report after bind failed", it) }
             reportGuardStatus(deviceNo)
                 .onFailure { Log.w(TAG, "guard status report failed", it) }
+            // confirmCloudBinding already reported the mode; the device and guard reports above
+            // do not wait for the five-minute mode heartbeat.
             // 2026-11-12: 绑定不再上传本机答题配置。绑定后答题配置完全以云端为准
             // （题库孩子级配置 + TV 关卡），上报本机旧结构会覆盖云端并引入不兼容。
             // 保留下行拉取（fetchConfig → applyRemote）与 QuizConfigDocumentSync 的 QCD 同步。

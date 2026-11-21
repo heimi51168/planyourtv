@@ -3,6 +3,10 @@ package app.orchard.tv.policy.web
 import android.content.Context
 import android.util.Log
 import app.orchard.tv.BuildConfig
+import app.orchard.tv.policy.FamilyAvatarStore
+import app.orchard.tv.policy.FamilyHub
+import app.orchard.tv.policy.UserConfigPinSettings
+import app.orchard.tv.policy.media.PolicyAudioLibrary
 import app.orchard.tv.policy.media.PolicyVideoLibrary
 import app.orchard.tv.policy.media.PolicyVideoValidation
 import app.orchard.tv.quiz.QuizIntroVideo
@@ -31,6 +35,8 @@ object ParentWebAdmin {
     private const val TAKEOVER_HEADER = "x-parent-takeover"
     private const val SENSITIVE_HEADER = "x-parent-sensitive-token"
     private const val INTRO_VIDEO_PATH = "/api/parent/intro-video"
+    private const val AUDIO_UPLOAD_PATH = "/api/parent/audio"
+    private const val SUBJECT_AVATAR_PATH = "/api/parent/subjects/avatar"
 
     /**
      * NanoHTTPD keeps one [IHTTPSession] for the whole keep-alive connection, so a POST body
@@ -60,7 +66,9 @@ object ParentWebAdmin {
             return null
         }
         return try {
-            if (session.method == Method.POST && path != INTRO_VIDEO_PATH) {
+            if (session.method == Method.POST && path != INTRO_VIDEO_PATH &&
+                path != AUDIO_UPLOAD_PATH && path != SUBJECT_AVATAR_PATH
+            ) {
                 requestJson.set(readJsonBody(session))
                 requestJsonCached.set(true)
             }
@@ -127,21 +135,77 @@ object ParentWebAdmin {
                     write(context, session) { ParentCenterActions.cancelMediaDownload(it) }
                 session.method == Method.POST && path == "/api/parent/media/select" ->
                     write(context, session) { ParentCenterActions.selectMedia(context, it) }
+                session.method == Method.POST && path == "/api/parent/media/playlist" ->
+                    write(context, session) { ParentCenterActions.saveMediaPlaylist(context, it) }
                 session.method == Method.POST && path == "/api/parent/media/delete" ->
                     write(context, session) { ParentCenterActions.deleteMedia(context, it) }
                 session.method == Method.POST && path == "/api/parent/media/sound" ->
                     write(context, session) { ParentCenterActions.setMediaSound(context, it) }
+                // A raw audio body, streamed into the local music library like a wallpaper.
+                session.method == Method.POST && path == AUDIO_UPLOAD_PATH ->
+                    uploadAudio(context, session)
+                session.method == Method.POST && path == "/api/parent/media/audio/refresh" ->
+                    write(context, session) { ParentCenterActions.refreshAudio(context) }
+                session.method == Method.POST && path == "/api/parent/media/audio/download" ->
+                    write(context, session) { ParentCenterActions.downloadAudio(context, it) }
+                session.method == Method.POST && path == "/api/parent/media/audio/cancel" ->
+                    write(context, session) { ParentCenterActions.cancelAudioDownload(it) }
+                session.method == Method.POST && path == "/api/parent/media/audio/select" ->
+                    write(context, session) { ParentCenterActions.selectAudio(context, it) }
+                session.method == Method.POST && path == "/api/parent/media/audio/delete" ->
+                    write(context, session) { ParentCenterActions.deleteAudio(context, it) }
                 session.method == Method.GET && path == "/api/parent/apps" -> apps(context, session)
                 session.method == Method.GET && path == "/api/parent/icon" -> icon(context, session)
-                session.method == Method.POST && path == "/api/parent/rules" ->
+                // A family photo is editor-only data, so this route requires the same lease as
+                // the rest of the page. The <img> tag cannot send that header; the page fetches
+                // the bytes through host.blob() and renders them from an object URL.
+                session.method == Method.GET && path == "/api/parent/avatar" ->
+                    memberAvatar(context, session)
+                session.method == Method.POST && path == "/api/parent/subjects/add" ->
+                    write(context, session) { ParentCenterActions.addMember(it) }
+                session.method == Method.POST && path == "/api/parent/subjects/profile" ->
+                    write(context, session) { ParentCenterActions.updateMemberProfile(it) }
+                session.method == Method.POST && path == SUBJECT_AVATAR_PATH ->
+                    uploadMemberAvatar(context, session)
+                session.method == Method.POST && path == "/api/parent/subjects/avatar/delete" ->
+                    write(context, session) { ParentCenterActions.deleteMemberAvatar(it) }
+                // Removing a child is destructive and irreversible from the page, so it
+                // requires the same parent-PIN proof as editing the rules. The action still
+                // repeats the active/default/cloud guards.
+                session.method == Method.POST && path == "/api/parent/subjects/delete" ->
                     write(
                         context,
                         session,
                         sensitiveScope = ParentSensitiveAuth.Scope.RULES_EDIT,
+                    ) { ParentCenterActions.deleteMember(it) }
+                // Remote member switching shares the TV's lock-screen/busy gate; the parent
+                // center login plus editor lease is the authentication on this side.
+                session.method == Method.POST && path == "/api/parent/subjects/activate" ->
+                    write(context, session) { ParentCenterActions.activateSubject(it) }
+                session.method == Method.POST && path == "/api/parent/member-switch" ->
+                    write(context, session) { ParentCenterActions.setMemberSwitch(it) }
+                // V47: user-configuration edits keep the RULES_EDIT proof unless the parent
+                // deliberately turned off the extra PIN prompts for that tab. System routes
+                // below keep their scope unconditionally.
+                session.method == Method.POST && path == "/api/parent/rules" ->
+                    write(
+                        context,
+                        session,
+                        sensitiveScope = rulesSensitiveScope(),
                     ) { ParentCenterActions.setRules(it) }
-                // Activation is fixed to MANUAL while the web center owns local config.
-                session.method == Method.POST && path == "/api/parent/activation" ->
-                    jsonError(Response.Status.GONE, "MANUAL_MODE_FIXED")
+                // Turning the extra user-config prompts off is a deliberate reduction of
+                // protection, so it needs a single-use USER_CONFIG proof. Turning them back
+                // on only restores protection and needs no proof. Two explicit routes keep
+                // the scope independent of a request body.
+                session.method == Method.POST && path == "/api/parent/user-config-pin/disable" ->
+                    write(
+                        context,
+                        session,
+                        sensitiveScope = ParentSensitiveAuth.Scope.USER_CONFIG,
+                        consumeSensitive = true,
+                    ) { ParentCenterActions.setUserConfigPin(false) }
+                session.method == Method.POST && path == "/api/parent/user-config-pin/enable" ->
+                    write(context, session) { ParentCenterActions.setUserConfigPin(true) }
                 // Turning child mode off or creating its first PIN changes what the web page
                 // itself is authorized by, so those stay TV-only.
                 session.method == Method.POST && path == "/api/parent/child-mode" ->
@@ -542,6 +606,53 @@ object ParentWebAdmin {
         return jsonError(status, code)
     }
 
+    /**
+     * A raw audio body for the child wallpaper's background music. The declared length is
+     * checked before the stream is consumed; the library repeats the byte, format, duration
+     * and decoder checks before publishing the track.
+     */
+    private fun uploadAudio(context: Context, session: IHTTPSession): Response {
+        if (!requirePostHeader(session)) return jsonError(Response.Status.FORBIDDEN, "REQUEST_HEADER")
+        val check = editorCheck(session)
+        val editor = check.second
+        if (editor is ParentWebAccess.EditorCheck.Failed) return editorError(editor.code)
+
+        val declared = session.headers["content-length"]?.toLongOrNull()
+            ?: return jsonError(Response.Status.LENGTH_REQUIRED, "LENGTH_REQUIRED")
+        if (declared <= 0L) return jsonError(Response.Status.BAD_REQUEST, "AUDIO_INVALID")
+        if (declared > PolicyAudioLibrary.MAX_AUDIO_BYTES) {
+            return jsonError(Response.Status.PAYLOAD_TOO_LARGE, "AUDIO_TOO_LARGE")
+        }
+        val name = session.parameters["name"]?.firstOrNull().orEmpty()
+        return when (val result = PolicyAudioLibrary.receive(context, session.inputStream, declared, name)) {
+            is PolicyAudioLibrary.ReceiveResult.Ok -> {
+                Log.i(TAG, "audio stored: ${result.entry.sizeBytes} bytes")
+                json(
+                    Response.Status.OK,
+                    JSONObject()
+                        .put("ok", true)
+                        .put("uploadedId", result.entry.id)
+                        .put("snapshot", ParentCenterActions.snapshot(context)),
+                )
+            }
+            is PolicyAudioLibrary.ReceiveResult.Rejected -> {
+                Log.i(TAG, "audio rejected: ${result.code}")
+                audioError(result.code)
+            }
+        }
+    }
+
+    private fun audioError(code: String): Response {
+        val status = when (code) {
+            "AUDIO_TOO_LARGE" -> Response.Status.PAYLOAD_TOO_LARGE
+            "AUDIO_NO_SPACE" -> Response.Status.SERVICE_UNAVAILABLE
+            "AUDIO_BAD_FORMAT", "AUDIO_UNSUPPORTED_CODEC", "AUDIO_BAD_DURATION" ->
+                Response.Status.UNSUPPORTED_MEDIA_TYPE
+            else -> Response.Status.BAD_REQUEST
+        }
+        return jsonError(status, code)
+    }
+
     private fun apps(context: Context, session: IHTTPSession): Response {
         val check = editorCheck(session)
         if (check.second is ParentWebAccess.EditorCheck.Failed) {
@@ -566,11 +677,96 @@ object ParentWebAdmin {
         return bytes(Response.Status.OK, "image/png", bytes)
     }
 
+    /**
+     * Serves one member's uploaded avatar. The response is a private app file, never a path
+     * supplied by the page; the query name is only a cache-busting hint and is ignored.
+     * The editor lease is required, so the page fetches this through host.blob() instead of
+     * an <img> tag; a family photo is not readable by another LAN page.
+     */
+    private fun memberAvatar(context: Context, session: IHTTPSession): Response {
+        val check = editorCheck(session)
+        if (check.second is ParentWebAccess.EditorCheck.Failed) {
+            return editorError((check.second as ParentWebAccess.EditorCheck.Failed).code)
+        }
+        val userId = session.parameters["userId"]?.firstOrNull().orEmpty()
+        val member = FamilyHub.state.value.members.firstOrNull { it.userId == userId }
+            ?: return jsonError(Response.Status.NOT_FOUND, "SUBJECT_NOT_FOUND")
+        val bytes = FamilyAvatarStore.read(context, member)
+            ?: return jsonError(Response.Status.NOT_FOUND, "SUBJECT_AVATAR_NOT_FOUND")
+        return bytes(Response.Status.OK, "image/jpeg", bytes)
+    }
+
+    /**
+     * Raw avatar upload, capped before allocation. The editor lease and the LOCAL/unbound check
+     * run before the body is consumed, so an unauthorized client cannot fill the TV's storage.
+     */
+    private fun uploadMemberAvatar(context: Context, session: IHTTPSession): Response {
+        if (!requirePostHeader(session)) return jsonError(Response.Status.FORBIDDEN, "REQUEST_HEADER")
+        if (session.headers["content-type"]?.startsWith("image/") != true) {
+            return jsonError(Response.Status.UNSUPPORTED_MEDIA_TYPE, "CONTENT_TYPE")
+        }
+        val check = editorCheck(session)
+        val editor = check.second
+        if (editor is ParentWebAccess.EditorCheck.Failed) return editorError(editor.code)
+        if (!ParentCenterActions.canEditFamily()) {
+            return jsonError(
+                Response.Status.CONFLICT,
+                if (FamilyHub.isReady) "READ_ONLY" else "FAMILY_NOT_READY",
+            )
+        }
+        val userId = session.parameters["userId"]?.firstOrNull().orEmpty()
+        val family = FamilyHub.state.value
+        val member = family.members.firstOrNull {
+            it.userId == userId && it.status == com.planyourtv.policy.MemberStatus.ACTIVE
+        } ?: return jsonError(Response.Status.NOT_FOUND, "SUBJECT_NOT_FOUND")
+        val declared = session.headers["content-length"]?.toLongOrNull()
+            ?: return jsonError(Response.Status.LENGTH_REQUIRED, "LENGTH_REQUIRED")
+        if (declared <= 0L) return jsonError(Response.Status.BAD_REQUEST, "SUBJECT_AVATAR_EMPTY")
+        if (declared > FamilyAvatarStore.MAX_UPLOAD_BYTES) {
+            return jsonError(Response.Status.PAYLOAD_TOO_LARGE, "SUBJECT_AVATAR_TOO_LARGE")
+        }
+        return when (
+            val result = FamilyAvatarStore.receive(
+                context = context,
+                familyId = member.familyId,
+                userId = member.userId,
+                input = session.inputStream,
+                declaredLength = declared,
+            )
+        ) {
+            is FamilyAvatarStore.ReceiveResult.Ok -> json(
+                Response.Status.OK,
+                JSONObject()
+                    .put("ok", true)
+                    .put(
+                        "avatarRevision",
+                        FamilyHub.state.value.members
+                            .firstOrNull { it.userId == member.userId }
+                            ?.avatarRevision ?: 0L,
+                    )
+                    .put("snapshot", ParentCenterActions.snapshot(context)),
+            )
+            is FamilyAvatarStore.ReceiveResult.Rejected -> {
+                Log.i(TAG, "member avatar rejected: ${result.code}")
+                jsonError(Response.Status.BAD_REQUEST, result.code)
+            }
+        }
+    }
+
+    /**
+     * The rules route belongs to the user-configuration tab. Its extra proof disappears only
+     * when the parent turned that tab's PIN prompts off; every system-configuration route
+     * keeps its fixed scope.
+     */
+    internal fun rulesSensitiveScope(): ParentSensitiveAuth.Scope? =
+        if (UserConfigPinSettings.isRequired()) ParentSensitiveAuth.Scope.RULES_EDIT else null
+
     private fun write(
         context: Context,
         session: IHTTPSession,
         pinRateLimit: Boolean = false,
         sensitiveScope: ParentSensitiveAuth.Scope? = null,
+        consumeSensitive: Boolean = false,
         action: (JSONObject) -> ParentCenterActions.Outcome,
     ): Response {
         if (!requirePostHeader(session)) return jsonError(Response.Status.FORBIDDEN, "REQUEST_HEADER")
@@ -581,8 +777,10 @@ object ParentWebAdmin {
         if (check.second is ParentWebAccess.EditorCheck.Failed) {
             return editorError((check.second as ParentWebAccess.EditorCheck.Failed).code)
         }
+        var sensitiveEditor: String? = null
         if (sensitiveScope != null) {
             val editor = check.first ?: return jsonError(Response.Status.UNAUTHORIZED, "EDITOR_REQUIRED")
+            sensitiveEditor = editor
             val status = ParentSensitiveAuth.check(
                 token = session.headers[SENSITIVE_HEADER],
                 scope = sensitiveScope,
@@ -600,6 +798,17 @@ object ParentWebAdmin {
         val body = cachedJsonBody(session)
             ?: return jsonError(Response.Status.BAD_REQUEST, "INVALID_JSON")
         val outcome = action(body)
+        // Single-use scopes burn only after the guarded action actually succeeded, so a
+        // cancelled confirmation or a retried command does not waste the parent's window.
+        if (outcome.ok && consumeSensitive && sensitiveScope != null) {
+            sensitiveEditor?.let { editor ->
+                ParentSensitiveAuth.consume(
+                    token = session.headers[SENSITIVE_HEADER],
+                    scope = sensitiveScope,
+                    editorToken = editor,
+                )
+            }
+        }
         if (pinRateLimit) {
             ParentWebAccess.onChangePinAttempt(
                 clientIp = clientIp,
@@ -661,11 +870,12 @@ object ParentWebAdmin {
 
     private fun outcomeStatus(code: String): Response.Status = when (code) {
         "STATE_CHANGED", "READ_ONLY", "NOT_READY", "SESSION_NOT_ACTIVE",
+        "FAMILY_NOT_READY", "SUBJECT_UPDATE_FAILED", "TV_BUSY",
         "MEDIA_BUSY", "MEDIA_NOT_READY", "MEDIA_IN_USE",
         "MEDIA_SOUND_UNAVAILABLE", "RECOVERY_NOT_SET", "RECOVERY_FAILED", "LOCAL_ONLY" ->
             Response.Status.CONFLICT
         "RECOVERY_LOCKED" -> Response.Status.TOO_MANY_REQUESTS
-        "MEDIA_NOT_FOUND" -> Response.Status.NOT_FOUND
+        "MEDIA_NOT_FOUND", "SUBJECT_NOT_FOUND" -> Response.Status.NOT_FOUND
         "MEDIA_NO_SPACE", "CATALOG_UNAVAILABLE" -> Response.Status.SERVICE_UNAVAILABLE
         "MEDIA_BAD_FORMAT" -> Response.Status.UNSUPPORTED_MEDIA_TYPE
         "MEDIA_TOO_LARGE" -> Response.Status.PAYLOAD_TOO_LARGE

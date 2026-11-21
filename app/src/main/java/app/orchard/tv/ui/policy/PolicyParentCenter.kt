@@ -56,12 +56,10 @@ import app.orchard.tv.ui.theme.GlyphIcon
 import app.orchard.tv.ui.theme.Palette
 import app.orchard.tv.ui.theme.Type
 import com.planyourtv.policy.ALL_VALID_APP
-import com.planyourtv.policy.Activation
 import com.planyourtv.policy.GuardStatus
 import com.planyourtv.policy.LocalRules
 import com.planyourtv.policy.LocalRulesError
 import com.planyourtv.policy.LocalTimeWindow
-import com.planyourtv.policy.LockReason
 import com.planyourtv.policy.PinResult
 import com.planyourtv.policy.PolicyConsentStore
 import com.planyourtv.policy.PolicyMode
@@ -83,8 +81,10 @@ private const val REMOVE_TIMEOUT_MS = 3_000L
 
 // 2026-11-12: 远程管理随扫码绑定一起放出。绑定后答题配置完全以云端为准
 // （题库孩子级配置 + TV 关卡），本机只保留断网时的 active 文档执行能力。
-// 2026-11-15: 远程功能尚未就绪，先隐藏家长中心的「远程管理」入口；绑定点位、
-// 迁移流程和页面代码保持完整，后期功能好后改回 true 即可整体释放。
+// 2026-11-15: 远程功能尚未就绪，临时隐藏「远程管理」入口。
+// 2026-11-19: 恢复入口，继续扫码绑定对接；绑定、迁移和摘要页代码保持完整。
+// 2026-11-21: 家长中心保留，仅隐藏其中的「远程管理」入口；绑定、迁移和摘要页代码保持完整。
+// 测试通过后把这里改回 true 即可放出。
 private const val REMOTE_MANAGEMENT_ENABLED = false
 
 // The sheet's inner width is 864 dp: the rail, its gap and the pane must add up to it.
@@ -92,11 +92,8 @@ private val ParentRailWidth = 280.dp
 private val ParentColumnGap = 20.dp
 private val ParentPaneWidth = 564.dp
 
-// Parent-center editor ranges (V6 UI contract §2.3). The rule engine accepts wider ranges so
-// that cloud rules stay valid, but both TV and phone only edit within these steps.
-internal const val MIN_EDIT_DAILY_MINUTES = 0
-internal const val MAX_EDIT_DAILY_MINUTES = 240
-internal const val MIN_EDIT_SESSION_MINUTES = 5
+// Parent-center editor range. The rule engine accepts wider ranges so that cloud rules stay
+// valid, but the TV only edits the rest interval within these steps.
 internal const val MAX_EDIT_REST_MINUTES = 60
 
 private sealed interface ArmedAction {
@@ -114,7 +111,7 @@ private class VerifyRequest(
  * V6 parent center.
  *
  * The left rail is the only place that owns the child-mode switch. The right pane is a
- * read-only summary once a handoff has completed; before binding it is the local rule editor.
+ * read-only cloud summary once the phone is bound; before binding it is the local rule editor.
  * All focus movement is logical, so the d-pad can never jump between columns on its own.
  */
 @Composable
@@ -153,10 +150,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
     val pinGateFocus = remember { FocusRequester() }
 
     var rules by remember {
-        mutableStateOf(
-            LocalPolicyRuntime.currentRules
-                ?: LocalRules.defaultsFor(LocalPolicyRuntime.state.value.activation),
-        )
+        mutableStateOf(LocalPolicyRuntime.currentRules ?: LocalRules.DEFAULTS)
     }
     var quizEntryVisible by remember { mutableStateOf(QuizSettings.isLockEntryVisible()) }
     var quizChanging by remember { mutableStateOf(false) }
@@ -183,7 +177,6 @@ fun PolicyParentCenter(onClose: () -> Unit) {
     var armedRemoveKey by remember { mutableStateOf<String?>(null) }
     var armedRemoveJob by remember { mutableStateOf<Job?>(null) }
     var editingKey by remember { mutableStateOf<String?>(null) }
-    var activationConfirmTarget by remember { mutableStateOf<Activation?>(null) }
     var savedJob by remember { mutableStateOf<Job?>(null) }
     var switching by remember { mutableStateOf(false) }
     var retrying by remember { mutableStateOf(false) }
@@ -226,11 +219,6 @@ fun PolicyParentCenter(onClose: () -> Unit) {
     val remoteEntryVisible = REMOTE_MANAGEMENT_ENABLED && PolicyProduct.cloudEnabled
     val unboundCloud = PolicyProduct.cloudEnabled && !bound && state.mode == PolicyMode.CLOUD
     val localSessionActive = state.mode == PolicyMode.LOCAL && state.sessionState == SessionState.ACTIVE
-    // The mode switch clears the rest cursor too, so the confirmation must warn when either a
-    // running segment or a rest countdown will be discarded.
-    val localRestActive = state.mode == PolicyMode.LOCAL &&
-        state.lockReason == LockReason.RESTING &&
-        state.restRemainingSeconds > 0L
     // Once the TV is bound, the local pane stays the familiar rule view but becomes read-only;
     // edits are made on the phone. After the handoff the pane mirrors the cloud copy so a phone
     // edit is visible without reopening the center.
@@ -238,14 +226,6 @@ fun PolicyParentCenter(onClose: () -> Unit) {
     // A DONE handoff means the remote node exists, so its rule copy is what the pane mirrors.
     val displayRemoteRules = readOnlyLocal && handoff == RemoteHandoffState.DONE
     val displayedRules = if (displayRemoteRules) remote?.rules ?: rules else rules
-    val displayedActivation = if (displayRemoteRules) {
-        remote?.activation ?: state.activation
-    } else {
-        state.activation
-    }
-
-    fun activationTabKey(activation: Activation): String =
-        if (activation == Activation.AUTO) "activation-auto" else "activation-manual"
 
     fun localRequester(key: String): FocusRequester =
         localFocus.getOrPut(key) { FocusRequester() }
@@ -339,7 +319,6 @@ fun PolicyParentCenter(onClose: () -> Unit) {
         ParentPaneKind.OFF -> emptyList()
         ParentPaneKind.LOCAL -> v6LocalFocusKeys(
             rules = displayedRules,
-            activation = displayedActivation,
             sessionActive = localSessionActive,
             readOnly = readOnlyLocal,
         ).map { ParentFocusTarget.LocalRow(it) }
@@ -355,8 +334,11 @@ fun PolicyParentCenter(onClose: () -> Unit) {
         !bound -> ParentPaneKind.BIND
         remote == null -> ParentPaneKind.WAIT_CONFIG
         remote.handoffState == RemoteHandoffState.DONE -> ParentPaneKind.SUMMARY
-        remote.handoffState == RemoteHandoffState.PENDING -> ParentPaneKind.MIGRATION
-        else -> ParentPaneKind.WAIT_CONFIG
+        // 2026-11-19: binding no longer uploads local rules, so PENDING is not a migration
+        // this TV can finish. Show the bound summary instead of the legacy upload page.
+        remote.handoffState == RemoteHandoffState.PENDING &&
+            PolicyModeCoordinator.LOCAL_RULES_UPLOAD_ENABLED -> ParentPaneKind.MIGRATION
+        else -> ParentPaneKind.SUMMARY
     }
 
     fun defaultPaneKind(): ParentPaneKind = when {
@@ -402,18 +384,12 @@ fun PolicyParentCenter(onClose: () -> Unit) {
             return
         }
         if (bound) {
-            // A TV bound before this build may still owe the local-to-cloud upload. Show the
-            // same one-time notice when remote management is opened, before any data moves.
-            if (handoffPending && !cloudConsentAccepted) {
-                consentForHandoff = true
-                enterPane(remotePaneKind(), ParentRailOrigin.REMOTE)
-                showCloudConsent = true
-                return
-            }
+            // 2026-11-19: a bound TV never uploads local config, so there is no pending
+            // handoff notice to show here. Open the phone-managed summary directly.
             enterPane(remotePaneKind(), ParentRailOrigin.REMOTE)
             return
         }
-        // The consent is about the one-time upload, so it is only needed before binding.
+        // The consent is about remote management reports, so it is only needed before binding.
         if (!cloudConsentAccepted) {
             cancelInlineConfirm()
             editingKey = null
@@ -519,12 +495,12 @@ fun PolicyParentCenter(onClose: () -> Unit) {
     fun requestDisable() {
         if (switching) return
         // Only ask when this center has no verified PIN yet; a parent who just unlocked or
-        // passed the gate can turn protection off directly. The upload warning still applies
-        // while a handoff is pending because leaving now cancels it.
+        // passed the gate can turn protection off directly. The upload warning only applies
+        // when the legacy handoff path is enabled.
         if (!pinVerified || authPin.length != PARENT_PIN_LENGTH) {
             verifyRequest = VerifyRequest(
                 message = context.getString(
-                    if (handoffPending) {
+                    if (handoffPending && PolicyModeCoordinator.LOCAL_RULES_UPLOAD_ENABLED) {
                         R.string.policy_v6_switch_off_migrating
                     } else {
                         R.string.policy_parent_pin_to_disable
@@ -609,53 +585,18 @@ fun PolicyParentCenter(onClose: () -> Unit) {
         }
         if (changed == window) return
         val nextWindows = windows.toMutableList().also { it[index] = changed }
-        val nextRules = if (weekday) {
-            rules.copy(weekdayWindows = nextWindows)
-        } else {
-            rules.copy(weekendWindows = nextWindows)
-        }
-        applyRules(nextRules)
+        applyRules(rules.withEntertainmentWindowsForDay(if (weekday) 1 else 6, nextWindows))
     }
 
     fun removeWindow(weekday: Boolean, index: Int) {
         val windows = if (weekday) rules.weekdayWindows else rules.weekendWindows
         if (windows.size <= 1 || index !in windows.indices) return
         val next = windows.filterIndexed { i, _ -> i != index }
-        val nextRules = if (weekday) {
-            rules.copy(weekdayWindows = next)
-        } else {
-            rules.copy(weekendWindows = next)
-        }
         editingKey = null
-        applyRules(nextRules, focusAfter = "${if (weekday) "wd" else "we"}-0-start")
-    }
-
-    fun adjustDaily(delta: Int) {
-        // Editor range is narrower than the engine range (see the V6 UI contract §2.3):
-        // 0–240 in 15-minute steps, so a remote rule is always editable on the TV. Zero means
-        // no automatic entertainment that day. Keep an out-of-range value from an imported rule
-        // stable instead of snapping it the wrong way.
-        val current = rules.autoDailyLimitMinutes
-        val next = (current + delta).coerceIn(
-            minOf(MIN_EDIT_DAILY_MINUTES, current),
-            maxOf(MAX_EDIT_DAILY_MINUTES, current),
+        applyRules(
+            rules.withEntertainmentWindowsForDay(if (weekday) 1 else 6, next),
+            focusAfter = "${if (weekday) "wd" else "we"}-0-start",
         )
-        if (next != current) {
-            applyRules(rules.copy(autoDailyLimitMinutes = next))
-        }
-    }
-
-    fun adjustSession(delta: Int) {
-        // The per-session cap is independent of the automatic daily quota; manual mode has no
-        // daily quota at all, so it must still be editable up to the same editor maximum.
-        val current = rules.sessionLimitMinutes
-        val next = (current + delta).coerceIn(
-            minOf(MIN_EDIT_SESSION_MINUTES, current),
-            maxOf(MAX_EDIT_DAILY_MINUTES, current),
-        )
-        if (next != current) {
-            applyRules(rules.copy(sessionLimitMinutes = next))
-        }
     }
 
     fun adjustRest(delta: Int) {
@@ -677,36 +618,6 @@ fun PolicyParentCenter(onClose: () -> Unit) {
         }
     }
 
-    fun selectLocalActivation(next: Activation) {
-        if (readOnlyLocal) return
-        if (next == displayedActivation) {
-            // Selecting the tab already in effect changes nothing; keep focus where the parent
-            // pressed OK so the section below stays one press away.
-            focusNow(ParentFocusTarget.LocalRow(activationTabKey(next)))
-            return
-        }
-        // A mode switch replaces the whole timing rule set, so require an explicit confirmation
-        // instead of letting one stray OK change how the TV counts time.
-        activationConfirmTarget = next
-    }
-
-    fun applyLocalActivation(next: Activation): Boolean {
-        if (readOnlyLocal) return false
-        val tabKey = activationTabKey(next)
-        if (!PolicyModeCoordinator.setLocalActivation(next)) {
-            actionError = R.string.policy_parent_rules_invalid
-            return false
-        }
-        // The tab swaps to the other stored rule set. Mirror it here so editing another field
-        // next writes into the activation now in effect.
-        LocalPolicyRuntime.currentRules?.let { rules = it }
-        actionError = null
-        editingKey = null
-        showSaved(R.string.policy_parent_saved)
-        focusNow(ParentFocusTarget.LocalRow(tabKey))
-        return true
-    }
-
     fun adjustLocalByKey(key: String, delta: Int) {
         when {
             key.endsWith("-start") || key.endsWith("-end") -> {
@@ -716,8 +627,6 @@ fun PolicyParentCenter(onClose: () -> Unit) {
                 val start = parts.getOrNull(2) == "start"
                 adjustWindow(weekday, index, start, delta)
             }
-            key == "daily" -> adjustDaily(delta)
-            key == "session" -> adjustSession(delta)
             key == "rest" -> adjustRest(delta)
             key == "buffer" -> adjustBuffer(delta)
         }
@@ -874,10 +783,6 @@ fun PolicyParentCenter(onClose: () -> Unit) {
                     armRemove(key)
                 }
             }
-            // Tab selection is immediate: OK switches the active rule set and the rows below
-            // re-render from that set. There is no separate edit state to enter or leave.
-            key == "activation-auto" -> selectLocalActivation(Activation.AUTO)
-            key == "activation-manual" -> selectLocalActivation(Activation.MANUAL)
             // The root key catcher routes OK here, so the row's own Pressable never sees it.
             key == "quiz" -> toggleQuizEntry()
             key == "sources" -> toggleSourceEntries()
@@ -937,6 +842,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
     }
 
     fun completeHandoff(pin: String) {
+        if (!PolicyModeCoordinator.LOCAL_RULES_UPLOAD_ENABLED) return
         if (handoffBusy) return
         handoffBusy = true
         handoffError = null
@@ -966,6 +872,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
     }
 
     fun requestHandoff() {
+        if (!PolicyModeCoordinator.LOCAL_RULES_UPLOAD_ENABLED) return
         if (!handoffPending || handoffBusy) return
         handoffError = null
         // A TV bound before the consent existed can still be pending. Never upload its local
@@ -1054,11 +961,14 @@ fun PolicyParentCenter(onClose: () -> Unit) {
         active = cloudConsentAccepted && childOn && paneKind == ParentPaneKind.BIND && !bound,
         onBound = {
             handoffError = null
-            paneKind = ParentPaneKind.MIGRATION
+            // Binding reports status only; wait for the first cloud snapshot (or its retry)
+            // instead of showing the legacy local-upload pane.
+            paneKind = if (PolicyModeCoordinator.LOCAL_RULES_UPLOAD_ENABLED) {
+                ParentPaneKind.MIGRATION
+            } else {
+                ParentPaneKind.WAIT_CONFIG
+            }
             railOrigin = ParentRailOrigin.REMOTE
-            // Stay on the remote-management row while the automatic upload runs. Focusing the
-            // retry button here would leave the remote context and the state effect would swap
-            // the pane back to the local editor before the upload had a chance to finish.
             focusNow(ParentFocusTarget.Remote)
         },
     )
@@ -1074,7 +984,6 @@ fun PolicyParentCenter(onClose: () -> Unit) {
         paneKind,
         rules,
         displayedRules,
-        displayedActivation,
         readOnlyLocal,
         localSessionActive,
     ) {
@@ -1171,11 +1080,10 @@ fun PolicyParentCenter(onClose: () -> Unit) {
         }
     }
 
-    // A binding made while the parent center was already authenticated can finish the handoff
-    // without another PIN prompt: the privacy notice was accepted before the QR. If the PIN was
-    // verified earlier in this center it is uploaded with the rules; otherwise the handoff
-    // still completes and leaves the cloud password untouched.
+    // Legacy path only. 2026-11-19 binding reports device status without uploading local rules,
+// so a freshly bound TV must not start the old migration here.
     LaunchedEffect(authenticated, bound, handoff, authPin, cloudConsentAccepted) {
+        if (!PolicyModeCoordinator.LOCAL_RULES_UPLOAD_ENABLED) return@LaunchedEffect
         if (authenticated && bound && handoff == RemoteHandoffState.PENDING &&
             cloudConsentAccepted && !handoffBusy
         ) {
@@ -1281,31 +1189,6 @@ fun PolicyParentCenter(onClose: () -> Unit) {
             paneTargetsFor(paneKind)
         }
         val target = focusedTarget
-        // Automatic/Manual is a tab strip, not two stacked rows: Left/Right stay inside the
-        // pair (Left from the first tab is the only way back to the rail), Up leaves for the
-        // shared entries, and Down skips the sibling tab so the selected mode's own first
-        // parameter row is one press away.
-        if (target is ParentFocusTarget.LocalRow &&
-            (target.key == "activation-auto" || target.key == "activation-manual")
-        ) {
-            editingKey = null
-            when {
-                isUp -> focusNow(ParentFocusTarget.LocalRow("sources"))
-                isDown -> {
-                    val pairEnd = targets.indexOf(ParentFocusTarget.LocalRow("activation-manual"))
-                    targets.getOrNull(pairEnd + 1)?.let { focusNow(it) }
-                }
-                isLeft -> if (target.key == "activation-manual") {
-                    focusNow(ParentFocusTarget.LocalRow("activation-auto"))
-                } else {
-                    focusRailFromPane()
-                }
-                isRight -> if (target.key == "activation-auto") {
-                    focusNow(ParentFocusTarget.LocalRow("activation-manual"))
-                }
-            }
-            return true
-        }
         if (isUp || isDown) {
             if (editingKey != null) editingKey = null
             if (targets.isEmpty()) return true
@@ -1376,7 +1259,13 @@ fun PolicyParentCenter(onClose: () -> Unit) {
     }
     val remoteSubtitle = when {
         !bound -> stringResource(R.string.policy_v6_remote_unbound)
-        handoff == RemoteHandoffState.PENDING -> stringResource(R.string.policy_v6_remote_pending)
+        handoff == RemoteHandoffState.PENDING ->
+            if (PolicyModeCoordinator.LOCAL_RULES_UPLOAD_ENABLED) {
+                stringResource(R.string.policy_v6_remote_pending)
+            } else {
+                // No local upload is pending; the phone already manages the cloud copy.
+                stringResource(R.string.policy_v6_remote_done)
+            }
         handoff == RemoteHandoffState.DONE -> stringResource(R.string.policy_v6_remote_done)
         else -> stringResource(R.string.policy_v6_status_wait_config)
     }
@@ -1565,7 +1454,6 @@ fun PolicyParentCenter(onClose: () -> Unit) {
                         ParentPaneKind.OFF -> Unit
                         ParentPaneKind.LOCAL -> V6LocalPane(
                             rules = displayedRules,
-                            activation = displayedActivation,
                             quizEntryVisible = quizEntryVisible,
                             sourceEntriesVisible = sourceEntriesVisible,
                             sessionActive = localSessionActive,
@@ -1582,7 +1470,6 @@ fun PolicyParentCenter(onClose: () -> Unit) {
                             onFocusRail = ::focusRailFromPane,
                             onActivateValue = { key -> activateLocalByKey(key) },
                             onAdjust = ::adjustLocalByKey,
-                            onSelectActivation = ::selectLocalActivation,
                             onToggleQuizEntry = ::toggleQuizEntry,
                             onToggleSourceEntries = ::toggleSourceEntries,
                             onRemoveWindow = { weekday, index ->
@@ -1717,34 +1604,6 @@ fun PolicyParentCenter(onClose: () -> Unit) {
                             switchTo(PolicyMode.LOCAL, "")
                         }
                     }
-                },
-            )
-        }
-        activationConfirmTarget?.let { target ->
-            // Show the automatic rule set that will take effect, not a hard-coded example:
-            // daily/session/rest values are editable and differ between activations.
-            val autoRules = LocalPolicyRuntime.currentRuleSets
-                ?.rulesFor(Activation.AUTO)
-                ?: LocalRules.defaultsFor(Activation.AUTO)
-            PolicyActivationConfirmDialog(
-                keyRouter = dialogKeyRouter,
-                target = target,
-                autoDailyMinutes = autoRules.autoDailyLimitMinutes,
-                autoSessionMinutes = autoRules.sessionLimitMinutes,
-                autoRestMinutes = autoRules.restMinutes,
-                timingActive = localSessionActive || localRestActive,
-                onConfirm = {
-                    activationConfirmTarget = null
-                    if (!applyLocalActivation(target)) {
-                        focusNow(
-                            ParentFocusTarget.LocalRow(activationTabKey(displayedActivation)),
-                        )
-                    }
-                },
-                onDismiss = {
-                    activationConfirmTarget = null
-                    // Keep the highlight on the mode that is still in effect.
-                    focusNow(ParentFocusTarget.LocalRow(activationTabKey(displayedActivation)))
                 },
             )
         }

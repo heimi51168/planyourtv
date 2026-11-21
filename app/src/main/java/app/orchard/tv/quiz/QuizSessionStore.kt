@@ -1,5 +1,6 @@
 package app.orchard.tv.quiz
 
+import app.orchard.tv.policy.FamilyHub
 import com.planyourtv.policy.TvStore
 import com.planyourtv.policy.quiz.QuizAnswerScope
 import com.planyourtv.policy.quiz.QUIZ_DEFAULT_ANSWER_DISPLAY_SEC
@@ -65,6 +66,20 @@ object QuizSessionStore {
 
     private val lock = Any()
 
+    /** Quiz config/session/prefs belong to one child; the default member keeps legacy keys. */
+    private fun key(base: String): String = QuizSubjectScope.key(base)
+
+    /**
+     * A named member's key. Used by the web editor while the TV executes a
+     * different member; it never moves the active pointer. For the active
+     * member this resolves to the same key as [key].
+     */
+    private fun keyFor(base: String, userId: String): String {
+        val family = FamilyHub.state.value
+        if (!family.ready) return base
+        return QuizSubjectScope.keyFor(family, userId, base)
+    }
+
     /**
      * A decoded record plus why it failed, when it did. Errors are field names
      * from the codec; the decrypted payload is never returned or logged.
@@ -77,7 +92,7 @@ object QuizSessionStore {
     )
 
     fun inspectSession(): SessionInspection = synchronized(lock) {
-        val raw = TvStore.getString(KEY_SESSION)
+        val raw = TvStore.getString(key(KEY_SESSION))
         if (raw == null) {
             if (TvStore.isReady) markSessionAnswerDisplayMigrated()
             return SessionInspection(null, false, false, emptyList())
@@ -115,7 +130,7 @@ object QuizSessionStore {
             config = session.config.copy(answerDisplaySec = QUIZ_DEFAULT_ANSWER_DISPLAY_SEC),
         )
         val encrypted = QuizCrypto.encrypt(QuizSessionCodec.encode(migrated))
-        if (encrypted != null && TvStore.putStringDurable(KEY_SESSION, encrypted)) {
+        if (encrypted != null && TvStore.putStringDurable(key(KEY_SESSION), encrypted)) {
             markSessionAnswerDisplayMigrated()
         }
         return migrated
@@ -124,7 +139,7 @@ object QuizSessionStore {
     fun loadSession(): QuizSession? = inspectSession().session
 
     /** True when a record exists but none of the decode paths produced a session. */
-    fun hasStoredSession(): Boolean = TvStore.getString(KEY_SESSION) != null
+    fun hasStoredSession(): Boolean = TvStore.getString(key(KEY_SESSION)) != null
 
     /**
      * Moves an undecodable record out of the active slot without destroying it.
@@ -132,9 +147,9 @@ object QuizSessionStore {
      * the original rather than losing it to a failed clean-up.
      */
     fun quarantineUnreadableSession(): Boolean = synchronized(lock) {
-        val raw = TvStore.getString(KEY_SESSION) ?: return false
-        if (!TvStore.putStringDurable(KEY_SESSION_UNREADABLE, raw)) return false
-        TvStore.removeDurable(KEY_SESSION)
+        val raw = TvStore.getString(key(KEY_SESSION)) ?: return false
+        if (!TvStore.putStringDurable(key(KEY_SESSION_UNREADABLE), raw)) return false
+        TvStore.removeDurable(key(KEY_SESSION))
     }
 
     fun saveSession(session: QuizSession): Boolean = synchronized(lock) {
@@ -143,7 +158,7 @@ object QuizSessionStore {
         // updatedAt precedes createdAt: decoding treats that as corrupt.
         val normalized = session.copy(updatedAt = maxOf(session.updatedAt, session.createdAt))
         val encrypted = QuizCrypto.encrypt(QuizSessionCodec.encode(normalized)) ?: return false
-        val saved = TvStore.putStringDurable(KEY_SESSION, encrypted)
+        val saved = TvStore.putStringDurable(key(KEY_SESSION), encrypted)
         // The session was produced under the new feedback semantics; do not
         // rewrite its hold on the next inspection.
         if (saved) markSessionAnswerDisplayMigrated()
@@ -151,7 +166,7 @@ object QuizSessionStore {
     }
 
     fun clearSession(): Boolean = synchronized(lock) {
-        TvStore.removeDurable(KEY_SESSION)
+        TvStore.removeDurable(key(KEY_SESSION))
     }
 
     /**
@@ -215,7 +230,7 @@ object QuizSessionStore {
      * the whole config unreadable.
      */
     fun loadChallengeConfig(): QuizConfig? = synchronized(lock) {
-        val raw = TvStore.getString(KEY_CHALLENGE_CONFIG)
+        val raw = TvStore.getString(key(KEY_CHALLENGE_CONFIG))
         if (!answerDisplayMigrated()) {
             if (raw == null) {
                 if (TvStore.isReady) markAnswerDisplayMigrated()
@@ -223,7 +238,7 @@ object QuizSessionStore {
             }
             val migrated = runCatching { JSONObject(raw) }.getOrNull() ?: return null
             migrated.put("answerDisplaySec", QUIZ_DEFAULT_ANSWER_DISPLAY_SEC)
-            if (TvStore.putStringDurable(KEY_CHALLENGE_CONFIG, migrated.toString())) {
+            if (TvStore.putStringDurable(key(KEY_CHALLENGE_CONFIG), migrated.toString())) {
                 markAnswerDisplayMigrated()
             }
             return runCatching { QuizSessionCodec.decodeConfig(migrated) }.getOrNull()
@@ -231,7 +246,7 @@ object QuizSessionStore {
         runCatching { QuizSessionCodec.decodeConfig(JSONObject(raw ?: return null)) }.getOrNull()
     }
 
-    fun hasChallengeConfig(): Boolean = TvStore.getString(KEY_CHALLENGE_CONFIG) != null
+    fun hasChallengeConfig(): Boolean = TvStore.getString(key(KEY_CHALLENGE_CONFIG)) != null
 
     /**
      * Read-only view for the one-way QCD migration. Unlike [loadChallengeConfig],
@@ -239,13 +254,12 @@ object QuizSessionStore {
      * until the parent saves through the new document endpoint.
      */
     fun challengeConfigRawForMigration(): JSONObject? = synchronized(lock) {
-        val raw = TvStore.getString(KEY_CHALLENGE_CONFIG) ?: return null
+        val raw = TvStore.getString(key(KEY_CHALLENGE_CONFIG)) ?: return null
         runCatching { JSONObject(raw) }.getOrNull()
     }
 
     fun saveChallengeConfig(config: QuizConfig): Boolean = synchronized(lock) {
-        val saved = TvStore.putStringDurable(
-            KEY_CHALLENGE_CONFIG,
+        val saved = TvStore.putStringDurable(key(KEY_CHALLENGE_CONFIG),
             QuizSessionCodec.encodeConfig(config).toString(),
         )
         // A config written by this build already uses the new semantics, so a
@@ -269,19 +283,19 @@ object QuizSessionStore {
     }
 
     fun loadSourceConfig(): QuizSourceConfig = synchronized(lock) {
-        QuizSourceConfig.decode(TvStore.getString(KEY_SOURCE_CONFIG)) ?: QuizSourceConfig()
+        QuizSourceConfig.decode(TvStore.getString(key(KEY_SOURCE_CONFIG))) ?: QuizSourceConfig()
     }
 
     fun saveSourceConfig(config: QuizSourceConfig): Boolean = synchronized(lock) {
-        TvStore.putStringDurable(KEY_SOURCE_CONFIG, config.encode().toString())
+        TvStore.putStringDurable(key(KEY_SOURCE_CONFIG), config.encode().toString())
     }
 
     fun loadSyncState(): QuizSyncState = synchronized(lock) {
-        QuizSyncState.decode(TvStore.getString(KEY_SYNC_STATE)) ?: QuizSyncState()
+        QuizSyncState.decode(TvStore.getString(key(KEY_SYNC_STATE))) ?: QuizSyncState()
     }
 
     fun saveSyncState(state: QuizSyncState): Boolean = synchronized(lock) {
-        TvStore.putStringDurable(KEY_SYNC_STATE, state.encode().toString())
+        TvStore.putStringDurable(key(KEY_SYNC_STATE), state.encode().toString())
     }
 
     /**
@@ -290,12 +304,22 @@ object QuizSessionStore {
      * phone should get the same form back after clearing browser storage.
      */
     fun loadGenerationPrefs(): JSONObject? = synchronized(lock) {
-        val raw = TvStore.getString(KEY_GENERATION_PREFS) ?: return null
+        val raw = TvStore.getString(key(KEY_GENERATION_PREFS)) ?: return null
         runCatching { JSONObject(raw) }.getOrNull()
     }
 
     fun saveGenerationPrefs(prefs: JSONObject): Boolean = synchronized(lock) {
-        TvStore.putStringDurable(KEY_GENERATION_PREFS, prefs.toString())
+        TvStore.putStringDurable(key(KEY_GENERATION_PREFS), prefs.toString())
+    }
+
+    /** The generation form of a named member, without moving the TV's active pointer. */
+    fun loadGenerationPrefsFor(userId: String): JSONObject? = synchronized(lock) {
+        val raw = TvStore.getString(keyFor(KEY_GENERATION_PREFS, userId)) ?: return null
+        runCatching { JSONObject(raw) }.getOrNull()
+    }
+
+    fun saveGenerationPrefsFor(userId: String, prefs: JSONObject): Boolean = synchronized(lock) {
+        TvStore.putStringDurable(keyFor(KEY_GENERATION_PREFS, userId), prefs.toString())
     }
 
     /**
@@ -317,19 +341,19 @@ object QuizSessionStore {
      * 答题范围与出题配置相互独立。保存字面量 "null" 表示用户显式选择“绑定出题范围”，
      * 与“从未初始化”区分开；后者在首次读取时同样按绑定出题范围处理。
      */
-    fun hasAnswerScope(): Boolean = TvStore.getString(KEY_ANSWER_SCOPE) != null
+    fun hasAnswerScope(): Boolean = TvStore.getString(key(KEY_ANSWER_SCOPE)) != null
 
-    fun answerScopeIsBound(): Boolean = TvStore.getString(KEY_ANSWER_SCOPE) == "null"
+    fun answerScopeIsBound(): Boolean = TvStore.getString(key(KEY_ANSWER_SCOPE)) == "null"
 
     fun loadAnswerScope(): QuizAnswerScope? = synchronized(lock) {
-        val raw = TvStore.getString(KEY_ANSWER_SCOPE) ?: return null
+        val raw = TvStore.getString(key(KEY_ANSWER_SCOPE)) ?: return null
         if (raw == "null") return null
         val json = runCatching { JSONObject(raw) }.getOrNull() ?: return null
         QuizAnswerScope.parse(json)
     }
 
     fun saveAnswerScope(scope: QuizAnswerScope?): Boolean = synchronized(lock) {
-        TvStore.putStringDurable(KEY_ANSWER_SCOPE, scope?.encode()?.toString() ?: "null")
+        TvStore.putStringDurable(key(KEY_ANSWER_SCOPE), scope?.encode()?.toString() ?: "null")
     }
 
     /**
@@ -338,12 +362,12 @@ object QuizSessionStore {
      * and only migrate when the list was never written.
      */
     fun loadAnswerScopes(): List<QuizLevel>? = synchronized(lock) {
-        val raw = TvStore.getString(KEY_ANSWER_SCOPES) ?: return null
+        val raw = TvStore.getString(key(KEY_ANSWER_SCOPES)) ?: return null
         val array = runCatching { JSONArray(raw) }.getOrNull() ?: return null
         QuizLevel.parseList(array)
     }
 
-    fun hasAnswerScopes(): Boolean = TvStore.getString(KEY_ANSWER_SCOPES) != null
+    fun hasAnswerScopes(): Boolean = TvStore.getString(key(KEY_ANSWER_SCOPES)) != null
 
     /**
      * Saves the list and mirrors its first scope into the legacy single-scope
@@ -352,12 +376,10 @@ object QuizSessionStore {
      */
     fun saveAnswerScopes(levels: List<QuizLevel>): Boolean = synchronized(lock) {
         if (levels.size > QuizLevel.MAX_LEVELS) return false
-        val listOk = TvStore.putStringDurable(
-            KEY_ANSWER_SCOPES,
+        val listOk = TvStore.putStringDurable(key(KEY_ANSWER_SCOPES),
             QuizLevel.encodeList(levels).toString(),
         )
-        val legacyOk = TvStore.putStringDurable(
-            KEY_ANSWER_SCOPE,
+        val legacyOk = TvStore.putStringDurable(key(KEY_ANSWER_SCOPE),
             levels.firstOrNull()?.scope?.encode()?.toString() ?: "null",
         )
         listOk && legacyOk

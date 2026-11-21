@@ -1,12 +1,10 @@
 package com.planyourtv.policy
 
 /**
- * The only execution axis: automatic sessions follow the rule scheduler, manual sessions start
- * only from an explicit parent action. Configuration provenance is [PolicySource], not a third
- * activation.
+ * The only execution mode: every session starts from an explicit parent action. Configuration
+ * provenance is [PolicySource], not a second activation.
  */
 enum class Activation {
-    AUTO,
     MANUAL,
 }
 
@@ -53,7 +51,6 @@ enum class RejectReason {
     GUARD_DISABLED,
     /** Legacy controlled modes only; the V10 hosted rule guard accepts a PIN-confirmed local start. */
     HOSTED_MANUAL_REMOTE_ONLY,
-    ACTIVATION_MISMATCH,
     STALE_EPOCH,
     PARENT_OVERRIDE,
     BUSY,
@@ -62,6 +59,8 @@ enum class RejectReason {
     OUTSIDE_WINDOW,
     /** The local day's quota is already used up; a manual start would otherwise be a free session. */
     DAILY_LIMIT,
+    /** V44: this child route already used its own daily count (or its count is zero). */
+    ROUTE_LIMIT,
     EXPIRED,
     NO_TIMED_APPS,
     INVALID_SCOPE,

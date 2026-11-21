@@ -5,18 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="color-scheme" content="light dark">
   <title>家长网页</title>
-  <link rel="stylesheet" href="quiz.css?v=42">
-  <link rel="stylesheet" href="parent.css?v=39">
+  <link rel="stylesheet" href="quiz.css?v=55">
+  <link rel="stylesheet" href="parent.css?v=57">
 </head>
 <body>
   <header class="top">
-    <select id="langSelect" class="lang-select" data-i18n-aria="languageLabel">
-      <option value="zh">中文</option>
-      <option value="en">English</option>
-      <option value="ru">Русский</option>
-      <option value="uk">Українська</option>
-      <option value="kk">Қазақша</option>
-    </select>
+    <button id="subjectChip" class="subject-chip hidden" type="button" data-open-subject
+            aria-haspopup="dialog">
+      <span class="subject-avatar" data-subject-avatar aria-hidden="true"></span>
+      <span class="subject-chip-copy">
+        <span class="subject-chip-title" data-page-title></span>
+        <span class="subject-chip-label" data-subject-sub></span>
+      </span>
+      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+    </button>
+    <!-- V41: bank import sits on the avatar's row, like DingTalk's top-right +. -->
+    <button id="openBankImport" class="top-add hidden" type="button" data-i18n-aria="bankImport">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
   </header>
 
   <main>
@@ -68,10 +74,6 @@
     <section id="editor" class="hidden">
       <section id="view-generate" class="view">
         <section id="generateHome">
-          <header class="home-head">
-            <h1 data-i18n="tabGenerate"></h1>
-          </header>
-
           <section class="card gen-card">
             <button id="openGenConfig" class="gen-head" type="button">
               <span class="card-head">
@@ -157,6 +159,7 @@
             </button>
             <h1 data-i18n="genConfigTitle"></h1>
           </header>
+          <p id="genSetupHint" class="hint hidden" role="status"></p>
 
           <div class="field">
             <span class="field-label" data-i18n="genGradeLabel"></span>
@@ -164,12 +167,12 @@
             <p id="genGradeHint" class="hint hidden"></p>
           </div>
 
-          <div class="field">
+          <div id="genSemesterField" class="field">
             <span class="field-label" data-i18n="scopeSemester"></span>
             <div id="genSemester" class="chip-row" role="group" data-i18n-aria="scopeSemester"></div>
           </div>
 
-          <div class="field">
+          <div id="genSubjectField" class="field">
             <span class="field-label" data-i18n="genSubjectLabel"></span>
             <div id="genSubjects" class="chip-row" role="group" data-i18n-aria="genSubjectLabel">
               <button class="choice-chip" type="button" data-subject="chinese" aria-pressed="false" data-i18n="subjectChinese"></button>
@@ -263,103 +266,30 @@
           <div id="answerPaneScope">
             <p id="levelsTotalHint" class="hint levels-total" aria-live="polite"></p>
 
-            <!-- The level draft lives on the answer-range page: adding sources
-                 accumulates here instead of pushing a second "add level" page. -->
-            <div id="packageDraftPanel" class="package-draft-panel hidden">
-              <div class="package-draft-head">
-                <div class="package-draft-heading">
-                  <h2 id="packageEditorTitle"></h2>
-                  <span id="packageDraftBadge" class="level-draft-badge" data-i18n="levelDraftBadge"></span>
-                </div>
-                <button id="cancelPackage" class="btn text small" type="button" data-i18n="cancel"></button>
+            <div id="levelListSection">
+              <div id="addLevelRow" class="level-add-row single">
+                <button id="addLevel" class="level-add-card course" type="button">
+                  <span class="level-add-plus" aria-hidden="true">+</span>
+                  <span class="level-add-copy">
+                    <span class="level-add-title" data-i18n="levelAddPackageTitle"></span>
+                    <span class="level-add-meta" data-i18n="levelAddPackageMeta"></span>
+                  </span>
+                </button>
               </div>
+              <p id="levelMaxHint" class="hint level-max-hint hidden" data-i18n="levelMaxHint"></p>
 
-              <div class="field package-draft-name">
-                <label id="packageNameLabel" for="packageName" data-i18n="levelNameLabel"></label>
-                <input id="packageName" type="text" maxlength="10" autocomplete="off"
-                  aria-labelledby="packageNameLabel" data-i18n-placeholder="levelNamePlaceholder">
-                <p class="hint" data-i18n="levelNameHint"></p>
+              <div class="level-head">
+                <span class="field-label" data-i18n="levelListTitle"></span>
+                <span id="levelListCount" class="level-count" aria-live="polite"></span>
               </div>
+              <p class="hint level-lead" data-i18n="levelListLead"></p>
 
-              <div class="field">
-                <span class="field-label" data-i18n="levelSourcesTitle"></span>
-                <p class="hint" data-i18n="levelSourcesLead"></p>
-                <div class="package-sources-card">
-                  <p id="packageTotals" class="available package-totals" aria-live="polite"></p>
-                  <div id="packageSourceList" class="package-source-list"></div>
-                  <p id="packageSourcesEmpty" class="hint" data-i18n="levelAtLeastOneSource"></p>
+              <div id="levelList" class="level-list"></div>
 
-                  <div class="level-add-row package-source-choices">
-                    <button id="pickCourseSource" class="level-add-card course" type="button">
-                      <span class="level-add-plus" aria-hidden="true">+</span>
-                      <span class="level-add-copy">
-                        <span class="level-add-title" data-i18n="levelSourceCourse"></span>
-                        <span class="level-add-meta" data-i18n="levelSourceCourseMeta"></span>
-                      </span>
-                      <span id="courseSourceBankCount" class="level-add-count"
-                        aria-live="polite"></span>
-                    </button>
-                    <button id="pickTagSource" class="level-add-card custom" type="button">
-                      <span class="level-add-plus" aria-hidden="true">+</span>
-                      <span class="level-add-copy">
-                        <span class="level-add-title" data-i18n="levelSourceCustom"></span>
-                        <span class="level-add-meta" data-i18n="levelSourceCustomMeta"></span>
-                      </span>
-                      <span id="customSourceBankCount" class="level-add-count"
-                        aria-live="polite"></span>
-                    </button>
-                    <button id="pickWrongSource" class="level-add-card wrong" type="button">
-                      <span class="level-add-plus" aria-hidden="true">+</span>
-                      <span class="level-add-copy">
-                        <span class="level-add-title" data-i18n="levelSourceWrong"></span>
-                        <span class="level-add-meta" data-i18n="levelSourceWrongMeta"></span>
-                      </span>
-                      <span id="wrongSourceAvailable" class="level-add-count"
-                        aria-live="polite"></span>
-                    </button>
-                  </div>
-
-                  <div id="tagSourceField" class="field package-tag-field hidden">
-                    <div id="tagSourceList" class="tag-choice-list" role="radiogroup"
-                      data-i18n-aria="levelSourceCustom"></div>
-                    <p id="tagSourceEmpty" class="hint hidden" data-i18n="customLevelEmptyText"></p>
-                    <div class="inline-actions">
-                      <button id="tagSourceGoImport" class="btn secondary small" type="button"
-                        data-i18n="goImportBank"></button>
-                    </div>
-                  </div>
-                  <p id="sourcePickerError" class="error" role="alert"></p>
-                </div>
+              <div id="levelEmpty" class="empty-state hidden">
+                <p data-i18n="levelEmptyTitle"></p>
+                <p class="muted" data-i18n="levelEmptyText"></p>
               </div>
-
-              <p id="packageEditorError" class="error" role="alert"></p>
-              <div class="package-draft-actions">
-                <button id="savePackage" class="btn primary" type="button"></button>
-              </div>
-            </div>
-
-            <div id="addLevelRow" class="level-add-row single">
-              <button id="addLevel" class="level-add-card course" type="button">
-                <span class="level-add-plus" aria-hidden="true">+</span>
-                <span class="level-add-copy">
-                  <span class="level-add-title" data-i18n="levelAddPackageTitle"></span>
-                  <span class="level-add-meta" data-i18n="levelAddPackageMeta"></span>
-                </span>
-              </button>
-            </div>
-            <p id="levelMaxHint" class="hint level-max-hint hidden" data-i18n="levelMaxHint"></p>
-
-            <div class="level-head">
-              <span class="field-label" data-i18n="levelListTitle"></span>
-              <span id="levelListCount" class="level-count" aria-live="polite"></span>
-            </div>
-            <p class="hint level-lead" data-i18n="levelListLead"></p>
-
-            <div id="levelList" class="level-list"></div>
-
-            <div id="levelEmpty" class="empty-state hidden">
-              <p data-i18n="levelEmptyTitle"></p>
-              <p class="muted" data-i18n="levelEmptyText"></p>
             </div>
 
             <p id="levelState" class="ok" role="status"></p>
@@ -460,39 +390,110 @@
               <p id="unlockHint" class="hint" data-i18n="unlockHint"></p>
             </div>
 
-            <div class="field">
-              <p id="settingsActiveHint" class="hint hidden" data-i18n="settingsActiveHint"></p>
-              <label class="field-label" for="maxEarned" data-i18n="maxEarned"></label>
-              <div class="settings-stepper">
-                <button id="maxEarnedMinus" class="icon-btn" type="button"
-                        data-i18n-aria="maxEarnedDecrease">−</button>
-                <input id="maxEarned" type="number" inputmode="numeric"
-                       min="1" max="180" step="5" value="60" aria-describedby="maxEarnedHint">
-                <span class="settings-stepper-unit" data-i18n="minutesUnit"></span>
-                <button id="maxEarnedPlus" class="icon-btn" type="button"
-                        data-i18n-aria="maxEarnedIncrease">+</button>
-              </div>
-              <p id="maxEarnedHint" class="hint" data-i18n="maxEarnedHint"></p>
-              <label class="check" for="shuffle">
-                <input id="shuffle" type="checkbox" checked>
-                <span data-i18n="shuffle"></span>
-              </label>
-            </div>
-
-            <div class="fold-section">
-              <p class="section-label" data-i18n="syncTitle"></p>
-              <p id="syncSummary" class="muted"></p>
-              <div class="inline-actions">
-                <button id="syncRetry" class="btn secondary small hidden" type="button" data-i18n="syncRetry"></button>
-                <button id="syncUseRemote" class="btn text small hidden" type="button" data-i18n="syncUseRemote"></button>
-              </div>
-            </div>
+            <p id="settingsActiveHint" class="hint hidden" data-i18n="settingsActiveHint"></p>
           </div>
 
           <p id="settingsState" class="ok fold-status" role="status"></p>
           <p id="settingsError" class="error fold-status" role="alert"></p>
           <div id="answerSaveBar" class="sticky-bar hidden">
             <button id="saveAnswer" class="btn primary" type="button" data-i18n="saveConfig"></button>
+          </div>
+        </section>
+
+        <!-- A level draft is its own subpage: the answer page keeps the two
+             tabs and the saved level list, while this page owns the draft
+             from naming sources to saving the level. -->
+        <section id="packageEditorPage" class="subpage hidden">
+          <header class="page-head">
+            <button id="backFromPackage" class="back-btn" type="button" data-i18n-aria="back">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <h1 id="packageEditorTitle"></h1>
+            <span id="packageDraftBadge" class="level-draft-badge" data-i18n="levelDraftBadge"></span>
+          </header>
+
+          <div id="packageDraftPanel" class="package-draft-panel">
+            <div class="field package-draft-name">
+              <label id="packageNameLabel" for="packageName" data-i18n="levelNameLabel"></label>
+              <input id="packageName" type="text" maxlength="10" autocomplete="off"
+                aria-labelledby="packageNameLabel" data-i18n-placeholder="levelNamePlaceholder">
+              <p class="hint" data-i18n="levelNameHint"></p>
+            </div>
+
+            <div class="field">
+              <span class="field-label" data-i18n="levelSourcesTitle"></span>
+              <p class="hint" data-i18n="levelSourcesLead"></p>
+              <div class="package-sources-card">
+                <p id="packageTotals" class="available package-totals" aria-live="polite"></p>
+                <div id="packageSourceList" class="package-source-list"></div>
+                <p id="packageSourcesEmpty" class="hint" data-i18n="levelAtLeastOneSource"></p>
+
+                <div class="level-add-row package-source-choices">
+                  <button id="pickPresetSource" class="level-add-card course" type="button">
+                    <span class="level-add-plus" aria-hidden="true">+</span>
+                    <span class="level-add-copy">
+                      <span class="level-add-title" data-i18n="levelSourcePreset"></span>
+                      <span class="level-add-meta" data-i18n="levelSourcePresetMeta"></span>
+                    </span>
+                    <span id="presetSourceBankCount" class="level-add-count"
+                      aria-live="polite"></span>
+                  </button>
+                  <button id="pickAiSource" class="level-add-card ai" type="button">
+                    <span class="level-add-plus" aria-hidden="true">+</span>
+                    <span class="level-add-copy">
+                      <span class="level-add-title" data-i18n="levelSourceAi"></span>
+                      <span class="level-add-meta" data-i18n="levelSourceAiMeta"></span>
+                    </span>
+                    <span id="aiSourceBankCount" class="level-add-count"
+                      aria-live="polite"></span>
+                  </button>
+                  <button id="pickTagSource" class="level-add-card custom" type="button">
+                    <span class="level-add-plus" aria-hidden="true">+</span>
+                    <span class="level-add-copy">
+                      <span class="level-add-title" data-i18n="levelSourceCustom"></span>
+                      <span class="level-add-meta" data-i18n="levelSourceCustomMeta"></span>
+                    </span>
+                    <span id="customSourceBankCount" class="level-add-count"
+                      aria-live="polite"></span>
+                  </button>
+                  <button id="pickLifeSource" class="level-add-card life" type="button">
+                    <span class="level-add-plus" aria-hidden="true">+</span>
+                    <span class="level-add-copy">
+                      <span class="level-add-title" data-i18n="levelSourceLife"></span>
+                      <span class="level-add-meta" data-i18n="levelSourceLifeMeta"></span>
+                    </span>
+                    <span id="lifeSourceBankCount" class="level-add-count"
+                      aria-live="polite"></span>
+                  </button>
+                  <button id="pickWrongSource" class="level-add-card wrong" type="button">
+                    <span class="level-add-plus" aria-hidden="true">+</span>
+                    <span class="level-add-copy">
+                      <span class="level-add-title" data-i18n="levelSourceWrong"></span>
+                      <span class="level-add-meta" data-i18n="levelSourceWrongMeta"></span>
+                    </span>
+                    <span id="wrongSourceAvailable" class="level-add-count"
+                      aria-live="polite"></span>
+                  </button>
+                </div>
+
+                <div id="tagSourceField" class="field package-tag-field hidden">
+                  <div id="tagSourceList" class="tag-choice-list" role="radiogroup"
+                    data-i18n-aria="levelSourceCustom"></div>
+                  <p id="tagSourceEmpty" class="hint hidden" data-i18n="customLevelEmptyText"></p>
+                  <div class="inline-actions">
+                    <button id="tagSourceGoImport" class="btn secondary small" type="button"
+                      data-i18n="goImportBank"></button>
+                  </div>
+                </div>
+                <p id="sourcePickerError" class="error" role="alert"></p>
+              </div>
+            </div>
+
+            <p id="packageEditorError" class="error" role="alert"></p>
+          </div>
+
+          <div class="sticky-bar">
+            <button id="savePackage" class="btn primary" type="button"></button>
           </div>
         </section>
 
@@ -585,30 +586,27 @@
         <div id="bankHome">
           <div class="section-head">
             <div>
-              <h2 data-i18n="tabBank"></h2>
               <p id="bankCounts" class="muted"></p>
               <p id="bankSourceCounts" class="muted"></p>
             </div>
             <div class="head-actions">
-              <button id="openBankImport" class="btn secondary small" type="button" data-i18n="bankImport"></button>
-              <button id="openBankManage" class="btn secondary small" type="button" data-i18n="bankManageEntry"></button>
               <button id="refreshBank" class="btn text small" type="button" data-i18n="refresh"></button>
             </div>
           </div>
-          <div id="bankFilters" class="segmented" role="group" aria-labelledby="bankFiltersLabel">
-            <span id="bankFiltersLabel" class="hidden" data-i18n="tabBank"></span>
-            <button type="button" data-filter="all" aria-pressed="true" data-i18n="bankFilterAll"></button>
-            <button type="button" data-filter="unused" aria-pressed="false" data-i18n="bankFilterUnused"></button>
-            <button type="button" data-filter="wrong" aria-pressed="false" data-i18n="bankFilterWrong"></button>
+          <div id="bankScopes" class="bank-tabs" role="tablist" aria-label="题库分类">
+            <button type="button" role="tab" data-bank-scope="builtin" aria-selected="true" data-i18n="bankScopeBuiltin"></button>
+            <button type="button" role="tab" data-bank-scope="ai" aria-selected="false" data-i18n="bankScopeAi"></button>
+            <button type="button" role="tab" data-bank-scope="manual" aria-selected="false" data-i18n="bankScopeManual"></button>
+            <button type="button" role="tab" data-bank-scope="wrong" aria-selected="false" data-i18n="bankScopeWrong"></button>
           </div>
+          <p id="bankScopeSummary" class="muted"></p>
+          <div id="bankManualFilters" class="chip-row bank-tag-filter hidden" role="group" aria-label="手动导入标签"></div>
+          <div id="bankScopeActions" class="inline-actions bank-scope-actions"></div>
           <p id="bankInRoundNotice" class="hint hidden" data-i18n="inRoundNotice"></p>
           <div id="bankList" class="bank-list"></div>
           <div id="bankEmptyActions" class="empty-state hidden">
-            <p data-i18n="bankEmptyImportTitle"></p>
-            <div class="inline-actions">
-              <button id="bankEmptyImport" class="btn secondary small" type="button" data-i18n="bankImport"></button>
-              <button id="bankEmptyGenerate" class="btn text small" type="button" data-i18n="goGenerate"></button>
-            </div>
+            <button id="bankEmptyImport" class="btn primary small" type="button" data-i18n="bankImport"></button>
+            <button id="bankEmptyGenerate" class="btn primary small" type="button" data-i18n="goGenerate"></button>
           </div>
           <button id="bankMore" class="btn secondary block hidden" type="button" data-i18n="loadMore"></button>
           <p id="bankError" class="error" role="alert"></p>
@@ -619,42 +617,25 @@
             <button id="backFromBankManage" class="back-btn" type="button" data-i18n-aria="back">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
             </button>
-            <h1 data-i18n="bankManageTitle"></h1>
+            <h1 id="bankManageTitle"></h1>
           </header>
 
-          <p class="hint" data-i18n="bankManageLead"></p>
+          <p id="bankManageLead" class="hint"></p>
 
-          <section class="card">
-            <h2 data-i18n="bankManageCourseTitle"></h2>
-            <p id="bankManageCourseMeta" class="muted"></p>
-            <button id="bankManageCourseClear" class="btn danger block" type="button" data-i18n="bankManageClearCourse"></button>
-            <p class="hint" data-i18n="bankManageCourseStateLead"></p>
-            <div class="maintenance-grid">
-              <button id="bankManageCourseUnused" class="btn secondary" type="button" data-i18n="clearUnused"></button>
-              <button id="bankManageCourseAnswered" class="btn secondary" type="button" data-i18n="clearAnswered"></button>
-              <button id="bankManageCourseWrong" class="btn secondary" type="button" data-i18n="clearWrong"></button>
-            </div>
+          <section id="bankManageBuiltinCard" class="card">
+            <h2 data-i18n="bankManageBuiltinTitle"></h2>
+            <p id="bankManageBuiltinMeta" class="muted"></p>
+            <p class="hint" data-i18n="bankManageBuiltinLead"></p>
+            <button id="bankManageBuiltinClear" class="btn danger block" type="button" data-i18n="bankManageBuiltinClear"></button>
           </section>
 
-          <section class="card">
-            <h2 data-i18n="bankManageCustomTitle"></h2>
-            <p id="bankManageCustomMeta" class="muted"></p>
-            <p class="hint" data-i18n="bankManageCustomLead"></p>
-            <div id="bankManageCustomList" class="settings-list"></div>
-            <p id="bankManageCustomEmpty" class="hint hidden" data-i18n="maintenanceSourceNoTags"></p>
-            <button id="bankManageCustomClear" class="btn danger block hidden" type="button" data-i18n="bankManageClearCustom"></button>
-          </section>
-
-          <section class="card">
-            <h2 data-i18n="bankManageWrongTitle"></h2>
-            <p id="bankManageWrongMeta" class="muted"></p>
-            <button id="bankManageWrongClear" class="btn danger block" type="button" data-i18n="bankManageClearWrong"></button>
-          </section>
-
-          <section class="card">
-            <h2 data-i18n="bankManageAllTitle"></h2>
-            <p id="bankManageAllMeta" class="muted"></p>
-            <button id="bankManageAllClear" class="btn danger block" type="button" data-i18n="bankManageClearAll"></button>
+          <section id="bankManageManualCard" class="card hidden">
+            <h2 data-i18n="bankManageManualTitle"></h2>
+            <p id="bankManageManualMeta" class="muted"></p>
+            <p class="hint" data-i18n="bankManageManualLead"></p>
+            <div id="bankManageTagList" class="settings-list"></div>
+            <p id="bankManageTagEmpty" class="hint hidden" data-i18n="bankManageTagEmpty"></p>
+            <button id="bankManageManualClear" class="btn danger block hidden" type="button" data-i18n="bankManageManualClear"></button>
           </section>
 
           <p id="bankManageState" class="ok" role="status"></p>
@@ -704,7 +685,11 @@
             <input id="importFile" class="hidden" type="file"
               accept=".json,.txt,application/json,text/plain">
             <p id="importFileName" class="hint import-file-name"></p>
-            <label for="importText" data-i18n="importPasteLabel"></label>
+            <div class="import-paste-head">
+              <label for="importText" data-i18n="importPasteLabel"></label>
+              <button id="clearImportText" class="btn text small import-paste-clear" type="button"
+                data-i18n="importPasteClear"></button>
+            </div>
             <textarea id="importText" rows="8" maxlength="16777216"
               data-i18n-placeholder="importTextPlaceholder"></textarea>
             <div class="inline-actions import-tools">
@@ -867,6 +852,12 @@
         </section>
       </section>
 
+      <!-- The user/system tabs render their whole surface in the parent-center
+           overlay (parent.js). These placeholders only let the bottom nav switch
+           views without leaving the previous tab visible behind the overlay. -->
+      <section id="view-user" class="view hidden"></section>
+      <section id="view-system" class="view hidden"></section>
+
       <section id="aiConfigPage" class="subpage hidden">
         <header class="page-head">
           <button id="backFromAi" class="back-btn" type="button" data-i18n-aria="back">
@@ -968,21 +959,19 @@
       </svg>
       <span data-i18n="tabBank"></span>
     </button>
-    <button class="nav-item" type="button" data-tab="control" aria-pressed="false">
+    <button class="nav-item" type="button" data-tab="user" aria-pressed="false">
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <rect x="4" y="5" width="16" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/>
-        <circle cx="9" cy="10" r="1.5" fill="currentColor"/>
-        <path d="M6.5 16h7M16.5 9.5v5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="12" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M5 20c.6-3.4 3.4-5.4 7-5.4s6.4 2 7 5.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
       </svg>
-      <span data-i18n="tabControl"></span>
+      <span data-i18n="tabUser"></span>
     </button>
-    <button class="nav-item" type="button" data-tab="me" aria-pressed="false">
+    <button class="nav-item" type="button" data-tab="system" aria-pressed="false">
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <circle cx="5" cy="12" r="1.7" fill="currentColor"/>
-        <circle cx="12" cy="12" r="1.7" fill="currentColor"/>
-        <circle cx="19" cy="12" r="1.7" fill="currentColor"/>
+        <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.08A1.7 1.7 0 0 0 8.98 19.36a1.7 1.7 0 0 0-1.87.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.62 15a1.7 1.7 0 0 0-1.56-1.03H3v-4h.08A1.7 1.7 0 0 0 4.64 8.94a1.7 1.7 0 0 0-.34-1.87l-.06-.06 2.83-2.83.06.06a1.7 1.7 0 0 0 1.87.34A1.7 1.7 0 0 0 10.03 3H10V3h4v.08a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06 2.83 2.83-.06.06a1.7 1.7 0 0 0-.34 1.87 1.7 1.7 0 0 0 1.56 1.03H21v4h-.08A1.7 1.7 0 0 0 19.4 15z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
       </svg>
-      <span data-i18n="tabMe"></span>
+      <span data-i18n="tabSystem"></span>
     </button>
   </nav>
 
@@ -1002,7 +991,7 @@
       <p id="consentError" class="error" role="alert"></p>
       <div class="modal-actions">
         <button id="acceptConsent" class="btn primary" type="button" data-i18n="acceptAndContinue"></button>
-        <button id="declineConsent" class="btn text" type="button" data-i18n="exit"></button>
+        <button id="declineConsent" class="btn text" type="button" data-i18n="cancel"></button>
       </div>
     </section>
 
@@ -1073,6 +1062,17 @@
       </div>
     </section>
 
+    <section id="subjectDialog" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="subjectDialogTitle">
+      <div class="modal-head">
+        <h2 id="subjectDialogTitle" data-i18n="subjectDialogTitle"></h2>
+        <button class="icon-btn close" type="button" data-close-modal data-i18n-aria="close">×</button>
+      </div>
+      <p class="muted" data-i18n="subjectDialogLead"></p>
+      <div id="subjectList" class="subject-list" role="listbox" aria-labelledby="subjectDialogTitle"></div>
+      <p id="subjectDialogError" class="error" role="alert"></p>
+      <p class="hint" data-i18n="subjectDialogHint"></p>
+    </section>
+
     <section id="bankClearDialog" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="bankClearTitle">
       <div class="modal-head">
         <h2 id="bankClearTitle"></h2>
@@ -1083,22 +1083,6 @@
       <div class="modal-actions">
         <button class="btn text" type="button" data-close-modal data-i18n="cancel"></button>
         <button id="bankClearNext" class="btn primary" type="button"></button>
-      </div>
-    </section>
-
-    <section id="scopeMismatchDialog" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="scopeMismatchTitle">
-      <div class="modal-head">
-        <h2 id="scopeMismatchTitle" data-i18n="scopeMismatchTitle"></h2>
-        <button class="icon-btn close" type="button" data-close-modal data-i18n-aria="close">×</button>
-      </div>
-      <p class="muted" data-i18n="scopeMismatchIntro"></p>
-      <p id="scopeMismatchAnswer" class="scope-mismatch-row"></p>
-      <p id="scopeMismatchGenerate" class="scope-mismatch-row"></p>
-      <p id="scopeMismatchBody" class="scope-mismatch-body"></p>
-      <p class="scope-mismatch-note" data-i18n="scopeMismatchNote"></p>
-      <div class="modal-actions">
-        <button id="scopeMismatchAlign" class="btn primary" type="button" data-i18n="alignToAnswerScope"></button>
-        <button id="scopeMismatchKeep" class="btn secondary" type="button" data-i18n="keepCurrentScope"></button>
       </div>
     </section>
 
@@ -1117,7 +1101,7 @@
 
   <div id="parentCenterRoot" class="parent-root hidden"></div>
 
-  <script src="parent.js?v=39"></script>
-  <script src="quiz.js?v=44"></script>
+  <script src="parent.js?v=61"></script>
+  <script src="quiz.js?v=60"></script>
 </body>
 </html>

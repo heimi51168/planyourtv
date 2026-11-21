@@ -124,6 +124,7 @@ class PhoneServer private constructor(
                         "wallpaperAlwaysMoves" -> { onMain { AerialSettings.chooseWallpaperAlwaysMoves(on) }; true }
                         "showWeather" -> { onMain { AerialSettings.chooseShowWeather(on) }; true }
                         "screensaverClock" -> { onMain { AerialSettings.chooseScreensaverClock(on) }; true }
+                        "screensaverCaption" -> { onMain { AerialSettings.chooseScreensaverCaption(on) }; true }
                         else -> false
                     }
                     json(state().put("saved", known))
@@ -266,6 +267,7 @@ class PhoneServer private constructor(
             .put("wallpaperAlwaysMoves", AerialSettings.wallpaperAlwaysMoves)
             .put("showWeather", AerialSettings.showWeather)
             .put("screensaverClock", AerialSettings.screensaverClock)
+            .put("screensaverCaption", AerialSettings.screensaverCaption)
             .put("wallpapers", list)
             .put("apps", JSONArray().apply {
                 // Pinned inputs first, then apps by the name Home shows. [default] is the name a

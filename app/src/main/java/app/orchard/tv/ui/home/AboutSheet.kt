@@ -123,6 +123,13 @@ fun AboutSheet(visible: Boolean, onDismiss: () -> Unit) {
                         stringResource(R.string.about_project),
                         style = Type.Caption.copy(color = Palette.SecondaryLabel),
                     )
+                    if (BuildConfig.APP_RECORD_NUMBER.isNotBlank()) {
+                        Spacer(Modifier.height(10.dp))
+                        BasicText(
+                            stringResource(R.string.about_app_record, BuildConfig.APP_RECORD_NUMBER),
+                            style = Type.Caption.copy(color = Palette.SecondaryLabel),
+                        )
+                    }
                     Spacer(Modifier.weight(1f))
                     BasicText(
                         stringResource(R.string.about_hint),

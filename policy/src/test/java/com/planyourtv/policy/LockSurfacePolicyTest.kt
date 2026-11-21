@@ -29,11 +29,9 @@ class LockSurfacePolicyTest {
         listOf(
             LockReason.TIME_UP,
             LockReason.MANUAL_WAITING,
-            LockReason.AUTO_READY,
             LockReason.RESTING,
             LockReason.OUTSIDE_WINDOW,
             LockReason.PARENT_STOP,
-            LockReason.AUTO_BLOCKED,
             LockReason.NO_TIMED_APPS,
         ).forEach { reason ->
             assertEquals(
@@ -45,7 +43,7 @@ class LockSurfacePolicyTest {
     }
 
     @Test
-    fun automaticAndManualModesUseTheSameEdge() {
+    fun cloudAndLocalModesUseTheSameEdge() {
         assertEquals(
             LockSurfaceEdge.SESSION_ENDED,
             lockSurfaceEdge(running(), state(LockReason.TIME_UP, mode = PolicyMode.CLOUD)),

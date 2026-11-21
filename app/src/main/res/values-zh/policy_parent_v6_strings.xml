@@ -20,7 +20,7 @@
     <string name="policy_v6_off_body">按 OK 开启儿童模式。开启后可设置本地规则，或绑定手机远程管理。</string>
 
     <string name="policy_v6_local_title">本地规则</string>
-    <string name="policy_v6_local_note">绑定手机后，本地规则会迁移到云端，电视上的设置将变为只读。</string>
+    <string name="policy_v6_local_note">绑定手机后，电视端设置变为只读；本地与云端配置相互独立。</string>
     <string name="policy_v6_edit_hint">左右调整 · OK/返回完成</string>
     <string name="policy_v6_nav_hint">上下选择 · OK 调整 · 左键返回</string>
     <string name="policy_v6_rail_hint">上下选择 · OK 确认 · → 进入</string>
@@ -48,10 +48,7 @@
     <string name="policy_v6_mode_rule">规则模式</string>
     <string name="policy_v6_mode_redeem">兑换模式</string>
     <string name="policy_v6_today_usage">今日使用</string>
-    <string name="policy_v6_usage_value">%1$d / %2$d 分钟</string>
-    <string name="policy_v6_remaining">剩余 %1$d 分钟</string>
     <string name="policy_v6_rule_time">规则时段</string>
-    <string name="policy_v6_session_rest">单次 / 休息</string>
     <string name="policy_v6_apps">娱乐应用</string>
     <string name="policy_v6_apps_all">全部应用</string>
     <string name="policy_v6_apps_count">已选 %1$d 个应用</string>
@@ -65,20 +62,10 @@
     <string name="policy_v6_rule_template_saved">规则模板已保存，当前不执行</string>
     <string name="policy_v6_phone_only">所有规则/兑换请在手机端「家庭打卡 → 设备」修改。</string>
 
-    <string name="policy_v6_activation_section">计时方式</string>
+    <string name="policy_v6_activation_section">计时</string>
     <string name="policy_v6_activation">计时方式</string>
-    <string name="policy_v6_activation_auto">自动</string>
-    <string name="policy_v6_activation_auto_hint">亮屏时按时段和规则自动开始；休息后按“开始计时”。</string>
     <string name="policy_v6_activation_manual">手动</string>
     <string name="policy_v6_activation_manual_hint">支持答题解锁和单次使用；每段时长由家长确认。</string>
-    <string name="policy_v6_activation_tab_hint">各模式单独保存时段、时长、休息和息屏缓冲；点选上方标签切换，下方参数只属于当前模式。</string>
-    <string name="policy_v6_activation_confirm_auto_title">切换到自动模式？</string>
-    <string name="policy_v6_activation_confirm_auto_body">自动模式下电视不能开始答题闯关。当前自动规则：每天最多 %1$d 分钟，每次最多 %2$d 分钟，休息间隔 %3$d 分钟。</string>
-    <string name="policy_v6_activation_confirm_manual_title">切换到手动模式？</string>
-    <string name="policy_v6_activation_confirm_manual_body">手动模式由家长在锁屏发起单次计时，并支持答题闯关。</string>
-    <string name="policy_v6_activation_confirm_end_session">本次计时和休息倒计时会立即结束。</string>
-    <string name="policy_v6_activation_confirm_cancel">取消</string>
-    <string name="policy_v6_activation_confirm_switch">切换</string>
     <string name="policy_v6_quiz_challenge">展示答题闯关入口</string>
     <string name="policy_v6_quiz_hint">开启后，锁屏最前面显示答题闯关图标；关闭不影响点击娱乐应用进入答题。</string>
     <string name="policy_v6_quiz_setup">题库设置</string>
@@ -91,11 +78,11 @@
     <string name="policy_v6_quiz_web_unlock">电视锁屏时可在网页临时解锁</string>
     <string name="policy_v29_qr_pane_title">家长中心</string>
     <string name="policy_v29_qr_pane_status">手机配置</string>
-    <string name="policy_v29_qr_pane_summary">本地设置已移到手机，电视只保留儿童模式开关和远程管理。</string>
+    <string name="policy_v29_qr_pane_summary">请用浏览器扫码进入家长中心手机端</string>
     <string name="policy_v6_study_apps">学习应用</string>
     <string name="policy_v6_study_none">无</string>
     <string name="policy_v6_study_hint">学习应用不计时，仅在学习模式中打开。</string>
-    <string name="policy_v6_apps_shared_hint">娱乐与学习应用由自动和手动共用；切换计时方式不会改变应用范围。</string>
+    <string name="policy_v6_apps_shared_hint">娱乐与学习应用在儿童模式中统一设置。</string>
     <string name="policy_v6_study_saved">学习应用已保存</string>
     <string name="policy_v6_apps_in_study">该应用在学习名单中，请先在学习应用里移除。</string>
 
@@ -109,11 +96,11 @@
     <string name="policy_v6_switch_off_confirm">再按 OK 关闭儿童模式</string>
     <string name="policy_v6_switch_off_migrating">迁移尚未完成，关闭后需重新开启才能继续。</string>
     <string name="policy_v6_remove_confirm">再按 OK 删除这个时段</string>
-    <string name="policy_v6_bind_note">绑定后，本地规则会复制到手机；电视上的规则和密码入口将变为只读。</string>
+    <string name="policy_v6_bind_note">绑定后，电视端规则和密码入口变为只读；云端与本地配置相互独立，请在手机端管理。</string>
     <string name="policy_v6_upload_done">本地配置已上传，电视端现已只读。</string>
 
     <string name="policy_v6_consent_title">远程管理与隐私说明</string>
-    <string name="policy_v6_consent_body">启用远程管理后，本电视会上传家长中心配置（含家长密码校验值）、时间进度和答题记录至 PlanYourTV 云端，用于手机端远程管理与记录查看，不用于广告或其他用途。电视本地保存的 AI 模型密钥（API Key）不会上传。您可随时解绑，解绑后停止上传并保留本地设置；继续即表示您确认有权管理本电视。</string>
+    <string name="policy_v6_consent_body">启用远程管理后，本电视会上报设备状态、时间进度和答题记录至 PlanYourTV 云端，用于手机端远程管理与记录查看，不用于广告或其他用途。电视本地保存的规则、家长密码和 AI 模型密钥（API Key）不会上传，云端与本地配置相互独立。您可随时解绑，解绑后停止上报并保留本地设置；继续即表示您确认有权管理本电视。</string>
     <string name="policy_v6_consent_agree">同意并显示二维码</string>
     <string name="policy_v6_consent_cancel">暂不</string>
 
