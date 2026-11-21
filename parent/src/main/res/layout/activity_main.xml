@@ -6,17 +6,6 @@
     android:background="@color/surface"
     android:orientation="vertical">
 
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="@color/brand"
-        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
-        app:subtitleTextColor="@color/white"
-        app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
-        app:title="@string/app_name"
-        app:titleTextColor="@color/white" />
-
     <LinearLayout
         android:id="@+id/updateBanner"
         android:layout_width="match_parent"
@@ -258,5 +247,22 @@
                 android:layout_marginTop="4dp"
                 android:text="@string/devices_title" />
         </LinearLayout>
+
+        <!-- The web page carries its own headers, so the native shell keeps
+             only the global menu as a floating control over the page. -->
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="top|end"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_top_menu"
+            android:elevation="3dp"
+            app:contentInsetEnd="0dp"
+            app:contentInsetStart="0dp"
+            app:contentInsetStartWithNavigation="0dp"
+            app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+            app:theme="@style/ThemeOverlay.AppCompat.Light" />
     </FrameLayout>
 </LinearLayout>

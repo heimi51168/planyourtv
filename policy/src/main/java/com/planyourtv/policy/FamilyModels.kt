@@ -37,7 +37,7 @@ data class FamilyMember(
     val familyId: String,
     val userId: String,
     val displayName: String,
-    val avatarPreset: String = "rabbit",
+    val avatarPreset: String = "boy",
     /** App-private relative name, for example `avatars/<familyId>/<userId>.webp`. */
     val avatarImage: String? = null,
     val avatarRevision: Long = 0L,
@@ -60,12 +60,67 @@ data class FamilyMember(
      */
     val switchPinSalt: String? = null,
     val switchPinHash: String? = null,
+    /**
+     * Whether the TV lock screen asks for this member's switch password before entering it.
+     * Missing on documents saved before the per-member switch existed, which decodes to false.
+     */
+    val switchPinRequired: Boolean = false,
+    /**
+     * Weekdays (`1` = Monday … `7` = Sunday) on which the switch password is waived inside
+     * [switchPinExemptStartMinute] until [switchPinExemptEndMinute]. An empty list means the
+     * exemption is off; this is also what every document saved before the field existed means.
+     * The same window applies to every selected day.
+     */
+    val switchPinExemptDays: List<Int> = emptyList(),
+    val switchPinExemptStartMinute: Int = SwitchPinExempt.DEFAULT_START_MINUTE,
+    val switchPinExemptEndMinute: Int = SwitchPinExempt.DEFAULT_END_MINUTE,
     val createdAt: Long,
     val updatedAt: Long,
 ) {
     val switchPinInitial: Boolean
         get() = switchPinSalt == null && switchPinHash == null
 }
+
+/**
+ * The constrained shape of the per-member switch-password exemption. The window is same-day,
+ * start-inclusive and end-exclusive, and every selected weekday shares it. Invalid data is never
+ * coerced into an exemption: callers must reject it or fall back to no selected days.
+ */
+object SwitchPinExempt {
+    const val DEFAULT_START_MINUTE = 9 * 60
+    const val DEFAULT_END_MINUTE = 15 * 60
+    const val END_OF_DAY_MINUTE = 24 * 60
+
+    /** Returns distinct, sorted weekdays, or null when any value is outside 1..7. */
+    fun normalizeDays(days: Collection<Int>): List<Int>? {
+        if (days.any { it !in 1..7 }) return null
+        return days.distinct().sorted()
+    }
+
+    /** Same-day window; 24:00 is allowed only as an end and must be later than the start. */
+    fun isValidWindow(startMinute: Int, endMinute: Int): Boolean =
+        startMinute in 0 until END_OF_DAY_MINUTE &&
+            endMinute in 1..END_OF_DAY_MINUTE &&
+            startMinute < endMinute
+}
+
+/**
+ * True when [this] member currently waives its switch password.
+ *
+ * [dayOfWeek] is 1..7 (Monday..Sunday) and [minuteOfDay] is 0..1439. Protection must be on,
+ * the day must be selected, the stored window must still be valid, and the minute must fall in
+ * the half-open `[start, end)` range. Anything unexpected fails closed and asks for the PIN.
+ */
+fun FamilyMember.switchPinExemptAt(dayOfWeek: Int, minuteOfDay: Int): Boolean =
+    switchPinRequired &&
+        dayOfWeek in 1..7 &&
+        dayOfWeek in switchPinExemptDays &&
+        SwitchPinExempt.isValidWindow(
+            switchPinExemptStartMinute,
+            switchPinExemptEndMinute,
+        ) &&
+        minuteOfDay >= switchPinExemptStartMinute &&
+        minuteOfDay < switchPinExemptEndMinute
 
 data class FamilyDocument(
     val schemaVersion: Int = FamilyIds.SCHEMA_VERSION,

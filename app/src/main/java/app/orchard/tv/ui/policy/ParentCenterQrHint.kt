@@ -64,7 +64,7 @@ internal fun ParentCenterQrHint(
     ) {
         return
     }
-    val qr = rememberQuizQr(scale = 8, enabled = load, fragment = "#parent")
+    val web = rememberParentWebQr(scale = 8, enabled = load)
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -80,15 +80,15 @@ internal fun ParentCenterQrHint(
             contentAlignment = Alignment.Center,
         ) {
             when {
-                qr.bitmap != null -> Image(
-                    bitmap = qr.bitmap,
+                web.qr.bitmap != null -> Image(
+                    bitmap = web.qr.bitmap,
                     contentDescription = null,
                     contentScale = ContentScale.Fit,
                     // The bitmap is generated above the on-screen size, so it is reduced here.
                     filterQuality = FilterQuality.Low,
                     modifier = Modifier.fillMaxSize(),
                 )
-                qr.loading -> BasicText(
+                web.qr.loading -> BasicText(
                     "…",
                     style = Type.Caption.copy(fontSize = 16.sp, color = ParentQrPlaceholder),
                 )
@@ -122,6 +122,8 @@ internal fun ParentCenterQrHint(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
+            Spacer(Modifier.height(4.dp))
+            ParentWebStatusCompact(web.status)
         }
     }
 }

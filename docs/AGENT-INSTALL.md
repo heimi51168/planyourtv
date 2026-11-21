@@ -5,17 +5,18 @@
 本文写给能在用户电脑上执行命令的 AI 助手，例如豆包电脑版 / 豆包工作版、WorkBuddy、千问电脑版、Claude Code、Codex、Cursor 或 Trae。手机版、网页版聊天只能把步骤告诉用户，不能执行命令；遇到这种情况，请直接让用户换到电脑版。
 
 - 项目主页：https://github.com/heimi51168/planyourtv
-- 官方下载：https://planyourtv.me/download/
-- 手机家长端（可选，Android 7.0+）：https://planyourtv.me/download/planyourtv-parent.apk
+- Gitee 下载（国内优先，速度更快）：https://gitee.com/liurumbo/planyourtv/releases
+- 官网备用下载：https://planyourtv.me/download/
+- 手机家长端（可选，Android 7.0+）：优先从上面的 Gitee Release 下载 `planyourtv-parent.apk`
 - 支持系统：Android TV 5.0+（API 21+）；Android 4.x 不支持；不需要 root
-- 版本：以 GitHub Release 的 https://github.com/heimi51168/planyourtv/releases/latest/download/version.txt 为准；官网 https://planyourtv.me/download/version.txt 可能因部署延迟落后，两者不一致时不要安装官网旧包。不要使用任何文档里写死的版本号
+- 版本：以 GitHub Release 的 https://github.com/heimi51168/planyourtv/releases/latest/download/version.txt 为准；Gitee 是同一版本的国内镜像，下载 APK 时优先用 Gitee；Gitee 没有该版本或打不开时，再用官网，最后用 GitHub。官网可能因部署延迟落后，版本不一致时不要安装官网旧包。不要使用任何文档里写死的版本号
 - 上游与致谢：基于 Aerial（MIT）；感谢 pengchujin 与 Aerial 贡献者。详见项目 README、LICENSE 和 NOTICE。
 
 ## 0. 必须遵守的规则
 
 1. **亲自在用户的电脑上运行命令**，不要只列步骤。每一步都看真实输出，不要猜。
 2. **不要假装成功。** 最后必须完成「验收」，把原始输出贴给用户。没有看到输出，就不能说装好了。
-3. **安装 PlanYourTV。** 推荐在用户的电脑上运行本项目安装器，APK 推荐从 `https://planyourtv.me/download/` 获取；其他安装方式由用户选择，本项目未逐一验证。PlanYourTV 本身就是桌面，但 Android 允许同时安装多个桌面，只有一个默认桌面。安装器会检测其他第三方桌面并默认保留，安装照常继续；装好后把 PlanYourTV 设为默认桌面。**未经用户明确要求，不要卸载任何第三方桌面。** 只有用户明确要求清理时，才使用安装器的 `--remove-launchers` / `-RemoveLaunchers` 或手动卸载；这会删除对方数据，必须先征得同意。
+3. **安装 PlanYourTV。** 推荐在用户的电脑上运行本项目安装器，APK 优先从 Gitee Release 获取（国内速度更快），Gitee 不可用时再用 `https://planyourtv.me/download/`；其他安装方式由用户选择，本项目未逐一验证。PlanYourTV 本身就是桌面，但 Android 允许同时安装多个桌面，只有一个默认桌面。安装器会检测其他第三方桌面并默认保留，安装照常继续；装好后把 PlanYourTV 设为默认桌面。**未经用户明确要求，不要卸载任何第三方桌面。** 只有用户明确要求清理时，才使用安装器的 `--remove-launchers` / `-RemoveLaunchers` 或手动卸载；这会删除对方数据，必须先征得同意。
 4. **不要卸载、停用或修改任何系统应用**，包括电视自带桌面。不要恢复出厂设置，不要删除电视上的文件。只能删除这次安装自己下载的临时 APK。
 5. **重启电视前先征得用户同意。** 需要用户在电视上按遥控器时，明确告诉他按哪个键、选哪一项。
 6. **失败就停下来。** 把命令和原始输出给用户看。需要更换 APK、安装其他工具或修改系统设置时，先征求用户同意，不要自行硬闯。
@@ -27,9 +28,10 @@
 
 电视装好后，家长可以用 Android 7.0+ 手机安装一个可选的家长端壳，用它扫码打开电视上的家长中心，之后不用每次重新扫码。它不是电视 APK，**不要装到电视上**；不装也不影响电视端使用。
 
-- 下载：https://planyourtv.me/download/planyourtv-parent.apk
+- 下载（优先 Gitee，速度更快）：先在 Gitee Release 选择与 `version.txt` 相同的版本，再下载其中的 `planyourtv-parent.apk`：`curl -fL -o planyourtv-parent.apk "https://gitee.com/liurumbo/planyourtv/releases/download/${VERSION}/planyourtv-parent.apk"`
+- 官网备用：https://planyourtv.me/download/planyourtv-parent.apk
 - GitHub 回退：https://github.com/heimi51168/planyourtv/releases/latest/download/planyourtv-parent.apk
-- 校验值：https://planyourtv.me/download/SHA256SUMS
+- 校验值：同一版本的 `SHA256SUMS`（Gitee Release 或官网下载目录）
 - 安装：手机和电视连同一个 Wi-Fi。用手机浏览器打开下载链接，按系统提示允许浏览器安装未知应用；如果浏览器没有直接打开安装器，到手机的「文件管理 / 下载」里打开刚下载的 APK。
 - 配对：打开家长端，扫描电视「家长中心」页面上的二维码。地址会保存在手机上，下次直接进入。
 - 如果 Agent 不能操作手机，把下载链接和以上步骤原样发给用户。不要让用户从第三方站点下载 APK，也不要尝试把家长端安装到电视上。
@@ -163,26 +165,28 @@ adb shell cmd package query-activities --brief -a android.intent.action.MAIN -c 
 
 用户明确要求清理时，只卸载同时满足以下条件的包：在 `pm list packages -3` 的第三方列表中、出现在 HOME 查询结果里（或属于上面的已知包名），且不是 PlanYourTV 自身 `com.planyourtv.tv`。升级时 PlanYourTV 自己也会出现在这些列表里，绝不能卸载它。先告诉用户卸载会删除该桌面的数据；用户确认后运行 `adb shell pm uninstall <包名>`，再用 `adb shell pm path <包名>` 确认没有输出。`cmd` 不可用时，至少逐个检查上面的已知包名。用户没有明确要求时，保留这些桌面，继续安装。
 
-先读取 GitHub Release 和官网的最新版本号（输出形如 `vX.Y.ZZZ`，不要用任何文档里写死的版本号判断）。以 GitHub Release 为最新版本基准；如果官网版本落后，说明官网尚未部署，必须改用 GitHub Release 资产。任一命令失败、输出为空或不是 `v` 开头时停止，不要继续使用本机残留的旧 APK：
+先读取 GitHub Release 的版本号（输出形如 `vX.Y.ZZZ`，不要用任何文档里写死的版本号判断）。**下载 APK 时优先使用 Gitee 同一版本的 Release，国内下载明显更快**；Gitee 没有该版本或打不开时，再用官网，最后用 GitHub。官网可能因部署延迟落后，版本不一致时不要安装官网旧包。任一命令失败、输出为空或不是 `v` 开头时停止，不要继续使用本机残留的旧 APK：
 
 ```bash
-curl -fsSL https://github.com/heimi51168/planyourtv/releases/latest/download/version.txt
-curl -fsSL https://planyourtv.me/download/version.txt
+VERSION=$(curl -fsSL https://github.com/heimi51168/planyourtv/releases/latest/download/version.txt)
+echo "$VERSION"
 ```
 
-两个版本一致时，推荐从官方地址下载。下载前先删除上次可能残留的同名文件，避免下载失败时误装旧包（macOS/Linux 用 `rm -f`，Windows PowerShell 用 `Remove-Item -Force -ErrorAction SilentlyContinue`）：
+优先从 Gitee 下载对应版本。下载前先删除上次可能残留的同名文件，避免下载失败时误装旧包（macOS/Linux 用 `rm -f`，Windows PowerShell 用 `Remove-Item -Force -ErrorAction SilentlyContinue`）：
 
 ```bash
 rm -f planyourtv-standard.apk
-curl -fL -o planyourtv-standard.apk https://planyourtv.me/download/planyourtv-standard.apk
+curl -fL -o planyourtv-standard.apk "https://gitee.com/liurumbo/planyourtv/releases/download/${VERSION}/planyourtv-standard.apk"
 adb install -r -i com.planyourtv.tv planyourtv-standard.apk
 ```
 
-官网版本落后时，改用 GitHub Release 资产，不要安装官网旧包：
+Gitee 没有该版本或下载失败时，改用官网同版本；官网也落后时，再用 GitHub Release 资产：
 
 ```bash
 rm -f planyourtv-standard.apk
-curl -fL -o planyourtv-standard.apk https://github.com/heimi51168/planyourtv/releases/latest/download/planyourtv-standard.apk
+curl -fL -o planyourtv-standard.apk "https://planyourtv.me/download/planyourtv-standard.apk"
+# 或：
+curl -fL -o planyourtv-standard.apk "https://github.com/heimi51168/planyourtv/releases/download/${VERSION}/planyourtv-standard.apk"
 adb install -r -i com.planyourtv.tv planyourtv-standard.apk
 ```
 
@@ -196,15 +200,17 @@ adb install -r -i com.planyourtv.tv planyourtv-standard.apk
 
 ```bash
 rm -f planyourtv-guard.apk
-curl -fL -o planyourtv-guard.apk https://planyourtv.me/download/planyourtv-guard.apk
+curl -fL -o planyourtv-guard.apk "https://gitee.com/liurumbo/planyourtv/releases/download/${VERSION}/planyourtv-guard.apk"
 adb install -r -i com.planyourtv.tv planyourtv-guard.apk
 ```
 
-官网版本落后时，改用 GitHub Release 的 guard 包：
+Gitee 不可用时，改用官网或 GitHub 的同一版本 guard 包：
 
 ```bash
 rm -f planyourtv-guard.apk
-curl -fL -o planyourtv-guard.apk https://github.com/heimi51168/planyourtv/releases/latest/download/planyourtv-guard.apk
+curl -fL -o planyourtv-guard.apk "https://planyourtv.me/download/planyourtv-guard.apk"
+# 或：
+curl -fL -o planyourtv-guard.apk "https://github.com/heimi51168/planyourtv/releases/download/${VERSION}/planyourtv-guard.apk"
 adb install -r -i com.planyourtv.tv planyourtv-guard.apk
 ```
 
@@ -357,7 +363,7 @@ adb shell pm uninstall com.planyourtv.tv
 ## 12. 不要做的事
 
 - 推荐通过电脑安装；其他安装方式不禁止，本项目未逐一验证。
-- 推荐从官方下载页获取 PlanYourTV APK。
+- 下载 PlanYourTV APK 时优先使用 Gitee Release（国内速度更快）；Gitee 不可用时再用官网或 GitHub。
 - 不要卸载、停用或恢复出厂设置任何系统应用。
 - 不要删除电视上不属于本次安装的文件。
 - 不要把 5555 端口暴露到公网。

@@ -1,0 +1,23 @@
+<resources>
+    <string name="policy_parent_web_checking">Тексерілуде…</string>
+    <string name="policy_parent_web_ok">Веб-қызмет жұмыс істейді</string>
+    <string name="policy_parent_web_offline">Теледидар желіге қосылмаған</string>
+    <string name="policy_parent_web_no_address">Қолжетімді ТВ мекенжайы жоқ</string>
+    <string name="policy_parent_web_not_started">Веб-қызмет іске қосылмаған</string>
+    <string name="policy_parent_web_unresponsive">Веб-қызмет жауап бермейді</string>
+    <string name="policy_parent_web_waiting">телефон күтілуде</string>
+    <string name="policy_parent_web_just_now">телефон жаңа ғана қосылды</string>
+    <string name="policy_parent_web_minutes">%1$d мин бұрын</string>
+    <string name="policy_parent_web_hours">%1$d сағ бұрын</string>
+    <string name="policy_parent_web_address_access">%1$s · %2$s</string>
+    <string name="policy_parent_web_action_network">Wi-Fi немесе Ethernet қосып, қайталаңыз</string>
+    <string name="policy_parent_web_action_proxy">Прокси немесе VPN өшіріп, қайталаңыз</string>
+    <string name="policy_parent_web_action_restart">Теледидарды қайта іске қосыңыз</string>
+    <string name="policy_parent_web_hint">Телефон қосылмайды ма? Бірдей Wi-Fi пайдаланып, қонақ желісін / AP оқшаулауын өшіріңіз.</string>
+    <string name="policy_parent_web_short_checking">Тексеру</string>
+    <string name="policy_parent_web_short_ok">Веб OK</string>
+    <string name="policy_parent_web_short_offline">Желі жоқ</string>
+    <string name="policy_parent_web_short_no_address">Мекенжай жоқ</string>
+    <string name="policy_parent_web_short_not_started">Қызмет өшік</string>
+    <string name="policy_parent_web_short_unresponsive">Жауап жоқ</string>
+</resources>

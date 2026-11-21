@@ -3,6 +3,7 @@ package app.orchard.tv.ui.policy
 import android.graphics.BitmapFactory
 import android.util.Log
 import android.view.KeyEvent as NativeKeyEvent
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -56,6 +57,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -63,8 +65,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import app.orchard.tv.R
 import app.orchard.tv.policy.FamilyAvatarStore
 import app.orchard.tv.policy.FamilyHub
@@ -74,7 +74,10 @@ import app.orchard.tv.policy.PolicyCloud
 import app.orchard.tv.policy.PolicyModeCoordinator
 import app.orchard.tv.policy.SubjectSwitcher
 import app.orchard.tv.ui.components.Pressable
+import app.orchard.tv.ui.components.consumeTaps
 import app.orchard.tv.ui.components.liquidGlass
+import app.orchard.tv.ui.theme.Glyph
+import app.orchard.tv.ui.theme.GlyphIcon
 import app.orchard.tv.ui.theme.Motion
 import app.orchard.tv.ui.theme.Palette
 import app.orchard.tv.ui.theme.Type
@@ -84,10 +87,21 @@ import com.planyourtv.policy.MemberPin
 import com.planyourtv.policy.MemberSource
 import com.planyourtv.policy.PolicyRuntime
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.LocalDateTime
 
 private const val TAG = "SubjectChip"
+
+/**
+ * Ring around a family member's avatar. The desktop chip and both member pickers draw it from
+ * here, so a colour or weight change reaches every place the current member is shown.
+ */
+private val SubjectAvatarRing = Color.White.copy(alpha = 0.35f)
+
+/** The same ring on the pickers' near-white focus plate, where white would disappear. */
+private val SubjectAvatarRingOnFocus = Palette.OnFocus.copy(alpha = 0.22f)
 
 /**
  * The current child's face beside the lock desktop's clock: right of a left clock, left of a
@@ -114,6 +128,8 @@ internal fun SubjectChip(
     modifier: Modifier = Modifier,
     diameter: Dp = 34.dp,
     focusedScale: Float = 1.1f,
+    /** False while a modal sheet is up: the face stays composed for focus restoration. */
+    enabled: Boolean = true,
     /** Lets the lock desktop return its grid to the shelf while the face is focused. */
     onFocused: ((Boolean) -> Unit)? = null,
 ) {
@@ -127,6 +143,7 @@ internal fun SubjectChip(
         modifier = modifier,
         diameter = diameter,
         focusedScale = focusedScale,
+        enabled = enabled,
         onFocused = onFocused,
     ) {
         MemberAvatar(member, Modifier.fillMaxSize())
@@ -152,6 +169,8 @@ internal fun CloudSubjectChip(
     modifier: Modifier = Modifier,
     diameter: Dp = 34.dp,
     focusedScale: Float = 1.1f,
+    /** False while a modal sheet is up: the face stays composed for focus restoration. */
+    enabled: Boolean = true,
     onFocused: ((Boolean) -> Unit)? = null,
 ) {
     SubjectChipFrame(
@@ -164,6 +183,7 @@ internal fun CloudSubjectChip(
         modifier = modifier,
         diameter = diameter,
         focusedScale = focusedScale,
+        enabled = enabled,
         onFocused = onFocused,
     ) {
         CloudMemberAvatar(name, avatarUrl, Modifier.fillMaxSize())
@@ -181,11 +201,13 @@ private fun SubjectChipFrame(
     modifier: Modifier,
     diameter: Dp,
     focusedScale: Float,
+    enabled: Boolean,
     onFocused: ((Boolean) -> Unit)?,
     avatar: @Composable () -> Unit,
 ) {
     Pressable(
         onClick = onClick,
+        enabled = enabled,
         focusRequester = focusRequester,
         focusedScale = focusedScale,
         onFocused = onFocused,
@@ -218,7 +240,7 @@ private fun SubjectChipFrame(
                 .background(bg)
                 .border(
                     width = if (diameter >= 60.dp) 2.dp else 1.dp,
-                    color = Color.White.copy(alpha = 0.35f),
+                    color = SubjectAvatarRing,
                     shape = CircleShape,
                 )
                 .padding(diameter * 0.07f),
@@ -245,63 +267,59 @@ internal fun SubjectProfileOverlay(
         withFrameNanos { }
         runCatching { closeFocus.requestFocus() }
     }
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            dismissOnBackPress = true,
-            dismissOnClickOutside = false,
-        ),
+    // Drawn inline, not in a Dialog: a second window took over a second to appear on the
+    // projector, which read as a frozen remote. The caller disables the desktop's focus while
+    // this is up, so the card is still the only focusable surface.
+    BackHandler(onBack = onDismiss)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Palette.OnFocus.copy(alpha = 0.72f))
+            .consumeTaps(),
+        contentAlignment = Alignment.Center,
     ) {
-        Box(
+        Column(
             modifier = Modifier
-                .fillMaxSize()
-                .background(Palette.OnFocus.copy(alpha = 0.72f)),
-            contentAlignment = Alignment.Center,
+                .widthIn(max = 520.dp)
+                .liquidGlass(26.dp)
+                .padding(horizontal = 36.dp, vertical = 28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Column(
-                modifier = Modifier
-                    .widthIn(max = 520.dp)
-                    .liquidGlass(26.dp)
-                    .padding(horizontal = 36.dp, vertical = 28.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                MemberAvatar(member, Modifier.size(92.dp))
+            MemberAvatar(member, Modifier.size(92.dp))
+            BasicText(
+                member.displayName,
+                style = Type.LargeTitle.copy(fontSize = 24.sp),
+            )
+            BasicText(
+                stringResource(
+                    if (member.source == MemberSource.CLOUD) {
+                        R.string.policy_subject_cloud
+                    } else {
+                        R.string.policy_subject_local
+                    }
+                ),
+                style = Type.Caption.copy(fontSize = 13.sp, color = Palette.SecondaryLabel),
+            )
+            Spacer(Modifier.height(2.dp))
+            BasicText(
+                stringResource(R.string.policy_subject_web_hint),
+                style = Type.Body.copy(fontSize = 15.sp, color = Palette.Label),
+            )
+            if (showSingleHint) {
                 BasicText(
-                    member.displayName,
-                    style = Type.LargeTitle.copy(fontSize = 24.sp),
-                )
-                BasicText(
-                    stringResource(
-                        if (member.source == MemberSource.CLOUD) {
-                            R.string.policy_subject_cloud
-                        } else {
-                            R.string.policy_subject_local
-                        }
-                    ),
+                    stringResource(R.string.policy_subject_single_hint),
                     style = Type.Caption.copy(fontSize = 13.sp, color = Palette.SecondaryLabel),
                 )
-                Spacer(Modifier.height(2.dp))
-                BasicText(
-                    stringResource(R.string.policy_subject_web_hint),
-                    style = Type.Body.copy(fontSize = 15.sp, color = Palette.Label),
-                )
-                if (showSingleHint) {
-                    BasicText(
-                        stringResource(R.string.policy_subject_single_hint),
-                        style = Type.Caption.copy(fontSize = 13.sp, color = Palette.SecondaryLabel),
-                    )
-                }
-                Spacer(Modifier.height(8.dp))
-                LockButton(
-                    label = stringResource(R.string.policy_parent_close),
-                    onClick = onDismiss,
-                    width = 200.dp,
-                    focusRequester = closeFocus,
-                    primary = true,
-                )
             }
+            Spacer(Modifier.height(8.dp))
+            LockButton(
+                label = stringResource(R.string.policy_parent_close),
+                onClick = onDismiss,
+                width = 200.dp,
+                focusRequester = closeFocus,
+                primary = true,
+            )
         }
     }
 }
@@ -339,6 +357,14 @@ internal fun SubjectSwitchOverlay(
         else -> null
     }
     val firstSwitchTarget = members.indexOfFirst { it.userId != currentId }
+    // The waiver label must disappear when its window ends while the sheet stays open. A
+    // half-minute tick is enough for a minute-resolution rule and stays idle otherwise.
+    val now by produceState(LocalDateTime.now()) {
+        while (true) {
+            delay(30_000)
+            value = LocalDateTime.now()
+        }
+    }
 
     // The keypad leaves the composition while a code is checked, so a wrong code would come
     // back with no focused key and the remote's number keys would go nowhere. Ask for focus
@@ -351,11 +377,34 @@ internal fun SubjectSwitchOverlay(
         runCatching { firstFocus.requestFocus() }
     }
 
-    fun submit(chosen: FamilyMember, candidate: String?) {
+    /**
+     * [promptShown] is the decision made when the row was picked, not a fresh clock reading.
+     * Re-evaluating at submit time would make a window ending during PIN entry reject an empty
+     * code, and would let a window starting during a direct switch change the flow mid-tap.
+     * When no prompt was shown, only a concurrent change that turns protection on aborts.
+     */
+    fun submit(
+        chosen: FamilyMember,
+        candidate: String?,
+        promptShown: Boolean,
+        protectedAtPick: Boolean,
+    ) {
         busy = true
         error = null
         scope.launch {
-            if (MemberSwitchAuth.isRequired()) {
+            val protectedNow = FamilyHub.member(chosen.userId)
+                ?.switchPinRequired
+                ?: chosen.switchPinRequired
+            // Protection turned on remotely between the tap and this switch: do not use an
+            // exemption decision made against the old, open member.
+            if (!promptShown && !protectedAtPick && protectedNow) {
+                busy = false
+                entered = ""
+                phase = SubjectSwitchPhase.LIST
+                error = R.string.policy_subject_switch_failed
+                return@launch
+            }
+            if (promptShown) {
                 val checked = withContext(Dispatchers.Default) {
                     MemberSwitchAuth.verify(chosen.userId, candidate.orEmpty())
                 }
@@ -395,10 +444,12 @@ internal fun SubjectSwitchOverlay(
         target = chosen
         entered = ""
         error = null
-        if (MemberSwitchAuth.isRequired()) {
+        val latest = FamilyHub.member(chosen.userId) ?: chosen
+        val prompt = MemberSwitchAuth.requiresPin(latest)
+        if (prompt) {
             phase = SubjectSwitchPhase.PIN
         } else {
-            submit(chosen, null)
+            submit(chosen, null, promptShown = false, protectedAtPick = latest.switchPinRequired)
         }
     }
 
@@ -411,7 +462,9 @@ internal fun SubjectSwitchOverlay(
         entered += digit
         error = null
         if (entered.length == MemberPin.LENGTH) {
-            target?.let { submit(it, entered) }
+            target?.let {
+                submit(it, entered, promptShown = true, protectedAtPick = true)
+            }
         }
     }
 
@@ -422,18 +475,26 @@ internal fun SubjectSwitchOverlay(
         }
     }
 
-    Dialog(
-        onDismissRequest = { if (!busy) onDismiss() },
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            dismissOnBackPress = !busy,
-            dismissOnClickOutside = false,
-        ),
-    ) {
+    // Inline instead of a Dialog: the second window cost over a second on the projector, so
+    // tapping the face looked ignored. The lock desktop disables its own focus while this is
+    // composed; the sheet is the only focusable surface left.
+    BackHandler {
+        if (!busy) {
+            if (phase == SubjectSwitchPhase.PIN) {
+                phase = SubjectSwitchPhase.LIST
+                entered = ""
+                error = null
+            } else {
+                onDismiss()
+            }
+        }
+    }
+    Box(Modifier.fillMaxSize()) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Palette.OnFocus.copy(alpha = 0.72f))
+                .consumeTaps()
                 .onPreviewKeyEvent { event ->
                     if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                     val native = event.nativeKeyEvent
@@ -485,6 +546,7 @@ internal fun SubjectSwitchOverlay(
                             MemberRow(
                                 member = member,
                                 current = member.userId == currentId,
+                                now = now,
                                 // Every row stays focusable, the active member included;
                                 // choosing the current member just closes the sheet.
                                 enabled = unavailable == null && !busy,
@@ -609,18 +671,14 @@ internal fun CloudSubjectProfileOverlay(
         withFrameNanos { }
         runCatching { closeFocus.requestFocus() }
     }
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            dismissOnBackPress = true,
-            dismissOnClickOutside = false,
-        ),
-    ) {
+    // Inline, like [SubjectProfileOverlay], so opening it never waits for a second window.
+    BackHandler(onBack = onDismiss)
+    Box(Modifier.fillMaxSize()) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Palette.OnFocus.copy(alpha = 0.72f)),
+                .background(Palette.OnFocus.copy(alpha = 0.72f))
+                .consumeTaps(),
             contentAlignment = Alignment.Center,
         ) {
             Column(
@@ -718,18 +776,14 @@ internal fun CloudSubjectSwitchOverlay(
         }
     }
 
-    Dialog(
-        onDismissRequest = { if (!busy) onDismiss() },
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            dismissOnBackPress = !busy,
-            dismissOnClickOutside = false,
-        ),
-    ) {
+    // Inline, like the local sheet: a Dialog window takes too long to appear on TV hardware.
+    BackHandler { if (!busy) onDismiss() }
+    Box(Modifier.fillMaxSize()) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Palette.OnFocus.copy(alpha = 0.72f)),
+                .background(Palette.OnFocus.copy(alpha = 0.72f))
+                .consumeTaps(),
             contentAlignment = Alignment.Center,
         ) {
             Column(
@@ -824,6 +878,16 @@ private fun CloudMemberRow(
             tween(160, easing = Motion.EaseOut),
             label = "cloud-subject-row-bg",
         )
+        val fg by animateColorAsState(
+            if (state.focused) Palette.OnFocus else Palette.Label,
+            tween(160, easing = Motion.EaseOut),
+            label = "cloud-subject-row-fg",
+        )
+        val avatarRing = when {
+            current -> if (state.focused) SubjectAvatarRingOnFocus else SubjectAvatarRing
+            state.focused -> Palette.OnFocus.copy(alpha = 0.16f)
+            else -> Color.Transparent
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -836,19 +900,16 @@ private fun CloudMemberRow(
             CloudMemberAvatar(
                 name = member.name,
                 avatarUrl = member.avatarUrl,
-                modifier = Modifier.size(36.dp),
+                modifier = Modifier
+                    .size(36.dp)
+                    .border(1.dp, avatarRing, CircleShape),
             )
             BasicText(
                 member.name,
                 modifier = Modifier.weight(1f),
-                style = Type.Body.copy(fontSize = 16.sp),
+                style = Type.Body.copy(fontSize = 16.sp, color = fg),
             )
-            if (current) {
-                BasicText(
-                    stringResource(R.string.policy_subject_current),
-                    style = Type.Caption.copy(fontSize = 12.sp, color = Palette.SecondaryLabel),
-                )
-            }
+            if (current) CurrentMemberBadge(focused = state.focused)
         }
     }
 }
@@ -920,6 +981,7 @@ private val CloudAvatarColors = listOf(
 private fun MemberRow(
     member: FamilyMember,
     current: Boolean,
+    now: LocalDateTime,
     enabled: Boolean,
     focusRequester: FocusRequester?,
     onClick: () -> Unit,
@@ -936,6 +998,18 @@ private fun MemberRow(
             tween(160, easing = Motion.EaseOut),
             label = "subject-row-bg",
         )
+        // The focused plate is near-white, so the label must flip to the dark content colour
+        // the rest of the tvOS controls use; white-on-white made the focused member vanish.
+        val fg by animateColorAsState(
+            if (state.focused) Palette.OnFocus else Palette.Label,
+            tween(160, easing = Motion.EaseOut),
+            label = "subject-row-fg",
+        )
+        val avatarRing = when {
+            current -> if (state.focused) SubjectAvatarRingOnFocus else SubjectAvatarRing
+            state.focused -> Palette.OnFocus.copy(alpha = 0.16f)
+            else -> Color.Transparent
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -945,19 +1019,54 @@ private fun MemberRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            MemberAvatar(member, Modifier.size(36.dp))
+            MemberAvatar(
+                member,
+                Modifier
+                    .size(36.dp)
+                    .border(1.dp, avatarRing, CircleShape),
+            )
             BasicText(
                 member.displayName,
                 modifier = Modifier.weight(1f),
-                style = Type.Body.copy(fontSize = 16.sp),
+                style = Type.Body.copy(fontSize = 16.sp, color = fg),
             )
-            if (current) {
-                BasicText(
-                    stringResource(R.string.policy_subject_current),
-                    style = Type.Caption.copy(fontSize = 12.sp, color = Palette.SecondaryLabel),
-                )
+            if (!current && MemberSwitchAuth.isExemptNow(member, now)) {
+                ExemptBadge(member, focused = state.focused)
             }
+            if (current) CurrentMemberBadge(focused = state.focused)
         }
+    }
+}
+
+/** The interval currently waiving this member's switch password, shown on its row. */
+@Composable
+private fun ExemptBadge(member: FamilyMember, focused: Boolean) {
+    BasicText(
+        stringResource(
+            R.string.policy_subject_switch_exempt,
+            formatMinute(member.switchPinExemptStartMinute),
+            formatMinute(member.switchPinExemptEndMinute),
+        ),
+        style = Type.Caption.copy(
+            fontSize = 12.sp,
+            color = if (focused) Palette.OnFocus.copy(alpha = 0.62f) else Palette.Green,
+        ),
+    )
+}
+
+/** Marks the member the TV is actually running; the row focus plate is a separate state. */
+@Composable
+private fun CurrentMemberBadge(focused: Boolean) {
+    val fg = if (focused) Palette.OnFocus.copy(alpha = 0.62f) else Palette.Green
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        GlyphIcon(Glyph.Check, fg, 12.dp)
+        BasicText(
+            stringResource(R.string.policy_subject_current),
+            style = Type.Caption.copy(fontSize = 12.sp, color = fg),
+        )
     }
 }
 
@@ -981,10 +1090,11 @@ private fun MemberAvatar(member: FamilyMember, modifier: Modifier = Modifier) {
             }
         }
     }
+    val preset = FamilyAvatarStore.canonicalPreset(member.avatarPreset)
     Box(
         modifier = modifier
             .clip(CircleShape)
-            .background(paletteFor(member.avatarPreset).bg),
+            .background(paletteFor(preset).bg),
     ) {
         val bitmap = image
         if (bitmap != null) {
@@ -995,7 +1105,12 @@ private fun MemberAvatar(member: FamilyMember, modifier: Modifier = Modifier) {
                 modifier = Modifier.fillMaxSize(),
             )
         } else {
-            Canvas(Modifier.fillMaxSize()) { drawPresetAvatar(member.avatarPreset) }
+            Image(
+                painter = painterResource(FamilyAvatarStore.presetDrawable(preset)),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
         }
     }
 }

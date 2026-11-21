@@ -5,7 +5,6 @@ import app.orchard.tv.BuildConfig
 import app.orchard.tv.policy.FamilyAvatarStore
 import app.orchard.tv.policy.FamilyHub
 import app.orchard.tv.policy.LocalPolicyRuntime
-import app.orchard.tv.policy.MemberSwitchAuth
 import app.orchard.tv.policy.PolicyInstalledApps
 import app.orchard.tv.policy.PolicyModeCoordinator
 import app.orchard.tv.policy.PolicyProduct
@@ -38,6 +37,7 @@ import com.planyourtv.policy.PolicyMode
 import com.planyourtv.policy.PolicyRuntime
 import com.planyourtv.policy.RemoteHandoffState
 import com.planyourtv.policy.SessionState
+import com.planyourtv.policy.SwitchPinExempt
 import com.planyourtv.policy.UnlockRoute
 import com.planyourtv.policy.UnlockRoutePlan
 import com.planyourtv.policy.UnlockRoutePlanner
@@ -142,8 +142,6 @@ object ParentCenterActions {
             .put("autoUpdate", Updates.auto)
             .put("update", updateJson(context))
             .put("sourceEntriesVisible", SourceEntrySettings.isVisible())
-            // Defaults to false on upgraded and fresh devices: no prompt until enabled.
-            .put("memberSwitchRequired", MemberSwitchAuth.isRequired())
             // Defaults to true: the web user-configuration tab keeps asking for the parent PIN.
             .put("userConfigRequirePin", UserConfigPinSettings.isRequired())
             .put("quizEntryVisible", QuizSettings.isLockEntryVisible())
@@ -210,10 +208,6 @@ object ParentCenterActions {
                         "canSwitchSubject",
                         family.ready && family.canSwitchMember &&
                             ui.mode == PolicyMode.LOCAL && !readOnlyLocal,
-                    )
-                    .put(
-                        "canToggleMemberSwitch",
-                        ui.mode == PolicyMode.LOCAL && !readOnlyLocal && family.ready,
                     )
                     .put("cloudEnabled", PolicyProduct.cloudEnabled),
             )
@@ -335,6 +329,10 @@ object ParentCenterActions {
             .put("semester", member.semester ?: JSONObject.NULL)
             // Only the "still initial" flag, never the salt or hash.
             .put("switchPinInitial", member.switchPinInitial)
+            .put("switchPinRequired", member.switchPinRequired)
+            .put("switchPinExemptDays", JSONArray(member.switchPinExemptDays))
+            .put("switchPinExemptStartMinute", member.switchPinExemptStartMinute)
+            .put("switchPinExemptEndMinute", member.switchPinExemptEndMinute)
             .put("isDefault", member.userId == family.defaultUserId)
             .put("isActive", member.userId == family.activeUserId)
     }
@@ -766,24 +764,39 @@ object ParentCenterActions {
         val family = FamilyHub.state.value
         if (!family.canAddMember) return error("FAMILY_NOT_READY")
         val name = body.optString("name", "")
-        val preset = body.optString("avatarPreset", "rabbit")
+        val preset = body.optString("avatarPreset", FamilyAvatarStore.DEFAULT_PRESET)
         val scope = memberGradeSelection(body) ?: return error("SUBJECT_GRADE_INVALID")
-        // A newly added member must leave the parent with a working switch password. The
-        // default member keeps the historical 123456 initial credential, but the Web add
-        // form no longer accepts an empty field that would silently fall back to it.
-        val switchPin = body.optString("switchPin", "").trim()
-        if (switchPin.isEmpty()) return error("SUBJECT_PIN_REQUIRED")
-        if (!MemberPin.isValid(switchPin)) return error("SUBJECT_PIN_INVALID")
+        // Switch protection is opt-in. Members added with it off may stay on the initial
+        // credential; turning it on later forces the parent to set a custom password.
+        val switchPinRequired = body.optBoolean("switchPinRequired", false)
+        val switchPin = body.optString("switchPin", "").trim().takeIf { it.isNotEmpty() }
+        if (switchPin != null && !MemberPin.isValid(switchPin)) {
+            return error("SUBJECT_PIN_INVALID")
+        }
+        if (switchPinRequired && switchPin == null) return error("SUBJECT_PIN_REQUIRED")
+        if (switchPinRequired && switchPin == MemberPin.INITIAL) {
+            return error("SUBJECT_PIN_WEAK")
+        }
+        val exempt = switchPinExemptSelection(
+            body = body,
+            defaultDays = emptyList(),
+            defaultStartMinute = SwitchPinExempt.DEFAULT_START_MINUTE,
+            defaultEndMinute = SwitchPinExempt.DEFAULT_END_MINUTE,
+        ) ?: return error("SUBJECT_EXEMPT_INVALID")
         val member = FamilyHub.addMember(
             displayName = name,
             avatarPreset = preset,
             grade = scope.first,
             semester = scope.second,
             switchPin = switchPin,
+            switchPinRequired = switchPinRequired,
+            switchPinExemptDays = exempt.days,
+            switchPinExemptStartMinute = exempt.startMinute,
+            switchPinExemptEndMinute = exempt.endMinute,
         ) ?: return error(
             when {
                 FamilyIds.normalizeDisplayName(name) == null -> "SUBJECT_NAME_INVALID"
-                !FamilyAvatarStore.PRESETS.contains(preset.trim().lowercase()) ->
+                FamilyAvatarStore.resolvePreset(preset) == null ->
                     "SUBJECT_AVATAR_INVALID"
                 else -> "SUBJECT_ADD_FAILED"
             },
@@ -809,10 +822,25 @@ object ParentCenterActions {
         val name = body.optString("name", "")
         val preset = body.optString("avatarPreset", "")
         val scope = memberGradeSelection(body) ?: return error("SUBJECT_GRADE_INVALID")
-        // Blank means "keep the current password": the edit form shows a placeholder instead of
-        // the stored value, and old members may still be on the initial one.
+        // Absent keeps the member's current protection so a raw request can never disable it.
+        val switchPinRequired = if (body.has("switchPinRequired")) {
+            body.optBoolean("switchPinRequired", false)
+        } else {
+            null
+        }
+        // Blank means "keep the current password". Turning protection on requires a new one.
         val switchPin = body.optString("switchPin", "").trim().takeIf { it.isNotEmpty() }
-        if (switchPin != null && !MemberPin.isValid(switchPin)) return error("SUBJECT_PIN_INVALID")
+        if (switchPin != null && !MemberPin.isValid(switchPin)) {
+            return error("SUBJECT_PIN_INVALID")
+        }
+        if (switchPin == MemberPin.INITIAL) return error("SUBJECT_PIN_WEAK")
+        val existing = FamilyHub.member(userId) ?: return error("SUBJECT_NOT_FOUND")
+        val exempt = switchPinExemptSelection(
+            body = body,
+            defaultDays = existing.switchPinExemptDays,
+            defaultStartMinute = existing.switchPinExemptStartMinute,
+            defaultEndMinute = existing.switchPinExemptEndMinute,
+        ) ?: return error("SUBJECT_EXEMPT_INVALID")
         val failure = FamilyHub.updateProfile(
             userId,
             name,
@@ -820,6 +848,10 @@ object ParentCenterActions {
             grade = scope.first,
             semester = scope.second,
             switchPin = switchPin,
+            switchPinRequired = switchPinRequired,
+            switchPinExemptDays = exempt.days,
+            switchPinExemptStartMinute = exempt.startMinute,
+            switchPinExemptEndMinute = exempt.endMinute,
         )
         return if (failure == null) ok("SUBJECT_SAVED") else error(failure)
     }
@@ -853,22 +885,6 @@ object ParentCenterActions {
         }
         FamilyAvatarStore.deleteAllForMember(context, member.familyId, member.userId)
         return ok("SUBJECT_DELETED")
-    }
-
-    /**
-     * Whether the TV lock screen asks for the target member's 6-digit password. The setting is
-     * device-local; Web itself never asks a child for that password.
-     */
-    fun setMemberSwitch(body: JSONObject): Outcome {
-        val ui = PolicyModeCoordinator.state.value
-        if (ui.mode != PolicyMode.LOCAL) return error("LOCAL_ONLY")
-        if (PolicyProduct.cloudEnabled && PolicyRuntime.state.value.bound) {
-            return error("READ_ONLY")
-        }
-        if (!FamilyHub.isReady) return error("FAMILY_NOT_READY")
-        val enabled = body.optBoolean("enabled", MemberSwitchAuth.isRequired())
-        if (!MemberSwitchAuth.setRequired(enabled)) return error("SAVE_FAILED")
-        return ok("MEMBER_SWITCH_SAVED")
     }
 
     /**
@@ -927,6 +943,49 @@ object ParentCenterActions {
         if (grade !in 0..9 || semester !in 0..2) return null
         if (semester != 0 && grade == 0) return null
         return grade.takeIf { it > 0 } to semester.takeIf { it > 0 }
+    }
+
+    private data class MemberExemptSelection(
+        val days: List<Int>,
+        val startMinute: Int,
+        val endMinute: Int,
+    )
+
+    /**
+     * Reads the optional switch-password waiver. Absent fields keep the supplied defaults, so
+     * renaming a member never clears its days. Any malformed value rejects the whole save
+     * instead of silently widening or narrowing a security exemption.
+     */
+    private fun switchPinExemptSelection(
+        body: JSONObject,
+        defaultDays: List<Int>,
+        defaultStartMinute: Int,
+        defaultEndMinute: Int,
+    ): MemberExemptSelection? {
+        val days = if (body.has("switchPinExemptDays")) {
+            val array = body.optJSONArray("switchPinExemptDays") ?: return null
+            val parsed = ArrayList<Int>(array.length())
+            for (index in 0 until array.length()) {
+                val value = array.opt(index)
+                if (value !is Int || value !in 1..7) return null
+                parsed.add(value)
+            }
+            SwitchPinExempt.normalizeDays(parsed) ?: return null
+        } else {
+            SwitchPinExempt.normalizeDays(defaultDays) ?: return null
+        }
+        val start = if (body.has("switchPinExemptStartMinute")) {
+            body.opt("switchPinExemptStartMinute") as? Int ?: return null
+        } else {
+            defaultStartMinute
+        }
+        val end = if (body.has("switchPinExemptEndMinute")) {
+            body.opt("switchPinExemptEndMinute") as? Int ?: return null
+        } else {
+            defaultEndMinute
+        }
+        if (!SwitchPinExempt.isValidWindow(start, end)) return null
+        return MemberExemptSelection(days, start, end)
     }
 
     fun deleteMemberAvatar(body: JSONObject): Outcome {
@@ -1346,7 +1405,7 @@ object ParentCenterActions {
             previous?.quizGateEnabled ?: LocalRules.DEFAULTS.quizGateEnabled
         }
         val studyEnabled = if (json.has("studyEarnEnabled")) {
-            json.optBoolean("studyEarnEnabled", true)
+            json.optBoolean("studyEarnEnabled", LocalRules.DEFAULTS.studyEarnEnabled)
         } else {
             previous?.studyEarnEnabled ?: LocalRules.DEFAULTS.studyEarnEnabled
         }

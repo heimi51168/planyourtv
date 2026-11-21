@@ -39,7 +39,9 @@ body.parent-only .quiz-only { display: none !important; }
   position: fixed;
   inset: 0 0 calc(var(--nav-height, 64px) + env(safe-area-inset-bottom)) 0;
   z-index: 60;
-  background: var(--bg);
+  background-color: var(--bg);
+  background-image: var(--page-wash);
+  background-repeat: no-repeat;
   color: var(--ink);
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -62,9 +64,9 @@ body.parent-only .quiz-only { display: none !important; }
   align-items: center;
   gap: 10px;
   padding: max(10px, env(safe-area-inset-top)) 14px 10px;
-  background: var(--bg);
-  background: color-mix(in srgb, var(--bg) 94%, transparent);
-  backdrop-filter: blur(12px);
+  background: var(--surface);
+  background: var(--bar-bg);
+  backdrop-filter: blur(16px) saturate(1.2);
   border-bottom: 1px solid var(--line);
 }
 
@@ -176,7 +178,7 @@ body.parent-open .modal-root { z-index: 80; }
 /* Same solid green ring as the quiz header: the member shown here is the member the
    TV runs, and green marks the available/active state. */
 .parent-avatar.is-tv-current {
-  box-shadow: 0 0 0 3px var(--ok);
+  box-shadow: 0 0 0 3px var(--member-ring);
 }
 
 .parent-avatar svg,
@@ -203,6 +205,11 @@ body.parent-open .modal-root { z-index: 80; }
   font-size: 11px;
   font-weight: 600;
   vertical-align: 1px;
+}
+
+.parent-member-badge.is-protected {
+  background: var(--surface-2);
+  color: var(--muted);
 }
 
 .parent-add-member .parent-add-icon {
@@ -305,12 +312,15 @@ body.parent-open .modal-root { z-index: 80; }
   cursor: pointer;
 }
 
-.parent-avatar-option svg {
+.parent-avatar-option svg,
+.parent-avatar-option img {
   display: block;
   width: 48px;
   height: 48px;
   border-radius: 50%;
 }
+
+.parent-avatar-option img { object-fit: cover; }
 
 .parent-avatar-option.is-selected { border-color: var(--accent); }
 .parent-avatar-option:disabled { opacity: 0.5; cursor: default; }
@@ -334,6 +344,24 @@ body.parent-open .modal-root { z-index: 80; }
 }
 
 .parent-card + .parent-card { margin-top: 10px; }
+
+/* The user tab edits one member while the TV may be running another. When a switch is
+   possible, this card is the one action that makes the page editable, so it carries the
+   only blue-tinted card on the screen. The halo and tint do not change the row geometry. */
+.parent-switch-card.is-pending {
+  border-color: color-mix(in srgb, var(--select-border) 46%, var(--line));
+  background: linear-gradient(180deg, var(--accent-soft) 0, var(--surface) 82%);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--select-border) 14%, transparent),
+    0 8px 20px color-mix(in srgb, var(--select-border) 8%, transparent);
+}
+.parent-switch-card.is-pending .parent-row-title { color: var(--select-ink); font-weight: 620; }
+.parent-switch-card.is-pending .parent-row-sub { color: var(--accent); }
+.parent-switch-card.is-pending .parent-row-data { color: var(--select-ink); }
+.parent-switch-card.is-pending .chevron { color: var(--accent); }
+.parent-switch-card.is-pending .parent-row:active {
+  background: color-mix(in srgb, var(--accent-soft) 72%, var(--surface-2));
+}
 
 /* Inline body under a route switch: direct-start duration and the study-to-earn list. */
 .parent-method-body {
@@ -452,7 +480,7 @@ body.parent-open .modal-root { z-index: 80; }
   width: 44px;
   height: 26px;
   border-radius: 999px;
-  background: var(--line);
+  background: var(--track);
   pointer-events: none;
   transition: background 0.16s ease;
 }
@@ -465,7 +493,7 @@ body.parent-open .modal-root { z-index: 80; }
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--surface);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22);
   transition: transform 0.16s ease;
 }
@@ -483,7 +511,7 @@ body.parent-open .modal-root { z-index: 80; }
   gap: 4px;
   padding: 4px;
   border-radius: 12px;
-  background: var(--surface-2);
+  background: var(--track);
 }
 
 .parent-seg button {
@@ -497,9 +525,9 @@ body.parent-open .modal-root { z-index: 80; }
 }
 
 .parent-seg button[aria-pressed="true"] {
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  background: var(--tab-active-bg);
+  color: var(--tab-active-ink);
+  box-shadow: var(--control-shadow);
 }
 
 .parent-hint {
@@ -597,8 +625,9 @@ body.parent-open .modal-root { z-index: 80; }
   gap: 4px;
   margin: 18px -16px 10px;
   padding: 8px 16px;
-  background: color-mix(in srgb, var(--bg) 94%, transparent);
-  backdrop-filter: blur(12px);
+  background: var(--surface);
+  background: var(--bar-bg);
+  backdrop-filter: blur(16px) saturate(1.2);
   scroll-margin-top: calc(var(--parent-bar-h, 62px) + 2px);
 }
 
@@ -1376,7 +1405,7 @@ body.parent-open .modal-root { z-index: 80; }
   height: 18px;
   border-radius: 50%;
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-ink);
   font-size: 10px;
   font-weight: 700;
   pointer-events: none;
@@ -1656,10 +1685,32 @@ body.parent-open .modal-root { z-index: 80; }
   letter-spacing: 0.18em;
 }
 
-/* The avatar names whose switch password is being typed; the field itself stays masked. */
-.parent-pin-line { display: flex; align-items: center; gap: 10px; }
-.parent-pin-line .parent-avatar { flex: 0 0 44px; width: 44px; height: 44px; }
-.parent-pin-line .parent-pin-input { flex: 1 1 auto; width: auto; }
+.parent-switch-pin[hidden] { display: none; }
+.parent-pin-warn { color: var(--warn); }
+
+/* Per-member switch waiver: seven independent day toggles and one shared time range. */
+.parent-switch-exempt { margin-top: 10px; }
+.parent-switch-exempt[hidden] { display: none; }
+.parent-exempt-week { padding: 6px 0 2px; }
+/* Higher specificity than the shared week/day picker further below. */
+.parent-seg-week .parent-exempt-day {
+  min-height: 40px;
+  padding: 8px 1px;
+  border-radius: 9px;
+}
+.parent-seg-week .parent-exempt-day::after { display: none; }
+.parent-seg-week .parent-exempt-day.is-on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.parent-exempt-range {
+  padding: 8px 0 0;
+  border-bottom: 0;
+}
+.parent-exempt-status { margin: 4px 0 0; }
+.parent-exempt-status.is-error { color: var(--danger); }
 
 .parent-field { margin-top: 12px; }
 .parent-field-inset { padding-inline: 14px; }
@@ -1688,7 +1739,7 @@ body.parent-open .modal-root { z-index: 80; }
   text-align: center;
 }
 
-.parent-btn.primary { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+.parent-btn.primary { border-color: var(--accent-strong); background: var(--accent-strong); color: var(--accent-ink); }
 .parent-btn.ghost { border-color: transparent; background: transparent; color: var(--ink); }
 .parent-btn.danger { border-color: transparent; background: var(--danger-soft); color: var(--danger); }
 .parent-btn:disabled { opacity: 0.45; }
@@ -1862,7 +1913,7 @@ body.parent-open .modal-root { z-index: 80; }
   height: 18px;
   border-radius: 50%;
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-ink);
   font-size: 12px;
   line-height: 1;
 }
@@ -1981,9 +2032,9 @@ body.parent-open .modal-root { z-index: 80; }
   display: flex;
   gap: 9px;
   padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
-  background: var(--bg);
-  background: color-mix(in srgb, var(--bg) 94%, transparent);
-  backdrop-filter: blur(12px);
+  background: var(--surface);
+  background: var(--bar-bg);
+  backdrop-filter: blur(16px) saturate(1.2);
   border-top: 1px solid var(--line);
 }
 
@@ -2532,7 +2583,8 @@ body.parent-open .modal-root { z-index: 80; }
   gap: 8px;
   padding: max(10px, env(safe-area-inset-top)) 12px 8px;
   border-bottom: 0;
-  background: var(--bg);
+  background: var(--surface);
+  background: var(--bar-bg);
 }
 
 .parent-member-head {
@@ -2632,6 +2684,10 @@ body.parent-open .modal-root { z-index: 80; }
 .parent-user-switch { flex: 0 0 auto; min-height: 36px; padding: 0 12px; }
 
 .parent-user-note { margin: 10px 4px 0; }
+
+/* Keep the pending-switch card off the explanatory copy; its halo otherwise
+   makes the text and card read as one crowded block. */
+.parent-user-note + .parent-switch-card { margin-top: 14px; }
 
 .parent-system-group .parent-section-label:first-child { margin-top: 8px; }
 
@@ -2752,9 +2808,9 @@ body.parent-open #modalRoot { z-index: 70; }
   grid-template-columns: repeat(2, minmax(0, 1fr));
   padding: 0 16px;
   border-bottom: 1px solid var(--line);
-  background: var(--bg);
-  background: color-mix(in srgb, var(--bg) 94%, transparent);
-  backdrop-filter: blur(12px);
+  background: var(--surface);
+  background: var(--bar-bg);
+  backdrop-filter: blur(16px) saturate(1.2);
 }
 
 .parent-time-tab {

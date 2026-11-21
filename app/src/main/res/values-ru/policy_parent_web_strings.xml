@@ -1,0 +1,23 @@
+<resources>
+    <string name="policy_parent_web_checking">Проверка…</string>
+    <string name="policy_parent_web_ok">Веб-служба работает</string>
+    <string name="policy_parent_web_offline">ТВ не подключён к сети</string>
+    <string name="policy_parent_web_no_address">Нет доступного адреса ТВ</string>
+    <string name="policy_parent_web_not_started">Веб-служба не запущена</string>
+    <string name="policy_parent_web_unresponsive">Веб-служба не отвечает</string>
+    <string name="policy_parent_web_waiting">ожидание телефона</string>
+    <string name="policy_parent_web_just_now">телефон подключился только что</string>
+    <string name="policy_parent_web_minutes">%1$d мин назад</string>
+    <string name="policy_parent_web_hours">%1$d ч назад</string>
+    <string name="policy_parent_web_address_access">%1$s · %2$s</string>
+    <string name="policy_parent_web_action_network">Подключите Wi-Fi или Ethernet и повторите</string>
+    <string name="policy_parent_web_action_proxy">Отключите прокси или VPN и повторите</string>
+    <string name="policy_parent_web_action_restart">Перезагрузите телевизор</string>
+    <string name="policy_parent_web_hint">Телефон не подключается? Используйте тот же Wi-Fi и отключите гостевую сеть / изоляцию AP.</string>
+    <string name="policy_parent_web_short_checking">Проверка</string>
+    <string name="policy_parent_web_short_ok">Веб OK</string>
+    <string name="policy_parent_web_short_offline">Нет сети</string>
+    <string name="policy_parent_web_short_no_address">Нет адреса</string>
+    <string name="policy_parent_web_short_not_started">Служба выкл.</string>
+    <string name="policy_parent_web_short_unresponsive">Нет ответа</string>
+</resources>

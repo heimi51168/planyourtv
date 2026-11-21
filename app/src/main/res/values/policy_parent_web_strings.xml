@@ -1,0 +1,23 @@
+<resources>
+    <string name="policy_parent_web_checking">Checking…</string>
+    <string name="policy_parent_web_ok">Web service is up</string>
+    <string name="policy_parent_web_offline">TV is not on a network</string>
+    <string name="policy_parent_web_no_address">No usable TV address</string>
+    <string name="policy_parent_web_not_started">Web service is not running</string>
+    <string name="policy_parent_web_unresponsive">Web service is not responding</string>
+    <string name="policy_parent_web_waiting">waiting for phone</string>
+    <string name="policy_parent_web_just_now">phone accessed just now</string>
+    <string name="policy_parent_web_minutes">%1$d min ago</string>
+    <string name="policy_parent_web_hours">%1$d h ago</string>
+    <string name="policy_parent_web_address_access">%1$s · %2$s</string>
+    <string name="policy_parent_web_action_network">Connect Wi-Fi or Ethernet and retry</string>
+    <string name="policy_parent_web_action_proxy">Turn off the proxy or VPN and retry</string>
+    <string name="policy_parent_web_action_restart">Restart the TV</string>
+    <string name="policy_parent_web_hint">Phone can\'t connect? Use the same Wi-Fi and disable guest network / AP isolation.</string>
+    <string name="policy_parent_web_short_checking">Checking</string>
+    <string name="policy_parent_web_short_ok">Web OK</string>
+    <string name="policy_parent_web_short_offline">No network</string>
+    <string name="policy_parent_web_short_no_address">No address</string>
+    <string name="policy_parent_web_short_not_started">Service off</string>
+    <string name="policy_parent_web_short_unresponsive">No response</string>
+</resources>

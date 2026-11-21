@@ -15,6 +15,7 @@ class StudyEarnRulesTest {
 
     @Test
     fun defaultsDisableTheFeatureAndUseTenToFiveMinutes() {
+        assertFalse(LocalRules.DEFAULTS.studyEarnEnabled)
         assertEquals(emptySet<String>(), LocalRules.DEFAULTS.studyEarnPackages)
         assertEquals(10, LocalRules.DEFAULTS.studyEarnStudyMinutes)
         assertEquals(5, LocalRules.DEFAULTS.studyEarnRewardMinutes)

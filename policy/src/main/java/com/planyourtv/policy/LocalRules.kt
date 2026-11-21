@@ -86,9 +86,10 @@ data class LocalRules(
     val quizGateEnabled: Boolean = true,
     /**
      * Master switch for study mode and study-to-earn. Off keeps the study/study-earn app lists
-     * and minutes stored but hides them from the child.
+     * and minutes stored but hides them from the child. New and reset rules start with only the
+     * quiz route enabled; saved rules keep their stored value.
      */
-    val studyEarnEnabled: Boolean = true,
+    val studyEarnEnabled: Boolean = false,
     /** Master switch for direct start. Independent of the quiz and study routes. */
     val directStartEnabled: Boolean = false,
     /**

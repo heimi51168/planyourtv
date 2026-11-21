@@ -159,6 +159,13 @@ import kotlinx.coroutines.withTimeoutOrNull
 
 private const val PIN_LENGTH = 6
 
+/**
+ * How long a decoded picture takes to replace a film's last frame. A film's first frame uses
+ * the player's own 540 ms fade; this is the reverse direction, started only once the picture
+ * is in memory so the surface never shows the window's black.
+ */
+private const val FILM_TO_STILL_FADE_MS = 450
+
 // The lock screen's glass is the screen itself: edge to edge, with no margin and no corner.
 // The controls keep their original 920x508 dp sheet, centred, so no control moves: the sheet's
 // outer margin and inner padding already put the 864 dp content at the screen's 48 dp side
@@ -367,7 +374,21 @@ fun PolicyHomeGate(
     )
     val childLoading = childActive && childWallpaper?.loading == true
     val childFilmCover = remember { Animatable(0f) }
-    LaunchedEffect(childWallpaper?.source) { childFilmCover.snapTo(0f) }
+    // A film fades its first frame in by itself (PolicyLockFilm). The reverse - a film giving
+    // way to a picture or to the bundled default - starts only once that picture is decoded;
+    // until then the surface keeps the film's last frame. Snapping the cover when the source
+    // changed instead showed the previous picture (or black) for the decode time, which was
+    // the flash seen when a rotation advanced.
+    val childSourceKind = childWallpaper?.source?.kind
+    val childStillReady = childWallpaper == null || childWallpaper.imageReady
+    LaunchedEffect(childSourceKind, childStillReady) {
+        if (childSourceKind != PolicyMediaKind.VIDEO && childStillReady) {
+            childFilmCover.animateTo(
+                targetValue = 0f,
+                animationSpec = tween(FILM_TO_STILL_FADE_MS, easing = Motion.EaseOut),
+            )
+        }
+    }
     val homeWallpaper = if (childActive) {
         PolicyHomeWallpaper(
             image = childWallpaper?.image,
@@ -643,6 +664,9 @@ private fun PolicyLockScreen(
     // The top-right guard badge opens a small parent panel. One state drives BACK, the overlay
     // flags and the panel itself, so no flow can leave it open behind another sheet.
     var guardPanelOpen by remember { mutableStateOf(false) }
+    // The member sheet is inline, above the dock, rather than a Dialog window: on the projector
+    // the new window took over a second to appear and read as a frozen remote.
+    var subjectSheetOpen by remember { mutableStateOf(false) }
     // Set between opening the panel and handing focus back: the first composition (no panel has
     // ever opened) must not pull focus to the badge.
     var guardWasOpen by remember { mutableStateOf(false) }
@@ -1445,7 +1469,18 @@ private fun PolicyLockScreen(
     val lockSource = childWallpaper?.source
     val lockSound = videoSoundEnabled
     val lockFilmCover = remember { Animatable(0f) }
-    LaunchedEffect(lockSource?.uri) { lockFilmCover.snapTo(0f) }
+    // Same rule as the Home film above: a film's first frame fades in by itself; a picture
+    // replaces a film only when it is ready, so the last film frame stays until then.
+    val lockSourceKind = lockSource?.kind
+    val lockStillReady = childWallpaper == null || childWallpaper.imageReady
+    LaunchedEffect(lockSourceKind, lockStillReady) {
+        if (lockSourceKind != PolicyMediaKind.VIDEO && lockStillReady) {
+            lockFilmCover.animateTo(
+                targetValue = 0f,
+                animationSpec = tween(FILM_TO_STILL_FADE_MS, easing = Motion.EaseOut),
+            )
+        }
+    }
     // The panel takes focus itself when it opens. Closing it (BACK, a tap outside, or the exit
     // row starting the PIN) gives focus back to the badge, unless another sheet now owns focus.
     // Opening on the first composition is not a return, so the idle sheet keeps it.
@@ -1468,7 +1503,15 @@ private fun PolicyLockScreen(
             // A window-wide opaque fill would hide the policy film's SurfaceView, which is
             // behind the window; a picture keeps the opaque root and is drawn by the backdrop.
             .background(
-                if (v10 && lockSource?.kind == PolicyMediaKind.VIDEO) Color.Transparent else Color.Black,
+                // The film's SurfaceView is behind the window. Stay transparent for the whole
+                // child wallpaper, not only while the active item is a video: when a film gives
+                // way to a picture, the picture fades in over the film's last frame. The
+                // backdrop's own opaque base keeps the surface hidden everywhere else.
+                if (v10 && (lockSource?.kind == PolicyMediaKind.VIDEO || childWallpaper != null)) {
+                    Color.Transparent
+                } else {
+                    Color.Black
+                },
             )
             // Draw one more frame when a remote switch needed the panel woken; the frame itself
             // is unchanged apart from the badge the state already switched.
@@ -1479,13 +1522,17 @@ private fun PolicyLockScreen(
             .focusRequester(idleFocus)
             // The choice overlay traps focus on its own rows; the desktop root must not keep a
             // focusable node that focus search can fall back to.
-            .focusable(enabled = (!desktopMenu || !dockFocusActive) && !unlockChoiceMode)
+            .focusable(
+                enabled = (!desktopMenu || !dockFocusActive) &&
+                    !unlockChoiceMode &&
+                    !subjectSheetOpen,
+            )
             .onPreviewKeyEvent { event ->
                 // The sheet itself holds focus while idle so no action is pre-selected.
                 // The first direction press enters the list; after that the column's own
                 // navigation takes over. The choice overlay consumes its own D-pad keys.
                 if (!pinMode && !durationMode && !guardPanelOpen && !dockFocusActive &&
-                    !unlockChoiceMode &&
+                    !unlockChoiceMode && !subjectSheetOpen &&
                     event.type == KeyEventType.KeyDown &&
                     event.nativeKeyEvent.repeatCount == 0
                 ) {
@@ -1522,18 +1569,17 @@ private fun PolicyLockScreen(
             },
         contentAlignment = Alignment.Center,
     ) {
-        if (v10) {
-            val film = lockSource?.takeIf { it.kind == PolicyMediaKind.VIDEO }
-            if (film != null) {
-                PolicyLockFilm(
-                    source = film,
-                    cover = lockFilmCover,
-                    soundEnabled = lockSound && film.hasAudio,
-                    loop = (childWallpaper?.playlistSize ?: 1) <= 1,
-                    onEnded = childWallpaper?.onVideoEnded,
-                    onError = childWallpaper?.onVideoError,
-                )
-            }
+        if (v10 && childWallpaper != null) {
+            // Composed for a picture too: the SurfaceView keeps the last film frame while the
+            // next picture fades in. PolicyLockFilm ignores a null or still source.
+            PolicyLockFilm(
+                source = lockSource,
+                cover = lockFilmCover,
+                soundEnabled = lockSound && lockSource?.hasAudio == true,
+                loop = childWallpaper.playlistSize <= 1,
+                onEnded = childWallpaper.onVideoEnded,
+                onError = childWallpaper.onVideoError,
+            )
         }
         if (desktopMenu) {
             val resting = state.lockReason == LockReason.RESTING &&
@@ -1805,6 +1851,9 @@ private fun PolicyLockScreen(
             // The face sits above the grid: focusing it returns the grid to the shelf and takes
             // the time out of the pill, the way focusing the pill does.
             var subjectFocused by remember { mutableStateOf(false) }
+            // The member sheet is drawn here, above the dock. The desktop's focusable chrome is
+            // disabled while it is up so D-pad focus stays in the sheet.
+            val family by FamilyHub.state.collectAsState()
             val gridFocused by remember(dockMetrics, pillFocused, subjectFocused) {
                 derivedStateOf {
                     if (pillFocused || subjectFocused) return@derivedStateOf false
@@ -1829,7 +1878,8 @@ private fun PolicyLockScreen(
                 minutes = minutes,
                 showPending = state.sessionState == SessionState.PENDING,
                 // The panel covers the pill; hiding it keeps the glass free of the glyphs
-                // underneath and keeps focus from falling back to it.
+                // underneath and keeps focus from falling back to it. The member sheet keeps
+                // the pill and face composed but takes them out of focus search below.
                 statusInteractive = !guardPanelOpen,
                 statusFocus = guardFocus,
                 statusDownFocus = firstActionFocus,
@@ -1839,6 +1889,8 @@ private fun PolicyLockScreen(
                 showTime = gridFocused,
                 scroll = { dockState.scroll.value },
                 collapsePx = dockCollapsePx,
+                subjectSheetOpen = subjectSheetOpen,
+                onSubjectSheetOpen = { subjectSheetOpen = true },
             )
             LockDesktopDock(
                 slots = slots,
@@ -1907,6 +1959,7 @@ private fun PolicyLockScreen(
                 state = dockState,
                 // Focusing the status badge or the face returns to the shelf, as Up on Home does.
                 resetFocus = pillFocused || subjectFocused,
+                interactive = !subjectSheetOpen,
                 modifier = Modifier
                     .align(Alignment.TopStart),
             )
@@ -2004,6 +2057,34 @@ private fun PolicyLockScreen(
                         unlockChoiceMessage = null
                     },
                 )
+            }
+            // Drawn after the dock and the choice overlay so the member sheet covers the whole
+            // desktop. Its composables no longer open a Dialog; opening one blocked the remote
+            // for 1-2 s on the projector (measured 2026-11-22).
+            if (subjectSheetOpen) {
+                val cloud = state.cloudSubjectMember()
+                val activeMember = family.activeMember
+                when {
+                    cloud != null && state.cloudMembers.size > 1 -> CloudSubjectSwitchOverlay(
+                        deviceNo = state.deviceNo,
+                        members = state.cloudMembers,
+                        activeMemberId = cloud.memberId,
+                        onDismiss = { subjectSheetOpen = false },
+                    )
+                    cloud != null -> CloudSubjectProfileOverlay(
+                        member = cloud,
+                        onDismiss = { subjectSheetOpen = false },
+                    )
+                    activeMember != null && family.canSwitchMember -> SubjectSwitchOverlay(
+                        family = family,
+                        onDismiss = { subjectSheetOpen = false },
+                    )
+                    activeMember != null -> SubjectProfileOverlay(
+                        member = activeMember,
+                        showSingleHint = true,
+                        onDismiss = { subjectSheetOpen = false },
+                    )
+                }
             }
         } else if (v10) {
             // PIN and duration open over the same wallpaper instead of replacing it with the
@@ -2878,6 +2959,21 @@ private val LockDesktopTextShadow = Shadow(
 )
 
 /**
+ * The garden member the backend resolved for this bound TV, or null on a local roster.
+ * Both the desktop face and the sheet opened from it read this one derivation.
+ */
+private fun PolicyUiState.cloudSubjectMember(): CloudMember? =
+    cloudActiveMemberId?.let { activeId ->
+        val row = cloudMembers.firstOrNull { it.memberId == activeId }
+        CloudMember(
+            memberId = activeId,
+            name = cloudActiveMemberName.ifBlank { row?.name.orEmpty() },
+            avatarUrl = cloudActiveMemberIcon.ifBlank { row?.avatarUrl.orEmpty() },
+            isChild = row?.isChild,
+        )
+    }?.takeIf { mode == PolicyMode.CLOUD }
+
+/**
  * The V10 identity on the wallpaper, built on Aerial's own clock: [ShelfClock] or [CornerClock] at
  * the same coordinates and with the same [AerialSettings] choices Home uses (`largeClock`,
  * `clockRight`, `clockHours`, `showWeather`, the system language). Nothing about the clock is
@@ -2932,6 +3028,9 @@ private fun LockDesktopIdentity(
     /** The dock grid's scroll in px; the clock and the info band ride up and fade with it. */
     scroll: () -> Float = { 0f },
     collapsePx: Float = 1f,
+    /** The member sheet is rendered by the lock screen so it can cover the dock. */
+    subjectSheetOpen: Boolean = false,
+    onSubjectSheetOpen: () -> Unit = {},
 ) {
     val now by rememberNow()
     val clockRight = AerialSettings.clockRight
@@ -2944,17 +3043,8 @@ private fun LockDesktopIdentity(
     // shows this identity instead of the local roster: after binding, the desktop user is the
     // family member the parent configured in the Garden app. Older backends send no member;
     // those keep the local chip below unchanged.
-    val cloudMember: CloudMember? = state.cloudActiveMemberId?.let { activeId ->
-        val row = state.cloudMembers.firstOrNull { it.memberId == activeId }
-        CloudMember(
-            memberId = activeId,
-            name = state.cloudActiveMemberName.ifBlank { row?.name.orEmpty() },
-            avatarUrl = state.cloudActiveMemberIcon.ifBlank { row?.avatarUrl.orEmpty() },
-            isChild = row?.isChild,
-        )
-    }?.takeIf { state.mode == PolicyMode.CLOUD }
+    val cloudMember: CloudMember? = state.cloudSubjectMember()
     val subjectFocus = remember { FocusRequester() }
-    var subjectSheetOpen by remember { mutableStateOf(false) }
     var restoreSubjectFocus by remember { mutableStateOf(false) }
     val showSubjectChip = showDetails && statusInteractive && (cloudMember != null || member != null)
     LaunchedEffect(subjectSheetOpen) {
@@ -2993,7 +3083,7 @@ private fun LockDesktopIdentity(
                 now = now,
                 network = vm.network,
                 showTime = showTime,
-                enabled = statusInteractive,
+                enabled = statusInteractive && !subjectSheetOpen,
                 focusRequester = resolvedStatusFocus,
                 onFocused = { onStatusFocused?.invoke(it) },
                 onClick = { onStatusClick?.invoke() },
@@ -3041,7 +3131,7 @@ private fun LockDesktopIdentity(
                     focusRequester = subjectFocus,
                     onClick = {
                         restoreSubjectFocus = true
-                        subjectSheetOpen = true
+                        onSubjectSheetOpen()
                     },
                     onUp = { runCatching { resolvedStatusFocus.requestFocus() }.isSuccess },
                     onRight = { runCatching { resolvedStatusFocus.requestFocus() }.isSuccess },
@@ -3050,6 +3140,7 @@ private fun LockDesktopIdentity(
                     },
                     diameter = diameter,
                     focusedScale = if (diameter >= 60.dp) 1.06f else 1.1f,
+                    enabled = !subjectSheetOpen,
                     onFocused = onSubjectFocused,
                     modifier = chipModifier,
                 )
@@ -3060,7 +3151,7 @@ private fun LockDesktopIdentity(
                         focusRequester = subjectFocus,
                         onClick = {
                             restoreSubjectFocus = true
-                            subjectSheetOpen = true
+                            onSubjectSheetOpen()
                         },
                         onUp = { runCatching { resolvedStatusFocus.requestFocus() }.isSuccess },
                         onRight = { runCatching { resolvedStatusFocus.requestFocus() }.isSuccess },
@@ -3069,6 +3160,7 @@ private fun LockDesktopIdentity(
                         },
                         diameter = diameter,
                         focusedScale = if (diameter >= 60.dp) 1.06f else 1.1f,
+                        enabled = !subjectSheetOpen,
                         onFocused = onSubjectFocused,
                         modifier = chipModifier,
                     )
@@ -3217,42 +3309,6 @@ private fun LockDesktopIdentity(
                                 .padding(top = LockDesktopBadgeTop, end = LockDesktopStart),
                         )
                     }
-                }
-            }
-        }
-        if (subjectSheetOpen && (cloudMember != null || member != null)) {
-            // Cloud-bound: the sheet lists the garden family members the device allows and
-            // writes the pick back to the backend; with a single member it only explains where
-            // the profile is edited. Local TVs keep the established roster sheet below.
-            val cloud = cloudMember
-            if (cloud != null) {
-                if (state.cloudMembers.size > 1) {
-                    CloudSubjectSwitchOverlay(
-                        deviceNo = state.deviceNo,
-                        members = state.cloudMembers,
-                        activeMemberId = cloud.memberId,
-                        onDismiss = { subjectSheetOpen = false },
-                    )
-                } else {
-                    CloudSubjectProfileOverlay(
-                        member = cloud,
-                        onDismiss = { subjectSheetOpen = false },
-                    )
-                }
-            } else if (member != null) {
-                // One member: nothing to switch to, so the sheet only explains where to edit
-                // the name and photo. Two or more: the parent-confirmed switching list.
-                if (family.canSwitchMember) {
-                    SubjectSwitchOverlay(
-                        family = family,
-                        onDismiss = { subjectSheetOpen = false },
-                    )
-                } else {
-                    SubjectProfileOverlay(
-                        member = member,
-                        showSingleHint = true,
-                        onDismiss = { subjectSheetOpen = false },
-                    )
                 }
             }
         }

@@ -526,7 +526,7 @@ class ParentControlActionsTest {
         // The web page needs the stored switches and the V5 limit fields. Switches are
         // independent: none of them implies pausing another route.
         assertTrue(json.getBoolean("quizGateEnabled"))
-        assertTrue(json.getBoolean("studyEarnEnabled"))
+        assertFalse(json.getBoolean("studyEarnEnabled"))
         assertFalse(json.getBoolean("directStartEnabled"))
         assertEquals(30, json.getInt("sessionCapMinutes"))
         assertEquals(20, json.getInt("sessionLimitMinutes"))
@@ -649,7 +649,7 @@ class ParentControlActionsTest {
             assertEquals(1, saved.studyEarnRewardMinutes)
         }
 
-        val countTooHigh = saveRules(schemaFiveRules(defaultGroups).put("quizDailyLimitCount", 11))
+        val countTooHigh = saveRules(schemaFiveRules(defaultGroups).put("quizDailyLimitCount", 100))
         assertEquals("RULES_INVALID_ROUTE_COUNTS", countTooHigh.code)
         val countMissing = saveRules(schemaFiveRules(defaultGroups).apply {
             remove("directDailyFreeCount")

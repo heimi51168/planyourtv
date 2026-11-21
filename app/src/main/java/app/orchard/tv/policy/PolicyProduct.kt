@@ -48,7 +48,8 @@ object PolicyProduct {
         PolicyVoicePlayer.install(context.applicationContext)
         // Read the source-entry display switch before Home builds its first list.
         SourceEntrySettings.install(context.applicationContext)
-        // The member switch password defaults off for upgraded and fresh devices.
+        // Read the old device-wide switch before the roster exists. Its value is migrated to
+        // each member below; until that write succeeds it still guards upgraded devices.
         MemberSwitchAuth.install(context.applicationContext)
         // Extra parent-PIN prompts inside the web user-configuration tab default on.
         UserConfigPinSettings.install(context.applicationContext)
@@ -82,6 +83,12 @@ object PolicyProduct {
             // Siblings never inherit the pre-V41 global tags. Remove their
             // packages that reference those tags exactly once.
             QuizOwnershipMigration.reconcile()
+            // A data-empty fresh install gets one editable parent example next to the default
+            // child. Upgrades never enter this path; see FamilyDefaultSeed.
+            FamilyDefaultSeed.install(context.applicationContext)
+            // V48: the old device-wide switch becomes a per-member flag. Run once per boot
+            // after the roster is ready so every existing member inherits the old protection.
+            MemberSwitchAuth.migrateLegacyToMembers()
         }
         if (cloudEnabled) PolicyCloud.install(context)
         // One product-owned bring-home path for installs without a Home Guard.

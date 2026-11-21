@@ -5,7 +5,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -43,19 +45,21 @@ private val QrPlaceholder = Color(0xFF6E6E73)
 internal fun V6ParentWebQrPane(
     modifier: Modifier = Modifier,
 ) {
-    val web = rememberQuizQr(scale = 12, fragment = "#parent")
+    val web = rememberParentWebQr(scale = 12)
     Column(
         modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         QrPlate(
-            bitmap = web.bitmap,
-            loading = web.loading,
+            bitmap = web.qr.bitmap,
+            loading = web.qr.loading,
             size = WebQrSize,
         ) {
             OfflineQr()
         }
+        Spacer(Modifier.height(14.dp))
+        ParentWebStatusDetail(web.status)
     }
 }
 
@@ -99,7 +103,7 @@ private fun OfflineQr() {
     ) {
         GlyphIcon(Glyph.Offline, QrPlaceholder, 30.dp)
         BasicText(
-            stringResource(R.string.policy_quiz_offline),
+            stringResource(R.string.policy_parent_qr_offline),
             style = Type.Caption.copy(
                 fontSize = 10.sp,
                 color = QrPlaceholder,

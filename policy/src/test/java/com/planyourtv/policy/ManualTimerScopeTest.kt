@@ -21,6 +21,7 @@ class ManualTimerScopeTest {
         val rules = LocalRules(
             allowedPackages = setOf(video, study, free),
             studyPackages = setOf(study),
+            studyEarnEnabled = true,
             unlimitedPackages = setOf(free),
         )
 
@@ -40,6 +41,7 @@ class ManualTimerScopeTest {
         val rules = LocalRules(
             allowedPackages = setOf(video, study, free),
             studyPackages = setOf(study),
+            studyEarnEnabled = true,
             unlimitedPackages = setOf(free),
         )
 
@@ -89,6 +91,7 @@ class ManualTimerScopeTest {
         val rules = LocalRules(
             allowedPackages = setOf(ALL_VALID_APP),
             studyPackages = setOf(study),
+            studyEarnEnabled = true,
             unlimitedPackages = setOf(free),
         )
         val installed = setOf(video, game, study, free)

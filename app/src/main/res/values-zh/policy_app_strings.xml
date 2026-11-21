@@ -353,6 +353,7 @@
     <string name="policy_subject_switch_title">切换成员</string>
     <string name="policy_subject_switch_pin_title">请输入%1$s密码</string>
     <string name="policy_subject_current">当前使用</string>
+    <string name="policy_subject_switch_exempt">%1$s–%2$s 免密</string>
     <string name="policy_subject_switching">正在切换…</string>
     <string name="policy_subject_switch_busy">计时或答题进行中，结束后再切换。</string>
     <string name="policy_subject_switch_cloud">云端绑定期间暂不支持切换成员。</string>

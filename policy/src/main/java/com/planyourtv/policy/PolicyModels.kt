@@ -106,7 +106,7 @@ data class PolicyUiState(
     /** The parent allows the quiz route. V44 routes are independent and never pause each other. */
     val quizGateEnabled: Boolean = true,
     /** The parent allows study mode/study-to-earn. Independent from the other two routes. */
-    val studyEarnEnabled: Boolean = true,
+    val studyEarnEnabled: Boolean = false,
     /** Tapping an entertainment app starts immediately for [sessionLimitSeconds]. */
     val directStartEnabled: Boolean = false,
     /**

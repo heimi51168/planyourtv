@@ -60,6 +60,8 @@ class StudyRoundRuntimeTest {
         restMinutes = 0,
         allowedPackages = setOf(videoPackage),
         studyPackages = setOf(studyPackage),
+        // Study rounds are opt-in since 2.0.001; the master-switch test overrides this.
+        studyEarnEnabled = true,
         studyEarnPackages = setOf(studyPackage),
         studyEarnStudyMinutes = studyMinutes,
         studyEarnRewardMinutes = rewardMinutes,

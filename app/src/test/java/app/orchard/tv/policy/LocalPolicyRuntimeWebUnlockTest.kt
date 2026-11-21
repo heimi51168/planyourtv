@@ -42,8 +42,9 @@ class LocalPolicyRuntimeWebUnlockTest {
         sessionLimitMinutes = 20,
         restMinutes = 0,
         allowedPackages = setOf(videoPackage),
-        // Study mode needs a study scope; the master switch stays on by default.
+        // Study mode needs both a study scope and the opt-in master switch.
         studyPackages = setOf(studyPackage),
+        studyEarnEnabled = true,
     )
 
     private fun state() = LocalPolicyRuntime.state.value

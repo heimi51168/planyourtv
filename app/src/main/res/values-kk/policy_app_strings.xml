@@ -341,6 +341,7 @@
     <string name="policy_subject_switch_title">Мүшені ауыстыру</string>
     <string name="policy_subject_switch_pin_title">%1$s мүшесінің құпия сөзін енгізіңіз</string>
     <string name="policy_subject_current">Ағымдағы</string>
+    <string name="policy_subject_switch_exempt">%1$s–%2$s құпиясөзсіз</string>
     <string name="policy_subject_switching">Ауыстырылуда…</string>
     <string name="policy_subject_switch_busy">Таймер немесе тест аяқталғанша күтіңіз.</string>
     <string name="policy_subject_switch_cloud">Теледидар бұлтқа байланған кезде мүшені ауыстыру қолжетімсіз.</string>

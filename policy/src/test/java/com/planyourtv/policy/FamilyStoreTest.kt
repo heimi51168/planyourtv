@@ -25,6 +25,7 @@ class FamilyStoreTest {
 
         assertNotNull(created)
         assertEquals("大宝", created!!.document.members.single().displayName)
+        assertEquals("boy", created.document.members.single().avatarPreset)
         assertEquals(MemberSource.MIGRATED, created.document.members.single().source)
         assertEquals("usr_test", created.index.defaultUserId)
         val loaded = store.load() as FamilyLoad.Loaded
@@ -156,6 +157,134 @@ class FamilyStoreTest {
         assertTrue(MemberPin.verify("123456", second.switchPinSalt, second.switchPinHash))
         assertFalse(MemberPin.verify("000000", second.switchPinSalt, second.switchPinHash))
         assertFalse(MemberPin.verify("1234", second.switchPinSalt, second.switchPinHash))
+        assertTrue(members.none { it.switchPinRequired })
+        assertTrue(members.all { it.switchPinExemptDays.isEmpty() })
+        assertEquals(SwitchPinExempt.DEFAULT_START_MINUTE, members.first().switchPinExemptStartMinute)
+        assertEquals(SwitchPinExempt.DEFAULT_END_MINUTE, members.first().switchPinExemptEndMinute)
+    }
+
+    @Test
+    fun switchExemptionSurvivesReloadOnlyWhileProtectionIsOn() {
+        val storage = MemoryFamilyStorage()
+        val store = FamilyStore(storage)
+        store.createDefault(now, familyId = "fam_test", userId = "usr_default")
+        val credential = MemberPin.create("246800")!!
+        val second = store.addMember(
+            "二宝",
+            now + 1,
+            switchPinSalt = credential.salt,
+            switchPinHash = credential.hash,
+            switchPinRequired = true,
+            switchPinExemptDays = listOf(7, 1, 1),
+            switchPinExemptStartMinute = 9 * 60,
+            switchPinExemptEndMinute = 15 * 60,
+        )!!
+        assertEquals(listOf(1, 7), second.switchPinExemptDays)
+
+        val loaded = (store.load() as FamilyLoad.Loaded).document.members
+            .first { it.userId == second.userId }
+        assertEquals(listOf(1, 7), loaded.switchPinExemptDays)
+        assertTrue(loaded.switchPinExemptAt(dayOfWeek = 1, minuteOfDay = 9 * 60))
+        assertTrue(loaded.switchPinExemptAt(dayOfWeek = 1, minuteOfDay = 15 * 60 - 1))
+        assertFalse(loaded.switchPinExemptAt(dayOfWeek = 1, minuteOfDay = 15 * 60))
+        assertFalse(loaded.switchPinExemptAt(dayOfWeek = 2, minuteOfDay = 12 * 60))
+
+        assertTrue(store.updateMember(loaded.copy(switchPinRequired = false, updatedAt = now + 2)))
+        val disabled = (store.load() as FamilyLoad.Loaded).document.members
+            .first { it.userId == second.userId }
+        assertFalse(disabled.switchPinRequired)
+        assertTrue(disabled.switchPinExemptDays.isEmpty())
+    }
+
+    @Test
+    fun switchExemptionRejectsMalformedDaysAndWindows() {
+        val storage = MemoryFamilyStorage()
+        val store = FamilyStore(storage)
+        store.createDefault(now, familyId = "fam_test", userId = "usr_default")
+        val credential = MemberPin.create("246800")!!
+        val before = (store.load() as FamilyLoad.Loaded).document.revision
+
+        assertNull(store.addMember(
+            "二宝",
+            now + 1,
+            switchPinSalt = credential.salt,
+            switchPinHash = credential.hash,
+            switchPinRequired = true,
+            switchPinExemptDays = listOf(0),
+        ))
+        assertNull(store.addMember(
+            "二宝",
+            now + 2,
+            switchPinSalt = credential.salt,
+            switchPinHash = credential.hash,
+            switchPinRequired = true,
+            switchPinExemptDays = listOf(1),
+            switchPinExemptStartMinute = 15 * 60,
+            switchPinExemptEndMinute = 9 * 60,
+        ))
+        val unchanged = store.load() as FamilyLoad.Loaded
+        assertEquals(before, unchanged.document.revision)
+        assertEquals(1, unchanged.document.members.size)
+    }
+
+    @Test
+    fun switchExemptionHelpersFailClosed() {
+        val member = FamilyMember(
+            familyId = "fam_test",
+            userId = "usr_test",
+            displayName = "二宝",
+            switchPinRequired = true,
+            switchPinExemptDays = listOf(1, 2),
+            switchPinExemptStartMinute = 9 * 60,
+            switchPinExemptEndMinute = 15 * 60,
+            createdAt = now,
+            updatedAt = now,
+        )
+
+        assertTrue(member.switchPinExemptAt(1, 9 * 60))
+        assertFalse(member.switchPinExemptAt(1, 9 * 60 - 1))
+        assertFalse(member.switchPinExemptAt(1, 15 * 60))
+        assertFalse(member.switchPinExemptAt(3, 12 * 60))
+        assertFalse(member.copy(switchPinRequired = false).switchPinExemptAt(1, 12 * 60))
+        assertFalse(member.copy(switchPinExemptStartMinute = 15 * 60).switchPinExemptAt(1, 12 * 60))
+        assertEquals(listOf(1, 7), SwitchPinExempt.normalizeDays(listOf(7, 1, 7)))
+        assertNull(SwitchPinExempt.normalizeDays(listOf(0)))
+        assertFalse(SwitchPinExempt.isValidWindow(15 * 60, 9 * 60))
+        assertTrue(SwitchPinExempt.isValidWindow(0, 24 * 60))
+    }
+
+    @Test
+    fun perMemberSwitchProtectionDefaultsOffAndSurvivesReload() {
+        val storage = MemoryFamilyStorage()
+        val store = FamilyStore(storage)
+        store.createDefault(now, familyId = "fam_test", userId = "usr_default")
+        val credential = MemberPin.create("246800")!!
+        val second = store.addMember(
+            "二宝",
+            now + 1,
+            switchPinSalt = credential.salt,
+            switchPinHash = credential.hash,
+            switchPinRequired = true,
+        )!!
+
+        val members = (store.load() as FamilyLoad.Loaded).document.members
+        assertFalse(members.first().switchPinRequired)
+        assertTrue(members.first { it.userId == second.userId }.switchPinRequired)
+    }
+
+    @Test
+    fun legacySwitchAppliesToEveryExistingMemberInOneWrite() {
+        val storage = MemoryFamilyStorage()
+        val store = FamilyStore(storage)
+        store.createDefault(now, familyId = "fam_test", userId = "usr_default")
+        store.addMember("二宝", now + 1)
+        val before = (store.load() as FamilyLoad.Loaded).document.revision
+
+        assertTrue(store.setSwitchPinRequiredForAll(true, now + 2))
+
+        val loaded = store.load() as FamilyLoad.Loaded
+        assertTrue(loaded.document.members.all { it.switchPinRequired })
+        assertEquals(before + 1L, loaded.document.revision)
     }
 
     @Test
@@ -191,6 +320,10 @@ class FamilyStoreTest {
         for (index in 0 until members.length()) {
             members.getJSONObject(index).remove("switchPinSalt")
             members.getJSONObject(index).remove("switchPinHash")
+            members.getJSONObject(index).remove("switchPinRequired")
+            members.getJSONObject(index).remove("switchPinExemptDays")
+            members.getJSONObject(index).remove("switchPinExemptStartMinute")
+            members.getJSONObject(index).remove("switchPinExemptEndMinute")
         }
         storage.values[key] = JSONObject()
             .put("v", envelope.getInt("v"))
@@ -200,7 +333,39 @@ class FamilyStoreTest {
 
         val loaded = (store.load() as FamilyLoad.Loaded).document.members.single()
         assertTrue(loaded.switchPinInitial)
+        assertFalse(loaded.switchPinRequired)
+        assertTrue(loaded.switchPinExemptDays.isEmpty())
+        assertEquals(SwitchPinExempt.DEFAULT_START_MINUTE, loaded.switchPinExemptStartMinute)
+        assertEquals(SwitchPinExempt.DEFAULT_END_MINUTE, loaded.switchPinExemptEndMinute)
+        assertFalse(loaded.switchPinExemptAt(1, 12 * 60))
         assertTrue(MemberPin.verify("123456", loaded.switchPinSalt, loaded.switchPinHash))
+    }
+
+    @Test
+    fun malformedSwitchExemptionDecodesToNoWaiverWithoutCorruptingTheRoster() {
+        val storage = MemoryFamilyStorage()
+        val store = FamilyStore(storage)
+        store.createDefault(now, familyId = "fam_test", userId = "usr_default")
+        val key = FamilyKeys.family("fam_test")
+        val envelope = JSONObject(storage.values.getValue(key))
+        val payload = JSONObject(envelope.getString("payload"))
+        val member = payload.getJSONArray("members").getJSONObject(0)
+        member.put("switchPinRequired", true)
+        member.put("switchPinExemptDays", org.json.JSONArray(listOf(0, 8)))
+        member.put("switchPinExemptStartMinute", 15 * 60)
+        member.put("switchPinExemptEndMinute", 9 * 60)
+        storage.values[key] = JSONObject()
+            .put("v", envelope.getInt("v"))
+            .put("crc", CRC32().apply { update(payload.toString().toByteArray()) }.value)
+            .put("payload", payload.toString())
+            .toString()
+
+        val loaded = (store.load() as FamilyLoad.Loaded).document.members.single()
+        assertTrue(loaded.switchPinRequired)
+        assertTrue(loaded.switchPinExemptDays.isEmpty())
+        assertEquals(SwitchPinExempt.DEFAULT_START_MINUTE, loaded.switchPinExemptStartMinute)
+        assertEquals(SwitchPinExempt.DEFAULT_END_MINUTE, loaded.switchPinExemptEndMinute)
+        assertFalse(loaded.switchPinExemptAt(1, 12 * 60))
     }
 
     @Test

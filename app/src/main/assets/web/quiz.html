@@ -4,9 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#eaf4ff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#111315" media="(prefers-color-scheme: dark)">
   <title>家长网页</title>
-  <link rel="stylesheet" href="quiz.css?v=55">
-  <link rel="stylesheet" href="parent.css?v=57">
+  <link rel="stylesheet" href="quiz.css?v=57">
+  <link rel="stylesheet" href="parent.css?v=61">
 </head>
 <body>
   <header class="top">
@@ -438,6 +440,15 @@
                     <span id="presetSourceBankCount" class="level-add-count"
                       aria-live="polite"></span>
                   </button>
+                  <button id="pickLifeSource" class="level-add-card life" type="button">
+                    <span class="level-add-plus" aria-hidden="true">+</span>
+                    <span class="level-add-copy">
+                      <span class="level-add-title" data-i18n="levelSourceLife"></span>
+                      <span class="level-add-meta" data-i18n="levelSourceLifeMeta"></span>
+                    </span>
+                    <span id="lifeSourceBankCount" class="level-add-count"
+                      aria-live="polite"></span>
+                  </button>
                   <button id="pickAiSource" class="level-add-card ai" type="button">
                     <span class="level-add-plus" aria-hidden="true">+</span>
                     <span class="level-add-copy">
@@ -454,15 +465,6 @@
                       <span class="level-add-meta" data-i18n="levelSourceCustomMeta"></span>
                     </span>
                     <span id="customSourceBankCount" class="level-add-count"
-                      aria-live="polite"></span>
-                  </button>
-                  <button id="pickLifeSource" class="level-add-card life" type="button">
-                    <span class="level-add-plus" aria-hidden="true">+</span>
-                    <span class="level-add-copy">
-                      <span class="level-add-title" data-i18n="levelSourceLife"></span>
-                      <span class="level-add-meta" data-i18n="levelSourceLifeMeta"></span>
-                    </span>
-                    <span id="lifeSourceBankCount" class="level-add-count"
                       aria-live="polite"></span>
                   </button>
                   <button id="pickWrongSource" class="level-add-card wrong" type="button">
@@ -1101,7 +1103,7 @@
 
   <div id="parentCenterRoot" class="parent-root hidden"></div>
 
-  <script src="parent.js?v=61"></script>
-  <script src="quiz.js?v=60"></script>
+  <script src="parent.js?v=64"></script>
+  <script src="quiz.js?v=62"></script>
 </body>
 </html>

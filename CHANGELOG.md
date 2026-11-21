@@ -3,6 +3,44 @@
 This changelog covers the community source snapshot. Official hosted builds may ship different
 artifacts with the same upstream Aerial base.
 
+## [2.0.002] - 2026-11-22
+
+Per-member timed password exemption, the parent-center Web service status, smoother member
+switching, fresh-install family defaults, and wallpaper and parent-app polish. Version code
+`148002`. The optional parent app is `1.2.4` / `10`.
+
+### Added
+
+- Timed switch exemption per member. When a member's switch password is on, the parent can select
+  weekdays and one same-day window (default 09:00–15:00, no days selected until the parent opts
+  in). Inside that window the TV switches to that member without a PIN and the member row shows
+  `09:00–15:00 免密`; outside it the PIN is still required. The parent Web family page now asks for
+  the parent password again (a five-minute `FAMILY_EDIT` proof) and writes are checked on the
+  server, so a child cannot quietly change member security settings.
+- Parent Web service status on the TV parent-center QR screen: whether the LAN phone page is
+  starting, available, offline, missing an address or not answering, plus the last phone access
+  and a next-step hint. The access token is never shown.
+- Fresh-install defaults. A data-empty new install starts with two example members — 儿子 and an
+  editable 爸爸 with one 生活技能提升 preset level. Upgrades never change the existing roster, and
+  a seeded member deleted by the parent is not recreated.
+
+### Changed
+
+- New and reset entertainment plans enable only the quiz route. Learn-to-earn and direct start
+  stay off until the parent turns them on; existing saved rules keep their stored values.
+- Family members use a consistent illustrated avatar set. The member sheet is drawn inline and
+  highlights the selected row, so opening it no longer waits for a separate TV window.
+- Parent app `1.2.4` removes the native title bar; the page header carries the title and the
+  global menu stays as a floating button.
+
+### Fixed
+
+- Kids-wallpaper carousel: switching between a picture and a video no longer flashes a bright or
+  black frame.
+- Member switching: quiz data is loaded as a sparse snapshot, removing the pause when changing
+  the active child.
+- Parent Web layout: member switching hint and card spacing have more breathing room.
+
 ## [2.0.000] - 2026-11-21
 
 Family members, three unlock routes, a built-in parent-fun question bank, a rebuilt parent app,

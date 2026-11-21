@@ -4,6 +4,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
+import androidx.annotation.DrawableRes
+import app.orchard.tv.R
 import com.planyourtv.policy.FamilyIds
 import com.planyourtv.policy.FamilyMember
 import java.io.File
@@ -28,10 +30,50 @@ object FamilyAvatarStore {
     private const val JPEG_QUALITY = 88
     private const val AVATAR_ROOT = "avatars"
 
-    /** The four presets drawn by the approved V40 preview; both Web and TV share these IDs. */
+    /** Built-in family portraits; both Web and TV share these IDs. */
+    const val DEFAULT_PRESET = "boy"
     val PRESETS: Set<String> = linkedSetOf(
-        "rabbit", "fox", "bear", "panda",
+        "dad", "mom", "grandpa", "grandma", "boy", "girl",
     )
+
+    /**
+     * The retired animal presets stay readable without rewriting stored documents. A member's
+     * next profile save writes the canonical portrait ID.
+     */
+    private val LEGACY_PRESETS = mapOf(
+        "rabbit" to "boy",
+        "fox" to "girl",
+        "bear" to "dad",
+        "panda" to "mom",
+    )
+
+    /** Returns the canonical portrait ID, or null for an unknown value. */
+    fun resolvePreset(preset: String?): String? {
+        val key = preset?.trim()?.lowercase().orEmpty()
+        return when {
+            key in PRESETS -> key
+            key in LEGACY_PRESETS -> LEGACY_PRESETS[key]
+            else -> null
+        }
+    }
+
+    fun canonicalPreset(preset: String?): String = resolvePreset(preset) ?: DEFAULT_PRESET
+
+    @DrawableRes
+    fun presetDrawable(preset: String?): Int = when (canonicalPreset(preset)) {
+        "dad" -> R.drawable.family_avatar_dad
+        "mom" -> R.drawable.family_avatar_mom
+        "grandpa" -> R.drawable.family_avatar_grandpa
+        "grandma" -> R.drawable.family_avatar_grandma
+        "girl" -> R.drawable.family_avatar_girl
+        else -> R.drawable.family_avatar_boy
+    }
+
+    /** Serves the same bundled bytes to the TV and the parent-center Web page. */
+    fun presetBytes(context: Context, preset: String?): ByteArray? =
+        runCatching {
+            context.resources.openRawResource(presetDrawable(preset)).use { it.readBytes() }
+        }.getOrNull()
 
     sealed interface ReceiveResult {
         data class Ok(val relativePath: String) : ReceiveResult

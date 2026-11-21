@@ -5,6 +5,7 @@ import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import android.database.sqlite.SQLiteStatement
 import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.planyourtv.policy.quiz.CourseOrigin
@@ -84,6 +85,19 @@ object QuizQuestionCache {
     private const val SUBJECT_STATE_TABLE = "qc_subject_state"
     private const val SUBJECT_META_TABLE = "qc_subject_meta"
     private const val SUBJECT_OWNER_KEY = "state_owner"
+
+    /**
+     * Answer state that is not the unused default. Snapshots only store rows that
+     * differ from it, so switching a child costs work proportional to their
+     * answered questions rather than the whole shared bank.
+     */
+    private const val NON_DEFAULT_STATE =
+        "(state <> '$STATE_AVAILABLE'" +
+            " OR reserved_by IS NOT NULL OR reserved_at IS NOT NULL" +
+            " OR consumed_at IS NOT NULL OR last_result IS NOT NULL" +
+            " OR wrong_count <> 0 OR answered_at IS NOT NULL" +
+            " OR last_round_id IS NOT NULL OR last_timed_out <> 0" +
+            " OR last_selected_index IS NOT NULL OR last_selected_indices IS NOT NULL)"
 
     private const val ROUND_EXCLUSION_TABLE = "qc_round_exclusion"
     private const val PICKED_EXCLUSION =
@@ -618,13 +632,15 @@ object QuizQuestionCache {
     }
 
     /**
-     * Copies the current local state into the owner's snapshot. Reserved rows are normalized
-     * because a member switch is only permitted between rounds. Snapshot rows whose content
-     * was cleared from the bank are dropped so the snapshots stay bounded.
+     * Replaces the owner's snapshot with their current non-default local state. Reserved rows
+     * are normalized because a member switch is only permitted between rounds. Replacing the
+     * whole snapshot also drops rows whose content was cleared from the bank, so the snapshots
+     * stay bounded.
      */
     private fun exportLocalState(db: SQLiteDatabase, ownerKey: String) {
+        db.delete(SUBJECT_STATE_TABLE, "subject_key = ?", arrayOf(ownerKey))
         db.execSQL(
-            "INSERT OR REPLACE INTO $SUBJECT_STATE_TABLE (" +
+            "INSERT INTO $SUBJECT_STATE_TABLE (" +
                 "subject_key, cache_id, state, reserved_by, reserved_at, consumed_at, " +
                 "last_result, wrong_count, answered_at, last_round_id, last_timed_out, " +
                 "last_selected_index, last_selected_indices) " +
@@ -634,7 +650,7 @@ object QuizQuestionCache {
                 "CASE WHEN state = ? THEN NULL ELSE reserved_at END, " +
                 "consumed_at, last_result, wrong_count, answered_at, last_round_id, " +
                 "last_timed_out, last_selected_index, last_selected_indices " +
-                "FROM $TABLE WHERE scope_key = ?",
+                "FROM $TABLE WHERE scope_key = ? AND $NON_DEFAULT_STATE",
             arrayOf(
                 ownerKey,
                 STATE_RESERVED, STATE_AVAILABLE,
@@ -642,42 +658,72 @@ object QuizQuestionCache {
                 LOCAL_SCOPE,
             ),
         )
-        db.execSQL(
-            "DELETE FROM $SUBJECT_STATE_TABLE WHERE subject_key = ? AND cache_id NOT IN " +
-                "(SELECT cache_id FROM $TABLE WHERE scope_key = ?)",
-            arrayOf(ownerKey, LOCAL_SCOPE),
-        )
     }
 
     /**
-     * Resets every local row to the unused default and then overlays the target child's
+     * Resets the local rows that carry non-default state and then overlays the target child's
      * snapshot. Rows the child has never seen therefore become available again without
      * copying the question content.
+     *
+     * Snapshots are sparse, so only the target's answered rows are written. A single
+     * correlated UPDATE for every local row took seconds on a TV SoC once the shared bank
+     * grew; the reset plus per-snapshot-row updates keep a member switch near-instant.
      */
     private fun importLocalState(db: SQLiteDatabase, targetKey: String) {
-        fun snapshot(column: String): String =
-            "(SELECT s.$column FROM $SUBJECT_STATE_TABLE s " +
-                "WHERE s.subject_key = ? AND s.cache_id = $TABLE.cache_id)"
-        val assignments = listOf(
-            "state = COALESCE(${snapshot("state")}, '$STATE_AVAILABLE')",
-            "reserved_by = ${snapshot("reserved_by")}",
-            "reserved_at = ${snapshot("reserved_at")}",
-            "consumed_at = ${snapshot("consumed_at")}",
-            "last_result = ${snapshot("last_result")}",
-            "wrong_count = COALESCE(${snapshot("wrong_count")}, 0)",
-            "answered_at = ${snapshot("answered_at")}",
-            "last_round_id = ${snapshot("last_round_id")}",
-            "last_timed_out = COALESCE(${snapshot("last_timed_out")}, 0)",
-            "last_selected_index = ${snapshot("last_selected_index")}",
-            "last_selected_indices = ${snapshot("last_selected_indices")}",
-        )
-        val args = Array(assignments.size + 1) { index ->
-            if (index < assignments.size) targetKey else LOCAL_SCOPE
-        }
         db.execSQL(
-            "UPDATE $TABLE SET ${assignments.joinToString(", ")} WHERE scope_key = ?",
-            args,
+            "UPDATE $TABLE SET state = ?, reserved_by = NULL, reserved_at = NULL, " +
+                "consumed_at = NULL, last_result = NULL, wrong_count = 0, answered_at = NULL, " +
+                "last_round_id = NULL, last_timed_out = 0, last_selected_index = NULL, " +
+                "last_selected_indices = NULL " +
+                "WHERE scope_key = ? AND $NON_DEFAULT_STATE",
+            arrayOf(STATE_AVAILABLE, LOCAL_SCOPE),
         )
+        db.compileStatement(
+            "UPDATE $TABLE SET state = ?, reserved_by = ?, reserved_at = ?, consumed_at = ?, " +
+                "last_result = ?, wrong_count = ?, answered_at = ?, last_round_id = ?, " +
+                "last_timed_out = ?, last_selected_index = ?, last_selected_indices = ? " +
+                "WHERE scope_key = ? AND cache_id = ?",
+        ).use { statement ->
+            // Older builds stored every row, so filter in SQL instead of materializing the
+            // snapshot: a full legacy snapshot must not exhaust a low-memory TV either.
+            db.rawQuery(
+                "SELECT cache_id, state, reserved_by, reserved_at, consumed_at, last_result, " +
+                    "wrong_count, answered_at, last_round_id, last_timed_out, " +
+                    "last_selected_index, last_selected_indices " +
+                    "FROM $SUBJECT_STATE_TABLE WHERE subject_key = ? AND $NON_DEFAULT_STATE",
+                arrayOf(targetKey),
+            ).use { cursor ->
+                while (cursor.moveToNext()) {
+                    statement.clearBindings()
+                    statement.bindString(1, cursor.getString(1))
+                    bindNullable(statement, 2, if (cursor.isNull(2)) null else cursor.getString(2))
+                    bindNullable(statement, 3, if (cursor.isNull(3)) null else cursor.getLong(3))
+                    bindNullable(statement, 4, if (cursor.isNull(4)) null else cursor.getLong(4))
+                    bindNullable(statement, 5, if (cursor.isNull(5)) null else cursor.getString(5))
+                    statement.bindLong(6, cursor.getLong(6))
+                    bindNullable(statement, 7, if (cursor.isNull(7)) null else cursor.getLong(7))
+                    bindNullable(statement, 8, if (cursor.isNull(8)) null else cursor.getString(8))
+                    statement.bindLong(9, cursor.getLong(9))
+                    bindNullable(statement, 10, if (cursor.isNull(10)) null else cursor.getInt(10))
+                    bindNullable(statement, 11, if (cursor.isNull(11)) null else cursor.getString(11))
+                    statement.bindString(12, LOCAL_SCOPE)
+                    statement.bindString(13, cursor.getString(0))
+                    statement.executeUpdateDelete()
+                }
+            }
+        }
+    }
+
+    private fun bindNullable(statement: SQLiteStatement, index: Int, value: String?) {
+        if (value == null) statement.bindNull(index) else statement.bindString(index, value)
+    }
+
+    private fun bindNullable(statement: SQLiteStatement, index: Int, value: Long?) {
+        if (value == null) statement.bindNull(index) else statement.bindLong(index, value)
+    }
+
+    private fun bindNullable(statement: SQLiteStatement, index: Int, value: Int?) {
+        if (value == null) statement.bindNull(index) else statement.bindLong(index, value.toLong())
     }
 
     /**

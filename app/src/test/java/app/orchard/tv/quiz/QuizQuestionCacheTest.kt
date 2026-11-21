@@ -1491,4 +1491,85 @@ fun presetBankDrawsOnlyItsOwnUnscopedRowsAndCountsIndependently() {
         assertEquals(3, restored.available)
         assertEquals(0, restored.reserved)
     }
+
+    @Test
+    fun subjectSwitchKeepsSparseSnapshotsAndAnswerDetails() {
+        freshSubjectCache()
+        assertTrue(QuizQuestionCache.replaceLocalSession(session("sess_sparse", 3), now))
+        assertTrue(QuizQuestionCache.reconcileSubjectState("member_a"))
+        val reserved = QuizQuestionCache.reserveForRound(
+            count = 2,
+            sessionId = "sess_sparse",
+            scopeKey = QuizQuestionCache.LOCAL_SCOPE,
+            minRequired = 1,
+            nowMs = now,
+        )
+        val answers = listOf(
+            QuizQuestionCache.AnswerWrite(
+                cacheId = reserved[0].cacheId,
+                questionId = reserved[0].question.questionId,
+                selectedIndex = 1,
+                correct = true,
+                timedOut = false,
+                answeredAt = now + 1,
+            ),
+            QuizQuestionCache.AnswerWrite(
+                cacheId = reserved[1].cacheId,
+                questionId = reserved[1].question.questionId,
+                selectedIndex = null,
+                correct = false,
+                timedOut = true,
+                answeredAt = now + 2,
+            ),
+        )
+        assertTrue(
+            QuizQuestionCache.settleRound(
+                "sess_sparse",
+                QuizQuestionCache.LOCAL_SCOPE,
+                answers,
+                now + 3,
+            ),
+        )
+
+        assertTrue(QuizQuestionCache.switchSubjectState("member_b"))
+        // The new active child starts from the untouched bank.
+        assertEquals(
+            3,
+            QuizQuestionCache.counts(QuizQuestionCache.LOCAL_SCOPE, now + 3).available,
+        )
+        // The previous child's sparse snapshot still projects every answer detail.
+        val sibling = QuizQuestionCache.bankCounts(
+            QuizQuestionCache.LOCAL_SCOPE,
+            nowMs = now + 3,
+            subjectUserId = "member_a",
+            activeSubjectUserId = "member_b",
+        )
+        assertEquals(1, sibling.correct)
+        assertEquals(1, sibling.wrong)
+        assertEquals(1, sibling.unused)
+        val wrong = QuizQuestionCache.listBank(
+            QuizQuestionCache.LOCAL_SCOPE,
+            "wrong",
+            nowMs = now + 3,
+            subjectUserId = "member_a",
+            activeSubjectUserId = "member_b",
+        )
+        assertEquals(1, wrong.size)
+        assertEquals(1, wrong.single().wrongCount)
+        assertTrue(wrong.single().timedOut)
+        assertNull(wrong.single().selectedIndex)
+
+        // Switching back restores the same details on the materialized rows.
+        assertTrue(QuizQuestionCache.switchSubjectState("member_a"))
+        val restored = QuizQuestionCache.bankCounts(QuizQuestionCache.LOCAL_SCOPE, now + 3)
+        assertEquals(1, restored.correct)
+        assertEquals(1, restored.wrong)
+        assertEquals(1, restored.unused)
+        assertEquals(
+            1,
+            QuizQuestionCache.listBank(QuizQuestionCache.LOCAL_SCOPE, "wrong", nowMs = now + 3)
+                .single()
+                .wrongCount,
+        )
+    }
 }

@@ -1,26 +1,36 @@
 :root {
   color-scheme: light;
-  --bg: #f7f6f2;
-  --surface: #fffefa;
-  --surface-2: #f0eee7;
-  --ink: #1d1d19;
-  --muted: #6b7280;
-  --line: #e3e0d7;
-  --accent: #1f6b57;
+  --bg: #f2f4f7;
+  --surface: #ffffff;
+  --surface-2: #f5f7fa;
+  --track: #edf1f5;
+  --ink: #181c1f;
+  --muted: #5f6672;
+  --line: #e4e8ee;
+  /* Text and line blue is one step deeper than the brand fill so 12–13px labels
+     still clear WCAG AA on white; filled actions use --accent-strong. */
+  --accent: #0b63e5;
+  --accent-strong: #005fff;
   --accent-ink: #ffffff;
-  --accent-soft: #e7f0ec;
-  --danger: #9d392f;
-  --danger-soft: #f6e8e5;
-  --warn: #8a641e;
-  --warn-soft: #f5efe1;
-  --ok: #1f744f;
-  --ok-soft: #e6f1eb;
-  --select-border: #1d5fbf;
-  --select-soft: #e8f1ff;
-  --select-ink: #174ea6;
-  --tab-active-bg: #1d5fbf;
-  --tab-active-ink: #ffffff;
-  --shadow: 0 18px 50px rgba(28, 31, 26, 0.14);
+  --accent-soft: #e7f1ff;
+  --danger: #c42318;
+  --danger-soft: #fef3f2;
+  --warn: #b54708;
+  --warn-soft: #fffaeb;
+  --ok: #067647;
+  --ok-soft: #ecfdf3;
+  /* One ring colour for every “this is the TV's current member” avatar.
+     Green stays tied to the TV's available/active status, not the blue brand. */
+  --member-ring: var(--ok);
+  --select-border: #1677ff;
+  --select-soft: #e7f1ff;
+  --select-ink: #0b5bd3;
+  --tab-active-bg: var(--surface);
+  --tab-active-ink: var(--accent-strong);
+  --control-shadow: 0 1px 3px rgba(16, 24, 40, 0.12), 0 0 0 1px var(--line);
+  --bar-bg: color-mix(in srgb, var(--surface) 88%, transparent);
+  --page-wash: linear-gradient(180deg, #eaf4ff 0, rgba(234, 244, 255, 0) 280px);
+  --shadow: 0 18px 50px rgba(16, 24, 40, 0.12);
   --radius: 16px;
   --nav-height: 64px;
 }
@@ -28,27 +38,32 @@
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --bg: #111310;
-    --surface: #191c17;
-    --surface-2: #22261f;
-    --ink: #f1f0e9;
-    --muted: #a5a39a;
-    --line: #2e332b;
-    --accent: #8bcdb8;
-    --accent-ink: #10201a;
-    --accent-soft: #1d2d25;
-    --danger: #e79a90;
-    --danger-soft: #2d1e1a;
-    --warn: #e0b36a;
-    --warn-soft: #2a2418;
-    --ok: #8fd0ae;
-    --ok-soft: #1b2a22;
-    --select-border: #7fb2f5;
-    --select-soft: #18283e;
+    --bg: #111315;
+    --surface: #181b1f;
+    --surface-2: #1f2329;
+    --track: #23272e;
+    --ink: #f5f7fa;
+    --muted: #a7aeb8;
+    --line: rgba(255, 255, 255, 0.1);
+    --accent: #8bb9ff;
+    --accent-strong: #6ea8ff;
+    --accent-ink: #06152b;
+    --accent-soft: #1a2a3e;
+    --danger: #ff9b90;
+    --danger-soft: #2b1a18;
+    --warn: #f0b35a;
+    --warn-soft: #2a2114;
+    --ok: #7fe0a8;
+    --ok-soft: #14271d;
+    --select-border: #8bb9ff;
+    --select-soft: #1a2a3e;
     --select-ink: #cfe3ff;
-    --tab-active-bg: #2563eb;
-    --tab-active-ink: #ffffff;
-    --shadow: 0 18px 50px rgba(0, 0, 0, 0.34);
+    --tab-active-bg: var(--surface);
+    --tab-active-ink: #cfe3ff;
+    --control-shadow: 0 1px 3px rgba(0, 0, 0, 0.35), 0 0 0 1px color-mix(in srgb, var(--ink) 10%, transparent);
+    --bar-bg: color-mix(in srgb, var(--surface) 88%, transparent);
+    --page-wash: linear-gradient(180deg, #162231 0, rgba(22, 34, 49, 0) 280px);
+    --shadow: 0 18px 50px rgba(0, 0, 0, 0.4);
   }
 }
 
@@ -61,7 +76,9 @@ body {
   min-height: 100vh;
   padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom) + 18px);
   color: var(--ink);
-  background: var(--bg);
+  background-color: var(--bg);
+  background-image: var(--page-wash);
+  background-repeat: no-repeat;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   font-size: 15px;
   line-height: 1.55;
@@ -128,7 +145,7 @@ h1, h2, h3 { letter-spacing: -0.012em; }
 /* The editing member is the member the TV is running. A solid green ring hugs the
    circle without changing the avatar size; green is the available/active state. */
 .subject-avatar.is-tv-current {
-  box-shadow: 0 0 0 3px var(--ok);
+  box-shadow: 0 0 0 3px var(--member-ring);
 }
 
 .subject-avatar svg,
@@ -426,7 +443,7 @@ details summary:focus-visible {
 }
 
 .btn:active { transform: translateY(1px); }
-.btn.primary { background: var(--accent); color: var(--accent-ink); }
+.btn.primary { background: var(--accent-strong); color: var(--accent-ink); }
 .btn.secondary { background: var(--surface); border-color: var(--line); color: var(--ink); }
 .btn.text { background: transparent; color: var(--muted); padding-inline: 10px; }
 .btn.danger { background: var(--danger-soft); color: var(--danger); }
@@ -540,7 +557,7 @@ details summary:focus-visible {
 .gen-actions { display: grid; gap: 8px; margin-top: 18px; }
 .progress-copy {
   margin: 12px 0 0;
-  color: var(--accent);
+  color: var(--accent-strong);
   font-size: 13px;
   font-variant-numeric: tabular-nums;
 }
@@ -562,7 +579,7 @@ details summary:focus-visible {
   padding: 3px;
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: var(--surface-2);
+  background: var(--track);
   margin-bottom: 12px;
 }
 .segmented button {
@@ -581,7 +598,7 @@ details summary:focus-visible {
 .segmented button[aria-pressed="true"] {
   background: var(--tab-active-bg);
   color: var(--tab-active-ink);
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--tab-active-bg) 24%, transparent);
+  box-shadow: var(--control-shadow);
 }
 
 /* V41 bank subpages: public built-in, this member's AI, this member's
@@ -593,7 +610,7 @@ details summary:focus-visible {
   padding: 3px;
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: var(--surface-2);
+  background: var(--track);
   margin-bottom: 12px;
 }
 .bank-tabs button {
@@ -610,9 +627,9 @@ details summary:focus-visible {
   transition: background-color 140ms ease, color 140ms ease;
 }
 .bank-tabs button[aria-selected="true"] {
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  background: var(--tab-active-bg);
+  color: var(--tab-active-ink);
+  box-shadow: var(--control-shadow);
 }
 
 #bankScopeSummary { margin: -4px 0 10px; }
@@ -803,7 +820,7 @@ details.solution p {
   position: absolute;
   inset: 0;
   border-radius: 999px;
-  background: var(--line);
+  background: var(--track);
   transition: background 160ms ease;
   pointer-events: none;
 }
@@ -891,7 +908,7 @@ details.solution p {
   font-weight: 560;
 }
 .nav-item svg { width: 21px; height: 21px; }
-.nav-item[aria-pressed="true"] { color: var(--accent); }
+.nav-item[aria-pressed="true"] { color: var(--accent-strong); }
 .nav-item:active { transform: translateY(1px); }
 
 .modal-root {
@@ -1418,7 +1435,7 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
   padding: 5px 2px;
   border: 0;
   background: none;
-  color: var(--accent);
+  color: var(--accent-strong);
   font-size: 13px;
   font-weight: 620;
 }
@@ -1431,7 +1448,7 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
   margin: 0 0 18px;
   padding: 4px;
   border-radius: 13px;
-  background: var(--surface-2);
+  background: var(--track);
 }
 .page-tabs button {
   flex: 1;
@@ -1447,7 +1464,7 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
 .page-tabs button[aria-selected="true"] {
   background: var(--tab-active-bg);
   color: var(--tab-active-ink);
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--tab-active-bg) 24%, transparent);
+  box-shadow: var(--control-shadow);
 }
 
 .field { margin: 0 0 14px; }
@@ -1669,7 +1686,7 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--surface);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
   transition: transform 0.16s ease;
 }
@@ -2020,8 +2037,8 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: var(--accent);
-  color: var(--accent-ink);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
 }
 .top-add:active { filter: brightness(0.94); }
 .top-add svg { width: 20px; height: 20px; }
@@ -2517,7 +2534,7 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
 .package-draft-name { margin: 0; }
 .package-draft-panel .package-sources-card { margin-top: 2px; }
 /* Five source kinds read as two pairs with the wrong-review row below:
-   preset, AI, manual import, the parent life bank, wrong. */
+   kids' preset bank, parents' preset bank, AI, manual import, wrong. */
 .package-source-choices {
   grid-template-columns: 1fr 1fr;
   gap: 8px;

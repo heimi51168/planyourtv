@@ -36,12 +36,17 @@ import app.orchard.tv.ui.theme.Motion
  * track; parent mode never uses this composable or reads that preference.
  *
  * A SurfaceView sits behind the window, so the lock screen keeps its root transparent while
- * this is composed and fades its own default-wallpaper picture out through [cover] once the
- * first frame is ready. Sound fades in only after that frame, so a decoder error never leaves
- * audio running over the fallback picture.
+ * this is composed and fades its own underlay picture out through [cover] once the first frame
+ * is ready. Sound fades in only after that frame, so a decoder error never leaves audio running
+ * over the fallback picture.
+ *
+ * [source] is null (or a still picture) between two films. The SurfaceView stays composed then
+ * with no player, so the last video frame remains behind the window while the caller fades its
+ * next picture in. Removing the view at that point dropped the frame and flashed the window's
+ * black between a film and a photo.
  *
  * The decoder is released with the lock screen and paused when the app stops. A film that
- * cannot be decoded leaves [cover] at zero, so the default wallpaper simply stays.
+ * cannot be decoded leaves [cover] at zero, so the caller's picture simply stays.
  *
  * [active] false releases the decoder and drops [cover] back to zero while the caller shows its
  * poster instead (a screensaver, or a quiz start shell with an intro film of its own). The same
@@ -49,7 +54,7 @@ import app.orchard.tv.ui.theme.Motion
  */
 @Composable
 internal fun PolicyLockFilm(
-    source: PolicyVideoSource,
+    source: PolicyVideoSource?,
     cover: Animatable<Float, *>,
     modifier: Modifier = Modifier,
     active: Boolean = true,
@@ -61,26 +66,28 @@ internal fun PolicyLockFilm(
     /** Called with the carousel item that cannot be decoded, so the caller can skip it. */
     onError: ((PolicyVideoSource) -> Unit)? = null,
 ) {
-    // A still picture is drawn by the caller's backdrop; it must never reach ExoPlayer.
-    if (source.kind != PolicyMediaKind.VIDEO) return
+    // A still picture is drawn by the caller's backdrop; it must never reach ExoPlayer. It does
+    // keep the SurfaceView below, though.
+    val video = source?.takeIf { it.kind == PolicyMediaKind.VIDEO }
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     // The SurfaceView survives source changes. Re-keying it here reset the reference to null
     // while the AndroidView factory kept the old view, so every carousel item after the first
     // prepared its player without any surface and stayed on its poster.
     var surface by remember { mutableStateOf<SurfaceView?>(null) }
-    var failed by remember(source) { mutableStateOf(false) }
-    var firstFrame by remember(source) { mutableStateOf(false) }
-    var player by remember(source) { mutableStateOf<ExoPlayer?>(null) }
+    var failed by remember(video) { mutableStateOf(false) }
+    var firstFrame by remember(video) { mutableStateOf(false) }
+    var player by remember(video) { mutableStateOf<ExoPlayer?>(null) }
     val playerNow by rememberUpdatedState(player)
+    val videoNow by rememberUpdatedState(video)
     val onEndedNow by rememberUpdatedState(onEnded)
     val onErrorNow by rememberUpdatedState(onError)
     val loopNow by rememberUpdatedState(loop)
     val activeNow by rememberUpdatedState(active)
 
-    LaunchedEffect(source) {
-        cover.snapTo(0f)
-    }
+    // The cover is not reset when the source changes. A picture-to-film change must keep the
+    // picture opaque until the player reports its first frame; a film-to-picture change is the
+    // caller's own fade, started only once the next picture is decoded (see PolicyLockScreen).
     LaunchedEffect(active) {
         if (!active) {
             // The next player renders its first frame again; until then the caller's poster is
@@ -140,9 +147,13 @@ internal fun PolicyLockFilm(
                 Lifecycle.Event.ON_STOP -> playerNow?.pause()
                 Lifecycle.Event.ON_START -> playerNow?.let { exo ->
                     // A film that ended while the app was stopped stays ENDED after play();
-                    // report it again so the rotation does not park on its last frame.
-                    if (activeNow && !loopNow && exo.playbackState == Player.STATE_ENDED) {
-                        onEndedNow?.invoke(source)
+                    // report it again so the rotation does not park on its last frame. Use the
+                    // live source: this observer outlives carousel advances.
+                    val film = videoNow
+                    if (activeNow && !loopNow && film != null &&
+                        exo.playbackState == Player.STATE_ENDED
+                    ) {
+                        onEndedNow?.invoke(film)
                     } else {
                         exo.play()
                     }
@@ -154,12 +165,13 @@ internal fun PolicyLockFilm(
         onDispose { lifecycle.removeObserver(observer) }
     }
 
-    DisposableEffect(source, failed, active) {
-        if (failed || !active) return@DisposableEffect onDispose { }
+    DisposableEffect(video, failed, active) {
+        val film = video
+        if (film == null || failed || !active) return@DisposableEffect onDispose { }
 
         var active = true
         val exo = ExoPlayer.Builder(context).build().apply {
-            setMediaItem(MediaItem.fromUri(source.uri))
+            setMediaItem(MediaItem.fromUri(film.uri))
             repeatMode = if (loop) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
             videoScalingMode = C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING
             videoChangeFrameRateStrategy = C.VIDEO_CHANGE_FRAME_RATE_STRATEGY_OFF
@@ -183,14 +195,14 @@ internal fun PolicyLockFilm(
                     if (!active) return
                     failed = true
                     // A broken carousel item must not hold the desktop until a timer fires.
-                    if (!loopNow) onErrorNow?.invoke(source)
+                    if (!loopNow) onErrorNow?.invoke(film)
                 }
 
                 override fun onPlaybackStateChanged(playbackState: Int) {
                     // A carousel film moves on at its natural end; a single wallpaper keeps
                     // its old repeat-one loop.
                     if (active && !loopNow && playbackState == Player.STATE_ENDED) {
-                        onEndedNow?.invoke(source)
+                        onEndedNow?.invoke(film)
                     }
                 }
             })
@@ -207,21 +219,22 @@ internal fun PolicyLockFilm(
         }
     }
 
-    if (!failed) {
-        AndroidView(
-            factory = { ctx ->
-                SurfaceView(ctx).also { view ->
-                    surface = view
-                    player?.setVideoSurfaceView(view)
-                }
-            },
-            onRelease = { view ->
-                player?.clearVideoSurfaceView(view)
-                if (surface === view) surface = null
-            },
-            modifier = modifier.fillMaxSize(),
-        )
-    }
+    // Always composed, even for a still picture or a null source: releasing the old player
+    // leaves its last frame on the surface, and the next picture fades in over exactly that
+    // frame instead of over the window's black.
+    AndroidView(
+        factory = { ctx ->
+            SurfaceView(ctx).also { view ->
+                surface = view
+                player?.setVideoSurfaceView(view)
+            }
+        },
+        onRelease = { view ->
+            player?.clearVideoSurfaceView(view)
+            if (surface === view) surface = null
+        },
+        modifier = modifier.fillMaxSize(),
+    )
 }
 
 /** Low enough to sit under quiz prompts and parent speech, loud enough to be audible. */

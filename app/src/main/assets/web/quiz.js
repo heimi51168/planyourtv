@@ -5179,7 +5179,7 @@ difficulty — тек easy, medium немесе hard.
   const V36_TEXTS = {
     zh: {
       levelAddPackageTitle: "添加关卡",
-      levelAddPackageMeta: "一个关卡可组合预置题库、家长趣味题、AI 题、手动导入和错题",
+      levelAddPackageMeta: "一个关卡可组合预置孩子题库、预置家长题库、AI 题、手动导入和错题",
       levelSourcesTitle: "题目来源",
       levelSourcesLead: "答题时从每个来源轮流抽题；某个来源用完就跳过，直到抽满一轮。可继续添加来源，点底部「创建关卡」后才会生成关卡。",
       levelDraftBadge: "待保存",
@@ -5187,7 +5187,7 @@ difficulty — тек easy, medium немесе hard.
       levelCreate: "创建关卡",
       levelSourceCourse: "教材题目",
       levelSourceCourseMeta: "按年级、学期、学科和单元选择",
-      levelSourcePreset: "预置题库",
+      levelSourcePreset: "预置孩子题库",
       levelSourcePresetMeta: "电视自带 · 全员共享",
       levelSourceAi: "AI生成",
       levelSourceAiMeta: "当前成员生成",
@@ -5199,10 +5199,10 @@ difficulty — тек easy, medium немесе hard.
       levelSourceCustomMeta: "导入时创建的标签",
       levelSourceWrong: "错题复习",
       levelSourceWrongMeta: "自动收录本机错题",
-      levelSourceLife: "家长趣味题",
+      levelSourceLife: "预置家长题库",
       levelSourceLifeMeta: "生活常识 · 单选与多选",
       levelSourceLifeCount: "趣味题 {n} 道",
-      levelSourceDuplicatePreset: "家长趣味题已在关卡中。",
+      levelSourceDuplicatePreset: "预置家长题库已在关卡中。",
       levelTypeFilterTitle: "题目类型",
       levelTypeAny: "混合",
       levelTypeSingle: "单选",
@@ -5239,7 +5239,7 @@ difficulty — тек easy, medium немесе hard.
     },
     en: {
       levelAddPackageTitle: "Add level",
-      levelAddPackageMeta: "Combine the preset bank, the parent life quiz, AI questions, imports, and mistakes in one level",
+      levelAddPackageMeta: "Combine the preset bank for kids, the preset bank for parents, AI questions, imports, and mistakes in one level",
       levelSourcesTitle: "Question sources",
       levelSourcesLead: "Questions rotate between sources. A source that runs out is skipped until the round is full. Add as many sources as you need; the level is created only after you tap Create level.",
       levelDraftBadge: "Unsaved",
@@ -5247,7 +5247,7 @@ difficulty — тек easy, medium немесе hard.
       levelCreate: "Create level",
       levelSourceCourse: "Textbook questions",
       levelSourceCourseMeta: "Pick grade, semester, subject, and unit",
-      levelSourcePreset: "Preset bank",
+      levelSourcePreset: "Preset bank for kids",
       levelSourcePresetMeta: "Bundled · shared by all",
       levelSourceAi: "AI questions",
       levelSourceAiMeta: "Made by this member",
@@ -5259,10 +5259,10 @@ difficulty — тек easy, medium немесе hard.
       levelSourceCustomMeta: "Tags from imports",
       levelSourceWrong: "Wrong review",
       levelSourceWrongMeta: "All mistakes here",
-      levelSourceLife: "Parent life quiz",
+      levelSourceLife: "Preset bank for parents",
       levelSourceLifeMeta: "Everyday life · single & multiple",
       levelSourceLifeCount: "{n} life questions",
-      levelSourceDuplicatePreset: "The parent life quiz is already in the level.",
+      levelSourceDuplicatePreset: "The preset bank for parents is already in the level.",
       levelTypeFilterTitle: "Question type",
       levelTypeAny: "Mixed",
       levelTypeSingle: "Single choice",
@@ -5299,7 +5299,7 @@ difficulty — тек easy, medium немесе hard.
     },
     ru: {
       levelAddPackageTitle: "Добавить уровень",
-      levelAddPackageMeta: "Объедините готовый банк, семейную викторину, вопросы ИИ, ручной импорт и ошибки в одном уровне",
+      levelAddPackageMeta: "Объедините готовый банк для детей, готовый банк для родителей, вопросы ИИ, ручной импорт и ошибки в одном уровне",
       levelSourcesTitle: "Источники вопросов",
       levelSourcesLead: "Вопросы чередуются между источниками. Исчерпанный источник пропускается до конца раунда. Добавляйте источники по одному: уровень создаётся только после нажатия «Создать уровень».",
       levelDraftBadge: "Не сохранено",
@@ -5307,7 +5307,7 @@ difficulty — тек easy, medium немесе hard.
       levelCreate: "Создать уровень",
       levelSourceCourse: "Вопросы учебника",
       levelSourceCourseMeta: "Выберите класс, полугодие, предмет и раздел",
-      levelSourcePreset: "Готовый банк",
+      levelSourcePreset: "Готовый банк для детей",
       levelSourcePresetMeta: "Встроены · общие для всех",
       levelSourceAi: "Вопросы ИИ",
       levelSourceAiMeta: "Создано этим участником",
@@ -5319,10 +5319,10 @@ difficulty — тек easy, medium немесе hard.
       levelSourceCustomMeta: "Теги из импорта",
       levelSourceWrong: "Повторение ошибок",
       levelSourceWrongMeta: "Все ошибки этого ТВ",
-      levelSourceLife: "Семейная викторина",
+      levelSourceLife: "Готовый банк для родителей",
       levelSourceLifeMeta: "Быт и здоровье · один или несколько ответов",
       levelSourceLifeCount: "Бытовых вопросов: {n}",
-      levelSourceDuplicatePreset: "Семейная викторина уже есть в уровне.",
+      levelSourceDuplicatePreset: "Готовый банк для родителей уже есть в уровне.",
       levelTypeFilterTitle: "Тип вопроса",
       levelTypeAny: "Смешанные",
       levelTypeSingle: "Один ответ",
@@ -5359,7 +5359,7 @@ difficulty — тек easy, medium немесе hard.
     },
     uk: {
       levelAddPackageTitle: "Додати рівень",
-      levelAddPackageMeta: "Поєднайте готовий банк, сімейну вікторину, питання ШІ, ручний імпорт і помилки в одному рівні",
+      levelAddPackageMeta: "Поєднайте готовий банк для дітей, готовий банк для батьків, питання ШІ, ручний імпорт і помилки в одному рівні",
       levelSourcesTitle: "Джерела питань",
       levelSourcesLead: "Питання чергуються між джерелами. Вичерпане джерело пропускається до кінця раунду. Додавайте джерела по одному: рівень створюється лише після натискання «Створити рівень».",
       levelDraftBadge: "Не збережено",
@@ -5367,7 +5367,7 @@ difficulty — тек easy, medium немесе hard.
       levelCreate: "Створити рівень",
       levelSourceCourse: "Питання підручника",
       levelSourceCourseMeta: "Виберіть клас, семестр, предмет і розділ",
-      levelSourcePreset: "Готовий банк",
+      levelSourcePreset: "Готовий банк для дітей",
       levelSourcePresetMeta: "Вбудовані · спільні для всіх",
       levelSourceAi: "Питання ШІ",
       levelSourceAiMeta: "Створено цим учасником",
@@ -5379,10 +5379,10 @@ difficulty — тек easy, medium немесе hard.
       levelSourceCustomMeta: "Теги з імпорту",
       levelSourceWrong: "Повторення помилок",
       levelSourceWrongMeta: "Усі помилки цього ТБ",
-      levelSourceLife: "Сімейна вікторина",
+      levelSourceLife: "Готовий банк для батьків",
       levelSourceLifeMeta: "Побут і здоров'я · одна або кілька відповідей",
       levelSourceLifeCount: "Побутових питань: {n}",
-      levelSourceDuplicatePreset: "Сімейна вікторина вже є в рівні.",
+      levelSourceDuplicatePreset: "Готовий банк для батьків уже є в рівні.",
       levelTypeFilterTitle: "Тип питання",
       levelTypeAny: "Змішані",
       levelTypeSingle: "Одна відповідь",
@@ -5419,7 +5419,7 @@ difficulty — тек easy, medium немесе hard.
     },
     kk: {
       levelAddPackageTitle: "Деңгей қосу",
-      levelAddPackageMeta: "Дайын банкіні, отбасылық викторинаны, ЖИ сұрақтарын, қолмен импортты және қателерді бір деңгейге біріктіріңіз",
+      levelAddPackageMeta: "Балаларға арналған дайын банкіні, ата-аналарға арналған дайын банкіні, ЖИ сұрақтарын, қолмен импортты және қателерді бір деңгейге біріктіріңіз",
       levelSourcesTitle: "Сұрақ көздері",
       levelSourcesLead: "Сұрақтар көздер арасында кезектеседі. Таусылған көз айналым толғанша өткізіледі. Көздерді біртіндеп қосыңыз: деңгей «Деңгей жасау» түймесін басқаннан кейін ғана жасалады.",
       levelDraftBadge: "Сақталмаған",
@@ -5427,7 +5427,7 @@ difficulty — тек easy, medium немесе hard.
       levelCreate: "Деңгей жасау",
       levelSourceCourse: "Оқулық сұрақтары",
       levelSourceCourseMeta: "Сынып, семестр, пән және тарауды таңдаңыз",
-      levelSourcePreset: "Дайын банк",
+      levelSourcePreset: "Балаларға арналған дайын банк",
       levelSourcePresetMeta: "Кіріктірілген · ортақ",
       levelSourceAi: "ЖИ сұрақтары",
       levelSourceAiMeta: "Осы қатысушы жасаған",
@@ -5439,10 +5439,10 @@ difficulty — тек easy, medium немесе hard.
       levelSourceCustomMeta: "Импорттағы тегтер",
       levelSourceWrong: "Қателерді қайталау",
       levelSourceWrongMeta: "Осы ТВ қателері",
-      levelSourceLife: "Отбасылық викторина",
+      levelSourceLife: "Ата-аналарға арналған дайын банк",
       levelSourceLifeMeta: "Тұрмыс және денсаулық · бір немесе бірнеше жауап",
       levelSourceLifeCount: "Тұрмыстық сұрақ: {n}",
-      levelSourceDuplicatePreset: "Отбасылық викторина деңгейде бар.",
+      levelSourceDuplicatePreset: "Ата-аналарға арналған дайын банк деңгейде бар.",
       levelTypeFilterTitle: "Сұрақ түрі",
       levelTypeAny: "Аралас",
       levelTypeSingle: "Бір жауап",
@@ -8458,7 +8458,7 @@ let presetBank = { bankId: "", total: 0, available: 0 };
 
   function paintSubjectAvatar(node, member) {
     if (!node) return;
-    const preset = String((member && member.avatarPreset) || "rabbit");
+    const preset = String((member && member.avatarPreset) || "boy");
     const revision = String((member && member.avatarRevision) || 0);
     node.dataset.member = member ? member.userId : "";
     node.dataset.revision = revision;
@@ -10512,8 +10512,8 @@ let presetBank = { bankId: "", total: 0, available: 0 };
    * the TV can write it straight to disk. Content-Length is set by the browser from the File.
    * XHR is used instead of fetch because only XHR reports upload progress to the page.
    */
-  function parentUpload(path, file, editorToken, onProgress, contentType) {
-    const headers = parentHeaders({ editorToken });
+  function parentUpload(path, file, editorToken, onProgress, contentType, sensitiveToken) {
+    const headers = parentHeaders({ editorToken, sensitiveToken });
     // Media uploads keep the octet-stream contract; the avatar route accepts image/* only and
     // gets the selected file's own mime type so the TV can reject a non-image before decoding.
     headers["Content-Type"] = contentType || "application/octet-stream";

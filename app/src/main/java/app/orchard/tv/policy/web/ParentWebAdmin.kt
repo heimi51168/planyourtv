@@ -37,6 +37,7 @@ object ParentWebAdmin {
     private const val INTRO_VIDEO_PATH = "/api/parent/intro-video"
     private const val AUDIO_UPLOAD_PATH = "/api/parent/audio"
     private const val SUBJECT_AVATAR_PATH = "/api/parent/subjects/avatar"
+    private const val PRESET_AVATAR_PATH = "/parent-avatar"
 
     /**
      * NanoHTTPD keeps one [IHTTPSession] for the whole keep-alive connection, so a POST body
@@ -61,7 +62,7 @@ object ParentWebAdmin {
     fun handle(context: Context, session: IHTTPSession, path: String): Response? {
         if (!ParentWebCenter.ENABLED) return null
         if (!path.startsWith("/api/parent/") && path != "/parent.js" && path != "/parent.css" &&
-            path != "/parent-kids-default.jpg"
+            path != "/parent-kids-default.jpg" && path != PRESET_AVATAR_PATH
         ) {
             return null
         }
@@ -86,6 +87,10 @@ object ParentWebAdmin {
                         "image/jpeg",
                         context.assets.open("web/parent-kids-default.jpg").use { it.readBytes() },
                     )
+                // Built-in portraits are public artwork, not family data. Serving them from
+                // the same bundled drawables keeps the phone and TV faces identical.
+                session.method == Method.GET && path == PRESET_AVATAR_PATH ->
+                    presetAvatar(context, session)
                 session.method == Method.GET && path == "/api/parent/bootstrap" -> bootstrap()
                 session.method == Method.GET && path == "/api/parent/gate" -> gate()
                 // V29 removes the old entry flows. Cached pages get a clear terminal answer
@@ -161,29 +166,41 @@ object ParentWebAdmin {
                 // the bytes through host.blob() and renders them from an object URL.
                 session.method == Method.GET && path == "/api/parent/avatar" ->
                     memberAvatar(context, session)
+                // Family management is behind its own fresh parent-PIN proof. Hiding the entry in
+                // the page is not an authorization boundary: add, edit, photo and delete all
+                // repeat the check here, including the raw avatar upload below.
                 session.method == Method.POST && path == "/api/parent/subjects/add" ->
-                    write(context, session) { ParentCenterActions.addMember(it) }
+                    write(
+                        context,
+                        session,
+                        sensitiveScope = ParentSensitiveAuth.Scope.FAMILY_EDIT,
+                    ) { ParentCenterActions.addMember(it) }
                 session.method == Method.POST && path == "/api/parent/subjects/profile" ->
-                    write(context, session) { ParentCenterActions.updateMemberProfile(it) }
+                    write(
+                        context,
+                        session,
+                        sensitiveScope = ParentSensitiveAuth.Scope.FAMILY_EDIT,
+                    ) { ParentCenterActions.updateMemberProfile(it) }
                 session.method == Method.POST && path == SUBJECT_AVATAR_PATH ->
                     uploadMemberAvatar(context, session)
                 session.method == Method.POST && path == "/api/parent/subjects/avatar/delete" ->
-                    write(context, session) { ParentCenterActions.deleteMemberAvatar(it) }
-                // Removing a child is destructive and irreversible from the page, so it
-                // requires the same parent-PIN proof as editing the rules. The action still
-                // repeats the active/default/cloud guards.
+                    write(
+                        context,
+                        session,
+                        sensitiveScope = ParentSensitiveAuth.Scope.FAMILY_EDIT,
+                    ) { ParentCenterActions.deleteMemberAvatar(it) }
+                // Removing a child is destructive and irreversible from the page. The action
+                // still repeats the active/default/cloud guards.
                 session.method == Method.POST && path == "/api/parent/subjects/delete" ->
                     write(
                         context,
                         session,
-                        sensitiveScope = ParentSensitiveAuth.Scope.RULES_EDIT,
+                        sensitiveScope = ParentSensitiveAuth.Scope.FAMILY_EDIT,
                     ) { ParentCenterActions.deleteMember(it) }
                 // Remote member switching shares the TV's lock-screen/busy gate; the parent
                 // center login plus editor lease is the authentication on this side.
                 session.method == Method.POST && path == "/api/parent/subjects/activate" ->
                     write(context, session) { ParentCenterActions.activateSubject(it) }
-                session.method == Method.POST && path == "/api/parent/member-switch" ->
-                    write(context, session) { ParentCenterActions.setMemberSwitch(it) }
                 // V47: user-configuration edits keep the RULES_EDIT proof unless the parent
                 // deliberately turned off the extra PIN prompts for that tab. System routes
                 // below keep their scope unconditionally.
@@ -706,8 +723,17 @@ object ParentWebAdmin {
             return jsonError(Response.Status.UNSUPPORTED_MEDIA_TYPE, "CONTENT_TYPE")
         }
         val check = editorCheck(session)
-        val editor = check.second
-        if (editor is ParentWebAccess.EditorCheck.Failed) return editorError(editor.code)
+        val editorResult = check.second
+        if (editorResult is ParentWebAccess.EditorCheck.Failed) {
+            return editorError(editorResult.code)
+        }
+        val editor = check.first ?: return jsonError(Response.Status.UNAUTHORIZED, "EDITOR_REQUIRED")
+        val sensitive = ParentSensitiveAuth.check(
+            token = session.headers[SENSITIVE_HEADER],
+            scope = ParentSensitiveAuth.Scope.FAMILY_EDIT,
+            editorToken = editor,
+        )
+        if (sensitive != ParentSensitiveAuth.Status.OK) return sensitiveError(sensitive)
         if (!ParentCenterActions.canEditFamily()) {
             return jsonError(
                 Response.Status.CONFLICT,
@@ -949,6 +975,13 @@ object ParentWebAdmin {
             .put("messageKey", "PIN_LOCKED")
             .put("retryAfterSeconds", seconds),
     )
+
+    private fun presetAvatar(context: Context, session: IHTTPSession): Response {
+        val preset = session.parameters["preset"]?.firstOrNull()
+        val body = FamilyAvatarStore.presetBytes(context, preset)
+            ?: return error(Response.Status.NOT_FOUND, "AVATAR_NOT_FOUND")
+        return bytes(Response.Status.OK, "image/jpeg", body)
+    }
 
     private fun asset(context: Context, name: String, type: String): Response {
         val body = context.assets.open(name).bufferedReader().use { it.readText() }

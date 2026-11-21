@@ -3,7 +3,9 @@ package app.orchard.tv.policy.web
 import android.content.Context
 import fi.iki.elonen.NanoHTTPD
 import java.io.InputStream
+import java.net.HttpURLConnection
 import java.net.Socket
+import java.net.URL
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -106,6 +108,21 @@ class ParentWebAdminKeepAliveTest {
             write(payload)
             flush()
         }
+    }
+
+    @Test
+    fun builtInPortraitRouteServesJpegBytes() {
+        val connection = URL("http://127.0.0.1:$port/parent-avatar?preset=dad")
+            .openConnection() as HttpURLConnection
+        connection.connectTimeout = 5_000
+        connection.readTimeout = 5_000
+        val bytes = connection.inputStream.use { it.readBytes() }
+
+        assertEquals(200, connection.responseCode)
+        assertTrue(connection.contentType.startsWith("image/jpeg"))
+        assertTrue(bytes.size > 1_000)
+        assertEquals(0xFF, bytes[0].toInt() and 0xFF)
+        assertEquals(0xD8, bytes[1].toInt() and 0xFF)
     }
 
     @Test

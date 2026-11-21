@@ -56,6 +56,8 @@ class UnlimitedRuntimeTest {
         restMinutes = 0,
         allowedPackages = setOf(videoPackage),
         studyPackages = setOf(studyPackage),
+        // The study round is opt-in since 2.0.001.
+        studyEarnEnabled = true,
         unlimitedPackages = setOf(unlimitedPackage),
     )
 

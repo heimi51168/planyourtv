@@ -13,8 +13,8 @@ import com.planyourtv.policy.MemberStatus
  * both triggers validate exactly the same state: the TV must be sitting on the lock screen and
  * the current child must own nothing — no running session, focus round, pending grant, temporary
  * unlock, setup wizard or active quiz round. Authentication stays intentionally different: the
- * TV verifies the target member's 6-digit password when [MemberSwitchAuth] is on, while Web acts
- * under the parent-center login and never asks for the child's password.
+ * TV asks for the target member's own 6-digit password when that member opted into switch
+ * protection, while Web acts under the parent-center login and never asks for it.
  *
  * A successful switch commits the outgoing runtime, moves the active pointer, hands the shared
  * question bank's answer state to the target child and reloads the subject cache. Cloud mode

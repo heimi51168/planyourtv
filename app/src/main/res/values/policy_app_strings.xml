@@ -353,6 +353,7 @@
     <string name="policy_subject_switch_title">Switch member</string>
     <string name="policy_subject_switch_pin_title">Enter %1$s\'s password</string>
     <string name="policy_subject_current">In use</string>
+    <string name="policy_subject_switch_exempt">%1$s–%2$s no PIN</string>
     <string name="policy_subject_switching">Switching…</string>
     <string name="policy_subject_switch_busy">Finish the timer or quiz before switching.</string>
     <string name="policy_subject_switch_cloud">Member switching is unavailable while this TV is bound to the cloud.</string>

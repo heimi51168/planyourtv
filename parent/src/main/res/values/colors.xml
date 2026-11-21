@@ -1,20 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- The same accent the Parent Center page uses. -->
-    <color name="brand">#1F6B57</color>
+    <!-- The same blue tokens the Parent Center page uses. -->
+    <color name="brand">#0B63E5</color>
     <!-- Cream plate behind the parent app launcher artwork. -->
     <color name="launcher_background">#FEFFEF</color>
-    <color name="brand_dark">#164D3F</color>
+    <color name="brand_dark">#0A54C0</color>
     <!-- Soft brand plate for the selected device row and subtle accents. -->
-    <color name="brand_soft">#E9F1ED</color>
+    <color name="brand_soft">#E7F1FF</color>
     <!-- Ripple over light surfaces; 15% brand. -->
-    <color name="brand_ripple">#261F6B57</color>
+    <color name="brand_ripple">#260B63E5</color>
     <color name="ripple_on_brand">#33FFFFFF</color>
-    <color name="surface">#F7F6F2</color>
-    <color name="surface_raised">#FFFEFA</color>
-    <color name="line">#E3E0D7</color>
-    <color name="ink">#1D1D19</color>
-    <color name="muted">#6B7280</color>
-    <color name="danger">#9D392F</color>
+    <color name="surface">#F2F4F7</color>
+    <color name="surface_raised">#FFFFFF</color>
+    <!-- Matches the top of the Parent Center page wash, so the status bar
+         continues the page instead of introducing a second title bar. -->
+    <color name="page_top">#EAF4FF</color>
+    <color name="line">#E4E8EE</color>
+    <color name="ink">#181C1F</color>
+    <color name="muted">#5F6672</color>
+    <color name="danger">#C42318</color>
     <color name="white">#FFFFFF</color>
 </resources>

@@ -21,10 +21,10 @@ class UnlockRouteRulesTest {
     )
 
     @Test
-    fun theHistoricalRoutesAreOnAndDirectStartIsOff() {
+    fun defaultsEnableOnlyTheQuizRoute() {
         val defaults = LocalRules.DEFAULTS
         assertTrue(defaults.quizGateEnabled)
-        assertTrue(defaults.studyEarnEnabled)
+        assertFalse(defaults.studyEarnEnabled)
         assertFalse(defaults.directStartEnabled)
         assertTrue(defaults.quizRouteActive)
         assertFalse(defaults.studyRouteActive)

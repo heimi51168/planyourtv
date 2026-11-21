@@ -45,6 +45,8 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.net.Inet4Address
+import java.net.InetSocketAddress
+import java.net.Socket
 import java.security.SecureRandom
 
 /**
@@ -70,6 +72,11 @@ class PhoneServer private constructor(
         val uri = session.uri
         if (!uri.startsWith(prefix)) return text(Response.Status.NOT_FOUND, "Not found")
         val path = uri.removePrefix(prefix).ifEmpty { "/" }
+        // The parent center's status shows this as "last phone access". Loopback requests are
+        // the TV's own health probe, and other pages are not the parent page.
+        if (isTrackedParentPath(path) && !isLoopbackHost(session.remoteIpAddress)) {
+            lastParentAccessAt = System.currentTimeMillis()
+        }
         // The quiz page has its own one-time pairing secret and parent PIN; it is
         // not the general wallpaper page and cannot change any other setting.
         ParentWebAdmin.handle(context, session, path)?.let { return it }
@@ -237,6 +244,30 @@ class PhoneServer private constructor(
             text(Response.Status.INTERNAL_ERROR, "error")
         }
     }
+
+    /**
+     * The TV's own check that the parent route answers. A raw socket is deliberate: targetSdk 34
+     * blocks cleartext HTTP for java.net.HttpURLConnection except for configured domains, and
+     * adding a loopback exception to the network security config would weaken the whole app for
+     * this one probe. The Host header is required by ParentWebAdmin's same-origin check.
+     */
+    internal fun probeParentWeb(): Boolean = runCatching {
+        val port = listeningPort
+        if (port !in 1..65535) return false
+        Socket().use { socket ->
+            socket.connect(InetSocketAddress(LOOPBACK, port), PROBE_TIMEOUT_MS)
+            socket.soTimeout = PROBE_TIMEOUT_MS
+            val request = "GET /$token/api/parent/gate HTTP/1.0\r\n" +
+                "Host: $LOOPBACK:$port\r\n" +
+                "Connection: close\r\n\r\n"
+            socket.getOutputStream().apply {
+                write(request.toByteArray(Charsets.US_ASCII))
+                flush()
+            }
+            val statusLine = socket.getInputStream().bufferedReader(Charsets.US_ASCII).use { it.readLine() }.orEmpty()
+            statusLine.split(' ').getOrNull(1) == "200"
+        }
+    }.getOrDefault(false)
 
     private fun page(): String = context.assets.open("web/index.html").bufferedReader().use { it.readText() }
         .replace("{{DEVICE}}", Build.MODEL.replace("_", " "))
@@ -576,6 +607,8 @@ class PhoneServer private constructor(
         private const val TAG = "AerialPhone"
         private const val PREFS = "phone_page"
         private const val PORT_KEY = "port"
+        private const val LOOPBACK = "127.0.0.1"
+        private const val PROBE_TIMEOUT_MS = 1_200
         /** Enough for a batch of phone photos at full size. */
         private const val MAX_UPLOAD = 200L * 1024 * 1024
         /** As for an input's name: Home's caption has room for about this much. */
@@ -583,6 +616,10 @@ class PhoneServer private constructor(
 
         @Volatile
         private var running: PhoneServer? = null
+
+        /** Session-only: a reboot is not something the status should claim to remember. */
+        @Volatile
+        private var lastParentAccessAt = 0L
 
         /**
          * Listens for as long as Aerial runs, from Home's start (MainActivity.startWork), so a
@@ -626,6 +663,48 @@ class PhoneServer private constructor(
             val port = server.listeningPort
             if (port !in 1..65535) return null
             return "http://$ip:$port/${server.token}/"
+        }
+
+        /**
+         * The parent center's service status. Call from an IO thread: it may bind the port and
+         * opens a loopback probe. [listen] is idempotent, so a failed startup is retried on the
+         * next poll; a live but unresponsive server is only reported, never stopped, because a
+         * parent's phone may be using it right now.
+         */
+        internal fun parentWebStatus(context: Context): PhoneWebStatus {
+            val app = context.applicationContext
+            val now = System.currentTimeMillis()
+            fun result(state: PhoneWebState, address: String? = null) =
+                PhoneWebStatus(state, address, lastParentAccessAt, now)
+
+            val server = running?.takeIf { it.isAlive } ?: listen(app)
+            val ip = lanAddress(app)
+            if (ip == null) return result(if (hasNetwork(app)) PhoneWebState.NO_ADDRESS else PhoneWebState.OFFLINE)
+            if (server == null) return result(PhoneWebState.NOT_STARTED)
+            val port = server.listeningPort
+            if (port !in 1..65535) return result(PhoneWebState.NOT_STARTED)
+            // One retry: the first socket can lose a race with a request that is just being served.
+            if (!server.probeParentWeb() && !server.probeParentWeb()) return result(PhoneWebState.UNRESPONSIVE)
+            return result(PhoneWebState.OK, "$ip:$port")
+        }
+
+        private fun hasNetwork(context: Context): Boolean {
+            val cm = context.getSystemService<ConnectivityManager>() ?: return false
+            val network = cm.currentNetwork() ?: return false
+            return cm.getNetworkCapabilities(network) != null
+        }
+
+        /** The page a phone opens from the parent-center QR, not the wallpaper or other pages. */
+        internal fun isTrackedParentPath(path: String): Boolean =
+            path == "/quiz" || path == "/quiz/" || path.startsWith("/api/parent/") ||
+                path == "/parent.js" || path == "/parent.css" ||
+                path == "/parent-kids-default.jpg" || path == "/parent-avatar"
+
+        /** Unknown and loopback addresses are the TV itself, never a phone. */
+        internal fun isLoopbackHost(host: String?): Boolean {
+            val h = host?.trim()?.removePrefix("[")?.removeSuffix("]")?.substringBefore('%') ?: return true
+            return h == "::1" || h == "0:0:0:0:0:0:0:1" || h == "localhost" || h == "127.0.0.1" ||
+                h.startsWith("127.") || h.startsWith("::ffff:127.")
         }
 
         /**

@@ -352,6 +352,12 @@ internal object FamilyCodecs {
         // Both null means the member still uses the initial switch password.
         .put("switchPinSalt", switchPinSalt ?: JSONObject.NULL)
         .put("switchPinHash", switchPinHash ?: JSONObject.NULL)
+        .put("switchPinRequired", switchPinRequired)
+        // Empty means no exemption. The window is stored even when empty so a parent can pick
+        // the days later without losing the chosen 09:00-15:00 range.
+        .put("switchPinExemptDays", JSONArray(switchPinExemptDays))
+        .put("switchPinExemptStartMinute", switchPinExemptStartMinute)
+        .put("switchPinExemptEndMinute", switchPinExemptEndMinute)
         .put("createdAt", createdAt)
         .put("updatedAt", updatedAt)
 
@@ -362,7 +368,7 @@ internal object FamilyCodecs {
         val displayName = requiredString("displayName")
             ?.let { FamilyIds.normalizeDisplayName(it) }
             ?: return null
-        val avatarPreset = optionalString("avatarPreset") ?: "rabbit"
+        val avatarPreset = optionalString("avatarPreset") ?: "boy"
         if (avatarPreset.length !in 1..MAX_AVATAR_PRESET_LENGTH ||
             avatarPreset.any { it.isISOControl() }
         ) {
@@ -399,6 +405,21 @@ internal object FamilyCodecs {
         val switchPinSalt = optionalString("switchPinSalt")
         val switchPinHash = optionalString("switchPinHash")
         if (!MemberPin.isStoredCredential(switchPinSalt, switchPinHash)) return null
+        // Absent on documents saved before per-member switch protection existed.
+        val switchPinRequired = optBoolean("switchPinRequired", false)
+        // Exemption fields are additive and optional. A damaged value must never invalidate the
+        // whole roster, and it must never become an accidental waiver: fall back to no selected
+        // days and the documented 09:00-15:00 window. Protection being off forces it off too.
+        val exemptStart = optInt(
+            "switchPinExemptStartMinute",
+            SwitchPinExempt.DEFAULT_START_MINUTE,
+        )
+        val exemptEnd = optInt(
+            "switchPinExemptEndMinute",
+            SwitchPinExempt.DEFAULT_END_MINUTE,
+        )
+        val windowValid = SwitchPinExempt.isValidWindow(exemptStart, exemptEnd)
+        val exemptDays = if (windowValid) decodedExemptDays() else emptyList()
         val createdAt = optLong("createdAt", -1L)
         val updatedAt = optLong("updatedAt", -1L)
         if (createdAt <= 0L || updatedAt <= 0L) return null
@@ -418,9 +439,33 @@ internal object FamilyCodecs {
             semester = semester,
             switchPinSalt = switchPinSalt,
             switchPinHash = switchPinHash,
+            switchPinRequired = switchPinRequired,
+            switchPinExemptDays = if (switchPinRequired) exemptDays else emptyList(),
+            switchPinExemptStartMinute = if (windowValid) {
+                exemptStart
+            } else {
+                SwitchPinExempt.DEFAULT_START_MINUTE
+            },
+            switchPinExemptEndMinute = if (windowValid) {
+                exemptEnd
+            } else {
+                SwitchPinExempt.DEFAULT_END_MINUTE
+            },
             createdAt = createdAt,
             updatedAt = updatedAt,
         )
+    }
+
+    /** Missing means no exemption. A malformed day list also fails closed to no exemption. */
+    private fun JSONObject.decodedExemptDays(): List<Int> {
+        val array = optJSONArray("switchPinExemptDays") ?: return emptyList()
+        val days = ArrayList<Int>(array.length())
+        for (index in 0 until array.length()) {
+            val value = array.opt(index)
+            if (value !is Int || value !in 1..7) return emptyList()
+            days.add(value)
+        }
+        return SwitchPinExempt.normalizeDays(days) ?: emptyList()
     }
 
     private fun IdentityLink.toJson(): JSONObject = JSONObject()

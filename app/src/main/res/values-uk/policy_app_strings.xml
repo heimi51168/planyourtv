@@ -341,6 +341,7 @@
     <string name="policy_subject_switch_title">Змінити учасника</string>
     <string name="policy_subject_switch_pin_title">Введіть пароль учасника %1$s</string>
     <string name="policy_subject_current">Поточний</string>
+    <string name="policy_subject_switch_exempt">%1$s–%2$s без пароля</string>
     <string name="policy_subject_switching">Перемикання…</string>
     <string name="policy_subject_switch_busy">Дочекайтеся завершення таймера або тесту.</string>
     <string name="policy_subject_switch_cloud">Поки телевізор прив’язаний до хмари, зміна учасника недоступна.</string>

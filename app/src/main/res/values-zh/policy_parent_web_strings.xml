@@ -1,0 +1,23 @@
+<resources>
+    <string name="policy_parent_web_checking">正在检查…</string>
+    <string name="policy_parent_web_ok">网页服务正常</string>
+    <string name="policy_parent_web_offline">电视未连接局域网</string>
+    <string name="policy_parent_web_no_address">未找到可用地址</string>
+    <string name="policy_parent_web_not_started">网页服务未启动</string>
+    <string name="policy_parent_web_unresponsive">网页服务无响应</string>
+    <string name="policy_parent_web_waiting">等待手机连接</string>
+    <string name="policy_parent_web_just_now">刚刚访问</string>
+    <string name="policy_parent_web_minutes">%1$d 分钟前访问</string>
+    <string name="policy_parent_web_hours">%1$d 小时前访问</string>
+    <string name="policy_parent_web_address_access">%1$s · %2$s</string>
+    <string name="policy_parent_web_action_network">接入 Wi-Fi 或有线网络后重试</string>
+    <string name="policy_parent_web_action_proxy">关闭代理或 VPN 后重试</string>
+    <string name="policy_parent_web_action_restart">请重启电视</string>
+    <string name="policy_parent_web_hint">扫码无反应？请确认手机与电视同一 Wi-Fi，并关闭访客网络 / AP 隔离。</string>
+    <string name="policy_parent_web_short_checking">检查中</string>
+    <string name="policy_parent_web_short_ok">网页正常</string>
+    <string name="policy_parent_web_short_offline">未联网</string>
+    <string name="policy_parent_web_short_no_address">地址异常</string>
+    <string name="policy_parent_web_short_not_started">服务未启动</string>
+    <string name="policy_parent_web_short_unresponsive">服务无响应</string>
+</resources>

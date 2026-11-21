@@ -49,11 +49,15 @@ import kotlinx.coroutines.withContext
  * frame the lock video was taken from, so the child surfaces show the same wallpaper even while
  * the video is paused or not yet rendering.
  *
- * The parent center can give the child a rotation of pictures and videos. [lockId], [source],
- * [image] and [frosted] always describe the item on screen; [playlistSize], [onVideoEnded] and
- * [onVideoError] let the players know whether to loop and how to move on. An image holds for the
- * configured interval, a video plays to its end, and a single item keeps the old looping
- * behaviour.
+ * The parent center can give the child a rotation of pictures and videos. [lockId] and [source]
+ * describe the active item; [image] and [frosted] are the frame the surfaces draw underneath it.
+ * While a film is playing that underlay stays on the previous picture, not on the film's own
+ * poster: the player fades its first frame in over it, so an image -> film change never shows a
+ * poster frame that the film immediately replaces. When the player is released ([playing] false,
+ * e.g. under the screensaver) the active film's poster becomes the underlay instead.
+ * [playlistSize], [onVideoEnded] and [onVideoError] let the players know whether to loop and how
+ * to move on. An image holds for the configured interval, a video plays to its end, and a single
+ * item keeps the old looping behaviour.
  *
  * The fallback is [PolicyDefaultWallpaper], never the owner's Home wallpaper. A missing or
  * unreadable poster therefore leaves child mode on the bundled kids picture instead of leaking the
@@ -62,15 +66,21 @@ import kotlinx.coroutines.withContext
  * Posters are decoded and shaded on a small per-process cache. [PolicyChildWallpaper] can be
  * returned before the first one finishes ([loading]); the lock screen can draw the shared default
  * meanwhile, while [PolicyHomeGate] keeps Home back until the frame is ready. Later rotation
- * changes keep the previous frame until the next poster is decoded, so advanced navigation never
+ * changes keep the previous frame until the next one is decoded, so advanced navigation never
  * flashes the fallback.
  */
 internal data class PolicyChildWallpaper(
     val lockId: String?,
-    /** The loop the lock screen plays; null when the role's file is missing or unreadable. */
+    /** The active loop; null when the role's file is missing or unreadable. */
     val source: PolicyVideoSource?,
     val image: ImageBitmap?,
     val frosted: ImageBitmap?,
+    /**
+     * True once the active item's own still is decoded ([lockId]'s picture or poster), so a
+     * surface that still shows a previous film's last frame can fade to it without waiting.
+     * When [lockId] is null the bundled default is the still and this is true.
+     */
+    val imageReady: Boolean,
     val loading: Boolean,
     /** The parent-center sound preference; the player also requires [source] to have audio. */
     val soundEnabled: Boolean = false,
@@ -105,13 +115,14 @@ internal class PolicyHomeWallpaper(
 /** The child wallpaper's film under Home. [active] false lets the screensaver's decoder have it. */
 @Composable
 internal fun PolicyHomeFilm(wallpaper: PolicyHomeWallpaper, active: Boolean) {
-    // A picture is drawn by HomeBackground; only a video may reach the player.
-    val source = wallpaper.source?.takeIf { it.kind == PolicyMediaKind.VIDEO } ?: return
+    // A picture is drawn by HomeBackground, but the film's SurfaceView stays composed: its last
+    // frame must remain while the next picture fades in.
+    val source = wallpaper.source?.takeIf { it.kind == PolicyMediaKind.VIDEO }
     PolicyLockFilm(
         source = source,
         cover = wallpaper.filmCover,
         active = active,
-        soundEnabled = wallpaper.soundEnabled && source.hasAudio,
+        soundEnabled = wallpaper.soundEnabled && source?.hasAudio == true,
         loop = wallpaper.playlistSize <= 1,
         onEnded = wallpaper.onVideoEnded,
         onError = wallpaper.onVideoError,
@@ -165,14 +176,18 @@ internal fun rememberPolicyChildWallpaperState(playing: Boolean = true): PolicyC
         onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
     }
     val activeUserId = family.activeUserId
-    var selection by remember(context, activeUserId) {
+    // These are deliberately not keyed by the member: a member switch must keep the picture that
+    // is already on screen until the next member's first frame is decoded. Re-keying reset every
+    // one of them, which flashed the bundled default between the two children's wallpapers.
+    var selection by remember(context) {
         mutableStateOf<PolicyWallpaperSelection?>(null)
     }
-    var activeIndex by remember(context, activeUserId) { mutableIntStateOf(0) }
-    var firstReady by remember(context, activeUserId) { mutableStateOf(false) }
-    var images by remember(context, activeUserId) {
+    var activeIndex by remember(context) { mutableIntStateOf(0) }
+    var firstReady by remember(context) { mutableStateOf(false) }
+    var images by remember(context) {
         mutableStateOf<Map<String, CachedWallpaperImage>>(emptyMap())
     }
+    var lastShown by remember(context) { mutableStateOf<CachedWallpaperImage?>(null) }
     val sound = remember(context, activeUserId, roleRevision) {
         // Preferences only. The player checks the item's audio capability separately.
         runCatching { PolicyVideoLibrary.lockSoundPreference(context) }.getOrDefault(true)
@@ -196,30 +211,79 @@ internal fun rememberPolicyChildWallpaperState(playing: Boolean = true): PolicyC
     val items = selection?.items.orEmpty()
     val active = items.getOrNull(activeIndex)
     val fallback = cachedPolicyDefaultWallpaper()
-    val shown = active?.let { images[it.id] }
-        ?: CachedWallpaperImage(fallback?.image, fallback?.frosted)
+    val defaultStill = remember(fallback?.image, fallback?.frosted) {
+        CachedWallpaperImage(fallback?.image, fallback?.frosted)
+    }
+    val activeStill = active?.let { images[it.id] }
+    val resolved = selection != null
+    val shown = when {
+        // The first selection is still being read: keep the frame already on screen.
+        !resolved -> lastShown ?: defaultStill
+        // No configured item (or a role whose file is gone): the bundled kids picture.
+        active == null -> defaultStill
+        // A still picture: show it as soon as it is decoded.
+        active.source.kind != PolicyMediaKind.VIDEO -> activeStill ?: lastShown ?: defaultStill
+        // A film whose player is released (screensaver, parent center) shows its poster. Its
+        // player may have been released before a new frame was decoded, so prefer the poster.
+        !playing -> activeStill ?: lastShown ?: defaultStill
+        // A playing film fades in over the frame that was already there, never over a poster
+        // taken from a different moment of the video.
+        else -> lastShown ?: activeStill ?: defaultStill
+    }
+    // A new picture is only "ready" when the active item's own image is decoded. The parent uses
+    // this to fade a film's cover out to it; otherwise the last frame stays until then.
+    val imageReady = resolved && (active == null || activeStill != null)
 
     LaunchedEffect(selection, activeIndex) {
-        if (selection == null) return@LaunchedEffect
+        val expectedSelection = selection ?: return@LaunchedEffect
         if (active == null) {
             loadPolicyDefaultWallpaper(context)
             firstReady = true
             return@LaunchedEffect
         }
-        val loadedImages = mutableMapOf<String, CachedWallpaperImage>()
-        loadedImages[active.id] = images[active.id]
-            ?: loadWallpaperImage(context, active.source)
+        val expectedIndex = activeIndex
+        val next = if (items.size > 1) {
+            items[(expectedIndex + 1) % items.size].takeIf { it.id != active.id }
+        } else {
+            null
+        }
+        // Keep the already-decoded preload if it is still the next item; replacing the map with
+        // only the active entry would throw it away and decode the same poster twice.
+        val cachedNext = next?.let { images[it.id] }
+        val activeImage = images[active.id] ?: loadWallpaperImage(context, active.source)
+        // The member or rotation may have changed while the bitmap was decoding. An old result
+        // must not overwrite the new member's picture.
+        if (selection !== expectedSelection || activeIndex != expectedIndex) return@LaunchedEffect
+        // Publish the frame that is about to be shown before decoding the preload, so an image
+        // switch does not wait for two bitmaps.
+        images = buildMap {
+            put(active.id, activeImage)
+            if (next != null && cachedNext != null) put(next.id, cachedNext)
+        }
         firstReady = true
         // Decode the next poster ahead of the timer. It is the only preload: a 20-item rotation
         // must not keep 20 full-screen pictures in memory, so this map holds just these two.
-        if (items.size > 1) {
-            val next = items[(activeIndex + 1) % items.size]
-            if (next.id != active.id) {
-                loadedImages[next.id] = images[next.id]
-                    ?: loadWallpaperImage(context, next.source)
+        if (next != null && cachedNext == null) {
+            val nextImage = loadWallpaperImage(context, next.source)
+            if (selection === expectedSelection && activeIndex == expectedIndex) {
+                images = images + (next.id to nextImage)
             }
         }
-        images = loadedImages
+    }
+
+    // Remember the last picture (or the bundled default) that was fully resolved. A playing film
+    // never replaces it: the frame is exactly what the film's first frame fades in over. A film
+    // whose player is released does replace it with its poster, so resuming the player does not
+    // dissolve back to a picture from an earlier rotation item.
+    LaunchedEffect(resolved, active?.id, activeStill, playing) {
+        if (!resolved) return@LaunchedEffect
+        val stable = when {
+            active == null -> defaultStill
+            active.source.kind != PolicyMediaKind.VIDEO -> activeStill
+            !playing -> activeStill
+            else -> null
+        }
+        if (stable != null && lastShown != stable) lastShown = stable
     }
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -296,6 +360,7 @@ internal fun rememberPolicyChildWallpaperState(playing: Boolean = true): PolicyC
         source = active?.source,
         image = shown.image,
         frosted = shown.frosted,
+        imageReady = imageReady,
         loading = selection == null || !firstReady,
         soundEnabled = sound,
         playlistSize = items.size,

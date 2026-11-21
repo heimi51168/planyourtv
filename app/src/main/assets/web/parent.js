@@ -54,7 +54,7 @@
       familyGroup: "家庭组",
       familyMemberCount: "{n} 位成员",
       familyActiveOnTv: "电视当前",
-      familyAddChild: "添加孩子",
+      familyAddChild: "添加家庭成员",
       familyAddChildDisabled: "当前无法添加成员。",
       familySingleNote: "点成员可修改称呼和头像；电视同一时间只按当前成员的设置计时。",
       memberAddAction: "添加",
@@ -93,10 +93,12 @@
       avatarCropFailed: "这张图片无法用作头像，请换一张试试",
       memberNotFound: "没有找到这个成员",
       familyNotReady: "成员资料暂不可用",
-      avatarRabbit: "小兔",
-      avatarFox: "狐狸",
-      avatarBear: "小熊",
-      avatarPanda: "熊猫",
+      avatarDad: "爸爸",
+      avatarMom: "妈妈",
+      avatarGrandpa: "爷爷",
+      avatarGrandma: "奶奶",
+      avatarBoy: "男孩",
+      avatarGirl: "女孩",
       memberSourceLocal: "本机",
       memberSourceCloud: "云端",
       timeAndApps: "娱乐应用时间计划",
@@ -657,7 +659,7 @@
       familyGroup: "Family",
       familyMemberCount: "{n} members",
       familyActiveOnTv: "On TV now",
-      familyAddChild: "Add child",
+      familyAddChild: "Add family member",
       familyAddChildDisabled: "Adding a member is unavailable right now.",
       familySingleNote: "Tap a member to change the name and avatar; the TV only runs the current member's settings.",
       memberAddAction: "Add",
@@ -696,10 +698,12 @@
       avatarCropFailed: "This photo cannot be used as an avatar. Try another one.",
       memberNotFound: "Member not found",
       familyNotReady: "Member profiles are not available yet",
-      avatarRabbit: "Rabbit",
-      avatarFox: "Fox",
-      avatarBear: "Bear",
-      avatarPanda: "Panda",
+      avatarDad: "Dad",
+      avatarMom: "Mom",
+      avatarGrandpa: "Grandpa",
+      avatarGrandma: "Grandma",
+      avatarBoy: "Boy",
+      avatarGirl: "Girl",
       memberSourceLocal: "This TV",
       memberSourceCloud: "Cloud",
       timeAndApps: "Entertainment time plan",
@@ -1260,7 +1264,7 @@
       familyGroup: "Семья",
       familyMemberCount: "Участников: {n}",
       familyActiveOnTv: "Сейчас на ТВ",
-      familyAddChild: "Добавить ребёнка",
+      familyAddChild: "Добавить члена семьи",
       familyAddChildDisabled: "Сейчас добавить участника нельзя.",
       familySingleNote: "Нажмите на участника, чтобы изменить имя и аватар; телевизор учитывает настройки только текущего участника.",
       memberAddAction: "Добавить",
@@ -1299,10 +1303,12 @@
       avatarCropFailed: "Это фото не подходит для аватара. Попробуйте другое.",
       memberNotFound: "Участник не найден",
       familyNotReady: "Профили участников пока недоступны",
-      avatarRabbit: "Кролик",
-      avatarFox: "Лиса",
-      avatarBear: "Медведь",
-      avatarPanda: "Панда",
+      avatarDad: "Папа",
+      avatarMom: "Мама",
+      avatarGrandpa: "Дедушка",
+      avatarGrandma: "Бабушка",
+      avatarBoy: "Мальчик",
+      avatarGirl: "Девочка",
       memberSourceLocal: "Этот ТВ",
       memberSourceCloud: "Облако",
       timeAndApps: "План времени развлечений",
@@ -1863,7 +1869,7 @@
       familyGroup: "Сім’я",
       familyMemberCount: "Учасників: {n}",
       familyActiveOnTv: "Зараз на ТБ",
-      familyAddChild: "Додати дитину",
+      familyAddChild: "Додати члена сім’ї",
       familyAddChildDisabled: "Зараз додати учасника неможливо.",
       familySingleNote: "Натисніть на учасника, щоб змінити ім’я та аватар; телевізор враховує налаштування лише поточного учасника.",
       memberAddAction: "Додати",
@@ -1902,10 +1908,12 @@
       avatarCropFailed: "Це фото не підходить для аватара. Спробуйте інше.",
       memberNotFound: "Учасника не знайдено",
       familyNotReady: "Профілі учасників поки недоступні",
-      avatarRabbit: "Кролик",
-      avatarFox: "Лис",
-      avatarBear: "Ведмідь",
-      avatarPanda: "Панда",
+      avatarDad: "Тато",
+      avatarMom: "Мама",
+      avatarGrandpa: "Дідусь",
+      avatarGrandma: "Бабуся",
+      avatarBoy: "Хлопчик",
+      avatarGirl: "Дівчинка",
       memberSourceLocal: "Цей ТБ",
       memberSourceCloud: "Хмара",
       timeAndApps: "План часу розваг",
@@ -2466,7 +2474,7 @@
       familyGroup: "Отбасы",
       familyMemberCount: "Мүше саны: {n}",
       familyActiveOnTv: "Қазір ТВ-де",
-      familyAddChild: "Бала қосу",
+      familyAddChild: "Отбасы мүшесін қосу",
       familyAddChildDisabled: "Қазір мүше қосу мүмкін емес.",
       familySingleNote: "Аты мен аватарын өзгерту үшін мүшені түртіңіз; теледидар тек ағымдағы мүшенің параметрлерін ескереді.",
       memberAddAction: "Қосу",
@@ -2505,10 +2513,12 @@
       avatarCropFailed: "Бұл фото аватарға жарамайды. Басқасын таңдап көріңіз.",
       memberNotFound: "Мүше табылмады",
       familyNotReady: "Мүше профильдері әзірге қолжетімсіз",
-      avatarRabbit: "Қоян",
-      avatarFox: "Түлкі",
-      avatarBear: "Аю",
-      avatarPanda: "Панда",
+      avatarDad: "Әке",
+      avatarMom: "Ана",
+      avatarGrandpa: "Ата",
+      avatarGrandma: "Әже",
+      avatarBoy: "Ұл",
+      avatarGirl: "Қыз",
       memberSourceLocal: "Осы ТВ",
       memberSourceCloud: "Бұлт",
       timeAndApps: "Ойын-сауық уақытының жоспары",
@@ -3081,13 +3091,23 @@
       userActiveNote: "这些设置只影响「{name}」；电视同一时间只按一个成员计时。",
       userSwitchAction: "切换",
       userPinLabel: "密码",
-      userPinHint: "6 位数字，切换成员时使用",
-      userPinInitial: "初始 123456",
+      userPinHint: "6 位数字",
       userPinKeep: "不修改",
-      userPinInvalid: "请输入 6 位数字密码",
-      userPinRequired: "请为这位成员设置 6 位数字密码",
-      systemMemberSwitch: "切换需要密码",
-      systemMemberSwitchHint: "开启后需 6 位密码",
+      userPinInvalid: "请输入 6 位数字",
+      userPinRequired: "请设置 6 位密码",
+      memberPinWeak: "不能使用 123456",
+      memberPinSet: "设置密码",
+      memberPinInitialWarn: "初始密码 123456",
+      memberSwitchProtect: "切换需密码",
+      memberSwitchOnHint: "切换时输入",
+      memberSwitchOffHint: "直接切换",
+      memberSwitchBadge: "需密码",
+      memberExemptTitle: "免密时段",
+      memberExemptHint: "仅所选星期内直接切换",
+      memberExemptEmpty: "未选星期，切换仍需密码",
+      memberExemptInvalid: "结束时间需晚于开始时间",
+      sensitivePinLeadFamily: "输入家长密码后管理家庭成员",
+      familyPinNotSet: "请先在电视上设置家长密码",
       userConfigPinInput: "用户配置密码输入",
       userConfigPinInputHint: "关闭后，用户配置中的修改和单次计时不再要求家长密码",
       sensitivePinLeadUserConfig: "关闭后，持有本页面的任何人都可以修改用户配置。请输入家长密码确认。",
@@ -3099,7 +3119,6 @@
       userSwitchDisabled: "电视当前用户",
       userSwitchConfirm: "切换到「{name}」？",
       memberSwitched: "已切换",
-      memberSwitchSaved: "已保存",
       tvBusy: "电视正在使用，暂时不能切换",
       userTimeDisabled: "切到电视当前成员后可修改",
       systemAiHint: "模型、密钥与语音",
@@ -3140,13 +3159,23 @@
       userActiveNote: "These settings apply only to {name}; the TV enforces one member at a time.",
       userSwitchAction: "Switch",
       userPinLabel: "Password",
-      userPinHint: "6 digits, used when switching members",
-      userPinInitial: "Initial 123456",
-      userPinKeep: "Keep unchanged",
-      userPinInvalid: "Enter a 6-digit password",
-      userPinRequired: "Set a 6-digit password for this member",
-      systemMemberSwitch: "Password to switch",
-      systemMemberSwitchHint: "Requires the 6-digit password",
+      userPinHint: "6 digits",
+      userPinKeep: "Keep current",
+      userPinInvalid: "Enter 6 digits",
+      userPinRequired: "Set a 6-digit password",
+      memberPinWeak: "Cannot be 123456",
+      memberPinSet: "Set password",
+      memberPinInitialWarn: "Initial password: 123456",
+      memberSwitchProtect: "Password to switch",
+      memberSwitchOnHint: "Asked when switching",
+      memberSwitchOffHint: "Switch directly",
+      memberSwitchBadge: "PIN",
+      memberExemptTitle: "No-PIN hours",
+      memberExemptHint: "Direct switch only on selected days",
+      memberExemptEmpty: "No days selected; switching still asks for the password",
+      memberExemptInvalid: "End time must be later than start time",
+      sensitivePinLeadFamily: "Enter the parent PIN to manage family members",
+      familyPinNotSet: "Set a parent password on the TV first",
       userConfigPinInput: "Password for user settings",
       userConfigPinInputHint: "When off, changes in user settings and the one-time timer no longer ask for the parent password",
       sensitivePinLeadUserConfig: "Turning this off lets anyone holding this page change user settings. Enter the parent PIN to confirm.",
@@ -3158,7 +3187,6 @@
       userSwitchDisabled: "Current TV user",
       userSwitchConfirm: "Switch to {name}?",
       memberSwitched: "Switched",
-      memberSwitchSaved: "Saved",
       tvBusy: "The TV is in use; try again later",
       userTimeDisabled: "Switch to the TV's current member to edit",
       systemAiHint: "Models, keys and speech",
@@ -3199,13 +3227,23 @@
       userActiveNote: "Настройки относятся только к «{name}»; ТВ соблюдает правила одного члена.",
       userSwitchAction: "Сменить",
       userPinLabel: "Пароль",
-      userPinHint: "6 цифр, нужен при смене участника",
-      userPinInitial: "Начальный 123456",
+      userPinHint: "6 цифр",
       userPinKeep: "Не менять",
-      userPinInvalid: "Введите пароль из 6 цифр",
-      userPinRequired: "Задайте пароль из 6 цифр для этого участника",
-      systemMemberSwitch: "Пароль для смены",
-      systemMemberSwitchHint: "Нужен пароль из 6 цифр",
+      userPinInvalid: "Введите 6 цифр",
+      userPinRequired: "Нужен пароль из 6 цифр",
+      memberPinWeak: "Нельзя 123456",
+      memberPinSet: "Задать пароль",
+      memberPinInitialWarn: "Начальный пароль 123456",
+      memberSwitchProtect: "Пароль при смене",
+      memberSwitchOnHint: "Спросим при смене",
+      memberSwitchOffHint: "Смена без пароля",
+      memberSwitchBadge: "Пароль",
+      memberExemptTitle: "Часы без пароля",
+      memberExemptHint: "Прямая смена только в выбранные дни",
+      memberExemptEmpty: "Дни не выбраны; при смене по-прежнему нужен пароль",
+      memberExemptInvalid: "Время окончания должно быть позже начала",
+      sensitivePinLeadFamily: "Введите пароль родителя для управления участниками",
+      familyPinNotSet: "Сначала задайте пароль родителя на телевизоре",
       userConfigPinInput: "Пароль для настроек пользователя",
       userConfigPinInputHint: "Если выключено, изменения в настройках пользователя и разовый таймер больше не требуют пароля родителя",
       sensitivePinLeadUserConfig: "После выключения любой, у кого открыта эта страница, сможет менять настройки пользователя. Введите пароль родителя для подтверждения.",
@@ -3217,7 +3255,6 @@
       userSwitchDisabled: "Текущий пользователь ТВ",
       userSwitchConfirm: "Переключить на {name}?",
       memberSwitched: "Переключено",
-      memberSwitchSaved: "Сохранено",
       tvBusy: "ТВ используется; повторите позже",
       userTimeDisabled: "Переключитесь на текущего члена ТВ",
       systemAiHint: "Модели, ключи и озвучивание",
@@ -3258,13 +3295,23 @@
       userActiveNote: "Ці налаштування стосуються лише «{name}»; ТБ дотримується правил одного учасника.",
       userSwitchAction: "Змінити",
       userPinLabel: "Пароль",
-      userPinHint: "6 цифр, потрібен під час зміни учасника",
-      userPinInitial: "Початковий 123456",
+      userPinHint: "6 цифр",
       userPinKeep: "Не змінювати",
-      userPinInvalid: "Введіть пароль із 6 цифр",
-      userPinRequired: "Задайте пароль із 6 цифр для цього учасника",
-      systemMemberSwitch: "Пароль для зміни",
-      systemMemberSwitchHint: "Потрібен пароль із 6 цифр",
+      userPinInvalid: "Введіть 6 цифр",
+      userPinRequired: "Потрібен пароль із 6 цифр",
+      memberPinWeak: "Не можна 123456",
+      memberPinSet: "Задати пароль",
+      memberPinInitialWarn: "Початковий пароль 123456",
+      memberSwitchProtect: "Пароль при зміні",
+      memberSwitchOnHint: "Запитаємо при зміні",
+      memberSwitchOffHint: "Зміна без пароля",
+      memberSwitchBadge: "Пароль",
+      memberExemptTitle: "Години без пароля",
+      memberExemptHint: "Пряма зміна лише у вибрані дні",
+      memberExemptEmpty: "Дні не вибрано; під час зміни все ще потрібен пароль",
+      memberExemptInvalid: "Час завершення має бути пізніше початку",
+      sensitivePinLeadFamily: "Введіть пароль батьків, щоб керувати учасниками",
+      familyPinNotSet: "Спочатку задайте пароль батьків на телевізорі",
       userConfigPinInput: "Пароль для налаштувань користувача",
       userConfigPinInputHint: "Якщо вимкнено, зміни в налаштуваннях користувача та разовий таймер більше не потребують пароля батьків",
       sensitivePinLeadUserConfig: "Після вимкнення будь-хто, у кого відкрита ця сторінка, зможе змінювати налаштування користувача. Введіть пароль батьків для підтвердження.",
@@ -3276,7 +3323,6 @@
       userSwitchDisabled: "Поточний користувач ТБ",
       userSwitchConfirm: "Перемкнути на {name}?",
       memberSwitched: "Перемкнено",
-      memberSwitchSaved: "Збережено",
       tvBusy: "ТБ зараз зайнятий; спробуйте пізніше",
       userTimeDisabled: "Перемкніться на поточного учасника ТБ",
       systemAiHint: "Моделі, ключі й озвучення",
@@ -3316,14 +3362,24 @@
       userSiblingNote: "«{name}» параметрлері ашық. Оның уақытын, таймерін және тұсқағазын осында өзгерту үшін ТВ-ні осы мүшеге ауыстырыңыз.",
       userActiveNote: "Бұл параметрлер тек «{name}» үшін; ТВ бір уақытта бір мүшенің ережесін ұстанады.",
       userSwitchAction: "Ауыстыру",
-      userPinLabel: "Құпия сөз",
-      userPinHint: "6 цифр, мүшені ауыстырғанда қолданылады",
-      userPinInitial: "Бастапқы 123456",
+      userPinLabel: "Құпиясөз",
+      userPinHint: "6 цифр",
       userPinKeep: "Өзгертпеу",
-      userPinInvalid: "6 цифрлық құпия сөзді енгізіңіз",
-      userPinRequired: "Бұл мүше үшін 6 цифрлық құпиясөз орнатыңыз",
-      systemMemberSwitch: "Ауыстыру құпия сөзі",
-      systemMemberSwitchHint: "6 цифрлық құпия сөз қажет",
+      userPinInvalid: "6 цифр енгізіңіз",
+      userPinRequired: "6 цифрлық құпиясөз қажет",
+      memberPinWeak: "123456 қолданылмайды",
+      memberPinSet: "Құпиясөз орнату",
+      memberPinInitialWarn: "Бастапқы құпиясөз 123456",
+      memberSwitchProtect: "Ауыстыруға құпиясөз",
+      memberSwitchOnHint: "Ауыстырғанда сұралады",
+      memberSwitchOffHint: "Тікелей ауыстыру",
+      memberSwitchBadge: "Құпиясөз",
+      memberExemptTitle: "Құпиясөзсіз уақыт",
+      memberExemptHint: "Тек таңдалған күндерде тікелей ауысу",
+      memberExemptEmpty: "Күн таңдалмаған; ауысқанда құпиясөз сұралады",
+      memberExemptInvalid: "Аяқталу уақыты басталудан кейін болуы керек",
+      sensitivePinLeadFamily: "Мүшелерді басқару үшін ата-ана құпиясөзін енгізіңіз",
+      familyPinNotSet: "Алдымен теледидарда ата-ана құпиясөзін орнатыңыз",
       userConfigPinInput: "Пайдаланушы параметрлерінің құпиясөзі",
       userConfigPinInputHint: "Өшірілсе, пайдаланушы параметрлеріндегі өзгерістер мен бір реттік таймер ата-ана құпиясөзін сұрамайды",
       sensitivePinLeadUserConfig: "Өшіргеннен кейін бұл бетті ашқан кез келген адам пайдаланушы параметрлерін өзгерте алады. Растау үшін ата-ана құпиясөзін енгізіңіз.",
@@ -3335,7 +3391,6 @@
       userSwitchDisabled: "ТВ-дегі ағымдағы пайдаланушы",
       userSwitchConfirm: "{name} пайдаланушысына ауысу керек пе?",
       memberSwitched: "Ауыстырылды",
-      memberSwitchSaved: "Сақталды",
       tvBusy: "ТВ қолданыста; кейінірек қайталаңыз",
       userTimeDisabled: "ТВ-дегі ағымдағы мүшеге ауысыңыз",
       systemAiHint: "Модельдер, кілттер және дыбыс",
@@ -3957,7 +4012,6 @@
     SUBJECT_ADDED: "memberAdded",
     SUBJECT_DELETED: "memberDeleted",
     SUBJECT_SWITCHED: "memberSwitched",
-    MEMBER_SWITCH_SAVED: "memberSwitchSaved",
     USER_CONFIG_PIN_SAVED: "userConfigPinSaved",
     SAVED_NEXT_SESSION: "savedNextSession",
     APP_SCOPE_SAVED: "savedAppScope",
@@ -4024,6 +4078,7 @@
     SUBJECT_GRADE_INVALID: "memberGradeInvalid",
     SUBJECT_PIN_INVALID: "userPinInvalid",
     SUBJECT_PIN_REQUIRED: "userPinRequired",
+    SUBJECT_PIN_WEAK: "memberPinWeak",
     SUBJECT_ACTIVE: "familyDeleteActiveHint",
     SUBJECT_DEFAULT: "familyDeleteDefaultHint",
     SUBJECT_LAST: "memberDeleteLast",
@@ -5016,6 +5071,7 @@
 
   function releaseAllSensitive(keepalive) {
     releaseSensitive("RULES_EDIT", keepalive);
+    releaseSensitive("FAMILY_EDIT", keepalive);
     releaseSensitive("TAKE_OVER", keepalive);
     releaseSensitive("USER_CONFIG", keepalive);
   }
@@ -5178,6 +5234,29 @@
       const renewed = await promptSensitivePin(scope, leadKey, true);
       if (!renewed) throw error;
       return host.request(path, Object.assign({}, options, { sensitiveToken: renewed }));
+    }
+  }
+
+  /**
+   * Raw uploads cannot reuse requestWithSensitive because they stream a Blob through XHR.
+   * The scope proof travels in the same header as the JSON writes and is renewed once when
+   * the TV reports it expired.
+   */
+  async function uploadWithSensitive(path, blob, contentType) {
+    let token = await requestSensitiveToken("FAMILY_EDIT", "sensitivePinLeadFamily");
+    if (!token) {
+      const cancelled = new Error("SENSITIVE_REQUIRED");
+      cancelled.code = "SENSITIVE_REQUIRED";
+      throw cancelled;
+    }
+    try {
+      return await host.upload(path, blob, editorToken, null, contentType, token);
+    } catch (error) {
+      if (!isSensitiveError(error)) throw error;
+      delete sensitiveTokens.FAMILY_EDIT;
+      const renewed = await promptSensitivePin("FAMILY_EDIT", "sensitivePinLeadFamily", true);
+      if (!renewed) throw error;
+      return host.upload(path, blob, editorToken, null, contentType, renewed);
     }
   }
 
@@ -5504,7 +5583,15 @@
     if (context.member) {
       const isActive = Boolean(context.active &&
         context.member.userId === context.active.userId);
-      const switchCard = el("div", "parent-card");
+      // Highlight the card only while it can actually move the TV to this member. Once the
+      // TV already runs this member, or the server says switching is unavailable, the card
+      // stays a normal row so the tint always means "tap to make this page editable".
+      const canSwitch = !isActive &&
+        Boolean(snap.capabilities && snap.capabilities.canSwitchSubject);
+      const switchCard = el(
+        "div",
+        canSwitch ? "parent-card parent-switch-card is-pending" : "parent-card parent-switch-card"
+      );
       switchCard.appendChild(row(
         t("userSwitchTo"),
         isActive
@@ -5512,7 +5599,7 @@
           : t("userSwitchEnabled", { name: context.member.name || "" }),
         null,
         () => confirmRemoteSwitch(context.member),
-        isActive || !(snap.capabilities && snap.capabilities.canSwitchSubject),
+        !canSwitch,
         "parent-row-data"
       ));
       content.appendChild(switchCard);
@@ -5640,6 +5727,32 @@
     window.scrollTo({ top: 0 });
   }
 
+  /**
+   * Family management needs the parent PIN on every entry, not only when a write is about to
+   * happen: a child holding an unlocked phone must not even open the roster. The write routes
+   * repeat the same FAMILY_EDIT proof, because this page check is not an authorization boundary.
+   */
+  async function enterFamily() {
+    if (!snap) return;
+    releaseSensitive("FAMILY_EDIT");
+    clearNotices();
+    const editable = Boolean(snap.capabilities && snap.capabilities.canEditFamily) &&
+      snap.mode !== "CLOUD";
+    if (!snap.pinConfigured) {
+      if (!editable) {
+        // A read-only roster cannot change anything, so it stays reachable without a PIN.
+        openSystemSubpage("family");
+        return;
+      }
+      setNotice(t("familyPinNotSet"), true);
+      render();
+      return;
+    }
+    const token = await requestSensitiveToken("FAMILY_EDIT", "sensitivePinLeadFamily");
+    if (!token) return;
+    openSystemSubpage("family");
+  }
+
   function renderSystemIndex() {
     const root = $(ROOT_ID);
     if (!root) return;
@@ -5656,16 +5769,7 @@
         t("systemFamily"),
         t("systemFamilyHint"),
         t("familyMemberCount", { n: familyMembers().length }),
-        () => openSystemSubpage("family")
-      ),
-      switchRow(
-        t("systemMemberSwitch"),
-        t("systemMemberSwitchHint"),
-        snap.memberSwitchRequired,
-        !(snap.capabilities && snap.capabilities.canToggleMemberSwitch),
-        (input) => saveSimple("/api/parent/member-switch", {
-          enabled: input.checked
-        }, "memberSwitchRequired", input.checked)
+        enterFamily
       ),
       row(
         t("systemDevice"),
@@ -5796,6 +5900,7 @@
   }
 
   function backToRoot() {
+    if (subpage === "family") releaseSensitive("FAMILY_EDIT");
     subpage = null;
     clearNotices();
     render();
@@ -6143,6 +6248,7 @@
       if (subpage === "time") {
         leaveTimeAndApps();
       } else {
+        if (subpage === "family") releaseSensitive("FAMILY_EDIT");
         subpage = null;
       }
       picker = null;
@@ -6246,67 +6352,36 @@
   }
 
   // ------------------------------------------------------------------ family members
-  // The four presets are the approved V40 visual set. Uploaded photos are fetched through
-  // host.blob() because /api/parent/avatar requires the same editor lease as the rest of the
-  // page; an <img src> would be an unauthenticated read. Blob URLs are cached per revision so
-  // a rename or a rules save does not refetch every avatar.
-  const MEMBER_AVATARS = {
-    rabbit: { bg: "#f3ddc9", face: "#f7e7d6", ear: "#efc3a8", inner: "#fff8ef", eye: "#3d3029", cheek: "rgba(232,115,101,.28)" },
-    fox: { bg: "#f8dfca", face: "#eeb170", ear: "#d9824a", inner: "#f9d3ae", eye: "#4b3021", cheek: "rgba(226,109,77,.25)" },
-    bear: { bg: "#e9e1d4", face: "#c99769", ear: "#a36d45", inner: "#e4bb8f", eye: "#3d2c23", cheek: "rgba(206,102,90,.22)" },
-    panda: { bg: "#e3e8e1", face: "#fbf8f0", ear: "#303630", inner: "#d7ddd5", eye: "#2f342e", cheek: "rgba(232,143,143,.22)" }
-  };
-  const MEMBER_AVATAR_KEYS = ["rabbit", "fox", "bear", "panda"];
+  // The built-in portraits are bundled family artwork served by ParentWebAdmin. Uploaded
+  // photos still use host.blob() because /api/parent/avatar requires the editor lease.
+  const DEFAULT_AVATAR_KEY = "boy";
+  const MEMBER_AVATAR_KEYS = ["dad", "mom", "grandpa", "grandma", "boy", "girl"];
   const MEMBER_AVATAR_LABELS = {
-    rabbit: "avatarRabbit",
-    fox: "avatarFox",
-    bear: "avatarBear",
-    panda: "avatarPanda"
+    dad: "avatarDad",
+    mom: "avatarMom",
+    grandpa: "avatarGrandpa",
+    grandma: "avatarGrandma",
+    boy: "avatarBoy",
+    girl: "avatarGirl"
+  };
+  const LEGACY_AVATAR_KEYS = {
+    rabbit: "boy",
+    fox: "girl",
+    bear: "dad",
+    panda: "mom"
   };
   const memberAvatarUrls = new Map();
 
+  function canonicalAvatarKey(key) {
+    const normalized = String(key || "").trim().toLowerCase();
+    if (MEMBER_AVATAR_KEYS.indexOf(normalized) >= 0) return normalized;
+    return LEGACY_AVATAR_KEYS[normalized] || DEFAULT_AVATAR_KEY;
+  }
+
   function avatarSvg(key) {
-    const a = MEMBER_AVATARS[key] || MEMBER_AVATARS.rabbit;
-    const eye = (cx, cy) => '<circle cx="' + cx + '" cy="' + cy + '" r="2.1" fill="' + a.eye + '"/>';
-    if (key === "fox") {
-      return '<svg viewBox="0 0 64 64" aria-hidden="true">'
-        + '<rect width="64" height="64" fill="' + a.bg + '"/>'
-        + '<path d="M14 24 18 8l12 12z" fill="' + a.ear + '"/><path d="M50 24 46 8 34 20z" fill="' + a.ear + '"/>'
-        + '<path d="M18 14l3 8" stroke="' + a.inner + '" stroke-width="3" stroke-linecap="round"/>'
-        + '<circle cx="32" cy="35" r="18" fill="' + a.face + '"/>'
-        + '<path d="M20 33q12-10 24 0" fill="none" stroke="' + a.ear + '" stroke-width="3" stroke-linecap="round"/>'
-        + eye(25, 35) + eye(39, 35)
-        + '<path d="M29 41q3 3 6 0" fill="none" stroke="' + a.eye + '" stroke-width="1.7" stroke-linecap="round"/>'
-        + '<circle cx="19" cy="41" r="3" fill="' + a.cheek + '"/><circle cx="45" cy="41" r="3" fill="' + a.cheek + '"/>'
-        + '</svg>';
-    }
-    if (key === "panda") {
-      return '<svg viewBox="0 0 64 64" aria-hidden="true">'
-        + '<rect width="64" height="64" fill="' + a.bg + '"/>'
-        + '<circle cx="20" cy="19" r="10" fill="' + a.ear + '"/><circle cx="44" cy="19" r="10" fill="' + a.ear + '"/>'
-        + '<circle cx="32" cy="35" r="18" fill="' + a.face + '"/>'
-        + '<ellipse cx="24" cy="34" rx="6" ry="7" fill="' + a.ear + '" transform="rotate(28 24 34)"/>'
-        + '<ellipse cx="40" cy="34" rx="6" ry="7" fill="' + a.ear + '" transform="rotate(-28 40 34)"/>'
-        + '<circle cx="24" cy="34" r="2" fill="#fff8ef"/><circle cx="40" cy="34" r="2" fill="#fff8ef"/>'
-        + '<ellipse cx="32" cy="42" rx="3" ry="2.2" fill="' + a.eye + '"/>'
-        + '<path d="M29 46q3 2 6 0" fill="none" stroke="' + a.eye + '" stroke-width="1.4" stroke-linecap="round"/>'
-        + '</svg>';
-    }
-    const isBear = key === "bear";
-    return '<svg viewBox="0 0 64 64" aria-hidden="true">'
-      + '<rect width="64" height="64" fill="' + a.bg + '"/>'
-      + (isBear
-        ? '<circle cx="20" cy="19" r="8" fill="' + a.ear + '"/><circle cx="44" cy="19" r="8" fill="' + a.ear + '"/>'
-        : '<ellipse cx="23" cy="17" rx="6" ry="12" fill="' + a.ear + '" transform="rotate(-17 23 17)"/>'
-          + '<ellipse cx="41" cy="17" rx="6" ry="12" fill="' + a.ear + '" transform="rotate(17 41 17)"/>'
-          + '<ellipse cx="23" cy="18" rx="2.6" ry="7" fill="' + a.inner + '" transform="rotate(-17 23 18)"/>'
-          + '<ellipse cx="41" cy="18" rx="2.6" ry="7" fill="' + a.inner + '" transform="rotate(17 41 18)"/>')
-      + '<circle cx="32" cy="35" r="18" fill="' + a.face + '"/>'
-      + (isBear ? '<circle cx="26" cy="30" r="2" fill="' + a.ear + '"/><circle cx="38" cy="30" r="2" fill="' + a.ear + '"/>' : '')
-      + eye(25, 35) + eye(39, 35)
-      + '<path d="M29 41q3 3 6 0" fill="none" stroke="' + a.eye + '" stroke-width="1.7" stroke-linecap="round"/>'
-      + '<circle cx="19" cy="41" r="3" fill="' + a.cheek + '"/><circle cx="45" cy="41" r="3" fill="' + a.cheek + '"/>'
-      + '</svg>';
+    const canonical = canonicalAvatarKey(key);
+    const base = location.pathname.replace(/\/quiz\/?$/, "/");
+    return '<img src="' + base + 'parent-avatar?preset=' + encodeURIComponent(canonical) + '" alt="">';
   }
 
   function memberAvatarNode(member, extraClass) {
@@ -6756,52 +6831,188 @@
   }
 
   /**
-   * The 6-digit switch password. The avatar beside the input names whose password it is;
-   * the stored value is never rendered. A legacy member (no stored credential) shows the
-   * initial-password placeholder, an existing custom one shows "leave unchanged".
+   * The optional 6-digit password behind one member's switch protection. A blank field keeps
+   * the stored credential; enabling protection for the first time requires a new one.
    */
   function memberSwitchPinField(options) {
     const opts = options || {};
     const field = el("div", "parent-field");
     field.appendChild(el("label", "parent-field-label", t("userPinLabel")));
-    const line = el("div", "parent-pin-line");
-    const avatar = el("span", "parent-avatar");
     const input = el("input", "parent-pin-input");
-    const seeded = opts.value ? String(opts.value) : "";
-    // The built-in 123456 is a documented first-run credential, not a secret: show it
-    // directly for the default member so the parent can see what the TV expects. As
-    // soon as the field differs from that default, mask the custom password.
-    input.type = opts.reveal && seeded ? "text" : "password";
+    input.type = "password";
     input.inputMode = "numeric";
     input.autocomplete = "new-password";
     input.maxLength = 6;
-    input.placeholder = opts.placeholderKey
-      ? t(opts.placeholderKey)
-      : opts.initial ? t("userPinInitial") : t("userPinKeep");
+    input.placeholder = t(opts.placeholderKey || "userPinKeep");
     input.disabled = Boolean(opts.disabled);
-    if (seeded) input.value = seeded;
     input.addEventListener("input", () => {
       input.value = input.value.replace(/\D/g, "").slice(0, 6);
-      if (opts.reveal && seeded) {
-        input.type = input.value === seeded ? "text" : "password";
-      }
     });
-    line.appendChild(avatar);
-    line.appendChild(input);
-    field.appendChild(line);
+    field.appendChild(input);
     field.appendChild(el("p", "parent-hint", t("userPinHint")));
+    return {
+      field,
+      input,
+      read: () => input.value.trim()
+    };
+  }
 
-    function paint(preset) {
-      avatar.innerHTML = avatarSvg(preset || "rabbit");
+  /**
+   * The days and one shared same-day range where the member's switch password is waived.
+   * Only shown while protection is on. No selected day means no waiver; the TV shows the
+   * interval on the member row only while the rule is actually active.
+   */
+  function memberSwitchExemptField(options) {
+    const opts = options || {};
+    const field = el("div", "parent-switch-exempt");
+    field.appendChild(el("span", "parent-field-label", t("memberExemptTitle")));
+    const week = el("div", "parent-seg-week parent-exempt-week");
+    const selected = new Set(
+      (Array.isArray(opts.days) ? opts.days : []).filter((day) => day >= 1 && day <= 7)
+    );
+    const dayButtons = [];
+    for (let day = 1; day <= 7; day++) {
+      const node = button(dayLabel(day), "parent-seg-day parent-exempt-day", () => {
+        if (opts.disabled) return;
+        if (selected.has(day)) selected.delete(day);
+        else selected.add(day);
+        sync();
+      });
+      node.setAttribute("aria-pressed", String(selected.has(day)));
+      node.disabled = Boolean(opts.disabled);
+      dayButtons.push({ day, node });
+      week.appendChild(node);
     }
-    paint(opts.preset);
+    field.appendChild(week);
+
+    const range = el("div", "parent-window parent-exempt-range");
+    const start = timeField(
+      Number.isFinite(Number(opts.startMinute)) ? Number(opts.startMinute) : 540,
+      t("from"),
+      false
+    );
+    const end = timeField(
+      Number.isFinite(Number(opts.endMinute)) ? Number(opts.endMinute) : 900,
+      t("to"),
+      true
+    );
+    range.appendChild(start.node);
+    range.appendChild(el("span", "parent-time-sep", "—"));
+    range.appendChild(end.node);
+    const status = el("p", "parent-hint parent-exempt-status");
+    status.setAttribute("role", "status");
+    field.appendChild(range);
+    field.appendChild(status);
+
+    function sync() {
+      for (const item of dayButtons) {
+        const on = selected.has(item.day);
+        item.node.classList.toggle("is-on", on);
+        item.node.setAttribute("aria-pressed", String(on));
+      }
+      const invalid = start.get() >= end.get();
+      status.textContent = invalid
+        ? t("memberExemptInvalid")
+        : (selected.size ? t("memberExemptHint") : t("memberExemptEmpty"));
+      status.classList.toggle("is-error", invalid);
+    }
+    start.onchange(sync);
+    end.onchange(sync);
+    if (opts.disabled) {
+      field.querySelectorAll("select").forEach((select) => { select.disabled = true; });
+    }
+    sync();
+
+    return {
+      field,
+      read: () => ({
+        days: Array.from(selected).sort((a, b) => a - b),
+        startMinute: start.get(),
+        endMinute: end.get(),
+        invalid: start.get() >= end.get()
+      })
+    };
+  }
+
+  /**
+   * Per-member switch protection. Off by default; the password field and its no-PIN waiver
+   * appear only when the member needs a password to switch to themselves.
+   */
+  function memberSwitchField(options) {
+    const opts = options || {};
+    const field = el("div", "parent-field");
+    const row = switchRow(
+      t("memberSwitchProtect"),
+      null,
+      Boolean(opts.required),
+      Boolean(opts.disabled),
+      (input) => sync(input.checked)
+    );
+    const input = row.querySelector("input");
+    const hint = el("p", "parent-hint");
+    const pin = memberSwitchPinField({
+      disabled: opts.disabled,
+      placeholderKey: opts.currentRequired ? "userPinKeep" : "memberPinSet"
+    });
+    const pinWrap = el("div", "parent-switch-pin");
+    pinWrap.appendChild(pin.field);
+    const initialWarn = el("p", "parent-hint parent-pin-warn", t("memberPinInitialWarn"));
+    pinWrap.appendChild(initialWarn);
+    const exempt = memberSwitchExemptField({
+      days: opts.exemptDays,
+      startMinute: opts.exemptStartMinute,
+      endMinute: opts.exemptEndMinute,
+      disabled: opts.disabled
+    });
+    field.appendChild(row);
+    field.appendChild(hint);
+    field.appendChild(pinWrap);
+    field.appendChild(exempt.field);
+
+    function sync(checked) {
+      hint.textContent = t(checked ? "memberSwitchOnHint" : "memberSwitchOffHint");
+      pinWrap.hidden = !checked;
+      exempt.field.hidden = !checked;
+      initialWarn.hidden = !checked || !opts.switchPinInitial;
+      if (!checked) pin.input.value = "";
+    }
+    sync(Boolean(opts.required));
 
     return {
       field,
       input,
-      paint,
-      read: () => input.value.trim()
+      pinInput: pin.input,
+      read: () => {
+        const required = input.checked;
+        if (!required) {
+          // Protection off clears the waiver; defaults keep the next opt-in predictable.
+          return {
+            required: false,
+            pin: "",
+            exemptDays: [],
+            exemptStartMinute: 540,
+            exemptEndMinute: 900,
+            exemptInvalid: false
+          };
+        }
+        const selection = exempt.read();
+        return {
+          required: true,
+          pin: pin.read(),
+          exemptDays: selection.days,
+          exemptStartMinute: selection.startMinute,
+          exemptEndMinute: selection.endMinute,
+          exemptInvalid: selection.invalid
+        };
+      }
     };
+  }
+
+  function memberPinError(pin, required) {
+    if (required && !pin) return t("userPinRequired");
+    if (pin && !/^\d{6}$/.test(pin)) return t("userPinInvalid");
+    if (pin === "123456") return t("memberPinWeak");
+    return "";
   }
 
   function memberSourceText(member) {
@@ -6821,11 +7032,17 @@
     for (const member of members) {
       const node = el("button", "parent-row parent-member-row");
       node.type = "button";
-      node.appendChild(memberAvatarNode(member, "parent-avatar-member"));
+      const avatar = memberAvatarNode(member, "parent-avatar-member");
+      // The family list uses the same TV-current ring as the header and member picker.
+      avatar.classList.toggle("is-tv-current", Boolean(member.isActive));
+      node.appendChild(avatar);
       const main = el("div", "parent-row-main");
       const title = el("span", "parent-member-name");
       title.appendChild(document.createTextNode(member.name || ""));
       if (member.isActive) title.appendChild(el("span", "parent-member-badge", t("familyActiveOnTv")));
+      if (member.switchPinRequired) {
+        title.appendChild(el("span", "parent-member-badge is-protected", t("memberSwitchBadge")));
+      }
       main.appendChild(title);
       const scopeText = memberScopeSummary(member);
       main.appendChild(el(
@@ -6863,8 +7080,8 @@
     // The add sheet matches the edit sheet: the chosen preset or a cropped phone photo is
     // previewed in the same hero. The photo stays on the phone until the member exists,
     // because the avatar route needs a userId; it is uploaded immediately after creation.
-    // Historical installs with no roster are represented by a first member named 大宝 and
-    // the documented 123456 default; later members must choose their own password.
+    // A historical install with no roster gets a first member named 大宝; switch protection
+    // is off by default for every new member.
     const firstMember = familyMembers().length === 0;
     let draftPhotoBlob = null;
     let draftPhotoUrl = null;
@@ -6896,8 +7113,8 @@
       const scopeFields = memberScopeFieldset(0, 0);
       sheet.appendChild(scopeFields.field);
 
-      let draftPreset = "rabbit";
-      let pinField = null;
+      let draftPreset = DEFAULT_AVATAR_KEY;
+      let switchField = null;
       let uploadPhoto = null;
       let removePhoto = null;
       let submitting = false;
@@ -6920,6 +7137,10 @@
         uploadPhoto.disabled = value;
         removePhoto.disabled = value;
         fileInput.disabled = value;
+        if (switchField) {
+          switchField.input.disabled = value;
+          switchField.pinInput.disabled = value;
+        }
         for (const choice of options.querySelectorAll(".parent-avatar-option")) {
           choice.disabled = value;
         }
@@ -6956,7 +7177,6 @@
             paintOptions();
             paintHero();
             paintMediaActions();
-            if (pinField) pinField.paint(draftPreset);
           });
           options.appendChild(choice);
         }
@@ -6964,17 +7184,12 @@
       paintOptions();
       sheet.appendChild(options);
 
-      // Only the first member keeps the historical 123456 default, shown directly so the
-      // parent can see it. A later member starts empty and cannot be added without a
-      // 6-digit password of its own.
-      pinField = memberSwitchPinField({
-        preset: draftPreset,
-        initial: firstMember,
-        value: firstMember ? "123456" : "",
-        reveal: firstMember,
-        placeholderKey: "userPinRequired"
+      switchField = memberSwitchField({
+        required: false,
+        currentRequired: false,
+        exemptDays: []
       });
-      sheet.appendChild(pinField.field);
+      sheet.appendChild(switchField.field);
 
       const mediaActions = el("div", "parent-avatar-actions");
       const fileInput = el("input", "hidden");
@@ -7039,15 +7254,15 @@
           nameInput.focus();
           return;
         }
-        const pin = pinField.read();
-        if (!pin) {
-          showError(t("userPinRequired"));
-          pinField.input.focus();
+        const protection = switchField.read();
+        const pinError = memberPinError(protection.pin, protection.required);
+        if (pinError) {
+          showError(pinError);
+          switchField.pinInput.focus();
           return;
         }
-        if (!/^\d{6}$/.test(pin)) {
-          showError(t("userPinInvalid"));
-          pinField.input.focus();
+        if (protection.exemptInvalid) {
+          showError(t("memberExemptInvalid"));
           return;
         }
         setSubmitting(true);
@@ -7061,14 +7276,29 @@
             avatarPreset: draftPreset,
             grade: scope.grade,
             semester: scope.semester,
-            switchPin: pin
+            switchPinRequired: protection.required,
+            switchPinExemptDays: protection.exemptDays,
+            switchPinExemptStartMinute: protection.exemptStartMinute,
+            switchPinExemptEndMinute: protection.exemptEndMinute
           };
-          const data = await host.request("/api/parent/subjects/add", {
-            method: "POST",
-            body: body,
-            editorToken: editorToken,
-            quizAuth: true
-          });
+          if (protection.pin) body.switchPin = protection.pin;
+          const data = await requestWithSensitive(
+            "/api/parent/subjects/add",
+            {
+              method: "POST",
+              body: body,
+              editorToken: editorToken,
+              quizAuth: true
+            },
+            "FAMILY_EDIT",
+            "sensitivePinLeadFamily"
+          );
+          if (!data) {
+            // The parent cancelled the PIN sheet; nothing was written.
+            setSubmitting(false);
+            add.disabled = false;
+            return;
+          }
           if (data && data.snapshot) adoptSnapshot(data.snapshot, false);
           else await refreshSnapshot();
           const added = familyMembers().find((member) => !beforeIds.has(member.userId)) || null;
@@ -7081,11 +7311,9 @@
           }
           if (pendingPhoto && added) {
             try {
-              const uploaded = await host.upload(
+              const uploaded = await uploadWithSensitive(
                 "/api/parent/subjects/avatar?userId=" + encodeURIComponent(added.userId),
                 pendingPhoto,
-                editorToken,
-                null,
                 "image/jpeg"
               );
               if (uploaded && uploaded.snapshot) adoptSnapshot(uploaded.snapshot, false);
@@ -7151,7 +7379,7 @@
       hero.appendChild(heroMain);
       sheet.appendChild(hero);
 
-      let draftPreset = initial.avatarPreset || "rabbit";
+      let draftPreset = canonicalAvatarKey(initial.avatarPreset);
       // Choosing a preset over an uploaded photo is a draft until Save; cancelling must not
       // delete the family photo. The delete request is sent only after the profile write.
       let dropPhoto = false;
@@ -7166,9 +7394,12 @@
         if (dropPhoto) {
           const preview = el("span", "parent-avatar parent-avatar-sheet");
           preview.innerHTML = avatarSvg(draftPreset);
+          preview.classList.toggle("is-tv-current", Boolean(member.isActive));
           avatarSlot.appendChild(preview);
         } else {
-          avatarSlot.appendChild(memberAvatarNode(member, "parent-avatar-sheet"));
+          const avatar = memberAvatarNode(member, "parent-avatar-sheet");
+          avatar.classList.toggle("is-tv-current", Boolean(member.isActive));
+          avatarSlot.appendChild(avatar);
         }
         heroName.textContent = member.name || "";
         heroSub.textContent = member.isActive
@@ -7195,7 +7426,6 @@
       const scopeFields = memberScopeFieldset(initial.grade, initial.semester, editable);
       sheet.appendChild(scopeFields.field);
 
-      let pinField = null;
       sheet.appendChild(el("span", "parent-field-label", t("memberAvatarLabel")));
       const options = el("div", "parent-avatar-options");
       function paintOptions() {
@@ -7211,7 +7441,6 @@
             dropPhoto = Boolean(currentMember().avatarUrl);
             paintOptions();
             paintHero();
-            if (pinField) pinField.paint(draftPreset);
           });
           options.appendChild(choice);
         }
@@ -7219,18 +7448,17 @@
       paintOptions();
       sheet.appendChild(options);
 
-      // The default member still has the documented 123456 credential; show it so the
-      // parent is not left guessing. A custom password is never rendered: the field stays
-      // empty and "keep unchanged" is the placeholder.
-      const initialPin = Boolean(initial.switchPinInitial) ? "123456" : "";
-      pinField = memberSwitchPinField({
-        preset: draftPreset,
-        initial: Boolean(initial.switchPinInitial),
-        disabled: !editable,
-        value: initialPin,
-        reveal: Boolean(initial.switchPinInitial)
+      const switchField = memberSwitchField({
+        required: Boolean(initial.switchPinRequired),
+        currentRequired: Boolean(initial.switchPinRequired),
+        switchPinInitial: Boolean(initial.switchPinInitial),
+        exemptDays: Array.isArray(initial.switchPinExemptDays)
+          ? initial.switchPinExemptDays : [],
+        exemptStartMinute: initial.switchPinExemptStartMinute,
+        exemptEndMinute: initial.switchPinExemptEndMinute,
+        disabled: !editable
       });
-      sheet.appendChild(pinField.field);
+      sheet.appendChild(switchField.field);
 
       const mediaActions = el("div", "parent-avatar-actions");
       const fileInput = el("input", "hidden");
@@ -7299,7 +7527,7 @@
                       editorToken: editorToken,
                       quizAuth: true
                     },
-                    "RULES_EDIT",
+                    "FAMILY_EDIT",
                     "sensitivePinLeadDelete"
                   );
                   if (!data) return;
@@ -7374,11 +7602,9 @@
           uploadPhoto.disabled = true;
           uploadPhoto.textContent = t("avatarCropProcessing");
           try {
-            const data = await host.upload(
+            const data = await uploadWithSensitive(
               "/api/parent/subjects/avatar?userId=" + encodeURIComponent(userId),
               blob,
-              editorToken,
-              null,
               "image/jpeg"
             );
             dropPhoto = false;
@@ -7418,10 +7644,15 @@
             nameInput.focus();
             return;
           }
-          const pin = pinField.read();
-          if (pin && !/^\d{6}$/.test(pin)) {
-            showError(t("userPinInvalid"));
-            pinField.input.focus();
+          const protection = switchField.read();
+          const pinError = memberPinError(protection.pin, protection.required);
+          if (pinError) {
+            showError(pinError);
+            switchField.pinInput.focus();
+            return;
+          }
+          if (protection.exemptInvalid) {
+            showError(t("memberExemptInvalid"));
             return;
           }
           save.disabled = true;
@@ -7432,26 +7663,46 @@
               name: name,
               avatarPreset: draftPreset,
               grade: scope.grade,
-              semester: scope.semester
+              semester: scope.semester,
+              switchPinRequired: protection.required,
+              switchPinExemptDays: protection.exemptDays,
+              switchPinExemptStartMinute: protection.exemptStartMinute,
+              switchPinExemptEndMinute: protection.exemptEndMinute
             };
-            // Leaving the visible 123456 default untouched must keep the initial
-            // credential instead of rewriting it as a custom PBKDF2 hash.
-            if (pin && !(initial.switchPinInitial && pin === "123456")) {
-              body.switchPin = pin;
-            }
-            const data = await host.request("/api/parent/subjects/profile", {
-              method: "POST",
-              body: body,
-              editorToken: editorToken,
-              quizAuth: true
-            });
-            if (dropPhoto && currentMember().avatarUrl) {
-              await host.request("/api/parent/subjects/avatar/delete", {
+            // A blank field keeps the stored credential (or the initial one). Enabling
+            // protection for the first time is rejected by the API without a new password.
+            if (protection.pin) body.switchPin = protection.pin;
+            const data = await requestWithSensitive(
+              "/api/parent/subjects/profile",
+              {
                 method: "POST",
-                body: { userId: userId },
+                body: body,
                 editorToken: editorToken,
                 quizAuth: true
-              });
+              },
+              "FAMILY_EDIT",
+              "sensitivePinLeadFamily"
+            );
+            if (!data) {
+              save.disabled = false;
+              return;
+            }
+            if (dropPhoto && currentMember().avatarUrl) {
+              const removed = await requestWithSensitive(
+                "/api/parent/subjects/avatar/delete",
+                {
+                  method: "POST",
+                  body: { userId: userId },
+                  editorToken: editorToken,
+                  quizAuth: true
+                },
+                "FAMILY_EDIT",
+                "sensitivePinLeadFamily"
+              );
+              if (!removed) {
+                save.disabled = false;
+                return;
+              }
             }
             await refreshSnapshot();
             close();
@@ -7592,7 +7843,7 @@
   function routeFlags(rules) {
     return {
       quiz: rules.quizGateEnabled !== false,
-      study: rules.studyEarnEnabled !== false,
+      study: rules.studyEarnEnabled === true,
       direct: rules.directStartEnabled === true,
     };
   }

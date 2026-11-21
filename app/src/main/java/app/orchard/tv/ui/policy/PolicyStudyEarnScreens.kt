@@ -7,7 +7,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -81,8 +80,8 @@ import com.planyourtv.policy.UnlockRouteReason
 import java.util.Locale
 import kotlin.math.roundToInt
 
-// The lock screen's floating-sheet corner; its own constant is private to PolicyLockScreen.
-private val StudyEarnCorner = 24.dp
+// The member sheet's corner, so a route choice and the face sheet read as the same surface.
+private val StudyEarnCorner = 26.dp
 
 /** The same reasons, for a rejected start where time passed between drawing the row and OK. */
 internal fun studyEarnRejectMessage(reason: RejectReason): Int = when (reason) {
@@ -233,16 +232,15 @@ internal fun PolicyUnlockChoiceOverlay(
         Modifier
             .fillMaxSize()
             .dismissOnTap { onBack() }
-            // The same shade and drop-in as Aerial's Control Center panel, centred so the choice
-            // reads as a modal: the desktop stays legible, but the dock cannot be read as the
-            // active surface. A denser scrim keeps bright wallpapers from washing out the rows.
-            .background(Color.Black.copy(alpha = 0.36f))
-            .padding(top = 24.dp),
-        contentAlignment = Alignment.TopCenter,
+            // The member sheet's near-black scrim, so the focused white plate keeps its contrast
+            // over a bright wallpaper. The desktop stays composed behind it and the film keeps
+            // running, but the shade makes the choice the only readable surface.
+            .background(Palette.OnFocus.copy(alpha = 0.72f)),
+        contentAlignment = Alignment.Center,
     ) {
         Box(
             Modifier
-                .width(360.dp)
+                .widthIn(max = 520.dp)
                 .heightIn(max = 500.dp)
                 // A tap on the card must not fall through to the scrim and dismiss the choice.
                 .consumeTaps()
@@ -250,7 +248,7 @@ internal fun PolicyUnlockChoiceOverlay(
                     alpha = cardEnter
                     scaleX = 0.94f + 0.06f * cardEnter
                     scaleY = 0.94f + 0.06f * cardEnter
-                    transformOrigin = TransformOrigin(0.5f, 0f)
+                    transformOrigin = TransformOrigin(0.5f, 0.5f)
                 }
                 .choiceShellGlass(StudyEarnCorner),
         ) {
@@ -289,9 +287,9 @@ internal fun PolicyUnlockChoiceOverlay(
                 Column(
                     modifier = Modifier
                         // The rows keep the height they need; only a long list scrolls. The
-                        // viewport is tall enough for the four child routes plus the inline
-                        // study apps, so the direct row is not clipped behind the Back row.
-                        .heightIn(max = 340.dp)
+                        // centred card is 500 dp tall at most, leaving room for the title and
+                        // the Back button even when an error line is showing.
+                        .heightIn(max = 300.dp)
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
@@ -429,8 +427,10 @@ private fun hint(vararg parts: String?): String =
     parts.filterNotNull().filter { it.isNotEmpty() }.joinToString(" · ")
 
 /**
- * The modal shell is deliberately weaker than the option cards. It keeps the title readable
- * over a bright wallpaper without turning the whole panel into one solid glass block.
+ * The same smoked pane as the member sheet, kept self-contained: the child wallpaper can be a
+ * film rendered by a SurfaceView behind the window, so the Aerial glass that samples a frosted
+ * wallpaper would show the owner's picture instead. A fixed gradient stays correct over both a
+ * picture and a film.
  */
 private fun Modifier.choiceShellGlass(corner: Dp): Modifier = this
     .clip(RoundedCornerShape(corner))
@@ -440,56 +440,12 @@ private fun Modifier.choiceShellGlass(corner: Dp): Modifier = this
         val h = size.height.roundToInt().coerceAtLeast(1)
         val edge = glassEdge(w, h, radius, 1.2.dp.toPx())
         val shell = Brush.verticalGradient(
-            0f to Color.Black.copy(alpha = 0.46f),
-            1f to Color.Black.copy(alpha = 0.60f),
+            0f to Color.Black.copy(alpha = 0.56f),
+            1f to Color.Black.copy(alpha = 0.70f),
         )
         onDrawBehind {
             drawRoundRect(brush = shell, cornerRadius = CornerRadius(radius, radius))
-            drawImage(edge, dstSize = IntSize(w, h), alpha = 0.72f)
-        }
-    }
-
-/**
- * One selectable row. The card is always visible, so a route reads as a choice before it is
- * focused; focus adds a rim and a slightly denser fill instead of turning the whole row white.
- */
-private fun Modifier.choiceOptionGlass(
-    corner: Dp,
-    enabled: Boolean,
-    focusProgress: Float,
-): Modifier = this
-    .clip(RoundedCornerShape(corner))
-    .drawWithCache {
-        val radius = corner.toPx()
-        val w = size.width.roundToInt().coerceAtLeast(1)
-        val h = size.height.roundToInt().coerceAtLeast(1)
-        val edge = glassEdge(w, h, radius, 1.2.dp.toPx())
-        onDrawBehind {
-            val focus = focusProgress.coerceIn(0f, 1f)
-            val topAlpha = if (enabled) 0.58f + 0.05f * focus else 0.30f
-            val bottomAlpha = if (enabled) 0.72f + 0.06f * focus else 0.38f
-            drawRoundRect(
-                brush = Brush.verticalGradient(
-                    0f to Color.Black.copy(alpha = topAlpha),
-                    1f to Color.Black.copy(alpha = bottomAlpha),
-                ),
-                cornerRadius = CornerRadius(radius, radius),
-            )
-            drawImage(
-                edge,
-                dstSize = IntSize(w, h),
-                alpha = if (enabled) 0.90f else 0.38f,
-            )
-            if (enabled && focus > 0.01f) {
-                val stroke = 1.6.dp.toPx()
-                drawRoundRect(
-                    color = Color.White.copy(alpha = 0.85f * focus),
-                    topLeft = Offset(stroke / 2f, stroke / 2f),
-                    size = Size(w - stroke, h - stroke),
-                    cornerRadius = CornerRadius(radius - stroke / 2f, radius - stroke / 2f),
-                    style = Stroke(width = stroke),
-                )
-            }
+            drawImage(edge, dstSize = IntSize(w, h), alpha = 0.85f)
         }
     }
 
@@ -509,20 +465,42 @@ private fun UnlockChoiceRow(
         enabled = enabled,
         focusRequester = focusRequester,
         onKey = onKey,
-        focusedScale = 1.015f,
+        focusedScale = 1.02f,
         modifier = Modifier.fillMaxWidth(),
     ) { state ->
-        val focusProgress by animateFloatAsState(
-            targetValue = if (state.focused && enabled) 1f else 0f,
-            animationSpec = tween(140, easing = Motion.EaseOut),
-            label = "choice-card-focus",
+        // The member sheet's selection: the whole plate turns near-white and its text flips to
+        // the dark content colour. A rim alone was hard to read now that the scrim behind the
+        // card is the darker one.
+        val focused = state.focused && enabled
+        val background by animateColorAsState(
+            when {
+                !enabled -> Color.White.copy(alpha = 0.06f)
+                focused -> Palette.Focus
+                else -> Color.White.copy(alpha = 0.10f)
+            },
+            tween(160, easing = Motion.EaseOut),
+            label = "choice-card-bg",
         )
-        val foreground = if (enabled) Palette.Label
-        else Palette.SecondaryLabel.copy(alpha = 0.72f)
+        val foreground = when {
+            !enabled -> Palette.SecondaryLabel.copy(alpha = 0.72f)
+            focused -> Palette.OnFocus
+            else -> Palette.Label
+        }
+        val metaColor = when {
+            !enabled -> Palette.SecondaryLabel.copy(alpha = 0.65f)
+            focused -> Palette.OnFocus.copy(alpha = 0.92f)
+            else -> Palette.Label.copy(alpha = 0.92f)
+        }
+        val hintColor = when {
+            !enabled -> Palette.SecondaryLabel.copy(alpha = 0.58f)
+            focused -> Palette.OnFocus.copy(alpha = 0.72f)
+            else -> Palette.Label.copy(alpha = 0.82f)
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .choiceOptionGlass(12.dp, enabled, focusProgress)
+                .clip(RoundedCornerShape(16.dp))
+                .background(background)
                 .heightIn(min = 64.dp)
                 .padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -548,11 +526,7 @@ private fun UnlockChoiceRow(
                         BasicText(
                             meta,
                             style = Type.Caption.copy(
-                                color = if (enabled) {
-                                    Palette.Label.copy(alpha = 0.92f)
-                                } else {
-                                    Palette.SecondaryLabel.copy(alpha = 0.65f)
-                                },
+                                color = metaColor,
                                 fontWeight = FontWeight.SemiBold,
                             ),
                             maxLines = 1,
@@ -564,11 +538,7 @@ private fun UnlockChoiceRow(
                     hint,
                     style = Type.Caption.copy(
                         lineHeight = 15.sp,
-                        color = if (enabled) {
-                            Palette.Label.copy(alpha = 0.82f)
-                        } else {
-                            Palette.SecondaryLabel.copy(alpha = 0.58f)
-                        },
+                        color = hintColor,
                     ),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -634,25 +604,34 @@ private fun StudyAppChoiceRow(
         enabled = enabled,
         focusRequester = focusRequester,
         onKey = onKey,
-        focusedScale = 1.015f,
+        focusedScale = 1.02f,
         modifier = Modifier.fillMaxWidth(),
     ) { state ->
-        val focusProgress by animateFloatAsState(
-            targetValue = if (state.focused && enabled) 1f else 0f,
-            animationSpec = tween(140, easing = Motion.EaseOut),
-            label = "study-app-card-focus",
+        val focused = state.focused && enabled
+        val background by animateColorAsState(
+            when {
+                !enabled -> Color.White.copy(alpha = 0.06f)
+                focused -> Palette.Focus
+                else -> Color.White.copy(alpha = 0.10f)
+            },
+            tween(160, easing = Motion.EaseOut),
+            label = "study-app-card-bg",
         )
-        val foreground = if (enabled) Palette.Label
-        else Palette.SecondaryLabel.copy(alpha = 0.72f)
+        val foreground = when {
+            !enabled -> Palette.SecondaryLabel.copy(alpha = 0.72f)
+            focused -> Palette.OnFocus
+            else -> Palette.Label
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .choiceOptionGlass(12.dp, enabled, focusProgress)
+                .clip(RoundedCornerShape(16.dp))
+                .background(background)
                 .heightIn(min = 56.dp)
                 .padding(horizontal = 14.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            MiniTile(app, focused = state.focused && enabled, modifier = Modifier.size(28.dp))
+            MiniTile(app, focused = focused, modifier = Modifier.size(28.dp))
             Spacer(Modifier.width(12.dp))
             BasicText(
                 app.label,
@@ -668,53 +647,22 @@ private fun StudyAppChoiceRow(
     }
 }
 
-/** The panel's dismiss row, in the same 44 dp MenuRow shape Aerial's sheet uses. */
+/** The member sheet's Close button, so both sheets dismiss with the same white-on-focus pill. */
 @Composable
 private fun ChoiceBackRow(
     onClick: () -> Unit,
     focusRequester: FocusRequester,
     onKey: (KeyEvent) -> Boolean,
 ) {
-    Pressable(
-        onClick = onClick,
-        focusRequester = focusRequester,
-        onKey = onKey,
-        focusedScale = 1.02f,
-        modifier = Modifier.fillMaxWidth(),
-    ) { state ->
-        // A dark chip is always visible over the bright child wallpaper; focus adds a rim
-        // rather than turning the row into a solid white block.
-        val background by animateColorAsState(
-            if (state.focused) Color.Black.copy(alpha = 0.30f)
-            else Color.Black.copy(alpha = 0.20f),
-            tween(140, easing = Motion.EaseOut),
-            label = "choice-back-bg",
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        LockButton(
+            label = stringResource(R.string.policy_back),
+            onClick = onClick,
+            width = 200.dp,
+            focusRequester = focusRequester,
+            primary = true,
+            onKey = onKey,
         )
-        val borderColor by animateColorAsState(
-            if (state.focused) Color.White.copy(alpha = 0.72f)
-            else Color.White.copy(alpha = 0.22f),
-            tween(140, easing = Motion.EaseOut),
-            label = "choice-back-border",
-        )
-        val foreground = if (state.focused) Palette.Label else Palette.Label.copy(alpha = 0.82f)
-        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            Row(
-                Modifier
-                    .widthIn(min = 96.dp)
-                    .height(40.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(background)
-                    .border(1.dp, borderColor, RoundedCornerShape(20.dp))
-                    .padding(horizontal = 20.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-            ) {
-                BasicText(
-                    stringResource(R.string.policy_back),
-                    style = Type.Body.copy(color = foreground),
-                )
-            }
-        }
     }
 }
 

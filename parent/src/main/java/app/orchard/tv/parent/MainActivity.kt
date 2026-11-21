@@ -169,7 +169,7 @@ class MainActivity : AppCompatActivity() {
             assets.open("shell_bridge.js").bufferedReader().use { it.readText() }
         }.getOrDefault("")
 
-        setupToolbar()
+        setupTopMenu()
         setupWebView()
         setupPairing()
         setupUpdates()
@@ -282,7 +282,6 @@ class MainActivity : AppCompatActivity() {
         binding.errorView.visibility = View.GONE
         deviceListDialog?.dismiss()
         binding.webView.clearHistory()
-        updateToolbar()
         updateMenu()
         loadPaired()
     }
@@ -333,8 +332,6 @@ class MainActivity : AppCompatActivity() {
         binding.manualToggle.visibility = View.VISIBLE
         binding.urlInput.setText("")
         binding.pairError.visibility = View.GONE
-        binding.toolbar.title = getString(R.string.app_name)
-        binding.toolbar.subtitle = null
         updateMenu()
     }
 
@@ -475,7 +472,6 @@ class MainActivity : AppCompatActivity() {
                     }
                     devices = devices.copy(devices = updated).normalized()
                     prefs.save(devices)
-                    updateToolbar()
                     populateDeviceList()
                     dialog.dismiss()
                 }
@@ -509,7 +505,6 @@ class MainActivity : AppCompatActivity() {
             } ?: showPairing()
         } else {
             populateDeviceList()
-            updateToolbar()
         }
     }
 
@@ -554,14 +549,6 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun updateToolbar() {
-        val current = devices.current()
-        binding.toolbar.title = current?.name ?: getString(R.string.app_name)
-        binding.toolbar.subtitle = current?.let {
-            runCatching { Uri.parse(it.url).authority }.getOrNull()
-        }
-    }
-
     private fun showCameraBlockedDialog() {
         AlertDialog.Builder(this)
             .setTitle(R.string.camera_blocked_title)
@@ -580,11 +567,8 @@ class MainActivity : AppCompatActivity() {
 
     // ---------------------------------------------------------------- toolbar
 
-    private fun setupToolbar() {
+    private fun setupTopMenu() {
         binding.toolbar.inflateMenu(R.menu.menu_main)
-        binding.toolbar.setOnClickListener {
-            if (devices.devices.isNotEmpty()) showDeviceList()
-        }
         binding.toolbar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.action_devices -> {
@@ -610,7 +594,6 @@ class MainActivity : AppCompatActivity() {
                 else -> false
             }
         }
-        updateToolbar()
         updateMenu()
     }
 

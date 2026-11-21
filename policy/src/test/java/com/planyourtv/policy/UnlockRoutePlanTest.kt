@@ -75,7 +75,7 @@ class UnlockRoutePlanTest {
 
     @Test
     fun routesAreIndependentAndStudyIsVisibleButUnconfiguredWithoutStudyApps() {
-        val p = plan(LocalRules(dayGroups = rules().dayGroups))
+        val p = plan(LocalRules(dayGroups = rules().dayGroups, studyEarnEnabled = true))
 
         assertTrue(p.quiz.visible)
         assertTrue(p.quiz.available)

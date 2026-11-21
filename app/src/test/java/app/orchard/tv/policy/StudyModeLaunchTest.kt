@@ -56,6 +56,8 @@ class StudyModeLaunchTest {
         restMinutes = 0,
         allowedPackages = setOf(videoPackage),
         studyPackages = setOf(studyPackage),
+        // Study mode is opt-in since 2.0.001; these tests exercise the mode itself.
+        studyEarnEnabled = true,
         unlimitedPackages = setOf(unlimitedPackage),
     )
 
@@ -158,14 +160,14 @@ class StudyModeLaunchTest {
     }
 
     @Test
-    fun anEntertainmentSessionBlocksStudyAppsButKeepsUnlimitedInScope() {
+    fun anEntertainmentSessionKeepsItsAuthorizedAppsInScope() {
         assertEquals(SessionStartResult.Started, LocalPolicyRuntime.startManualSession(10 * 60L))
 
         assertFalse(PolicyModeCoordinator.shouldBlock(app, videoPackage))
         assertFalse(PolicyModeCoordinator.shouldBlock(app, unlimitedPackage))
-        // Study apps are timed only by their own round; they cannot be opened from recents during
-        // an entertainment session.
-        assertTrue(PolicyModeCoordinator.shouldBlock(app, studyPackage))
+        // With the study switch on, a study app may be opened directly during the session; it
+        // simply starts no round and earns no reward. The switch off excludes it entirely.
+        assertFalse(PolicyModeCoordinator.shouldBlock(app, studyPackage))
     }
 
     @Test

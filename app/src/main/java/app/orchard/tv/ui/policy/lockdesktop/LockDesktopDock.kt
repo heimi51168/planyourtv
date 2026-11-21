@@ -225,6 +225,8 @@ internal fun LockDesktopDock(
     startFocus: FocusRequester,
     state: LockDockState,
     resetFocus: Boolean = false,
+    /** False while a modal sheet owns the screen; keeps every tile out of focus search. */
+    interactive: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     if (slots.isEmpty() && gatewayApps.isEmpty() && studyApps.isEmpty() &&
@@ -300,7 +302,7 @@ internal fun LockDesktopDock(
                     width = metrics.tileW,
                     height = metrics.tileH,
                     focusRequester = requester,
-                    enabled = tile.enabled,
+                    enabled = tile.enabled && interactive,
                     moving = false,
                     // Disabled action cards already use the supplied gray artwork; dimming again
                     // would double-gray the picture. Real app icons have no gray variant, so the

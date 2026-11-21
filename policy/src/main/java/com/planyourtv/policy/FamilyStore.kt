@@ -124,11 +124,15 @@ class FamilyStore(
         displayName: String,
         now: Long,
         role: MemberRole = MemberRole.CHILD,
-        avatarPreset: String = "rabbit",
+        avatarPreset: String = "boy",
         grade: Int? = null,
         semester: Int? = null,
         switchPinSalt: String? = null,
         switchPinHash: String? = null,
+        switchPinRequired: Boolean = false,
+        switchPinExemptDays: List<Int> = emptyList(),
+        switchPinExemptStartMinute: Int = SwitchPinExempt.DEFAULT_START_MINUTE,
+        switchPinExemptEndMinute: Int = SwitchPinExempt.DEFAULT_END_MINUTE,
     ): FamilyMember? {
         val loaded = load() as? FamilyLoad.Loaded ?: return null
         val name = FamilyIds.normalizeDisplayName(displayName) ?: return null
@@ -136,6 +140,14 @@ class FamilyStore(
         if (grade != null && grade !in 1..9) return null
         if (semester != null && (grade == null || semester !in 1..2)) return null
         if (!MemberPin.isStoredCredential(switchPinSalt, switchPinHash)) return null
+        if (!SwitchPinExempt.isValidWindow(
+                switchPinExemptStartMinute,
+                switchPinExemptEndMinute,
+            )
+        ) {
+            return null
+        }
+        val exemptDays = SwitchPinExempt.normalizeDays(switchPinExemptDays) ?: return null
         val used = loaded.document.members.map { it.userId }.toSet()
         var userId = FamilyIds.newUserId()
         while (userId in used) userId = FamilyIds.newUserId()
@@ -152,6 +164,11 @@ class FamilyStore(
             semester = semester,
             switchPinSalt = switchPinSalt,
             switchPinHash = switchPinHash,
+            switchPinRequired = switchPinRequired,
+            // A selection without protection would be confusing and dead data.
+            switchPinExemptDays = if (switchPinRequired) exemptDays else emptyList(),
+            switchPinExemptStartMinute = switchPinExemptStartMinute,
+            switchPinExemptEndMinute = switchPinExemptEndMinute,
             createdAt = now,
             updatedAt = now,
         )
@@ -186,13 +203,26 @@ class FamilyStore(
         ) {
             return false
         }
+        val exemptDays = SwitchPinExempt.normalizeDays(updated.switchPinExemptDays) ?: return false
+        if (!SwitchPinExempt.isValidWindow(
+                updated.switchPinExemptStartMinute,
+                updated.switchPinExemptEndMinute,
+            )
+        ) {
+            return false
+        }
         if (current.userId == loaded.index.defaultUserId &&
             updated.status != MemberStatus.ACTIVE
         ) {
             return false
         }
+        // Turning protection off clears the waiver in the same write; callers may pass the
+        // member back unchanged except for `switchPinRequired`.
+        val normalized = updated.copy(
+            switchPinExemptDays = if (updated.switchPinRequired) exemptDays else emptyList(),
+        )
         val members = loaded.document.members.map {
-            if (it.userId == updated.userId) updated else it
+            if (it.userId == normalized.userId) normalized else it
         }
         if (members.none { it.status == MemberStatus.ACTIVE }) return false
         val document = loaded.document.copy(
@@ -201,6 +231,45 @@ class FamilyStore(
             family = loaded.document.family.copy(
                 revision = loaded.document.family.revision + 1L,
                 updatedAt = updated.updatedAt,
+            ),
+        )
+        val index = loaded.index.copy(revision = loaded.index.revision + 1L)
+        return save(document, index)
+    }
+
+    /**
+     * Applies the pre-per-member device switch to every existing member in one write. Used once
+     * when upgrading a TV whose old global switch was on; new members never inherit it.
+     */
+    fun setSwitchPinRequiredForAll(required: Boolean, now: Long): Boolean {
+        val loaded = load() as? FamilyLoad.Loaded ?: return false
+        if (loaded.document.members.all {
+                it.switchPinRequired == required &&
+                    (required || it.switchPinExemptDays.isEmpty())
+            }
+        ) {
+            return true
+        }
+        val members = loaded.document.members.map {
+            if (it.switchPinRequired == required &&
+                (required || it.switchPinExemptDays.isEmpty())
+            ) {
+                it
+            } else {
+                it.copy(
+                    switchPinRequired = required,
+                    // Turning protection off must also turn off its waiver.
+                    switchPinExemptDays = if (required) it.switchPinExemptDays else emptyList(),
+                    updatedAt = now,
+                )
+            }
+        }
+        val document = loaded.document.copy(
+            members = members,
+            revision = loaded.document.revision + 1L,
+            family = loaded.document.family.copy(
+                revision = loaded.document.family.revision + 1L,
+                updatedAt = now,
             ),
         )
         val index = loaded.index.copy(revision = loaded.index.revision + 1L)

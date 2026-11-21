@@ -25,6 +25,7 @@ import com.planyourtv.policy.SubjectRef
 import com.planyourtv.policy.SubjectRuntimeDocument
 import com.planyourtv.policy.SubjectSource
 import com.planyourtv.policy.SubjectStore
+import com.planyourtv.policy.SwitchPinExempt
 import com.planyourtv.policy.ControlOwner
 import com.planyourtv.policy.TvStore
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -220,6 +221,23 @@ object FamilyHub {
         return MemberPin.verify(candidate, member.switchPinSalt, member.switchPinHash)
     }
 
+    /**
+     * One-time upgrade from the old device-level switch. Every existing member inherits the
+     * old "on" state in a single roster write; members added later keep the default off.
+     */
+    @Synchronized
+    fun migrateLegacySwitchPinRequired(required: Boolean): Boolean {
+        val current = _state.value
+        if (!current.ready) return false
+        if (!required) return true
+        val familyStore = families ?: return false
+        if (!familyStore.setSwitchPinRequiredForAll(true, System.currentTimeMillis())) {
+            return false
+        }
+        refresh()
+        return true
+    }
+
     /** The active subject's config, or null when the document is missing or unsafe to use. */
     @Synchronized
     fun activeConfig(): SubjectConfigDocument? {
@@ -336,19 +354,44 @@ object FamilyHub {
         grade: Int? = null,
         semester: Int? = null,
         switchPin: String? = null,
+        switchPinRequired: Boolean? = null,
+        switchPinExemptDays: List<Int>? = null,
+        switchPinExemptStartMinute: Int? = null,
+        switchPinExemptEndMinute: Int? = null,
     ): String? {
         val current = _state.value
         if (!current.ready) return "FAMILY_NOT_READY"
         val member = current.members.firstOrNull { it.userId == userId }
             ?: return "SUBJECT_NOT_FOUND"
         val name = FamilyIds.normalizeDisplayName(displayName) ?: return "SUBJECT_NAME_INVALID"
-        val preset = avatarPreset.trim().lowercase()
-        if (preset.isEmpty() || !FamilyAvatarStore.PRESETS.contains(preset)) {
-            return "SUBJECT_AVATAR_INVALID"
-        }
+        val preset = FamilyAvatarStore.resolvePreset(avatarPreset)
+            ?: return "SUBJECT_AVATAR_INVALID"
         if (!validGradeSelection(grade, semester)) return "SUBJECT_GRADE_INVALID"
-        val credential = switchPin?.takeIf { it.isNotBlank() }?.let {
+        val requestedPin = switchPin?.takeIf { it.isNotBlank() }
+        if (requestedPin != null && !MemberPin.isValid(requestedPin)) {
+            return "SUBJECT_PIN_INVALID"
+        }
+        // The initial credential is public first-run data, not protection. A parent may keep
+        // it on a member that has never opted in, but cannot choose it as a new password.
+        if (requestedPin == MemberPin.INITIAL) return "SUBJECT_PIN_WEAK"
+        val credential = requestedPin?.let {
             MemberPin.create(it) ?: return "SUBJECT_PIN_INVALID"
+        }
+        val required = switchPinRequired ?: member.switchPinRequired
+        // Enabling protection must set a password in the same save, even if the member had a
+        // custom one before. This keeps the parent deliberate and prevents an old 123456
+        // credential from silently becoming the protection. Already-on members may keep it.
+        if (required && !member.switchPinRequired && requestedPin == null) {
+            return "SUBJECT_PIN_REQUIRED"
+        }
+        // Absent fields keep what the member already has, so a rename never clears a waiver.
+        val exemptDays = switchPinExemptDays?.let {
+            SwitchPinExempt.normalizeDays(it) ?: return "SUBJECT_EXEMPT_INVALID"
+        } ?: member.switchPinExemptDays
+        val exemptStart = switchPinExemptStartMinute ?: member.switchPinExemptStartMinute
+        val exemptEnd = switchPinExemptEndMinute ?: member.switchPinExemptEndMinute
+        if (!SwitchPinExempt.isValidWindow(exemptStart, exemptEnd)) {
+            return "SUBJECT_EXEMPT_INVALID"
         }
         val familyStore = families ?: return "FAMILY_NOT_READY"
         val updated = member.copy(
@@ -358,6 +401,12 @@ object FamilyHub {
             semester = semester,
             switchPinSalt = credential?.salt ?: member.switchPinSalt,
             switchPinHash = credential?.hash ?: member.switchPinHash,
+            switchPinRequired = required,
+            // A waiver without protection is dead data; clearing also makes the Web display
+            // deterministic when the parent turns protection back on.
+            switchPinExemptDays = if (required) exemptDays else emptyList(),
+            switchPinExemptStartMinute = exemptStart,
+            switchPinExemptEndMinute = exemptEnd,
             updatedAt = System.currentTimeMillis(),
         )
         if (!familyStore.updateMember(updated)) return "SUBJECT_UPDATE_FAILED"
@@ -417,20 +466,34 @@ object FamilyHub {
     @Synchronized
     fun addMember(
         displayName: String,
-        avatarPreset: String = "rabbit",
+        avatarPreset: String = FamilyAvatarStore.DEFAULT_PRESET,
         grade: Int? = null,
         semester: Int? = null,
-        switchPin: String,
+        switchPin: String? = null,
+        switchPinRequired: Boolean = false,
+        switchPinExemptDays: List<Int> = emptyList(),
+        switchPinExemptStartMinute: Int = SwitchPinExempt.DEFAULT_START_MINUTE,
+        switchPinExemptEndMinute: Int = SwitchPinExempt.DEFAULT_END_MINUTE,
     ): FamilyMember? {
         val current = _state.value
         if (!current.ready) return null
         if (FamilyIds.normalizeDisplayName(displayName) == null) return null
-        val preset = avatarPreset.trim().lowercase()
-        if (preset.isEmpty() || !FamilyAvatarStore.PRESETS.contains(preset)) return null
+        val preset = FamilyAvatarStore.resolvePreset(avatarPreset) ?: return null
         if (!validGradeSelection(grade, semester)) return null
-        // Only the migration-created default member may rely on the initial 123456
-        // credential. Every member added afterwards must have an explicit password.
-        val credential = MemberPin.create(switchPin) ?: return null
+        if (!SwitchPinExempt.isValidWindow(
+                switchPinExemptStartMinute,
+                switchPinExemptEndMinute,
+            )
+        ) {
+            return null
+        }
+        val exemptDays = SwitchPinExempt.normalizeDays(switchPinExemptDays) ?: return null
+        val pin = switchPin?.takeIf { it.isNotBlank() }
+        if (pin != null && !MemberPin.isValid(pin)) return null
+        // Opted-in members must start with their own custom password. Members that keep the
+        // switch off may stay on the initial credential until a parent enables protection.
+        if (switchPinRequired && (pin == null || pin == MemberPin.INITIAL)) return null
+        val credential = pin?.let { MemberPin.create(it) ?: return null }
         val familyStore = families ?: return null
         val member = familyStore.addMember(
             displayName = displayName,
@@ -439,8 +502,12 @@ object FamilyHub {
             avatarPreset = preset,
             grade = grade,
             semester = semester,
-            switchPinSalt = credential.salt,
-            switchPinHash = credential.hash,
+            switchPinSalt = credential?.salt,
+            switchPinHash = credential?.hash,
+            switchPinRequired = switchPinRequired,
+            switchPinExemptDays = if (switchPinRequired) exemptDays else emptyList(),
+            switchPinExemptStartMinute = switchPinExemptStartMinute,
+            switchPinExemptEndMinute = switchPinExemptEndMinute,
         ) ?: return null
         refresh()
         val added = _state.value.members.firstOrNull { it.userId == member.userId } ?: return null
