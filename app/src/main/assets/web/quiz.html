@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#eaf4ff" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#111315" media="(prefers-color-scheme: dark)">
   <title>家长网页</title>
-  <link rel="stylesheet" href="quiz.css?v=57">
+  <link rel="stylesheet" href="quiz.css?v=59">
   <link rel="stylesheet" href="parent.css?v=61">
 </head>
 <body>
@@ -20,10 +20,6 @@
         <span class="subject-chip-label" data-subject-sub></span>
       </span>
       <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
-    </button>
-    <!-- V41: bank import sits on the avatar's row, like DingTalk's top-right +. -->
-    <button id="openBankImport" class="top-add hidden" type="button" data-i18n-aria="bankImport">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg>
     </button>
   </header>
 
@@ -592,7 +588,9 @@
               <p id="bankSourceCounts" class="muted"></p>
             </div>
             <div class="head-actions">
-              <button id="refreshBank" class="btn text small" type="button" data-i18n="refresh"></button>
+              <!-- Keep import clear of the native parent shell's floating menu. -->
+              <button id="openBankImport" class="btn small bank-head-action" type="button" data-i18n="bankImportAction"></button>
+              <button id="refreshBank" class="btn small bank-head-action" type="button" data-i18n="refresh"></button>
             </div>
           </div>
           <div id="bankScopes" class="bank-tabs" role="tablist" aria-label="题库分类">
@@ -1104,6 +1102,6 @@
   <div id="parentCenterRoot" class="parent-root hidden"></div>
 
   <script src="parent.js?v=64"></script>
-  <script src="quiz.js?v=62"></script>
+  <script src="quiz.js?v=63"></script>
 </body>
 </html>

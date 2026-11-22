@@ -2026,22 +2026,21 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
 }
 .head-actions .btn { margin: 0; }
 
-/* V41: bank import shares the avatar's row at the top-right, DingTalk-style,
-   instead of taking a text button in the counts row. */
-.top-add {
-  display: grid;
-  place-items: center;
-  flex: 0 0 40px;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: var(--accent-soft);
+/* The native parent shell floats its overflow menu over the page's top-right.
+   These utilities sit in the counts row, and an outline keeps them readable as
+   buttons rather than as part of the counts. */
+.btn.bank-head-action {
+  min-height: 36px;
+  padding-inline: 10px;
+  border-color: color-mix(in srgb, var(--accent-strong) 42%, transparent);
+  background: var(--surface);
   color: var(--accent-strong);
+  font-weight: 620;
 }
-.top-add:active { filter: brightness(0.94); }
-.top-add svg { width: 20px; height: 20px; }
+.btn.bank-head-action:active {
+  border-color: var(--accent-strong);
+  background: var(--accent-soft);
+}
 
 .bank-badges {
   display: flex;

@@ -3,6 +3,18 @@
 This changelog covers the community source snapshot. Official hosted builds may ship different
 artifacts with the same upstream Aerial base.
 
+## [2.0.004] - 2026-11-22
+
+Question-bank import is easier to find in the phone parent page.
+Version code `148004`. The optional parent app is unchanged at `1.2.4` / `10`.
+
+### Changed
+
+- The question-bank page moves Manual import out of the top-right corner, where the optional
+  parent app's floating menu could cover it, into the counts row. Manual import and Refresh are
+  now blue outlined buttons with blue labels, so both read as actions instead of as part of the
+  counts.
+
 ## [2.0.003] - 2026-11-22
 
 Friendlier first-run defaults, free-form parent limits, and app names on every Kids-mode desktop.

@@ -2894,6 +2894,7 @@
   const V22_TEXTS = {
     zh: {
       bankImport: "导入题库",
+      bankImportAction: "手动导入",
       bankSourceLine: "预置 + AI {course} 道 · 手动导入 {custom} 道 · 错题 {wrong} 道 · 总 {total} / {capacity}",
       bankSourceCustomTag: "标签：{name}",
       goImportBank: "导入题库",
@@ -3210,6 +3211,7 @@ difficulty 只能是 easy、medium、hard。
     },
     en: {
       bankImport: "Import bank",
+      bankImportAction: "Manual import",
       bankSourceLine: "Preset + AI {course} · Manual {custom} · Wrong {wrong} · Total {total} / {capacity}",
       bankSourceCustomTag: "Tag: {name}",
       goImportBank: "Import bank",
@@ -3526,6 +3528,7 @@ Extra requirements: none`,
     },
     ru: {
       bankImport: "Импорт банка",
+      bankImportAction: "Импорт вручную",
       bankSourceLine: "Готовые + ИИ {course} · Ручной импорт {custom} · Ошибки {wrong} · Всего {total} / {capacity}",
       bankSourceCustomTag: "Тег: {name}",
       goImportBank: "Импортировать банк",
@@ -3842,6 +3845,7 @@ difficulty — только easy, medium или hard.
     },
     uk: {
       bankImport: "Імпорт банку",
+      bankImportAction: "Імпорт вручну",
       bankSourceLine: "Готові + ШІ {course} · Ручне імпортування {custom} · Помилки {wrong} · Усього {total} / {capacity}",
       bankSourceCustomTag: "Тег: {name}",
       goImportBank: "Імпортувати банк",
@@ -4158,6 +4162,7 @@ difficulty — лише easy, medium або hard.
     },
     kk: {
       bankImport: "Банкіні импорттау",
+      bankImportAction: "Қолмен импорттау",
       bankSourceLine: "Дайын + ЖИ {course} · Қолмен импорт {custom} · Қателер {wrong} · Барлығы {total} / {capacity}",
       bankSourceCustomTag: "Тег: {name}",
       goImportBank: "Банкіні импорттау",
@@ -8526,10 +8531,6 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       familyMembers.length > 0 &&
       activeTab !== "system";
     chip.classList.toggle("hidden", !visible);
-    // The bank's import plus shares the avatar's header row; other tabs have
-    // no create action of their own.
-    const add = $("openBankImport");
-    if (add) add.classList.toggle("hidden", !(visible && activeTab === "bank"));
     if (!visible) return;
     const member = editingMember() || activeMember();
     // The chat-style header carries the page title beside the avatar; the
