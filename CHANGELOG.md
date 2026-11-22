@@ -3,6 +3,28 @@
 This changelog covers the community source snapshot. Official hosted builds may ship different
 artifacts with the same upstream Aerial base.
 
+## [2.0.005] - 2026-11-22
+
+Copy a complete AI question prompt, and edit multi-source levels as one draft.
+Version code `148005`. The optional parent app is unchanged at `1.2.4` / `10`.
+
+### Added
+
+- The AI question page can copy the complete prompt with one tap. The copied text includes the
+  import-format specification and the current question type, count, difficulty, option count and
+  language, so it can be pasted directly into an AI tool and the generated questions imported
+  back through Manual import.
+- A level can combine several question sources. Manual import now opens a dedicated multi-select
+  page, where the parent picks the sources and returns to the level editor with all selections
+  kept.
+
+### Fixed
+
+- Level editing no longer writes on every tap. Adding or removing a source only changes an
+  in-memory draft until Save level is tapped, so leaving the page or switching pages keeps the
+  saved level intact.
+- A tap that finishes a page transition can no longer activate the next page's Save button.
+
 ## [2.0.004] - 2026-11-22
 
 Question-bank import is easier to find in the phone parent page.

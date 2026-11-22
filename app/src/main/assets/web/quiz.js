@@ -215,6 +215,9 @@
       genPromptLabel: "出题要求",
       genPromptBadgeAuto: "自动生成 · 可修改",
       genPromptBadgeEdited: "已手动修改",
+      genCopyPrompt: "复制提示",
+      genCopyPromptDone: "已复制",
+      genCopyPromptFailed: "复制失败",
       genPromptPlaceholder: "选好上面条件，提示词会自动写在这里。",
       genPromptTemplate: "请为{grade}出{subject}题，范围是{scope}。优先覆盖重点知识和易错题。",
       genSubjectWithBook: "{subject}（{book}）",
@@ -555,6 +558,9 @@
       genPromptLabel: "Question request",
       genPromptBadgeAuto: "Auto-generated · editable",
       genPromptBadgeEdited: "Edited",
+      genCopyPrompt: "Copy prompt",
+      genCopyPromptDone: "Copied",
+      genCopyPromptFailed: "Copy failed",
       genPromptPlaceholder: "Choose the options above; the request appears here.",
       genPromptTemplate: "Create questions for {grade} {subject}, covering {scope}. Focus on key knowledge and common mistakes.",
       genSubjectWithBook: "{subject} ({book})",
@@ -895,6 +901,9 @@
       genPromptLabel: "Запрос на вопросы",
       genPromptBadgeAuto: "Создано автоматически · можно изменить",
       genPromptBadgeEdited: "Изменено",
+      genCopyPrompt: "Копировать промпт",
+      genCopyPromptDone: "Скопировано",
+      genCopyPromptFailed: "Не удалось скопировать",
       genPromptPlaceholder: "Выберите условия выше — запрос появится здесь.",
       genPromptTemplate: "Составь вопросы для {grade} по предмету «{subject}», тема: {scope}. Основной упор — важные знания и типичные ошибки.",
       genSubjectWithBook: "{subject} ({book})",
@@ -1235,6 +1244,9 @@
       genPromptLabel: "Запит на питання",
       genPromptBadgeAuto: "Створено автоматично · можна змінити",
       genPromptBadgeEdited: "Змінено",
+      genCopyPrompt: "Копіювати промпт",
+      genCopyPromptDone: "Скопійовано",
+      genCopyPromptFailed: "Не вдалося скопіювати",
       genPromptPlaceholder: "Виберіть умови вище — запит з'явиться тут.",
       genPromptTemplate: "Створи питання для {grade} з предмета «{subject}», тема: {scope}. Основна увага — ключові знання й типові помилки.",
       genSubjectWithBook: "{subject} ({book})",
@@ -1575,6 +1587,9 @@
       genPromptLabel: "Сұрақ талабы",
       genPromptBadgeAuto: "Автоматты құрылды · өңдеуге болады",
       genPromptBadgeEdited: "Өңделді",
+      genCopyPrompt: "Промптты көшіру",
+      genCopyPromptDone: "Көшірілді",
+      genCopyPromptFailed: "Көшіру сәтсіз",
       genPromptPlaceholder: "Жоғарыдағы шарттарды таңдаңыз — талап осында пайда болады.",
       genPromptTemplate: "{grade} үшін «{subject}» пәнінен сұрақтар жаса, ауқымы: {scope}. Негізгі назар — маңызды білім мен жиі қателерге.",
       genSubjectWithBook: "{subject} ({book})",
@@ -3208,6 +3223,8 @@ difficulty 只能是 easy、medium、hard。
 难度分布：easy 40%、medium 40%、hard 20%
 输出语言：中文
 额外要求：无`,
+      // Keep in sync with the final heading of importGeneratePrompt.
+      importGeneratePromptHeading: "出题要求：",
     },
     en: {
       bankImport: "Import bank",
@@ -3525,6 +3542,8 @@ Number of questions: 20
 Difficulty mix: easy 40%, medium 40%, hard 20%
 Output language: English
 Extra requirements: none`,
+      // Keep in sync with the final heading of importGeneratePrompt.
+      importGeneratePromptHeading: "Question requirements:",
     },
     ru: {
       bankImport: "Импорт банка",
@@ -3842,6 +3861,8 @@ difficulty — только easy, medium или hard.
 Распределение сложности: easy 40%, medium 40%, hard 20%
 Язык вывода: русский
 Дополнительные требования: нет`,
+      // Keep in sync with the final heading of importGeneratePrompt.
+      importGeneratePromptHeading: "Требования к вопросам:",
     },
     uk: {
       bankImport: "Імпорт банку",
@@ -4159,6 +4180,8 @@ difficulty — лише easy, medium або hard.
 Розподіл складності: easy 40%, medium 40%, hard 20%
 Мова виводу: українська
 Додаткові вимоги: немає`,
+      // Keep in sync with the final heading of importGeneratePrompt.
+      importGeneratePromptHeading: "Вимоги до питань:",
     },
     kk: {
       bankImport: "Банкіні импорттау",
@@ -4476,6 +4499,8 @@ difficulty — тек easy, medium немесе hard.
 Қиындық үлесі: easy 40%, medium 40%, hard 20%
 Шығару тілі: қазақша
 Қосымша талаптар: жоқ`,
+      // Keep in sync with the final heading of importGeneratePrompt.
+      importGeneratePromptHeading: "Сұрақ құрастыру талаптары:",
     },
   };
 
@@ -5186,10 +5211,9 @@ difficulty — тек easy, medium немесе hard.
       levelAddPackageTitle: "添加关卡",
       levelAddPackageMeta: "一个关卡可组合预置孩子题库、预置家长题库、AI 题、手动导入和错题",
       levelSourcesTitle: "题目来源",
-      levelSourcesLead: "答题时从每个来源轮流抽题；某个来源用完就跳过，直到抽满一轮。可继续添加来源，点底部「创建关卡」后才会生成关卡。",
+      levelSourcesLead: "答题时从每个来源轮流抽题；某个来源用完就跳过，直到抽满一轮。可继续添加来源，点底部「保存关卡」后才会生成关卡。",
       levelDraftBadge: "待保存",
       levelSourceIndex: "来源 {n}",
-      levelCreate: "创建关卡",
       levelSourceCourse: "教材题目",
       levelSourceCourseMeta: "按年级、学期、学科和单元选择",
       levelSourcePreset: "预置孩子题库",
@@ -5218,7 +5242,6 @@ difficulty — тек easy, medium немесе hard.
       levelSourceSave: "保存来源",
       levelSourceLimit: "每个关卡最多 {n} 个来源。",
       levelSourceDuplicateCourse: "这个范围、类型和来源已在关卡中。",
-      levelSourceDuplicateTag: "这个标签已在关卡中。",
       levelSourceDuplicateWrong: "错题复习已在关卡中。",
       levelSourceMissingTag: "请选择一个标签。",
       levelSourcesCount: "{n}/{max} 个来源",
@@ -5230,7 +5253,14 @@ difficulty — тек easy, medium немесе hard.
       levelWrongIncluded: "含错题 {n} 道",
       levelAtLeastOneSource: "至少添加一个来源才能保存关卡。",
       levelPackageHint: "每个来源每轮抽一道题，来源之间轮流出现。",
-      levelSourceAdded: "来源已加入关卡，可继续添加或创建关卡。",
+      levelSourceAdded: "来源已加入关卡，可继续添加或保存关卡。",
+      levelSourcesAdded: "已加入 {n} 个来源，可继续添加或保存关卡。",
+      levelTagSourceTitle: "手动导入的标签",
+      levelTagSourceLead: "选择一个或多个标签加入关卡，然后用底部按钮返回关卡页；只有点「保存关卡」才会真正保存。",
+      levelTagSourceSelected: "已选 {n} 个",
+      levelTagSourceAdd: "加入关卡（{n}）",
+      levelTagSourceAlreadyAdded: "已在关卡中",
+      levelTagSourceRemaining: "还可加入 {n} 个来源",
       levelSourceUpdated: "来源已更新。",
       levelPackageFallbackName: "关卡 {n}",
       levelPackagesUnreadable: "电视上的关卡数据无法读取，请重新打开家长设置。",
@@ -5246,10 +5276,9 @@ difficulty — тек easy, medium немесе hard.
       levelAddPackageTitle: "Add level",
       levelAddPackageMeta: "Combine the preset bank for kids, the preset bank for parents, AI questions, imports, and mistakes in one level",
       levelSourcesTitle: "Question sources",
-      levelSourcesLead: "Questions rotate between sources. A source that runs out is skipped until the round is full. Add as many sources as you need; the level is created only after you tap Create level.",
+      levelSourcesLead: "Questions rotate between sources. A source that runs out is skipped until the round is full. Add as many sources as you need; the level is created only after you tap Save level.",
       levelDraftBadge: "Unsaved",
       levelSourceIndex: "Source {n}",
-      levelCreate: "Create level",
       levelSourceCourse: "Textbook questions",
       levelSourceCourseMeta: "Pick grade, semester, subject, and unit",
       levelSourcePreset: "Preset bank for kids",
@@ -5278,7 +5307,6 @@ difficulty — тек easy, medium немесе hard.
       levelSourceSave: "Save source",
       levelSourceLimit: "A level can hold at most {n} sources.",
       levelSourceDuplicateCourse: "This range, type, and source are already in the level.",
-      levelSourceDuplicateTag: "This tag is already in the level.",
       levelSourceDuplicateWrong: "Wrong review is already in the level.",
       levelSourceMissingTag: "Choose a tag.",
       levelSourcesCount: "{n}/{max} sources",
@@ -5290,7 +5318,14 @@ difficulty — тек easy, medium немесе hard.
       levelWrongIncluded: "includes {n} wrong",
       levelAtLeastOneSource: "Add at least one source before saving the level.",
       levelPackageHint: "Each source contributes one question per cycle, rotating between sources.",
-      levelSourceAdded: "Source added. Add more sources or create the level.",
+      levelSourceAdded: "Source added. Add more sources or save the level.",
+      levelSourcesAdded: "{n} sources added. Add more or save the level.",
+      levelTagSourceTitle: "Imported tags",
+      levelTagSourceLead: "Choose one or more tags for this level, then return with the button below. The level is written only when you tap Save level.",
+      levelTagSourceSelected: "{n} selected",
+      levelTagSourceAdd: "Add to level ({n})",
+      levelTagSourceAlreadyAdded: "Already in level",
+      levelTagSourceRemaining: "{n} more sources can be added",
       levelSourceUpdated: "Source updated.",
       levelPackageFallbackName: "Level {n}",
       levelPackagesUnreadable: "The level data on this TV could not be read. Reopen parent settings.",
@@ -5306,10 +5341,9 @@ difficulty — тек easy, medium немесе hard.
       levelAddPackageTitle: "Добавить уровень",
       levelAddPackageMeta: "Объедините готовый банк для детей, готовый банк для родителей, вопросы ИИ, ручной импорт и ошибки в одном уровне",
       levelSourcesTitle: "Источники вопросов",
-      levelSourcesLead: "Вопросы чередуются между источниками. Исчерпанный источник пропускается до конца раунда. Добавляйте источники по одному: уровень создаётся только после нажатия «Создать уровень».",
+      levelSourcesLead: "Вопросы чередуются между источниками. Исчерпанный источник пропускается до конца раунда. Добавляйте источники по одному: уровень создаётся только после нажатия «Сохранить уровень».",
       levelDraftBadge: "Не сохранено",
       levelSourceIndex: "Источник {n}",
-      levelCreate: "Создать уровень",
       levelSourceCourse: "Вопросы учебника",
       levelSourceCourseMeta: "Выберите класс, полугодие, предмет и раздел",
       levelSourcePreset: "Готовый банк для детей",
@@ -5338,7 +5372,6 @@ difficulty — тек easy, medium немесе hard.
       levelSourceSave: "Сохранить источник",
       levelSourceLimit: "В уровне может быть не более {n} источников.",
       levelSourceDuplicateCourse: "Этот диапазон, тип и источник уже есть в уровне.",
-      levelSourceDuplicateTag: "Этот тег уже есть в уровне.",
       levelSourceDuplicateWrong: "Повторение ошибок уже есть в уровне.",
       levelSourceMissingTag: "Выберите тег.",
       levelSourcesCount: "Источников: {n}/{max}",
@@ -5350,7 +5383,14 @@ difficulty — тек easy, medium немесе hard.
       levelWrongIncluded: "включая ошибок: {n}",
       levelAtLeastOneSource: "Добавьте хотя бы один источник, чтобы сохранить уровень.",
       levelPackageHint: "Каждый источник даёт один вопрос за цикл, источники чередуются.",
-      levelSourceAdded: "Источник добавлен. Добавьте ещё или создайте уровень.",
+      levelSourceAdded: "Источник добавлен. Добавьте ещё или сохраните уровень.",
+      levelSourcesAdded: "Добавлено источников: {n}. Добавьте ещё или сохраните уровень.",
+      levelTagSourceTitle: "Теги ручного импорта",
+      levelTagSourceLead: "Выберите один или несколько тегов для уровня и вернитесь кнопкой ниже. Уровень сохраняется только по кнопке «Сохранить уровень».",
+      levelTagSourceSelected: "Выбрано: {n}",
+      levelTagSourceAdd: "Добавить в уровень ({n})",
+      levelTagSourceAlreadyAdded: "Уже в уровне",
+      levelTagSourceRemaining: "Можно добавить ещё источников: {n}",
       levelSourceUpdated: "Источник обновлён.",
       levelPackageFallbackName: "Уровень {n}",
       levelPackagesUnreadable: "Не удалось прочитать данные уровней на ТВ. Откройте родительские настройки снова.",
@@ -5366,10 +5406,9 @@ difficulty — тек easy, medium немесе hard.
       levelAddPackageTitle: "Додати рівень",
       levelAddPackageMeta: "Поєднайте готовий банк для дітей, готовий банк для батьків, питання ШІ, ручний імпорт і помилки в одному рівні",
       levelSourcesTitle: "Джерела питань",
-      levelSourcesLead: "Питання чергуються між джерелами. Вичерпане джерело пропускається до кінця раунду. Додавайте джерела по одному: рівень створюється лише після натискання «Створити рівень».",
+      levelSourcesLead: "Питання чергуються між джерелами. Вичерпане джерело пропускається до кінця раунду. Додавайте джерела по одному: рівень створюється лише після натискання «Зберегти рівень».",
       levelDraftBadge: "Не збережено",
       levelSourceIndex: "Джерело {n}",
-      levelCreate: "Створити рівень",
       levelSourceCourse: "Питання підручника",
       levelSourceCourseMeta: "Виберіть клас, семестр, предмет і розділ",
       levelSourcePreset: "Готовий банк для дітей",
@@ -5398,7 +5437,6 @@ difficulty — тек easy, medium немесе hard.
       levelSourceSave: "Зберегти джерело",
       levelSourceLimit: "У рівні може бути не більше {n} джерел.",
       levelSourceDuplicateCourse: "Цей діапазон, тип і джерело вже є в рівні.",
-      levelSourceDuplicateTag: "Цей тег уже є в рівні.",
       levelSourceDuplicateWrong: "Повторення помилок уже є в рівні.",
       levelSourceMissingTag: "Виберіть тег.",
       levelSourcesCount: "Джерел: {n}/{max}",
@@ -5410,7 +5448,14 @@ difficulty — тек easy, medium немесе hard.
       levelWrongIncluded: "включно з помилками: {n}",
       levelAtLeastOneSource: "Додайте принаймні одне джерело, щоб зберегти рівень.",
       levelPackageHint: "Кожне джерело дає одне питання за цикл, джерела чергуються.",
-      levelSourceAdded: "Джерело додано. Додайте ще або створіть рівень.",
+      levelSourceAdded: "Джерело додано. Додайте ще або збережіть рівень.",
+      levelSourcesAdded: "Додано джерел: {n}. Додайте ще або збережіть рівень.",
+      levelTagSourceTitle: "Теги ручного імпорту",
+      levelTagSourceLead: "Виберіть один або кілька тегів для рівня та поверніться кнопкою нижче. Рівень зберігається лише за кнопкою «Зберегти рівень».",
+      levelTagSourceSelected: "Вибрано: {n}",
+      levelTagSourceAdd: "Додати до рівня ({n})",
+      levelTagSourceAlreadyAdded: "Уже в рівні",
+      levelTagSourceRemaining: "Ще можна додати джерел: {n}",
       levelSourceUpdated: "Джерело оновлено.",
       levelPackageFallbackName: "Рівень {n}",
       levelPackagesUnreadable: "Не вдалося прочитати дані рівнів на ТБ. Відкрийте батьківські налаштування знову.",
@@ -5426,10 +5471,9 @@ difficulty — тек easy, medium немесе hard.
       levelAddPackageTitle: "Деңгей қосу",
       levelAddPackageMeta: "Балаларға арналған дайын банкіні, ата-аналарға арналған дайын банкіні, ЖИ сұрақтарын, қолмен импортты және қателерді бір деңгейге біріктіріңіз",
       levelSourcesTitle: "Сұрақ көздері",
-      levelSourcesLead: "Сұрақтар көздер арасында кезектеседі. Таусылған көз айналым толғанша өткізіледі. Көздерді біртіндеп қосыңыз: деңгей «Деңгей жасау» түймесін басқаннан кейін ғана жасалады.",
+      levelSourcesLead: "Сұрақтар көздер арасында кезектеседі. Таусылған көз айналым толғанша өткізіледі. Көздерді біртіндеп қосыңыз: деңгей «Деңгейді сақтау» түймесін басқаннан кейін ғана жасалады.",
       levelDraftBadge: "Сақталмаған",
       levelSourceIndex: "Көз {n}",
-      levelCreate: "Деңгей жасау",
       levelSourceCourse: "Оқулық сұрақтары",
       levelSourceCourseMeta: "Сынып, семестр, пән және тарауды таңдаңыз",
       levelSourcePreset: "Балаларға арналған дайын банк",
@@ -5458,7 +5502,6 @@ difficulty — тек easy, medium немесе hard.
       levelSourceSave: "Көзді сақтау",
       levelSourceLimit: "Деңгейде ең көбі {n} көз болуы мүмкін.",
       levelSourceDuplicateCourse: "Бұл ауқым, түр және дереккөз деңгейде бар.",
-      levelSourceDuplicateTag: "Бұл тег деңгейде бар.",
       levelSourceDuplicateWrong: "Қателерді қайталау деңгейде бар.",
       levelSourceMissingTag: "Тег таңдаңыз.",
       levelSourcesCount: "Көздер: {n}/{max}",
@@ -5470,7 +5513,14 @@ difficulty — тек easy, medium немесе hard.
       levelWrongIncluded: "қателермен қоса: {n}",
       levelAtLeastOneSource: "Деңгейді сақтау үшін кемінде бір көз қосыңыз.",
       levelPackageHint: "Әр көз цикл сайын бір сұрақ береді, көздер кезектеседі.",
-      levelSourceAdded: "Көз қосылды. Тағы қосыңыз немесе деңгей жасаңыз.",
+      levelSourceAdded: "Көз қосылды. Тағы қосыңыз немесе деңгейді сақтаңыз.",
+      levelSourcesAdded: "{n} көз қосылды. Тағы қосыңыз немесе деңгейді сақтаңыз.",
+      levelTagSourceTitle: "Қолмен импортталған тегтер",
+      levelTagSourceLead: "Деңгейге бір немесе бірнеше тег таңдап, төмендегі түймемен оралыңыз. Деңгей тек «Деңгейді сақтау» түймесін басқанда жазылады.",
+      levelTagSourceSelected: "Таңдалды: {n}",
+      levelTagSourceAdd: "Деңгейге қосу ({n})",
+      levelTagSourceAlreadyAdded: "Деңгейде бар",
+      levelTagSourceRemaining: "Тағы {n} көз қосуға болады",
       levelSourceUpdated: "Көз жаңартылды.",
       levelPackageFallbackName: "Деңгей {n}",
       levelPackagesUnreadable: "ТВ-дегі деңгей деректерін оқу мүмкін болмады. Ата-ана параметрлерін қайта ашыңыз.",
@@ -5825,6 +5875,13 @@ difficulty — тек easy, medium немесе hard.
   };
 
   const LANGS = ["zh", "en", "ru", "uk", "kk"];
+  const LANGUAGE_LABELS = {
+    zh: "中文",
+    en: "English",
+    ru: "Русский",
+    uk: "Українська",
+    kk: "Қазақша",
+  };
   for (const code of LANGS) {
     Object.assign(
       TEXTS[code],
@@ -5922,6 +5979,7 @@ difficulty — тек easy, medium немесе hard.
     gen: "genConfigPage",
     answer: "answerConfigPage",
     package: "packageEditorPage",
+    tagSource: "tagSourcePage",
     level: "levelEditorPage",
     questions: "questionsPage",
   };
@@ -6264,7 +6322,10 @@ let presetBank = { bankId: "", total: 0, available: 0 };
   // True while the package editor or one of its child pages is open, so the
   // course-source and tag picker back buttons return to the draft.
   let packageEditorActive = false;
-  let tagPickerOpen = false;
+  // Manual import opens its own page. The selected tag ids are draft-only; the
+  // level is still written only by savePackageDraft on the package page.
+  let tagSourceSelected = new Set();
+  let tagSourceReturnAfterImport = false;
   let levelSaving = false;
   let pendingLevelDeleteId = null;
   let levelMessageTimer = 0;
@@ -7842,6 +7903,7 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     if (page === "questions") renderQuestions();
     if (page === "answer") renderAnswerPage();
     if (page === "package") renderPackageEditor();
+    if (page === "tagSource") renderTagSourcePage();
     if (page === "level") renderLevelEditor();
     window.scrollTo({ top: 0 });
   }
@@ -7871,7 +7933,8 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     packageDraftSources = [];
     packageNameDraft = "";
     packageEditorActive = false;
-    tagPickerOpen = false;
+    tagSourceSelected = new Set();
+    tagSourceReturnAfterImport = false;
     courseSourceEditingIndex = null;
     courseSourceAnswerKind = "any";
     courseSourceDifficultyPicked = false;
@@ -9447,6 +9510,16 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     closeImportTagSuggest();
     setImportError("", []);
     if (importResult) resetImportState();
+    const returnToTagSource = tagSourceReturnAfterImport;
+    tagSourceReturnAfterImport = false;
+    if (returnToTagSource) {
+      // Import success already reloaded the session, so the tag list is fresh.
+      // The selected ids are intentionally not cleared: the parent can pick the
+      // imported tag immediately, and nothing is written until "Save level".
+      setTab("generate", true);
+      showGenPage("tagSource");
+      return;
+    }
     showBankPage("home");
     loadBank(true);
   }
@@ -10287,6 +10360,14 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     openBankImport();
   }
 
+  // Return to the level's tag page after importing, not to the bank. The draft
+  // stays in memory, so the imported tag can be selected without rebuilding it.
+  function startImportFromTagSource() {
+    if (packageSaving || !packageEditorActive) return;
+    tagSourceReturnAfterImport = true;
+    startImportFromCustomLevel();
+  }
+
   function bankClearScopeText(item) {
     switch (item.scope) {
       case "builtin": return t("bankClearScopeBuiltin");
@@ -10829,7 +10910,8 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     packageNameDraft = "";
     packageSaving = false;
     packageEditorActive = false;
-    tagPickerOpen = false;
+    tagSourceSelected = new Set();
+    tagSourceReturnAfterImport = false;
     courseSourceEditingIndex = null;
     courseSourceAnswerKind = "any";
     courseSourceDifficultyPicked = false;
@@ -13840,7 +13922,7 @@ let presetBank = { bankId: "", total: 0, available: 0 };
   function renderPackageEditor() {
     if (!$("packageDraftPanel")) return;
     if (!packageEditorActive) {
-      tagPickerOpen = false;
+      tagSourceSelected = new Set();
       if ($("sourcePickerError")) $("sourcePickerError").textContent = "";
       return;
     }
@@ -13861,9 +13943,9 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     renderPackageSources();
     renderSourcePicker();
     if ($("savePackage")) {
-      // "Create" makes it explicit that adding sources only builds a draft;
-      // editing an existing level keeps the normal save wording.
-      $("savePackage").textContent = t(packageEditingId ? "levelSave" : "levelCreate");
+      // One wording for create and edit: adding sources only builds a draft,
+      // and the level exists only after this button is pressed.
+      $("savePackage").textContent = t("levelSave");
       $("savePackage").disabled = packageSaving || packageDraftSources.length === 0;
     }
   }
@@ -13880,7 +13962,8 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       }))
       : [];
     packageEditorActive = true;
-    tagPickerOpen = false;
+    tagSourceSelected = new Set();
+    tagSourceReturnAfterImport = false;
     answerTab = "scope";
     $("packageEditorError").textContent = "";
     $("packageEditorError").classList.remove("ok");
@@ -13895,7 +13978,8 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     packageDraftSources = [];
     packageNameDraft = "";
     packageEditorActive = false;
-    tagPickerOpen = false;
+    tagSourceSelected = new Set();
+    tagSourceReturnAfterImport = false;
     courseSourceEditingIndex = null;
     courseSourceAnswerKind = "any";
     courseSourceOrigin = "all";
@@ -13908,15 +13992,12 @@ let presetBank = { bankId: "", total: 0, available: 0 };
   }
 
   function renderSourcePicker() {
-    const hasTag = packageDraftSources.some((source) => source.type === "collection");
     const hasLife = packageDraftSources.some((source) => source.type === "preset");
     const hasWrong = packageDraftSources.some((source) => source.type === "wrong");
     const atLimit = packageDraftSources.length >= levelLimits.maxSources;
-    if (atLimit) tagPickerOpen = false;
     $("pickPresetSource").disabled = packageSaving || atLimit;
     $("pickAiSource").disabled = packageSaving || atLimit;
     $("pickTagSource").disabled = packageSaving || atLimit;
-    $("pickTagSource").setAttribute("aria-pressed", String(tagPickerOpen));
     $("pickLifeSource").disabled = packageSaving || atLimit || hasLife || !presetBank.bankId;
     $("pickWrongSource").disabled = packageSaving || atLimit || hasWrong;
     // Every source card carries a count so the picker is readable at a glance.
@@ -13939,57 +14020,167 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       el.textContent = t(key, { n: count });
       el.classList.toggle("warn", count <= 0);
     });
-    $("tagSourceField").classList.toggle("hidden", !tagPickerOpen);
-    if (!tagPickerOpen) return;
-    const host = $("tagSourceList");
+  }
+
+  function collectionSourceInDraft(collectionId) {
+    return packageDraftSources.some((source) =>
+      source.type === "collection" && source.collectionId === collectionId);
+  }
+
+  // Manual import is a child page of the level draft, not an inline expander.
+  // It never posts anything; selecting tags only changes the draft.
+  function openTagSourcePage() {
+    if (packageSaving || !packageEditorActive) return;
+    tagSourceSelected = new Set();
+    $("tagSourcePageError").textContent = "";
+    $("sourcePickerError").textContent = "";
+    showGenPage("tagSource");
+  }
+
+  function backFromTagSource() {
+    if (packageSaving) return;
+    tagSourceSelected = new Set();
+    $("tagSourcePageError").textContent = "";
+    showGenPage("package");
+  }
+
+  function tagSourceRemaining() {
+    return Math.max(0, levelLimits.maxSources - packageDraftSources.length);
+  }
+
+  function renderTagSourcePage() {
+    if (!$("tagSourcePageList")) return;
+    if (!packageEditorActive) {
+      showGenPage("package");
+      return;
+    }
+    const remaining = tagSourceRemaining();
+    if (tagSourceSelected.size > remaining) {
+      tagSourceSelected = new Set(Array.from(tagSourceSelected).slice(0, remaining));
+    }
+    const host = $("tagSourcePageList");
     host.replaceChildren();
-    $("tagSourceEmpty").classList.toggle("hidden", importCollections.length > 0);
     importCollections.forEach((collection) => {
+      const already = collectionSourceInDraft(collection.id);
+      const selected = tagSourceSelected.has(collection.id);
       const button = document.createElement("button");
       button.type = "button";
-      button.className = "tag-choice";
-      button.dataset.packageTagId = collection.id;
-      const used = hasTag && packageDraftSources.some((source) =>
-        source.type === "collection" && source.collectionId === collection.id);
-      button.setAttribute("aria-pressed", String(used));
-      button.disabled = used;
+      button.className = "tag-choice tag-source-choice";
+      button.dataset.tagSourceChoice = collection.id;
+      button.setAttribute("aria-pressed", String(selected));
+      button.disabled = packageSaving || already ||
+        (!selected && tagSourceSelected.size >= remaining);
+      const copy = document.createElement("span");
+      copy.className = "tag-choice-copy";
       const name = document.createElement("span");
       name.className = "tag-choice-name";
       name.textContent = collection.name;
       const meta = document.createElement("span");
       meta.className = "tag-choice-meta";
-      meta.textContent = collection.unused > 0
+      const counts = collection.unused > 0
         ? t("customLevelTagCounts", {
           total: collection.total,
           unused: collection.unused,
         })
         : t("customLevelTagCountsEmpty", { total: collection.total });
-      button.append(name, meta);
+      meta.textContent = already
+        ? counts + " · " + t("levelTagSourceAlreadyAdded")
+        : counts;
+      copy.append(name, meta);
+      const mark = document.createElement("span");
+      mark.className = "tag-source-choice-check";
+      mark.setAttribute("aria-hidden", "true");
+      mark.textContent = selected ? "✓" : "";
+      button.append(copy, mark);
       host.appendChild(button);
     });
+    $("tagSourcePageList").classList.toggle("hidden", importCollections.length === 0);
+    $("tagSourcePageEmpty").classList.toggle("hidden", importCollections.length > 0);
+    $("tagSourceSelectedCount").textContent = tagSourceSelected.size
+      ? t("levelTagSourceSelected", { n: tagSourceSelected.size })
+      : "";
+    $("tagSourcePageHint").textContent = importCollections.length
+      ? (remaining > 0
+        ? t("levelTagSourceRemaining", { n: remaining })
+        : t("levelSourceLimit", { n: levelLimits.maxSources }))
+      : "";
+    $("tagSourcePageHint").classList.toggle("warn", remaining === 0);
+    $("addTagSources").textContent = t("levelTagSourceAdd", { n: tagSourceSelected.size });
+    $("addTagSources").disabled = packageSaving || tagSourceSelected.size === 0;
   }
 
-  function addCollectionSource(collectionId) {
-    if (packageDraftSources.some((source) =>
-      source.type === "collection" && source.collectionId === collectionId)) {
-      $("sourcePickerError").textContent = t("levelSourceDuplicateTag");
-      return false;
-    }
+  function toggleTagSourceSelection(collectionId) {
+    if (packageSaving) return;
+    if (collectionSourceInDraft(collectionId)) return;
     const collection = importCollections.find((item) => item.id === collectionId);
     if (!collection) {
-      $("sourcePickerError").textContent = t("levelSourceMissingTag");
-      return false;
+      $("tagSourcePageError").textContent = t("levelSourceMissingTag");
+      return;
     }
-    packageDraftSources = packageDraftSources.concat([{
-      type: "collection",
-      collectionId: collection.id,
-      collectionName: collection.name,
-      total: collection.total,
-      available: collection.unused,
-    }]);
-    tagPickerOpen = false;
-    renderPackageEditor();
-    return true;
+    if (tagSourceSelected.has(collectionId)) {
+      tagSourceSelected.delete(collectionId);
+    } else if (tagSourceSelected.size >= tagSourceRemaining()) {
+      $("tagSourcePageError").textContent = t("levelSourceLimit", {
+        n: levelLimits.maxSources,
+      });
+      return;
+    } else {
+      tagSourceSelected.add(collectionId);
+    }
+    $("tagSourcePageError").textContent = "";
+    renderTagSourcePage();
+  }
+
+  function addSelectedTagSources() {
+    if (packageSaving || !tagSourceSelected.size) return;
+    const remaining = tagSourceRemaining();
+    if (tagSourceSelected.size > remaining) {
+      $("tagSourcePageError").textContent = t("levelSourceLimit", {
+        n: levelLimits.maxSources,
+      });
+      return;
+    }
+    const sources = [];
+    tagSourceSelected.forEach((collectionId) => {
+      if (collectionSourceInDraft(collectionId)) return;
+      const collection = importCollections.find((item) => item.id === collectionId);
+      if (!collection) return;
+      sources.push({
+        type: "collection",
+        collectionId: collection.id,
+        collectionName: collection.name,
+        total: collection.total,
+        available: collection.unused,
+      });
+    });
+    if (!sources.length) {
+      $("tagSourcePageError").textContent = t("levelSourceMissingTag");
+      return;
+    }
+    packageDraftSources = packageDraftSources.concat(sources);
+    tagSourceSelected = new Set();
+    $("tagSourcePageError").textContent = "";
+    $("sourcePickerError").textContent = "";
+    // Return to the level draft; savePackageDraft is still the only writer.
+    showGenPage("package");
+    const sourceList = $("packageSourceList");
+    if (sourceList && sourceList.lastElementChild) {
+      sourceList.lastElementChild.scrollIntoView({ block: "center" });
+    }
+    if ($("packageEditorError")) {
+      const key = sources.length === 1 ? "levelSourceAdded" : "levelSourcesAdded";
+      const params = sources.length === 1 ? undefined : { n: sources.length };
+      $("packageEditorError").textContent = t(key, params);
+      $("packageEditorError").classList.remove("error");
+      $("packageEditorError").classList.add("ok");
+      setTimeout(() => {
+        if ($("packageEditorError")) {
+          $("packageEditorError").textContent = "";
+          $("packageEditorError").classList.remove("ok");
+          $("packageEditorError").classList.add("error");
+        }
+      }, 2600);
+    }
   }
 
   function addPresetSource() {
@@ -14004,7 +14195,6 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       total: presetBank.total,
       available: presetBank.available,
     }]);
-    tagPickerOpen = false;
     renderPackageEditor();
     return true;
   }
@@ -14019,7 +14209,6 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       type: "wrong",
       available: wrongCount,
     }]);
-    tagPickerOpen = false;
     renderPackageEditor();
     return true;
   }
@@ -14284,6 +14473,61 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     const auto = generationScopeReady() ? composeGenerationPrompt() : "";
     const edited = genPromptDirty && $("genPrompt").value.trim() !== auto;
     $("genPromptBadge").textContent = t(edited ? "genPromptBadgeEdited" : "genPromptBadgeAuto");
+    if ($("copyGenPrompt")) {
+      $("copyGenPrompt").disabled = !$("genPrompt").value.trim();
+    }
+  }
+
+  // The import page's generation prompt ends with a localized heading and a
+  // sample requirement block. Keep the format spec and heading, drop the
+  // sample so the copied text contains only the live generation settings.
+  function generationFormatPromptSpec() {
+    const full = t("importGeneratePrompt");
+    const heading = t("importGeneratePromptHeading");
+    const at = full.lastIndexOf(heading);
+    return at >= 0 ? full.slice(0, at + heading.length) : full;
+  }
+
+  function composeGenerationCopy() {
+    const prompt = $("genPrompt").value.trim() || composeGenerationPrompt();
+    const separator = lang === "zh" ? "：" : ": ";
+    const questionType = genQuestionTypeValue === "mixed"
+      ? `${generationQuestionTypeText()} (single + multiple)`
+      : `${generationQuestionTypeText()} (${genQuestionTypeValue})`;
+    const difficulty = genDifficultyValue
+      ? `${generationDifficultyText()} (${genDifficultyValue})`
+      : generationDifficultyText();
+    return [
+      generationFormatPromptSpec(),
+      prompt,
+      `${t("genQuestionType")}${separator}${questionType}`,
+      `${t("genCount")}${separator}${targetCount}`,
+      `${t("genDifficulty")}${separator}${difficulty}`,
+      `${t("genOptions")}${separator}${genOptionsValue}`,
+      `${t("languageLabel")}${separator}${LANGUAGE_LABELS[lang] || lang}`,
+    ].join("\n");
+  }
+
+  let generationCopyTimer = 0;
+
+  function flashGenerationCopyButton(key) {
+    const button = $("copyGenPrompt");
+    if (!button) return;
+    window.clearTimeout(generationCopyTimer);
+    button.textContent = t(key);
+    generationCopyTimer = window.setTimeout(() => {
+      if ($("copyGenPrompt")) $("copyGenPrompt").textContent = t("genCopyPrompt");
+    }, 2200);
+  }
+
+  async function copyGenerationPrompt() {
+    if (!$("genPrompt") || !$("genPrompt").value.trim()) return;
+    try {
+      await copyText(composeGenerationCopy());
+      flashGenerationCopyButton("genCopyPromptDone");
+    } catch (_) {
+      flashGenerationCopyButton("genCopyPromptFailed");
+    }
   }
 
   function setButtonSaving(button, saving) {
@@ -14305,10 +14549,12 @@ let presetBank = { bankId: "", total: 0, available: 0 };
   function bindReliableTap(element, handler) {
     if (!element) return;
     let start = null;
+    let pointerDownAt = 0;
     let lastPointerAt = 0;
     element.addEventListener("pointerdown", (event) => {
       if (event.pointerType === "mouse" && event.button !== 0) return;
       if (element.disabled) return;
+      pointerDownAt = Date.now();
       start = { id: event.pointerId, x: event.clientX, y: event.clientY };
       // 键盘收起会让底部按钮位移；捕获指针保证 pointerup 仍落在按钮上。
       try { element.setPointerCapture(event.pointerId); } catch (_) { /* ignore */ }
@@ -14317,13 +14563,24 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       if (!start || start.id !== event.pointerId) return;
       const moved = Math.hypot(event.clientX - start.x, event.clientY - start.y);
       start = null;
+      pointerDownAt = 0;
       if (moved > 12 || element.disabled) return;
       lastPointerAt = Date.now();
       handler(event);
     });
-    element.addEventListener("pointercancel", () => { start = null; });
+    element.addEventListener("pointercancel", () => {
+      start = null;
+      pointerDownAt = 0;
+    });
     element.addEventListener("click", (event) => {
+      // A page can swap the button under the finger between pointerup and the
+      // synthesized click; that ghost click has no pointerdown on this element
+      // and must never trigger the next page's save. Keyboard activation
+      // (detail 0) has no pointer gesture and stays allowed.
+      const pointerGesture = event.detail !== 0;
+      if (pointerGesture && Date.now() - pointerDownAt > 1000) return;
       if (Date.now() - lastPointerAt < 700 || element.disabled) return;
+      pointerDownAt = 0;
       handler(event);
     });
   }
@@ -15144,6 +15401,7 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       genPromptDirty = $("genPrompt").value.trim() !== composeGenerationPrompt();
       updatePromptBadge();
     });
+    $("copyGenPrompt").addEventListener("click", copyGenerationPrompt);
     $("genQuestionTypeChips").addEventListener("click", (event) => {
       const chip = event.target.closest("[data-question-type]");
       if (!chip) return;
@@ -15239,9 +15497,7 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     });
     $("pickTagSource").addEventListener("click", () => {
       if ($("pickTagSource").disabled) return;
-      tagPickerOpen = !tagPickerOpen;
-      $("sourcePickerError").textContent = "";
-      renderSourcePicker();
+      openTagSourcePage();
     });
     $("pickLifeSource").addEventListener("click", () => {
       if ($("pickLifeSource").disabled) return;
@@ -15252,13 +15508,14 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       $("sourcePickerError").textContent = "";
       addWrongSource();
     });
-    $("tagSourceList").addEventListener("click", (event) => {
-      const choice = event.target.closest("[data-package-tag-id]");
+    $("backFromTagSource").addEventListener("click", backFromTagSource);
+    $("tagSourcePageList").addEventListener("click", (event) => {
+      const choice = event.target.closest("[data-tag-source-choice]");
       if (!choice || choice.disabled) return;
-      $("sourcePickerError").textContent = "";
-      addCollectionSource(choice.dataset.packageTagId);
+      toggleTagSourceSelection(choice.dataset.tagSourceChoice);
     });
-    $("tagSourceGoImport").addEventListener("click", startImportFromCustomLevel);
+    $("tagSourcePageGoImport").addEventListener("click", startImportFromTagSource);
+    bindReliableTap($("addTagSources"), addSelectedTagSources);
 
     bindStepper(
       "round", ROUND_MIN, ROUND_MAX, ROUND_STEP,

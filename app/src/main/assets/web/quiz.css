@@ -1016,10 +1016,19 @@ details.solution p {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 6px 12px;
   margin: 18px 0 6px;
 }
 .gen-prompt-head label { margin: 0; color: var(--ink); font-size: 14px; font-weight: 640; }
+.gen-prompt-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
 .gen-badge {
   padding: 3px 8px;
   border-radius: 999px;
@@ -2581,7 +2590,6 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
   line-height: 1.2;
 }
 .package-source-choices .level-add-card.wrong { grid-column: 1 / -1; }
-.package-tag-field { margin: 2px 0 0; }
 .package-draft-panel > .available,
 .package-draft-panel > .error { margin: 0; }
 /* Configured sources shown under each saved level on the answer-range page. */
@@ -2630,6 +2638,39 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
 .tag-choice-name { font-size: 14px; font-weight: 620; overflow-wrap: anywhere; }
 .tag-choice-meta { color: var(--muted); font-size: 12px; }
 .tag-choice[aria-pressed="true"] .tag-choice-meta { color: var(--select-ink); }
+
+/* The manual-import page is a multi-select list: it keeps the tag copy while
+   adding a larger check target on the right. */
+.tag-source-choice {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+.tag-choice-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.tag-source-choice-check {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--surface);
+  font-size: 14px;
+  font-weight: 700;
+}
+.tag-source-choice[aria-pressed="true"] .tag-source-choice-check {
+  border-color: var(--select-border);
+  background: var(--select-border);
+}
+.tag-source-choice:disabled { opacity: 0.55; }
+.tag-source-choice[aria-pressed="true"]:disabled { opacity: 0.75; }
 
 .maintenance-tag { margin: 4px 0 8px; }
 .maintenance-source-hint { margin: 6px 0 10px; font-size: 12.5px; }

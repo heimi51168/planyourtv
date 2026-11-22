@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#eaf4ff" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#111315" media="(prefers-color-scheme: dark)">
   <title>家长网页</title>
-  <link rel="stylesheet" href="quiz.css?v=59">
+  <link rel="stylesheet" href="quiz.css?v=61">
   <link rel="stylesheet" href="parent.css?v=61">
 </head>
 <body>
@@ -225,7 +225,11 @@
           <div class="field">
             <div class="gen-prompt-head">
               <label for="genPrompt" data-i18n="genPromptLabel"></label>
-              <span id="genPromptBadge" class="gen-badge"></span>
+              <div class="gen-prompt-actions">
+                <span id="genPromptBadge" class="gen-badge"></span>
+                <button id="copyGenPrompt" class="btn text small" type="button"
+                  data-i18n="genCopyPrompt"></button>
+              </div>
             </div>
             <textarea id="genPrompt" class="gen-prompt" rows="3" maxlength="400"
               data-i18n-placeholder="genPromptPlaceholder"></textarea>
@@ -474,15 +478,6 @@
                   </button>
                 </div>
 
-                <div id="tagSourceField" class="field package-tag-field hidden">
-                  <div id="tagSourceList" class="tag-choice-list" role="radiogroup"
-                    data-i18n-aria="levelSourceCustom"></div>
-                  <p id="tagSourceEmpty" class="hint hidden" data-i18n="customLevelEmptyText"></p>
-                  <div class="inline-actions">
-                    <button id="tagSourceGoImport" class="btn secondary small" type="button"
-                      data-i18n="goImportBank"></button>
-                  </div>
-                </div>
                 <p id="sourcePickerError" class="error" role="alert"></p>
               </div>
             </div>
@@ -492,6 +487,36 @@
 
           <div class="sticky-bar">
             <button id="savePackage" class="btn primary" type="button"></button>
+          </div>
+        </section>
+
+        <!-- Manual import is its own page: a level often takes several imported
+             tags, and the inline picker made the draft page cramped. Selecting
+             tags only edits the draft; the level is saved on the draft page. -->
+        <section id="tagSourcePage" class="subpage hidden">
+          <header class="page-head">
+            <button id="backFromTagSource" class="back-btn" type="button" data-i18n-aria="back">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <h1 data-i18n="levelTagSourceTitle"></h1>
+            <span id="tagSourceSelectedCount" class="level-count" aria-live="polite"></span>
+          </header>
+
+          <p class="hint" data-i18n="levelTagSourceLead"></p>
+          <div class="inline-actions">
+            <button id="tagSourcePageGoImport" class="btn secondary small" type="button"
+              data-i18n="goImportBank"></button>
+          </div>
+          <div id="tagSourcePageList" class="tag-choice-list" role="group"
+            data-i18n-aria="levelTagSourceTitle"></div>
+          <div id="tagSourcePageEmpty" class="empty-state hidden">
+            <p data-i18n="customLevelEmptyText"></p>
+          </div>
+          <p id="tagSourcePageHint" class="hint" aria-live="polite"></p>
+          <p id="tagSourcePageError" class="error" role="alert"></p>
+
+          <div class="sticky-bar">
+            <button id="addTagSources" class="btn primary" type="button"></button>
           </div>
         </section>
 
@@ -1102,6 +1127,6 @@
   <div id="parentCenterRoot" class="parent-root hidden"></div>
 
   <script src="parent.js?v=64"></script>
-  <script src="quiz.js?v=63"></script>
+  <script src="quiz.js?v=65"></script>
 </body>
 </html>
