@@ -327,6 +327,10 @@ fun PolicyHomeGate(
     // not a configured role but still fills these surfaces: a fresh install must look different
     // from parent mode before anything is chosen.
     val childActive = state.loaded && state.guardState == GuardStatus.ENFORCING
+    // Study mode uses Home rather than the lock desktop, so it has no child wallpaper. It is still
+    // a child desktop: Home must name the focused app there as it does in an active session.
+    val childHome = childActive ||
+        (state.loaded && state.mode != PolicyMode.NONE && state.guardState == GuardStatus.STUDY_MODE)
     // The parent center is a full-screen overlay above this gate. It is a parent surface, so the
     // child wallpaper's music and rotation pause underneath it.
     val parentCenterVisible by PolicyProduct.parentCenterVisible.collectAsState()
@@ -542,7 +546,7 @@ fun PolicyHomeGate(
         // so HomeViewModel hands Home only those tiles; a dedicated launcher would duplicate the
         // grid and break the desktop's look, focus and navigation. Control Center carries the
         // study-mode exit row, so the child is not stuck on the study desktop.
-        else -> PolicyHomeWithBadge(home, homeWallpaper)
+        else -> PolicyHomeWithBadge(home, homeWallpaper, focusNames = childHome)
     }
 }
 
@@ -579,6 +583,7 @@ private fun DesktopPreparingScreen(
 private fun PolicyHomeWithBadge(
     home: @Composable () -> Unit,
     wallpaper: PolicyHomeWallpaper? = null,
+    focusNames: Boolean = false,
 ) {
     val badge: @Composable (Color) -> Unit = { foreground ->
         PolicyStatusPillBadge(foreground)
@@ -586,6 +591,7 @@ private fun PolicyHomeWithBadge(
     CompositionLocalProvider(
         LocalStatusPillTrailing provides badge,
         LocalPolicyHomeWallpaper provides wallpaper,
+        LocalPolicyFocusNames provides focusNames,
     ) {
         home()
     }
@@ -1772,74 +1778,9 @@ private fun PolicyLockScreen(
                     (if (startIsFirst) firstActionFocus else startFocus).requestFocus()
                 }
             }
-            val selectedSlot = slots.firstOrNull { it.id == focusedDock && it.enabled }
-            val focusedGatewayApp = gatewayApps.firstOrNull {
-                it.packageName == focusedGatewayPackage
-            }
-            val focusedStudyApp = studyApps.firstOrNull {
-                it.packageName == focusedStudyPackage
-            }
-            val focusedUnlimitedApp = unlimitedApps.firstOrNull {
-                it.packageName == focusedUnlimitedPackage
-            }
-            val dockHint = when {
-                // An entertainment icon opens the only startable route directly, or stops at the
-                // three-card choice when several routes are visible.
-                focusedGatewayApp != null -> when {
-                    routePlan != null -> {
-                        val visibleRoutes = routePlan.decisions.filter { it.visible }
-                        when {
-                            visibleRoutes.isEmpty() ->
-                                stringResource(R.string.policy_no_unlock_route)
-                            visibleRoutes.size > 1 ->
-                                stringResource(R.string.policy_lock_gateway_choice_footer)
-                            visibleRoutes.first().route == UnlockRoute.DIRECT &&
-                                visibleRoutes.first().available ->
-                                stringResource(R.string.policy_lock_direct_footer)
-                            visibleRoutes.first().route == UnlockRoute.QUIZ &&
-                                visibleRoutes.first().available ->
-                                lockFooterText(LockAction.QUIZ, state, quizState)
-                            else -> stringResource(R.string.policy_lock_gateway_choice_footer)
-                        }
-                    }
-                    directStartFeature -> stringResource(R.string.policy_lock_direct_footer)
-                    studyEarnFeature ->
-                        stringResource(R.string.policy_lock_gateway_choice_footer)
-                    else -> lockFooterText(LockAction.QUIZ, state, quizState)
-                }
-                // A study icon names itself; an enabled one also states the trade.
-                focusedStudyApp != null -> when {
-                    !studyEarnFeature ||
-                        focusedStudyApp.packageName !in state.studyEarnPackages ->
-                        stringResource(
-                            R.string.policy_lock_study_app_footer,
-                            focusedStudyApp.label,
-                        )
-                    studyRouteAvailable -> stringResource(
-                        R.string.policy_lock_study_earn_footer,
-                        focusedStudyApp.label,
-                        state.studyEarnStudyMinutes,
-                        state.studyEarnRewardMinutes,
-                    )
-                    else -> stringResource(
-                        R.string.policy_lock_study_earn_blocked_footer,
-                        focusedStudyApp.label,
-                    )
-                }
-                // Unlimited apps never touch the clock or the quota.
-                focusedUnlimitedApp != null -> stringResource(
-                    R.string.policy_lock_unlimited_app_footer,
-                    focusedUnlimitedApp.label,
-                )
-                // The badge has no dock slot of its own; it still uses the parent footer.
-                focusedAction == LockAction.PARENT_UNLOCK ->
-                    lockFooterText(LockAction.PARENT_UNLOCK, state, quizState)
-                else -> selectedSlot?.hint ?: stringResource(R.string.policy_lock_dock_idle)
-            }
-
-            // One set of numbers places the dock, the grid below it, its plate and the hint. They
-            // come from Aerial's one-row shelf, so the same peek, plate and column settings move
-            // both the desktop and this screen.
+            // One set of numbers places the dock, the grid below it and its plate. They come from
+            // Aerial's one-row shelf, so the same peek, plate and column settings move both the
+            // desktop and this screen.
             val dockTileCount = slots.size + gatewayApps.size + studyApps.size +
                 unlimitedApps.size
             val dockMetrics = lockDockMetrics(AerialSettings.homeColumns, dockTileCount)
@@ -1960,37 +1901,40 @@ private fun PolicyLockScreen(
                 // Focusing the status badge or the face returns to the shelf, as Up on Home does.
                 resetFocus = pillFocused || subjectFocused,
                 interactive = !subjectSheetOpen,
+                // The tiles name themselves now. An action message owns the line under the dock,
+                // so names step aside while it is showing instead of overlapping it.
+                showNames = actionText == null,
                 modifier = Modifier
                     .align(Alignment.TopStart),
             )
-            // The hint starts on the same left edge as the dock's first tile and the clock, just
-            // under the dock's glass. It is positioned absolutely and never takes part in the
-            // row's layout, so a longer hint or an action message cannot move the dock. One line
-            // only: the action message replaces the focus hint while it is showing, rather than
-            // pushing a second line past the bottom edge with peek off.
-            BasicText(
-                actionText ?: dockHint,
-                style = LockCaptionText.copy(
-                    fontSize = 12.sp,
-                    lineHeight = 16.sp,
-                    // The clock's white, like every other line on this page.
-                    color = Palette.Label,
-                    textAlign = TextAlign.Start,
-                    shadow = LockDesktopTextShadow,
-                ),
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .offset(x = LockDesktopStart, y = dockMetrics.hintTop)
-                    .width(848.dp)
-                    // It belongs to the shelf: down in the rows it fades away with the clock.
-                    .graphicsLayer {
-                        alpha = 1f - (dockState.scroll.value / dockCollapsePx * 1.6f)
-                            .coerceIn(0f, 1f)
-                        compositingStrategy = CompositingStrategy.ModulateAlpha
-                    },
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            // Only an action message remains under the dock. It starts on the same left edge as
+            // the dock's first tile and the clock, just under the dock's glass, and never takes
+            // part in the row's layout, so a longer message cannot move the dock.
+            if (actionText != null) {
+                BasicText(
+                    actionText,
+                    style = LockCaptionText.copy(
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp,
+                        // The clock's white, like every other line on this page.
+                        color = Palette.Label,
+                        textAlign = TextAlign.Start,
+                        shadow = LockDesktopTextShadow,
+                    ),
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .offset(x = LockDesktopStart, y = dockMetrics.hintTop)
+                        .width(848.dp)
+                        // It belongs to the shelf: down in the rows it fades away with the clock.
+                        .graphicsLayer {
+                            alpha = 1f - (dockState.scroll.value / dockCollapsePx * 1.6f)
+                                .coerceIn(0f, 1f)
+                            compositingStrategy = CompositingStrategy.ModulateAlpha
+                        },
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
             // Drawn last, so its scrim covers the dock and its glass sits over the clock. It
             // reuses Aerial's Control Center model and rows: volume, brightness and the temporary
             // exit through the parent PIN.

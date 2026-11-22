@@ -86,6 +86,7 @@ import app.orchard.tv.wallpaper.AerialFormats
 import app.orchard.tv.wallpaper.ScreensaverMode
 import app.orchard.tv.wallpaper.Wallpapers
 import app.orchard.tv.ui.components.liquidGlass
+import app.orchard.tv.ui.policy.LocalPolicyFocusNames
 import app.orchard.tv.ui.policy.LocalPolicyHomeWallpaper
 import app.orchard.tv.ui.policy.PolicyHomeFilm
 import app.orchard.tv.ui.theme.LocalReducedMotion
@@ -321,10 +322,12 @@ fun HomeScreen(
     val gridEnabled = overlay == Overlay.None && kidsLock == null
 
     // A policy child session owns Home's wallpaper (its film and poster) for the length of the
-    // session. This is the one policy hook in Home: null for parent Home, study mode, parent
-    // override and policy-off Home.
+    // session. This hook is null for parent Home, study mode, parent override and policy-off Home.
     val policyWallpaper = LocalPolicyHomeWallpaper.current
     val policyActive = policyWallpaper != null
+    // Every child desktop names the focused app. In an active session and in Study mode this is
+    // true; parent Home and policy-off Home keep Aerial's own name behavior.
+    val policyFocusNames = LocalPolicyFocusNames.current
 
     // The aerial wallpaper's film, and how far it shows through.
     val filmCover = remember { Animatable(0f) }
@@ -567,8 +570,10 @@ fun HomeScreen(
         // same picture and plate, and only the row after it goes into the grid (issue #633: the
         // grid's frosted picture flashed up on the way to an app in the second row).
         val inGrid = focusedRow >= if (oneRow) 1 else 2
-        // With every name shown, the top row's go on its glass plate, which grows to hold them.
-        val plateNames = AerialSettings.showAllNames && AerialSettings.homePlate
+        // With every name shown, or on a child desktop where the focused app must be named on the
+        // plate, the top row's names go on the glass plate, which grows to hold them.
+        val plateNames = AerialSettings.homePlate &&
+            (AerialSettings.showAllNames || policyFocusNames)
         val peek = AerialSettings.peekNextRow
         val hasPlate = AerialSettings.homePlate
         val largeClock = AerialSettings.largeClock
@@ -896,9 +901,11 @@ fun HomeScreen(
                                     } else Modifier,
                                 ),
                             rowEnd = index % columns == columns - 1 || index == apps.lastIndex,
-                            // On the glass plate only with every name shown (an earlier build showed
-                            // the focused one alone there, but it sat oddly on the glass).
-                            showName = plate == null || index >= columns * metrics.shelfRows || plateNames,
+                            // On the glass plate only with every name shown, or on a child desktop
+                            // that asks for the focused name there; the plate has grown by
+                            // PlateNameRoom, so the name sits on its glass instead of on the row below.
+                            showName = policyFocusNames || plate == null ||
+                                index >= columns * metrics.shelfRows || plateNames,
                             nameOnPlate = plate != null && index < columns * metrics.shelfRows,
                         )
                     }

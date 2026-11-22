@@ -1304,14 +1304,14 @@ object ParentCenterActions {
             json.has("sessionLimitMinutes") -> json.optInt("sessionLimitMinutes", -1)
             else -> LocalRules.DEFAULT_DIRECT_SESSION_MINUTES
         }
-        val cap = if (json.has("sessionCapMinutes")) {
-            json.optInt("sessionCapMinutes", -1)
-        } else {
-            -1
-        }
-        if (cap !in LocalRules.MIN_SESSION_CAP_MINUTES..LocalRules.MAX_SESSION_CAP_MINUTES) {
-            return ParsedRules.Invalid("RULES_INVALID_SESSION_CAP")
-        }
+        // The public cap is free-form product-wise; only the Int storage bound applies.
+        // Parse exactly so a 2147483648L draft is rejected instead of wrapping via optInt.
+        val cap = parseIntInRange(
+            json,
+            "sessionCapMinutes",
+            LocalRules.MIN_SESSION_CAP_MINUTES,
+            LocalRules.MAX_SESSION_CAP_MINUTES,
+        ) ?: return ParsedRules.Invalid("RULES_INVALID_SESSION_CAP")
         if (json.has("directSessionMinutes") && json.has("sessionLimitMinutes") &&
             json.optInt("directSessionMinutes", -1) != json.optInt("sessionLimitMinutes", -2)
         ) {
@@ -1320,15 +1320,14 @@ object ParentCenterActions {
         if (direct !in LocalRules.MIN_WRITE_DIRECT_SESSION_MINUTES..cap) {
             return ParsedRules.Invalid("RULES_INVALID_DIRECT_SESSION")
         }
-        val quizCount = json.optInt("quizDailyLimitCount", -1)
-        val studyRewardCount = json.optInt("studyRewardDailyLimitCount", -1)
-        val directCount = json.optInt("directDailyFreeCount", -1)
-        if (quizCount !in 0..LocalRules.MAX_ROUTE_DAILY_COUNT ||
-            studyRewardCount !in 0..LocalRules.MAX_ROUTE_DAILY_COUNT ||
-            directCount !in 0..LocalRules.MAX_ROUTE_DAILY_COUNT
-        ) {
-            return ParsedRules.Invalid("RULES_INVALID_ROUTE_COUNTS")
-        }
+        // Counts are unbounded product-wise. Parse them exactly: optInt would wrap a value
+        // above Int.MAX_VALUE into a valid small count instead of rejecting it.
+        val quizCount = parseRouteCount(json, "quizDailyLimitCount")
+            ?: return ParsedRules.Invalid("RULES_INVALID_ROUTE_COUNTS")
+        val studyRewardCount = parseRouteCount(json, "studyRewardDailyLimitCount")
+            ?: return ParsedRules.Invalid("RULES_INVALID_ROUTE_COUNTS")
+        val directCount = parseRouteCount(json, "directDailyFreeCount")
+            ?: return ParsedRules.Invalid("RULES_INVALID_ROUTE_COUNTS")
         val rest = json.optInt("restMinutes", -1)
         val buffer = json.optInt("sessionScreenOffBufferMinutes", -1)
         if (rest < 0 || buffer < 0) return ParsedRules.Invalid("RULES_INVALID")
@@ -1436,6 +1435,20 @@ object ParentCenterActions {
         // V44: all three routes off is a valid choice. The parent confirms on the page and the
         // TV shows its empty state; the TV must not rewrite that decision.
         return ParsedRules.Valid(parsed)
+    }
+
+    /** A web route count: a whole number in 0..[LocalRules.MAX_ROUTE_DAILY_COUNT]. */
+    private fun parseRouteCount(json: JSONObject, key: String): Int? =
+        parseIntInRange(json, key, 0, LocalRules.MAX_ROUTE_DAILY_COUNT)
+
+    /** Exact whole-number read; `optInt` would wrap values outside the Int range. */
+    private fun parseIntInRange(json: JSONObject, key: String, min: Int, max: Int): Int? {
+        if (!json.has(key)) return null
+        val raw = json.opt(key)
+        if (raw !is Number) return null
+        val value = raw.toDouble()
+        if (value != Math.floor(value) || value < min || value > max) return null
+        return value.toInt()
     }
 
     /**

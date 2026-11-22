@@ -94,12 +94,13 @@ data class LocalRules(
     val directStartEnabled: Boolean = false,
     /**
      * Successful quiz-route sessions allowed today: -1 means unlimited, 0 means never, and
-     * 1..99 is the daily cap. The orchard's 0 ("unlimited") is projected as -1 by the backend.
+     * any positive count up to [MAX_ROUTE_DAILY_COUNT] is the daily cap. The orchard's 0
+     * ("unlimited") is projected as -1 by the backend.
      */
     val quizDailyLimitCount: Int = DEFAULT_ROUTE_DAILY_COUNT,
-    /** Successful study-reward sessions allowed today: -1 unlimited, 0 never, 1..99 cap. */
+    /** Successful study-reward sessions today: -1 unlimited, 0 never, positive count = cap. */
     val studyRewardDailyLimitCount: Int = DEFAULT_ROUTE_DAILY_COUNT,
-    /** Successful direct-start sessions allowed today: -1 unlimited, 0 never, 1..99 cap. */
+    /** Successful direct-start sessions today: -1 unlimited, 0 never, positive count = cap. */
     val directDailyFreeCount: Int = DEFAULT_ROUTE_DAILY_COUNT,
     val schemaVersion: Int = CURRENT_SCHEMA_VERSION,
     /** Entertainment scope. [ALL_VALID_APP] expands to every launchable app except study/unlimited. */
@@ -283,7 +284,7 @@ data class LocalRules(
 
     /** The shared single-session ceiling actually used at runtime; malformed values fail safe. */
     val effectiveSessionCapMinutes: Int
-        get() = sessionCapMinutes.coerceIn(1, MAX_DAILY_MINUTES)
+        get() = sessionCapMinutes.coerceIn(1, MAX_SESSION_CAP_MINUTES)
 
     /** Direct-start duration after clamping old documents to the shared ceiling. */
     val effectiveDirectMinutes: Int
@@ -406,7 +407,7 @@ data class LocalRules(
         }
         if (assignedDays.size != 7) return LocalRulesError.INVALID_DAY_GROUPS
         if (sessionLimitMinutes !in 1..MAX_DAILY_MINUTES ||
-            sessionCapMinutes !in 1..MAX_DAILY_MINUTES ||
+            sessionCapMinutes !in 1..MAX_SESSION_CAP_MINUTES ||
             quizDailyLimitCount !in -1..MAX_ROUTE_DAILY_COUNT ||
             studyRewardDailyLimitCount !in -1..MAX_ROUTE_DAILY_COUNT ||
             directDailyFreeCount !in -1..MAX_ROUTE_DAILY_COUNT ||
@@ -483,14 +484,21 @@ data class LocalRules(
         const val MIN_SESSION_BUFFER_MINUTES = 0
         const val MAX_SESSION_BUFFER_MINUTES = 60
         const val DEFAULT_DIRECT_SESSION_MINUTES = 20
-        const val DEFAULT_SESSION_CAP_MINUTES = 30
+        /** A generous default; the parent page still accepts any positive minute count. */
+        const val DEFAULT_SESSION_CAP_MINUTES = 600
         // 1 minute is the short-session/test floor; normal adjustments still use 5-minute steps.
         const val MIN_WRITE_DIRECT_SESSION_MINUTES = 1
         const val MIN_SESSION_CAP_MINUTES = 1
-        const val MAX_SESSION_CAP_MINUTES = 120
-        const val DEFAULT_ROUTE_DAILY_COUNT = 3
-        /** Upper bound shared with the orchard (0..99 there; -1 is the cloud's "unlimited"). */
-        const val MAX_ROUTE_DAILY_COUNT = 99
+        /** Storage bound only, not a product limit; the Web accepts a free-form minute count. */
+        const val MAX_SESSION_CAP_MINUTES = Int.MAX_VALUE
+        /** A generous first-run allowance; each route stays switchable and parent-editable. */
+        const val DEFAULT_ROUTE_DAILY_COUNT = 1000
+        /**
+         * Storage bound only, not a product limit. The parent page accepts any non-negative
+         * whole number; limiting it to [Int.MAX_VALUE] keeps the JSON, ledger and UI counters
+         * inside the Int fields they already use. -1 stays the cloud's "unlimited" sentinel.
+         */
+        const val MAX_ROUTE_DAILY_COUNT = Int.MAX_VALUE
         const val DEFAULT_STUDY_EARN_STUDY_MINUTES = 10
         const val DEFAULT_STUDY_EARN_REWARD_MINUTES = 5
         const val MIN_STUDY_EARN_MINUTES = 1
@@ -500,9 +508,9 @@ data class LocalRules(
 
         /**
          * Default schedule: workdays and weekends share the same all-day 00:00–24:00 window for
-         * study and entertainment. Study is unlimited; entertainment gets 60 minutes a day.
-         * The window itself stays unrestricted so a first-run family cannot be locked out at
-         * night by a default they never chose.
+         * study and entertainment. Both daily quotas start unlimited so a first-run family is
+         * never stopped by a cap they did not choose. The window itself stays unrestricted for
+         * the same reason.
          */
         val DEFAULT_DAY_GROUPS: List<LocalDayGroup> = listOf(
             LocalDayGroup(
@@ -510,14 +518,14 @@ data class LocalRules(
                 studyWindows = listOf(LocalTimeWindow(0, 24 * 60)),
                 studyDailyLimitMinutes = null,
                 entertainmentWindows = listOf(LocalTimeWindow(0, 24 * 60)),
-                entertainmentDailyLimitMinutes = 60,
+                entertainmentDailyLimitMinutes = null,
             ),
             LocalDayGroup(
                 days = listOf(6, 7),
                 studyWindows = listOf(LocalTimeWindow(0, 24 * 60)),
                 studyDailyLimitMinutes = null,
                 entertainmentWindows = listOf(LocalTimeWindow(0, 24 * 60)),
-                entertainmentDailyLimitMinutes = 60,
+                entertainmentDailyLimitMinutes = null,
             ),
         )
 

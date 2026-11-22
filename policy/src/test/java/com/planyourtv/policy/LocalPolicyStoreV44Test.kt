@@ -55,10 +55,10 @@ class LocalPolicyStoreV44Test {
 
         assertNotNull(decoded)
         val actual = decoded!!.rules()
-        assertEquals(30, actual.sessionCapMinutes)
-        assertEquals(3, actual.quizDailyLimitCount)
-        assertEquals(3, actual.studyRewardDailyLimitCount)
-        assertEquals(3, actual.directDailyFreeCount)
+        assertEquals(600, actual.sessionCapMinutes)
+        assertEquals(1000, actual.quizDailyLimitCount)
+        assertEquals(1000, actual.studyRewardDailyLimitCount)
+        assertEquals(1000, actual.directDailyFreeCount)
     }
 
     @Test
@@ -78,12 +78,34 @@ class LocalPolicyStoreV44Test {
     }
 
     @Test
-    fun anOutOfRangeCountInvalidatesTheDocument() {
+    fun largeSessionCapsLoadAndValuesPastTheIntBoundAreRejected() {
         val raw = JSONObject(
             LocalPolicyStore.encodeRuleSetsForSubject(LocalRuleSets.from(rules())),
         )
-        raw.getJSONObject("manual").put("quizDailyLimitCount", 100)
+        raw.getJSONObject("manual").put("sessionCapMinutes", 100000)
 
+        val decoded = LocalPolicyStore.decodeRuleSetsForSubject(raw.toString())
+
+        assertNotNull(decoded)
+        assertEquals(100000, decoded!!.rules().sessionCapMinutes)
+
+        raw.getJSONObject("manual").put("sessionCapMinutes", 2147483648L)
+        assertNull(LocalPolicyStore.decodeRuleSetsForSubject(raw.toString()))
+    }
+
+    @Test
+    fun largeRouteCountsLoadAndValuesPastTheIntBoundAreRejected() {
+        val raw = JSONObject(
+            LocalPolicyStore.encodeRuleSetsForSubject(LocalRuleSets.from(rules())),
+        )
+        raw.getJSONObject("manual").put("quizDailyLimitCount", 100000)
+
+        val decoded = LocalPolicyStore.decodeRuleSetsForSubject(raw.toString())
+
+        assertNotNull(decoded)
+        assertEquals(100000, decoded!!.rules().quizDailyLimitCount)
+
+        raw.getJSONObject("manual").put("quizDailyLimitCount", 2147483648L)
         assertNull(LocalPolicyStore.decodeRuleSetsForSubject(raw.toString()))
     }
 }

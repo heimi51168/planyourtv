@@ -7302,6 +7302,7 @@ let presetBank = { bankId: "", total: 0, available: 0 };
         defaultMinutes: Math.max(1, Number(manual.defaultMinutes) || 20),
         restRemainingSeconds: Math.max(0, Number(manual.restRemainingSeconds) || 0),
         remainingSeconds: Math.max(0, Number(manual.remainingSeconds) || 0),
+        outsidePlan: Boolean(manual.outsidePlan),
       }
       : null;
     if (manualState) {
@@ -7315,7 +7316,7 @@ let presetBank = { bankId: "", total: 0, available: 0 };
 
   function manualReasonText(reason, state) {
     const manual = state || manualState;
-    if (reason === "SESSION_ACTIVE" && manual && manual.remainingSeconds > 0) {
+    if (reason === "SESSION_ACTIVE" && manual && manual.outsidePlan && manual.remainingSeconds > 0) {
       return t("manualSessionActive", {
         minutes: Math.max(1, Math.ceil(manual.remainingSeconds / 60)),
       });

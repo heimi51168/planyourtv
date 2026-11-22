@@ -131,6 +131,12 @@ object PolicyModeCoordinator {
         val reason: WebManualStartReason,
         val restRemainingSeconds: Long = 0L,
         val remainingSeconds: Long = 0L,
+        /**
+         * True when [reason] is [WebManualStartReason.SESSION_ACTIVE] and the running session
+         * came from the parent's out-of-plan action. Pages must not show a child's plan timer
+         * as an out-of-plan countdown.
+         */
+        val outsidePlan: Boolean = false,
     )
 
     /** Result of the page's single-use action. A rejected PIN never starts a session. */
@@ -1227,10 +1233,14 @@ object PolicyModeCoordinator {
             return WebManualStartStatus(false, WebManualStartReason.NOT_READY)
         }
         if (ui.sessionState == SessionState.ACTIVE) {
+            // The manual-start payload is only allowed to carry progress for an out-of-plan
+            // timer. Keeping a plan session's countdown out of it also protects older pages.
+            val outsidePlan = ui.activeSessionOutsidePlan
             return WebManualStartStatus(
                 eligible = false,
                 reason = WebManualStartReason.SESSION_ACTIVE,
-                remainingSeconds = ui.effectiveRemainingSeconds,
+                remainingSeconds = if (outsidePlan) ui.effectiveRemainingSeconds else 0L,
+                outsidePlan = outsidePlan,
             )
         }
         if (ui.sessionState == SessionState.PENDING) {

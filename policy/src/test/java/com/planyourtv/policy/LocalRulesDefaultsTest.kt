@@ -1,6 +1,7 @@
 package com.planyourtv.policy
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class LocalRulesDefaultsTest {
@@ -55,11 +56,13 @@ class LocalRulesDefaultsTest {
     }
 
     @Test
-    fun firstRunUsesAllDayForStudyAndEntertainment() {
+    fun firstRunUsesAllDayWithUnlimitedQuotas() {
         val allDay = LocalTimeWindow(0, 24 * 60)
         for (group in LocalRules.DEFAULTS.dayGroups) {
             assertEquals(allDay, group.studyWindows.single())
             assertEquals(allDay, group.entertainmentWindows.single())
+            assertNull(group.studyDailyLimitMinutes)
+            assertNull(group.entertainmentDailyLimitMinutes)
         }
         assertEquals(listOf(allDay), LocalRules.DEFAULTS.weekdayWindows)
         assertEquals(listOf(allDay), LocalRules.DEFAULTS.weekendWindows)

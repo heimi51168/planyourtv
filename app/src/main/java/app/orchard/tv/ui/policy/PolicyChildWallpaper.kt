@@ -131,6 +131,13 @@ internal fun PolicyHomeFilm(wallpaper: PolicyHomeWallpaper, active: Boolean) {
 
 internal val LocalPolicyHomeWallpaper = compositionLocalOf<PolicyHomeWallpaper?> { null }
 
+/**
+ * True on the Home Aerial draws for a child desktop (an active session or Study mode). Home then
+ * names the focused app on its glass plate too, with the plate grown to hold it; parent Home and
+ * policy-off Home keep Aerial's own name behavior.
+ */
+internal val LocalPolicyFocusNames = compositionLocalOf { false }
+
 private data class CachedWallpaperImage(
     val image: ImageBitmap?,
     val frosted: ImageBitmap?,

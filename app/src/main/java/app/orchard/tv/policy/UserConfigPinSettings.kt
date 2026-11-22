@@ -10,10 +10,11 @@ import kotlinx.coroutines.flow.asStateFlow
  * Device-wide switch that controls the extra parent-PIN prompts inside the web parent center's
  * "user configuration" tab.
  *
- * ON is the default for fresh and upgraded devices: entering Time & Apps, saving its rules,
- * saving the unlimited-app picker, and starting the out-of-plan timer all ask for the parent
- * PIN again. OFF skips exactly those prompts; turning the switch off itself needs a one-time
- * USER_CONFIG proof. System configuration keeps every existing PIN gate either way.
+ * OFF is the default for fresh and upgraded devices: entering Time & Apps, saving its rules,
+ * saving the unlimited-app picker, and starting the out-of-plan timer do not ask for the
+ * parent PIN again. Enabling the switch restores those prompts. Turning protection off again
+ * needs a one-time USER_CONFIG proof. System configuration keeps every existing PIN gate
+ * either way.
  */
 object UserConfigPinSettings {
     private const val PREFS = "policy_user_config_pin"
@@ -22,7 +23,7 @@ object UserConfigPinSettings {
     private var appContext: Context? = null
     private var prefs: SharedPreferences? = null
 
-    private val _required = MutableStateFlow(true)
+    private val _required = MutableStateFlow(false)
     val required: StateFlow<Boolean> = _required.asStateFlow()
 
     fun install(context: Context) {
@@ -31,7 +32,7 @@ object UserConfigPinSettings {
         appContext = application
         val loaded = application.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         prefs = loaded
-        _required.value = loaded.getBoolean(KEY_REQUIRED, true)
+        _required.value = loaded.getBoolean(KEY_REQUIRED, false)
     }
 
     fun isRequired(): Boolean = _required.value
@@ -59,6 +60,6 @@ object UserConfigPinSettings {
                 ?.commit()
         }
         prefs = null
-        _required.value = true
+        _required.value = false
     }
 }

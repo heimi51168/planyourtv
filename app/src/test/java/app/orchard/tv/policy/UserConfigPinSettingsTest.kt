@@ -11,7 +11,7 @@ import org.robolectric.RuntimeEnvironment
 
 /**
  * V47 device switch for the web user-configuration PIN prompts. Missing storage must read as
- * on, matching both fresh installs and upgrades where the key did not exist.
+ * off, matching fresh installs and upgrades where the key did not exist.
  */
 @RunWith(RobolectricTestRunner::class)
 class UserConfigPinSettingsTest {
@@ -30,26 +30,26 @@ class UserConfigPinSettingsTest {
     }
 
     @Test
-    fun missingSettingDefaultsToRequired() {
-        assertTrue(UserConfigPinSettings.isRequired())
-        assertTrue(UserConfigPinSettings.required.value)
+    fun missingSettingDefaultsToPinless() {
+        assertFalse(UserConfigPinSettings.isRequired())
+        assertFalse(UserConfigPinSettings.required.value)
     }
 
     @Test
-    fun disablingPersistsAcrossAReinstall() {
-        assertTrue(UserConfigPinSettings.setRequired(false))
-        assertFalse(UserConfigPinSettings.isRequired())
+    fun enablingPersistsAcrossAReinstall() {
+        assertTrue(UserConfigPinSettings.setRequired(true))
+        assertTrue(UserConfigPinSettings.isRequired())
 
         // Drop only the in-process handle; install must read the stored value again.
         UserConfigPinSettings.debugResetForTest(clearStorage = false)
         UserConfigPinSettings.install(app)
-        assertFalse(UserConfigPinSettings.isRequired())
+        assertTrue(UserConfigPinSettings.isRequired())
     }
 
     @Test
-    fun enablingAgainRestoresTheDefaultBehavior() {
-        assertTrue(UserConfigPinSettings.setRequired(false))
+    fun disablingAgainRestoresThePinlessDefault() {
         assertTrue(UserConfigPinSettings.setRequired(true))
-        assertTrue(UserConfigPinSettings.isRequired())
+        assertTrue(UserConfigPinSettings.setRequired(false))
+        assertFalse(UserConfigPinSettings.isRequired())
     }
 }

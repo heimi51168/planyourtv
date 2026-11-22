@@ -163,7 +163,7 @@ android {
         // Raise productRevision for each product release; never reuse or decrease it.
         val aerialVersionName = "2.0"
         val aerialVersionCode = 148
-        val productRevision = 2
+        val productRevision = 3
         require(productRevision in 0..999) { "productRevision must fit in three digits" }
         versionCode = aerialVersionCode * 1000 + productRevision
         versionName = "$aerialVersionName.${productRevision.toString().padStart(3, '0')}"

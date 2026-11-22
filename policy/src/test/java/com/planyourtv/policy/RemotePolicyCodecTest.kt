@@ -660,8 +660,11 @@ class RemotePolicyCodecTest {
     }
 
     @Test
-    fun anOutOfRangeRouteCountInvalidatesTheSnapshot() {
-        val tooLarge = withRules(policyJson) { it.put("quizDailyLimitCount", 100) }
+    fun largeRouteCountsSurviveAndOnlyValuesPastTheIntBoundAreRejected() {
+        val large = withRules(policyJson) { it.put("quizDailyLimitCount", 100000) }
+        assertEquals(100000, RemotePolicyCodec.parse(large)!!.rules.quizDailyLimitCount)
+
+        val tooLarge = withRules(policyJson) { it.put("quizDailyLimitCount", 2147483648L) }
         assertNull(RemotePolicyCodec.parse(tooLarge))
 
         val tooSmall = withRules(policyJson) { it.put("directDailyFreeCount", -2) }

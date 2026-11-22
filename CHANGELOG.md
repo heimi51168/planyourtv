@@ -3,6 +3,38 @@
 This changelog covers the community source snapshot. Official hosted builds may ship different
 artifacts with the same upstream Aerial base.
 
+## [2.0.003] - 2026-11-22
+
+Friendlier first-run defaults, free-form parent limits, and app names on every Kids-mode desktop.
+Version code `148003`. The optional parent app is unchanged at `1.2.4` / `10`.
+
+### Added
+
+- Kids-mode desktops — the lock desktop, a timed session's Home and Study-mode Home — now name
+  the focused app under its icon in Aerial's own style. Fixed action cards keep the names drawn
+  in their artwork, and the old fixed hint line under the lock dock is gone.
+- The parent Web accepts any non-negative whole number for the three unlock routes' daily counts
+  and any positive minute count for the shared per-session cap; the previous 10-count and
+  120-minute product caps are removed. The TV checks only the integer storage bound, so large
+  values are kept exactly instead of wrapping.
+
+### Changed
+
+- First-run defaults are more forgiving: entertainment and study daily quotas are unlimited, the
+  per-session cap is 600 minutes, each unlock route allows 1000 sessions a day, and
+  【用户配置密码输入】 starts off. The quiz route is still the only route enabled by default.
+  Parents can tighten any rule; saved quotas, route switches and counts keep their stored values.
+- Editing a family member's dates or exemption window no longer asks for the member switch
+  password again when one already exists. A new 6-digit password is required only when
+  protection is turned on without one.
+
+### Fixed
+
+- The user configuration page no longer shows a child's planned countdown in the out-of-plan
+  timer block. While a plan session is active it shows “TV in use · planned timer”, keeps the
+  out-of-plan start blocked without minutes, and disables that block's exit action. A real
+  out-of-plan timer still shows its countdown and can be ended normally.
+
 ## [2.0.002] - 2026-11-22
 
 Per-member timed password exemption, the parent-center Web service status, smoother member

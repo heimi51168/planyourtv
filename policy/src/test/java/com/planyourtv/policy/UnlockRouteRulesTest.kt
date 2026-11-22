@@ -32,10 +32,10 @@ class UnlockRouteRulesTest {
         // No study apps configured: the quiz route is the only unlock method.
         assertTrue(defaults.hasUnlockRoute)
         assertEquals(20, defaults.sessionLimitMinutes)
-        assertEquals(30, defaults.sessionCapMinutes)
-        assertEquals(3, defaults.quizDailyLimitCount)
-        assertEquals(3, defaults.studyRewardDailyLimitCount)
-        assertEquals(3, defaults.directDailyFreeCount)
+        assertEquals(600, defaults.sessionCapMinutes)
+        assertEquals(1000, defaults.quizDailyLimitCount)
+        assertEquals(1000, defaults.studyRewardDailyLimitCount)
+        assertEquals(1000, defaults.directDailyFreeCount)
     }
 
     @Test
@@ -99,6 +99,17 @@ class UnlockRouteRulesTest {
 
         val cappedStudy = rules.copy(studyEarnRewardMinutes = 40)
         assertEquals(30, cappedStudy.effectiveStudyRewardMinutes)
+    }
+
+    @Test
+    fun largeSessionCapsAreNotProductCapped() {
+        val large = base().copy(sessionCapMinutes = 100000)
+        assertEquals(LocalRulesError.NONE, large.validationError())
+        assertEquals(100000, large.effectiveSessionCapMinutes)
+
+        val storageBound = large.copy(sessionCapMinutes = LocalRules.MAX_SESSION_CAP_MINUTES)
+        assertEquals(LocalRulesError.NONE, storageBound.validationError())
+        assertEquals(Int.MAX_VALUE, storageBound.effectiveSessionCapMinutes)
     }
 
     @Test

@@ -33,13 +33,16 @@
   const STEP_DIRECT_MINUTES = 5;
   const DIRECT_OPTIONS = [1, 5, 10, 15, 20, 25, 30, 40, 45, 60, 90, 120];
   const MIN_SESSION_CAP_MINUTES = 1;
-  const MAX_SESSION_CAP_MINUTES = 120;
+  // Storage bound only; the parent page accepts any positive whole minute count.
+  const MAX_SESSION_CAP_MINUTES = 2147483647;
   const STEP_SESSION_CAP_MINUTES = 5;
-  const SESSION_CAP_OPTIONS = [1, 5, 10, 15, 20, 25, 30, 40, 45, 60, 90, 120];
-  const DEFAULT_SESSION_CAP_MINUTES = 30;
+  const DEFAULT_SESSION_CAP_MINUTES = 600;
   const DEFAULT_DIRECT_MINUTES = 20;
-  const MAX_ROUTE_DAILY_COUNT = 10;
-  const DEFAULT_ROUTE_DAILY_COUNT = 3;
+  // The TV stores these counts as 32-bit ints. That is a storage bound, not a product cap:
+  // the parent may type any non-negative whole number the input accepts.
+  const MAX_ROUTE_DAILY_COUNT = 2147483647;
+  // First-run fallback only; the TV's stored rules are authoritative once configured.
+  const DEFAULT_ROUTE_DAILY_COUNT = 1000;
   // V5 makes the three child unlock routes independent and adds the shared public cap and
   // per-route daily counts. A V3/V4 page cannot express them, so every writer must send V5.
   const RULES_CONTRACT_VERSION = 5;
@@ -247,10 +250,14 @@
       unifiedLimits: "公共参数",
       sessionCapTitle: "单次使用时间上限",
       sessionCapHint: "三种方式各自一次会话的天花板；每日总额度在日期分组中设置。",
+      sessionCapInputHint: "输入 1 或更大的整数，不限上限",
+      sessionCapInvalid: "请输入 1 或更大的整数",
       directMaxHint: "每次观看时长，最多 {n} 分钟",
       quizAutoLength: "按答题结果自动计算，单次最多 {n} 分钟",
       routeDailyCount: "每日次数",
       countTimes: "{n} 次",
+      routeCountInputHint: "输入 0 或更大的整数，不限上限",
+      routeCountInvalid: "请输入 0 或更大的整数",
       studyRewardMaxHint: "受公共单次上限限制，最多 {n} 分钟；与学习时长独立",
       allRoutesOffTitle: "关闭全部观看入口？",
       allRoutesOffBody: "保存后孩子将没有可用的娱乐入口，电视会显示「没有可用的观看入口」。家长临时解锁不受影响。",
@@ -852,10 +859,14 @@
       unifiedLimits: "Common settings",
       sessionCapTitle: "Single-session time limit",
       sessionCapHint: "Ceiling for one session of any of the three routes; the daily total is set per day group.",
+      sessionCapInputHint: "Enter a whole number of 1 or more; there is no upper limit",
+      sessionCapInvalid: "Enter a whole number of 1 or more",
       directMaxHint: "Time per session, at most {n} min",
       quizAutoLength: "Calculated from the quiz result, up to {n} min per session",
       routeDailyCount: "Daily count",
       countTimes: "{n} times",
+      routeCountInputHint: "Enter 0 or a larger whole number; there is no upper limit",
+      routeCountInvalid: "Enter a whole number of 0 or more",
       studyRewardMaxHint: "Limited only by the public cap, up to {n} min; independent of study time",
       allRoutesOffTitle: "Turn off every viewing route?",
       allRoutesOffBody: "After saving, the child has no entertainment route and the TV shows “No available viewing route”. Parent override is unchanged.",
@@ -1457,10 +1468,14 @@
       unifiedLimits: "Общие параметры",
       sessionCapTitle: "Лимит времени одной сессии",
       sessionCapHint: "Верхний предел одной сессии для любого из трёх способов; дневная квота задаётся в группе дней.",
+      sessionCapInputHint: "Введите целое число 1 или больше; верхнего предела нет",
+      sessionCapInvalid: "Введите целое число 1 или больше",
       directMaxHint: "Время за один просмотр, не более {n} мин",
       quizAutoLength: "Рассчитывается по результату теста, до {n} мин за сессию",
       routeDailyCount: "Раз в день",
       countTimes: "{n} раз",
+      routeCountInputHint: "Введите целое число 0 или больше; верхнего предела нет",
+      routeCountInvalid: "Введите целое число 0 или больше",
       studyRewardMaxHint: "Ограничено только общим лимитом, не более {n} мин; время учёбы не влияет",
       allRoutesOffTitle: "Отключить все способы просмотра?",
       allRoutesOffBody: "После сохранения у ребёнка не останется способа смотреть развлечения, а телевизор покажет «Нет доступного способа просмотра». Родительский доступ не меняется.",
@@ -2062,10 +2077,14 @@
       unifiedLimits: "Спільні параметри",
       sessionCapTitle: "Ліміт часу однієї сесії",
       sessionCapHint: "Верхня межа однієї сесії для будь-якого з трьох способів; денна квота задається в групі днів.",
+      sessionCapInputHint: "Введіть ціле число 1 або більше; верхньої межі немає",
+      sessionCapInvalid: "Введіть ціле число 1 або більше",
       directMaxHint: "Час за один перегляд, не більше {n} хв",
       quizAutoLength: "Розраховується за результатом тесту, до {n} хв за сесію",
       routeDailyCount: "Разів на день",
       countTimes: "{n} разів",
+      routeCountInputHint: "Введіть ціле число 0 або більше; верхньої межі немає",
+      routeCountInvalid: "Введіть ціле число 0 або більше",
       studyRewardMaxHint: "Обмежено лише спільним лімітом, не більше {n} хв; час навчання не впливає",
       allRoutesOffTitle: "Вимкнути всі способи перегляду?",
       allRoutesOffBody: "Після збереження дитина не матиме способу дивитися розваги, а телевізор покаже «Немає доступного способу перегляду». Батьківський доступ не змінюється.",
@@ -2667,10 +2686,14 @@
       unifiedLimits: "Жалпы параметрлер",
       sessionCapTitle: "Бір сеанс уақытының шегі",
       sessionCapHint: "Кез келген үш жол үшін бір сеанстың жоғарғы шегі; күндік жалпы шек күн тобында орнатылады.",
+      sessionCapInputHint: "1 немесе одан үлкен бүтін санды енгізіңіз; жоғарғы шектеу жоқ",
+      sessionCapInvalid: "1 немесе одан үлкен бүтін санды енгізіңіз",
       directMaxHint: "Бір көруге арналған уақыт, ең көбі {n} мин",
       quizAutoLength: "Тест нәтижесі бойынша есептеледі, сеанс үшін ең көбі {n} мин",
       routeDailyCount: "Күндік саны",
       countTimes: "{n} рет",
+      routeCountInputHint: "0 немесе одан үлкен бүтін санды енгізіңіз; жоғарғы шектеу жоқ",
+      routeCountInvalid: "0 немесе одан үлкен бүтін санды енгізіңіз",
       studyRewardMaxHint: "Тек жалпы шекпен шектеледі, ең көбі {n} мин; оқу уақыты әсер етпейді",
       allRoutesOffTitle: "Барлық көру жолдарын өшіру керек пе?",
       allRoutesOffBody: "Сақтағаннан кейін баланың ойын-сауыққа кіретін жолы болмайды, теледидар «Қолжетімді көру жолы жоқ» деп көрсетеді. Ата-ананың уақытша ашуы өзгермейді.",
@@ -3439,6 +3462,7 @@
       controlStatusEnforcing: "儿童模式 · 已锁定",
       controlStatusTimer: "计时中 · 剩余 {time}",
       controlStatusManualTimer: "计划外计时中 · 剩余 {minutes} 分钟",
+      controlStatusInPlanTimer: "电视使用中 · 计划内计时",
       controlStatusRest: "休息中 · 剩余 {time}",
       controlStatusPending: "等待孩子确认家长授权",
       controlStatusOverride: "已临时退出 · 剩余 {time}",
@@ -3456,7 +3480,7 @@
       controlStartHint: "计划外 · 不计入每日额度",
       controlStopTitle: "退出计时",
       controlStopHint: "当前计时剩余 {time}",
-      controlStopNoTimer: "当前没有计时",
+      controlStopNoTimer: "当前没有计划外计时",
       controlBusy: "正在执行…",
       controlAppliedTakeOver: "已临时退出儿童模式",
       controlNoopTakeOver: "电视已在临时退出状态",
@@ -3554,6 +3578,7 @@
       controlStatusEnforcing: "Child mode · locked",
       controlStatusTimer: "Timing · {time} left",
       controlStatusManualTimer: "Out-of-plan timer · {minutes} min left",
+      controlStatusInPlanTimer: "TV in use · planned timer",
       controlStatusRest: "Resting · {time} left",
       controlStatusPending: "Waiting for the child to confirm the parent grant",
       controlStatusOverride: "Temporarily unlocked · {time} left",
@@ -3571,7 +3596,7 @@
       controlStartHint: "Out of plan · not counted against the daily quota",
       controlStopTitle: "Exit timing",
       controlStopHint: "Current timer has {time} left",
-      controlStopNoTimer: "There is no active timer",
+      controlStopNoTimer: "There is no out-of-plan timer",
       controlBusy: "Working…",
       controlAppliedTakeOver: "The TV is temporarily unlocked",
       controlNoopTakeOver: "The TV is already temporarily unlocked",
@@ -3669,6 +3694,7 @@
       controlStatusEnforcing: "Детский режим · заблокирован",
       controlStatusTimer: "Таймер · осталось {time}",
       controlStatusManualTimer: "Таймер вне плана · осталось {minutes} мин",
+      controlStatusInPlanTimer: "Телевизор используется · плановый таймер",
       controlStatusRest: "Перерыв · осталось {time}",
       controlStatusPending: "Ожидание подтверждения ребёнком родительского доступа",
       controlStatusOverride: "Временно разблокирован · осталось {time}",
@@ -3686,7 +3712,7 @@
       controlStartHint: "Вне плана · не расходует дневную квоту",
       controlStopTitle: "Выйти из таймера",
       controlStopHint: "До конца таймера осталось {time}",
-      controlStopNoTimer: "Активного таймера нет",
+      controlStopNoTimer: "Таймера вне плана нет",
       controlBusy: "Выполняется…",
       controlAppliedTakeOver: "Телевизор временно разблокирован",
       controlNoopTakeOver: "Телевизор уже временно разблокирован",
@@ -3784,6 +3810,7 @@
       controlStatusEnforcing: "Дитячий режим · заблоковано",
       controlStatusTimer: "Таймер · залишилося {time}",
       controlStatusManualTimer: "Таймер поза планом · залишилося {minutes} хв",
+      controlStatusInPlanTimer: "Телевізор використовується · плановий таймер",
       controlStatusRest: "Перерва · залишилося {time}",
       controlStatusPending: "Очікування підтвердження дитиною батьківського доступу",
       controlStatusOverride: "Тимчасово розблоковано · залишилося {time}",
@@ -3801,7 +3828,7 @@
       controlStartHint: "Поза планом · не витрачає денну квоту",
       controlStopTitle: "Вийти з таймера",
       controlStopHint: "До кінця таймера залишилося {time}",
-      controlStopNoTimer: "Активного таймера немає",
+      controlStopNoTimer: "Таймера поза планом немає",
       controlBusy: "Виконується…",
       controlAppliedTakeOver: "Телевізор тимчасово розблоковано",
       controlNoopTakeOver: "Телевізор уже тимчасово розблоковано",
@@ -3899,6 +3926,7 @@
       controlStatusEnforcing: "Бала режимі · құлыпталған",
       controlStatusTimer: "Таймер · {time} қалды",
       controlStatusManualTimer: "Жоспардан тыс таймер · {minutes} мин қалды",
+      controlStatusInPlanTimer: "Теледидар қолданылуда · жоспарлы таймер",
       controlStatusRest: "Демалыс · {time} қалды",
       controlStatusPending: "Баланың ата-ана рұқсатын растауын күту",
       controlStatusOverride: "Уақытша ашылған · {time} қалды",
@@ -3916,7 +3944,7 @@
       controlStartHint: "Жоспардан тыс · күндік шектеуді жұмсамайды",
       controlStopTitle: "Таймерден шығу",
       controlStopHint: "Таймер аяқталуына {time} қалды",
-      controlStopNoTimer: "Белсенді таймер жоқ",
+      controlStopNoTimer: "Жоспардан тыс таймер жоқ",
       controlBusy: "Орындалуда…",
       controlAppliedTakeOver: "Теледидар уақытша ашылды",
       controlNoopTakeOver: "Теледидар уақытша ашық",
@@ -7008,8 +7036,10 @@
     };
   }
 
-  function memberPinError(pin, required) {
-    if (required && !pin) return t("userPinRequired");
+  function memberPinError(pin, required, hasStoredPin) {
+    // A protected member already has a credential. Blank means "keep it"; only the first
+    // opt-in (or a member added with protection on) must set a new 6-digit password.
+    if (required && !hasStoredPin && !pin) return t("userPinRequired");
     if (pin && !/^\d{6}$/.test(pin)) return t("userPinInvalid");
     if (pin === "123456") return t("memberPinWeak");
     return "";
@@ -7255,7 +7285,7 @@
           return;
         }
         const protection = switchField.read();
-        const pinError = memberPinError(protection.pin, protection.required);
+        const pinError = memberPinError(protection.pin, protection.required, false);
         if (pinError) {
           showError(pinError);
           switchField.pinInput.focus();
@@ -7645,7 +7675,11 @@
             return;
           }
           const protection = switchField.read();
-          const pinError = memberPinError(protection.pin, protection.required);
+          const pinError = memberPinError(
+            protection.pin,
+            protection.required,
+            Boolean(initial.switchPinRequired)
+          );
           if (pinError) {
             showError(pinError);
             switchField.pinInput.focus();
@@ -7870,7 +7904,7 @@
     const controls = el("div", "parent-stepper");
     const minus = button("−", "parent-step", () => adjustRouteCount(field, -1));
     const value = button(t("countTimes", { n: routeCount(field) }), "parent-step-value",
-      () => setRouteCount(field, routeCount(field)));
+      () => openRouteCountSheet(field, label));
     value.dataset.routeCount = field;
     const plus = button("+", "parent-step", () => adjustRouteCount(field, 1));
     [minus, value, plus].forEach((control) => {
@@ -7887,6 +7921,53 @@
     const next = Math.min(MAX_ROUTE_DAILY_COUNT, Math.max(0, current + delta));
     if (next === current) return;
     setRouteCount(field, next);
+  }
+
+  /** Free-form entry: the stepper is convenient, but the parent is not held to its range. */
+  function openRouteCountSheet(field, label) {
+    if (!snap.capabilities || !snap.capabilities.canEditRules) return;
+    openSheet((sheet, close) => {
+      sheet.appendChild(el("h2", null, label));
+      sheet.appendChild(el("p", "parent-hint", t("routeCountInputHint")));
+      const input = el("input", "parent-count-input");
+      input.type = "number";
+      input.setAttribute("inputmode", "numeric");
+      input.setAttribute("pattern", "[0-9]*");
+      input.min = "0";
+      input.step = "1";
+      input.autocomplete = "off";
+      input.value = String(routeCount(field));
+      input.setAttribute("aria-label", label);
+      sheet.appendChild(input);
+      const error = el("p", "parent-error");
+      error.hidden = true;
+      sheet.appendChild(error);
+      const commit = () => {
+        const raw = String(input.value || "").trim();
+        const value = Number(raw);
+        if (!/^\d+$/.test(raw) || !Number.isSafeInteger(value) ||
+            value > MAX_ROUTE_DAILY_COUNT) {
+          error.textContent = t("routeCountInvalid");
+          error.hidden = false;
+          return;
+        }
+        close();
+        setRouteCount(field, value);
+      };
+      input.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter") return;
+        event.preventDefault();
+        commit();
+      });
+      const actions = el("div", "parent-actions");
+      actions.appendChild(button(t("cancel"), "parent-btn ghost", close));
+      actions.appendChild(button(t("mediaSave"), "parent-btn primary", commit));
+      sheet.appendChild(actions);
+      setTimeout(() => {
+        input.focus();
+        input.select();
+      }, 0);
+    });
   }
 
   function setRouteCount(field, value) {
@@ -10620,11 +10701,7 @@
     const card = el("div", "parent-card");
     const canEdit = Boolean(snap.capabilities && snap.capabilities.canEditRules);
     const rules = snap.rules || {};
-    card.appendChild(limitRow(
-      "sessionCapMinutes", t("sessionCapTitle"), sessionCapMinutes(),
-      STEP_SESSION_CAP_MINUTES, MIN_SESSION_CAP_MINUTES, MAX_SESSION_CAP_MINUTES, canEdit,
-      SESSION_CAP_OPTIONS
-    ));
+    card.appendChild(sessionCapRow(canEdit));
     const hint = el("p", "parent-hint", t("sessionCapHint", { n: sessionCapMinutes() }));
     hint.dataset.capHint = "1";
     card.appendChild(hint);
@@ -10638,6 +10715,81 @@
       STEP_BUFFER, MIN_BUFFER, MAX_BUFFER, canEdit, BUFFER_OPTIONS
     ));
     return card;
+  }
+
+  /**
+   * The shared session ceiling is free-form: the stepper is a shortcut, but the value sheet
+   * accepts any positive whole number instead of a fixed 1–120 list.
+   */
+  function sessionCapRow(canEdit) {
+    const node = el("div", "parent-row");
+    const main = el("div", "parent-row-main");
+    main.appendChild(el("span", "parent-row-title", t("sessionCapTitle")));
+    node.appendChild(main);
+    const controls = el("div", "parent-stepper");
+    const minus = button("−", "parent-step", () => adjustLimit(
+      "sessionCapMinutes", -STEP_SESSION_CAP_MINUTES,
+      MIN_SESSION_CAP_MINUTES, MAX_SESSION_CAP_MINUTES
+    ));
+    const valueBtn = button(t("minutes", { n: sessionCapMinutes() }), "parent-step-value",
+      openSessionCapSheet);
+    valueBtn.dataset.limitKey = "sessionCapMinutes";
+    const plus = button("+", "parent-step", () => adjustLimit(
+      "sessionCapMinutes", STEP_SESSION_CAP_MINUTES,
+      MIN_SESSION_CAP_MINUTES, MAX_SESSION_CAP_MINUTES
+    ));
+    [minus, valueBtn, plus].forEach((control) => {
+      control.disabled = !canEdit;
+      controls.appendChild(control);
+    });
+    node.appendChild(controls);
+    return node;
+  }
+
+  function openSessionCapSheet() {
+    if (!snap.capabilities || !snap.capabilities.canEditRules) return;
+    openSheet((sheet, close) => {
+      sheet.appendChild(el("h2", null, t("sessionCapTitle")));
+      sheet.appendChild(el("p", "parent-hint", t("sessionCapInputHint")));
+      const input = el("input", "parent-count-input");
+      input.type = "number";
+      input.setAttribute("inputmode", "numeric");
+      input.setAttribute("pattern", "[0-9]*");
+      input.min = String(MIN_SESSION_CAP_MINUTES);
+      input.step = "1";
+      input.autocomplete = "off";
+      input.value = String(sessionCapMinutes());
+      input.setAttribute("aria-label", t("sessionCapTitle"));
+      sheet.appendChild(input);
+      const error = el("p", "parent-error");
+      error.hidden = true;
+      sheet.appendChild(error);
+      const commit = () => {
+        const raw = String(input.value || "").trim();
+        const value = Number(raw);
+        if (!/^\d+$/.test(raw) || !Number.isSafeInteger(value) ||
+            value < MIN_SESSION_CAP_MINUTES || value > MAX_SESSION_CAP_MINUTES) {
+          error.textContent = t("sessionCapInvalid");
+          error.hidden = false;
+          return;
+        }
+        close();
+        setLimit("sessionCapMinutes", value);
+      };
+      input.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter") return;
+        event.preventDefault();
+        commit();
+      });
+      const actions = el("div", "parent-actions");
+      actions.appendChild(button(t("cancel"), "parent-btn ghost", close));
+      actions.appendChild(button(t("mediaSave"), "parent-btn primary", commit));
+      sheet.appendChild(actions);
+      setTimeout(() => {
+        input.focus();
+        input.select();
+      }, 0);
+    });
   }
 
   function limitRow(key, label, value, step, min, max, canEdit, options) {
@@ -10924,15 +11076,15 @@
   }
 
   /**
-   * V5 server validation is strict: direct 1..cap, Y 1..cap, X 1..180 and counts 0..10.
-   * X and Y are independent inputs, so Y is not clamped by X. A legacy snapshot can still hold
-   * values outside those ranges, so clamp the outgoing draft; the clamp is what the next
-   * snapshot reads back and displays.
+   * V5 server validation is strict: direct 1..cap, Y 1..cap, X 1..180 and counts are whole
+   * numbers up to the Int storage bound. X and Y are independent inputs, so Y is not clamped
+   * by X. A legacy snapshot can still hold values outside those ranges, so clamp the outgoing
+   * draft; the clamp is what the next snapshot reads back and displays.
    */
   function clampRules(next) {
     const capValue = Number(next.sessionCapMinutes);
     const cap = Math.min(MAX_SESSION_CAP_MINUTES, Math.max(MIN_SESSION_CAP_MINUTES,
-      Number.isFinite(capValue) ? capValue : DEFAULT_SESSION_CAP_MINUTES));
+      Number.isFinite(capValue) ? Math.round(capValue) : DEFAULT_SESSION_CAP_MINUTES));
     next.sessionCapMinutes = cap;
     const directValue = Number(next.directSessionMinutes);
     const directAlias = Number(next.sessionLimitMinutes);
@@ -11835,11 +11987,14 @@
     if (control.quiz && control.quiz.roundActive) return t("controlStatusQuiz");
     const timer = control.timer || {};
     if (control.sessionState === "ACTIVE" || timer.active) {
-      // V45: only the user config page starts out-of-plan timers, so it labels that state
-      // differently from a child-started entertainment session.
-      if (manualPage && timer.outsidePlan) {
-        const minutes = Math.max(1, Math.ceil((Number(timer.remainingSeconds) || 0) / 60));
-        return t("controlStatusManualTimer", { minutes: minutes });
+      if (manualPage) {
+        // V45: the out-of-plan section only owns the parent's manual timer. A child's plan
+        // session is still active, but its countdown must not appear here.
+        if (timer.outsidePlan) {
+          const minutes = Math.max(1, Math.ceil((Number(timer.remainingSeconds) || 0) / 60));
+          return t("controlStatusManualTimer", { minutes: minutes });
+        }
+        return t("controlStatusInPlanTimer");
       }
       return t("controlStatusTimer", { time: fmtSeconds(timer.remainingSeconds) });
     }
@@ -12346,10 +12501,14 @@
       } else {
         refs.startManual.sub.textContent = t("controlStartBlocked");
       }
-      const timerLeft = controlTimerLeft(control);
-      refs.stopTimer.button.disabled = !stop.enabled || busy;
-      refs.stopTimer.sub.textContent = stop.enabled
-        ? t("controlStopHint", { time: fmtSeconds(timerLeft) })
+      // The manual page may only end its own out-of-plan timer. The server still allows a
+      // parent to stop any timer through the API, but this section must not expose plan
+      // progress or act as a plan-timer stop control.
+      const manualTimer = Boolean(control && control.timer && control.timer.outsidePlan);
+      const canStopManual = stop.enabled && manualTimer;
+      refs.stopTimer.button.disabled = !canStopManual || busy;
+      refs.stopTimer.sub.textContent = canStopManual
+        ? t("controlStopHint", { time: fmtSeconds(controlTimerLeft(control)) })
         : t("controlStopNoTimer");
     }
 

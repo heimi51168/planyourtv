@@ -112,7 +112,7 @@ class RuleSetsTest {
                 sessionScreenOffBufferMinutes = 30,
                 quizGateEnabled = true,
                 quizDailyLimitCount = 2,
-                // 掩码外的次数各给一个不同于云端的本机值（云端保持默认 3），
+                // 掩码外的次数各给一个不同于云端的本机值（云端保持默认 1000），
                 // 才能真正证明「云没投影的字段保留本地值」，而不是碰巧撞上同一个默认值。
                 studyRewardDailyLimitCount = 7,
                 directDailyFreeCount = 4,

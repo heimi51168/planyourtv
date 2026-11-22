@@ -74,6 +74,9 @@ class ParentWebAdminUserConfigPinTest {
         QuizAccess.onPinReset()
         UserConfigPinSettings.debugResetForTest()
         UserConfigPinSettings.install(app)
+        // Route-contract cases below assume protection is on; default-off is covered by
+        // UserConfigPinSettingsTest.
+        assertTrue(UserConfigPinSettings.setRequired(true))
 
         val login = QuizAccess.authenticate(pin)
         assertTrue(login is QuizAccess.AuthResult.Ok)

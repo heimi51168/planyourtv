@@ -383,6 +383,7 @@ object ParentControlActions {
             .put("requiresPin", UserConfigPinSettings.isRequired())
             .put("remainingSeconds", manual.remainingSeconds)
             .put("restRemainingSeconds", manual.restRemainingSeconds)
+            .put("outsidePlan", manual.outsidePlan)
             .put("minMinutes", ManualSessionLimits.MIN_MINUTES)
             .put("maxMinutes", ManualSessionLimits.MAX_MINUTES)
             .put("stepMinutes", ManualSessionLimits.STEP_MINUTES)

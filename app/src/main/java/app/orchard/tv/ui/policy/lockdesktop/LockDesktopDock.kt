@@ -51,9 +51,10 @@ private val LockDockRowAboveTop = 72.dp
 
 /**
  * Aerial's one-row grid, reproduced for the lock desktop: the dock is the top row on the glass
- * plate, and the parent's study apps continue in the rows below, scrolling up as on Home. The
- * lock draws no names under its tiles (the hint line names the focused app), so Home's two-row
- * shelf and the extra name room on its plate do not apply here.
+ * plate, and the parent's study apps continue in the rows below, scrolling up as on Home. Real
+ * app tiles name the focused app under it, as Home does; the fixed action cards already carry
+ * their names in their artwork and draw no second label. The rows already reserve name room, so
+ * Home's two-row shelf and the extra name room on its plate do not apply here.
  */
 internal data class LockDockMetrics(
     val columns: Int,
@@ -227,6 +228,8 @@ internal fun LockDesktopDock(
     resetFocus: Boolean = false,
     /** False while a modal sheet owns the screen; keeps every tile out of focus search. */
     interactive: Boolean = true,
+    /** False while an action message uses the line under the dock, so a name cannot overlap it. */
+    showNames: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     if (slots.isEmpty() && gatewayApps.isEmpty() && studyApps.isEmpty() &&
@@ -344,7 +347,10 @@ internal fun LockDesktopDock(
                                 Modifier
                             },
                         ),
-                    showName = false,
+                    // Fixed action cards are whole pictures whose names are already in the art.
+                    showName = showNames && tile !is DockTile.Action,
+                    // The dock row sits on the plate; its name must not step down past the frame.
+                    nameOnPlate = metrics.plateOn && index < metrics.columns,
                     rowEnd = index % columns == columns - 1 || index == rowEnd,
                 )
             }

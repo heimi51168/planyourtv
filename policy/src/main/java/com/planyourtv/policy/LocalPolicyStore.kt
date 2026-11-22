@@ -408,32 +408,51 @@ object LocalPolicyStore {
         return sets.withRules(materialized)
     }
 
+    /**
+     * Route counts are stored as Ints but are not product-capped. Missing values keep the
+     * historical default; anything that is not an exact Int (including a value that would
+     * wrap through [JSONObject.optInt]) rejects the document.
+     */
+    private fun JSONObject.storedRouteCount(key: String): Int? {
+        if (!has(key)) return LocalRules.DEFAULT_ROUTE_DAILY_COUNT
+        return storedIntInRange(key, -1, LocalRules.MAX_ROUTE_DAILY_COUNT)
+    }
+
+    /**
+     * Exact whole-number read. `optInt` can wrap a value outside the Int range into a valid
+     * small number, so a stored document is only accepted when it fits the declared bounds.
+     */
+    private fun JSONObject.storedIntInRange(key: String, min: Int, max: Int): Int? {
+        if (!has(key)) return null
+        val raw = opt(key)
+        if (raw !is Number) return null
+        val value = raw.toDouble()
+        if (value != Math.floor(value) || value < min || value > max) return null
+        return value.toInt()
+    }
+
     private fun parseStoredRuleSet(json: JSONObject?): LocalRuleSet? {
         if (json == null) return null
         val groups = json.optJSONArray("dayGroups")?.toDayGroupsStrict() ?: return null
         val session = json.optInt("sessionLimitMinutes", -1)
         // Missing V44 fields are safe defaults: schema 3 existed before the shared cap and the
         // three daily counts, and old documents must keep loading.
-        val cap = json.optInt(
-            "sessionCapMinutes",
-            LocalRules.DEFAULT_SESSION_CAP_MINUTES,
-        )
-        val quizCount = json.optInt(
-            "quizDailyLimitCount",
-            LocalRules.DEFAULT_ROUTE_DAILY_COUNT,
-        )
-        val studyRewardCount = json.optInt(
-            "studyRewardDailyLimitCount",
-            LocalRules.DEFAULT_ROUTE_DAILY_COUNT,
-        )
-        val directFreeCount = json.optInt(
-            "directDailyFreeCount",
-            LocalRules.DEFAULT_ROUTE_DAILY_COUNT,
-        )
+        val cap = if (json.has("sessionCapMinutes")) {
+            json.storedIntInRange(
+                "sessionCapMinutes",
+                LocalRules.MIN_SESSION_CAP_MINUTES,
+                LocalRules.MAX_SESSION_CAP_MINUTES,
+            ) ?: return null
+        } else {
+            LocalRules.DEFAULT_SESSION_CAP_MINUTES
+        }
+        val quizCount = json.storedRouteCount("quizDailyLimitCount") ?: return null
+        val studyRewardCount = json.storedRouteCount("studyRewardDailyLimitCount") ?: return null
+        val directFreeCount = json.storedRouteCount("directDailyFreeCount") ?: return null
         val rest = json.optInt("restMinutes", -1)
         val buffer = json.optInt("sessionScreenOffBufferMinutes", -1)
         if (session !in 1..LocalRules.MAX_DAILY_MINUTES ||
-            cap !in 1..LocalRules.MAX_DAILY_MINUTES ||
+            cap !in LocalRules.MIN_SESSION_CAP_MINUTES..LocalRules.MAX_SESSION_CAP_MINUTES ||
             quizCount !in -1..LocalRules.MAX_ROUTE_DAILY_COUNT ||
             studyRewardCount !in -1..LocalRules.MAX_ROUTE_DAILY_COUNT ||
             directFreeCount !in -1..LocalRules.MAX_ROUTE_DAILY_COUNT ||

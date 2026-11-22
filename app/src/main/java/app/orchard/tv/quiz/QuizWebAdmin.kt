@@ -3197,6 +3197,7 @@ object QuizWebAdmin {
             .put("defaultMinutes", ManualSessionLimits.DEFAULT_MINUTES)
             .put("restRemainingSeconds", status.restRemainingSeconds)
             .put("remainingSeconds", status.remainingSeconds)
+            .put("outsidePlan", status.outsidePlan)
 
     private fun json(status: Response.Status, body: JSONObject): Response =
         newResponse(status, "application/json; charset=utf-8", body.toString())

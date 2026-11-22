@@ -69,6 +69,8 @@ class ParentControlActionsTest {
         QuizAccess.onPinReset()
         UserConfigPinSettings.debugResetForTest()
         UserConfigPinSettings.install(app)
+        // These cases exercise the protected path; the product default is now pinless.
+        assertTrue(UserConfigPinSettings.setRequired(true))
     }
 
     @After
@@ -427,6 +429,30 @@ class ParentControlActionsTest {
         val timer = status.getJSONObject("timer")
         assertTrue(timer.getBoolean("active"))
         assertTrue(timer.getBoolean("outsidePlan"))
+        val manual = status.getJSONObject("manualStart")
+        assertEquals("SESSION_ACTIVE", manual.getString("reason"))
+        assertFalse(manual.getBoolean("eligible"))
+        assertTrue(manual.getBoolean("outsidePlan"))
+        assertTrue(manual.getLong("remainingSeconds") > 0L)
+    }
+
+    @Test
+    fun statusKeepsAnInPlanTimerOutOfTheManualAction() {
+        startTimer()
+
+        val status = ParentControlActions.statusJson()
+        val timer = status.getJSONObject("timer")
+        assertTrue(timer.getBoolean("active"))
+        assertFalse(timer.getBoolean("outsidePlan"))
+        // The system status still owns the plan countdown.
+        assertTrue(timer.getLong("remainingSeconds") > 0L)
+
+        // The out-of-plan action must not expose or display the plan timer's progress.
+        val manual = status.getJSONObject("manualStart")
+        assertEquals("SESSION_ACTIVE", manual.getString("reason"))
+        assertFalse(manual.getBoolean("eligible"))
+        assertFalse(manual.getBoolean("outsidePlan"))
+        assertEquals(0L, manual.getLong("remainingSeconds"))
     }
 
     @Test
@@ -528,12 +554,12 @@ class ParentControlActionsTest {
         assertTrue(json.getBoolean("quizGateEnabled"))
         assertFalse(json.getBoolean("studyEarnEnabled"))
         assertFalse(json.getBoolean("directStartEnabled"))
-        assertEquals(30, json.getInt("sessionCapMinutes"))
+        assertEquals(600, json.getInt("sessionCapMinutes"))
         assertEquals(20, json.getInt("sessionLimitMinutes"))
         assertEquals(20, json.getInt("directSessionMinutes"))
-        assertEquals(3, json.getInt("quizDailyLimitCount"))
-        assertEquals(3, json.getInt("studyRewardDailyLimitCount"))
-        assertEquals(3, json.getInt("directDailyFreeCount"))
+        assertEquals(1000, json.getInt("quizDailyLimitCount"))
+        assertEquals(1000, json.getInt("studyRewardDailyLimitCount"))
+        assertEquals(1000, json.getInt("directDailyFreeCount"))
         val groups = json.getJSONArray("dayGroups")
         assertEquals(3, groups.length())
         val firstDays = groups.getJSONObject(0).getJSONArray("days")
@@ -606,7 +632,19 @@ class ParentControlActionsTest {
     fun v5SavesValidateTheCapDirectDurationCountsAndStudyReward() {
         val capTooLow = saveRules(schemaFiveRules(defaultGroups).put("sessionCapMinutes", 0))
         assertEquals("RULES_INVALID_SESSION_CAP", capTooLow.code)
-        val capTooHigh = saveRules(schemaFiveRules(defaultGroups).put("sessionCapMinutes", 121))
+        val capAboveTheOldCeiling = saveRules(
+            schemaFiveRules(defaultGroups).put("sessionCapMinutes", 121),
+        )
+        assertEquals("OK", capAboveTheOldCeiling.code)
+        assertEquals(121, LocalPolicyRuntime.currentRules!!.sessionCapMinutes)
+        val largeCap = saveRules(
+            schemaFiveRules(defaultGroups).put("sessionCapMinutes", 100000),
+        )
+        assertEquals("OK", largeCap.code)
+        assertEquals(100000, LocalPolicyRuntime.currentRules!!.sessionCapMinutes)
+        val capTooHigh = saveRules(
+            schemaFiveRules(defaultGroups).put("sessionCapMinutes", 2147483648L),
+        )
         assertEquals("RULES_INVALID_SESSION_CAP", capTooHigh.code)
         val missingCap = saveRules(schemaFiveRules(defaultGroups).apply {
             remove("sessionCapMinutes")
@@ -649,7 +687,14 @@ class ParentControlActionsTest {
             assertEquals(1, saved.studyEarnRewardMinutes)
         }
 
-        val countTooHigh = saveRules(schemaFiveRules(defaultGroups).put("quizDailyLimitCount", 100))
+        val countLarge = saveRules(
+            schemaFiveRules(defaultGroups).put("quizDailyLimitCount", 100000),
+        )
+        assertEquals("OK", countLarge.code)
+        assertEquals(100000, LocalPolicyRuntime.currentRules!!.quizDailyLimitCount)
+        val countTooHigh = saveRules(
+            schemaFiveRules(defaultGroups).put("quizDailyLimitCount", 2147483648L),
+        )
         assertEquals("RULES_INVALID_ROUTE_COUNTS", countTooHigh.code)
         val countMissing = saveRules(schemaFiveRules(defaultGroups).apply {
             remove("directDailyFreeCount")
@@ -699,23 +744,23 @@ class ParentControlActionsTest {
         val snapshot = ParentCenterActions.snapshot(app)
         val rules = snapshot.getJSONObject("rules")
         assertEquals(5, rules.getInt("rulesContractVersion"))
-        assertEquals(30, rules.getInt("sessionCapMinutes"))
+        assertEquals(600, rules.getInt("sessionCapMinutes"))
         assertEquals(20, rules.getInt("directSessionMinutes"))
         assertEquals(20, rules.getInt("sessionLimitMinutes"))
-        assertEquals(3, rules.getInt("directDailyFreeCount"))
+        assertEquals(1000, rules.getInt("directDailyFreeCount"))
 
         val usage = snapshot.getJSONObject("usage")
-        assertEquals(30 * 60, usage.getInt("sessionCapSeconds"))
+        assertEquals(600 * 60, usage.getInt("sessionCapSeconds"))
         val counts = usage.getJSONObject("routeCounts")
         assertTrue(counts.getString("date").isNotEmpty())
         val quiz = counts.getJSONObject("quiz")
         assertEquals(0, quiz.getInt("used"))
-        assertEquals(3, quiz.getInt("limit"))
-        assertEquals(3, quiz.getInt("remaining"))
+        assertEquals(1000, quiz.getInt("limit"))
+        assertEquals(1000, quiz.getInt("remaining"))
         val direct = counts.getJSONObject("directFree")
         assertEquals(0, direct.getInt("used"))
-        assertEquals(3, direct.getInt("remaining"))
-        assertEquals(3, counts.getJSONObject("studyReward").getInt("remaining"))
+        assertEquals(1000, direct.getInt("remaining"))
+        assertEquals(1000, counts.getJSONObject("studyReward").getInt("remaining"))
     }
 
     @Test

@@ -201,11 +201,13 @@ object RemotePolicyCodec {
             else -> value.takeIf { it in 1..LocalRules.MAX_DAILY_MINUTES } ?: return null
         }
         // 单次娱乐上限：果园按「孩子 × 设备」配置，电视所有解锁路由共用。
-        val sessionCapRead = json.cloudMinutes("sessionCapMinutes")
+        val sessionCapRead = json.cloudMinutes("sessionCapMinutes", LocalRules.MAX_SESSION_CAP_MINUTES)
         if (!sessionCapRead.valid) return null
         val sessionCapMinutes = when (val value = sessionCapRead.value) {
             null -> if (sessionCapRead.present) return null else defaults.sessionCapMinutes
-            else -> value.takeIf { it in 1..LocalRules.MAX_DAILY_MINUTES } ?: return null
+            else -> value.takeIf {
+                it in LocalRules.MIN_SESSION_CAP_MINUTES..LocalRules.MAX_SESSION_CAP_MINUTES
+            } ?: return null
         }
         // Shared with the existing device-level buffer. Older backends omit it, and legacy
         // values such as 1470 are clamped so the TV never pauses for a day.
@@ -370,11 +372,13 @@ object RemotePolicyCodec {
         } else {
             fallbackBuffer
         }
-        val sessionCapRead = json.cloudMinutes("sessionCapMinutes")
+        val sessionCapRead = json.cloudMinutes("sessionCapMinutes", LocalRules.MAX_SESSION_CAP_MINUTES)
         if (!sessionCapRead.valid) return null
         val sessionCap = when (val value = sessionCapRead.value) {
             null -> LocalRules.DEFAULTS.sessionCapMinutes
-            else -> value.takeIf { it in 1..LocalRules.MAX_DAILY_MINUTES } ?: return null
+            else -> value.takeIf {
+                it in LocalRules.MIN_SESSION_CAP_MINUTES..LocalRules.MAX_SESSION_CAP_MINUTES
+            } ?: return null
         }
         val quizCount = json.cloudCount(
             "quizDailyLimitCount",
@@ -540,14 +544,17 @@ private class CloudMinutes(val present: Boolean, val valid: Boolean, val value: 
  * out-of-range value is invalid and the caller must reject the whole snapshot instead of
  * inventing a default — a silently widened or narrowed quota is a real behaviour change.
  */
-private fun JSONObject.cloudMinutes(key: String): CloudMinutes {
+private fun JSONObject.cloudMinutes(
+    key: String,
+    max: Int = LocalRules.MAX_DAILY_MINUTES,
+): CloudMinutes {
     if (!has(key)) return CloudMinutes(present = false, valid = true, value = null)
     if (isNull(key)) return CloudMinutes(present = true, valid = true, value = null)
     val raw = opt(key)
     if (raw !is Number) return CloudMinutes(present = true, valid = false, value = null)
     val exact = raw.toDouble()
     val value = raw.toInt()
-    if (exact != value.toDouble() || value !in 0..LocalRules.MAX_DAILY_MINUTES) {
+    if (exact != value.toDouble() || value !in 0..max) {
         return CloudMinutes(present = true, valid = false, value = null)
     }
     return CloudMinutes(present = true, valid = true, value = value)
