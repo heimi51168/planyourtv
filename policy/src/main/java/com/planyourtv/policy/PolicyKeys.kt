@@ -111,6 +111,10 @@ internal object PolicyKeys {
     // An in-progress study-to-earn round. Kept outside the runtime snapshot so adding it cannot
     // change the codec version or invalidate an existing session/ledger document.
     const val LOCAL_STUDY_ROUND_V1 = "local_study_round_v1"
+    // V58 LOCAL fruit account. One document per local family member under this key plus a
+    // stable member identifier. The ledger deliberately survives resetLocalSetup and is
+    // independent of the TV's active member/session state.
+    const val LOCAL_FRUIT_ACCOUNT_V1 = "local_fruit_account_v1"
 
     // Hosted (cloud rule guard) execution partition. A TV controlled from the cloud keeps its
     // usage/guard/study state here, so it can never overwrite — or be mistaken for — the
@@ -122,6 +126,9 @@ internal object PolicyKeys {
     const val HOSTED_RUNTIME_V2 = "hosted_runtime_v2"
     const val HOSTED_GUARD_V2 = "hosted_guard_v2"
     const val HOSTED_STUDY_ROUND_V1 = "hosted_study_round_v1"
+    // Cloud fruit account projection for the hosted rule guard. Written only by the device
+    // context fetch, scoped by cloud member; the LOCAL fruit ledger stays untouched.
+    const val HOSTED_FRUIT_FACTS_V1 = "hosted_fruit_facts_v1"
     // The cloud roster is per member since 2026-11-21. Every hosted key above gains a
     // `@member:<id>` suffix so one child's ledger, rest cursor and study round can never leak
     // into another's. The bare key remains as the pre-scope partition used for migration.

@@ -56,9 +56,11 @@ class LocalPolicyStoreV44Test {
         assertNotNull(decoded)
         val actual = decoded!!.rules()
         assertEquals(600, actual.sessionCapMinutes)
-        assertEquals(1000, actual.quizDailyLimitCount)
-        assertEquals(1000, actual.studyRewardDailyLimitCount)
-        assertEquals(1000, actual.directDailyFreeCount)
+        // 2026-11-26: 缺失的次数默认「不限制」。
+        assertEquals(-1, actual.quizDailyLimitCount)
+        assertEquals(-1, actual.studyRewardDailyLimitCount)
+        assertEquals(-1, actual.directDailyFreeCount)
+        assertEquals(-1, actual.fruitExchangeDailyLimitCount)
     }
 
     @Test

@@ -3,11 +3,19 @@ package app.orchard.tv.quiz
 import android.util.Log
 import com.planyourtv.policy.PolicyFlowTrace
 import com.planyourtv.policy.PolicyRuntime
+import com.planyourtv.policy.quiz.QuizItem
 import com.planyourtv.policy.quiz.QuizSession
 import com.planyourtv.policy.quiz.QuizSessionStatus
+import com.planyourtv.policy.quiz.QuizVisual
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import java.io.IOException
 
@@ -27,6 +35,7 @@ import java.io.IOException
  */
 object CloudQuizPreparer {
     private const val TAG = "CloudQuizPreparer"
+    private const val VISUAL_DOWNLOAD_CONCURRENCY = 4
     private val prepareMutex = Mutex()
 
     sealed interface Outcome {
@@ -80,7 +89,15 @@ object CloudQuizPreparer {
                 QuizQuestionCache.ClearMode.ALL,
             )
         }
-        if (cloudSession != null) QuizSessionStore.clearSession()
+        if (cloudSession != null) {
+            // Stop the current cloud utterance before its attempt disappears.
+            QuizSpeechPlayer.stop()
+            QuizSessionStore.clearSession()
+        }
+        QuizVisualAssetStore.clearNamespace(QuizVisualAssetStore.QB_FIGURE_ASSET_ID)
+        // Cloud audio is derived from the cloud attempt; a local bank never
+        // writes here, so clearing it cannot affect local speech.
+        QuizTtsCache.clear()
         // Release reservations left by a removed cloud attempt, but keep the
         // active local round's rows reserved.
         QuizQuestionCache.releaseOrphans(QuizSessionStore.loadSession()?.id)
@@ -141,6 +158,7 @@ object CloudQuizPreparer {
             sessionAttempt == cachedAttempt &&
             session.expiresAt > nowMs &&
             QuizQuestionCache.availableCount(scope, nowMs) >= session.items.size &&
+            QuizVisualAssetStore.hasAllAssets(session.items) &&
             // Freeze match: a parent edit or a different level fetches anew so
             // the round never executes with rules the child did not see.
             session.cloudMemberId == plan.memberId &&
@@ -185,10 +203,22 @@ object CloudQuizPreparer {
             return Outcome.Unavailable("题目获取失败，请检查网络后重试")
         }
 
+        // Figures are prefetched before the cache/session are written. A failed
+        // picture fails the whole round explicitly: a "如图" question without
+        // its figure must never reach the child.
+        val visualItems = when (val result = attachVisuals(set)) {
+            is VisualAttachResult.Ready -> result.items
+            is VisualAttachResult.Failed -> {
+                Log.w(TAG, "question figure failed: ${result.reason}")
+                PolicyFlowTrace.event("quiz.prepare.visual_failed", "reason" to result.reason)
+                return Outcome.Unavailable("题目图片下载失败，请检查网络后重试")
+            }
+        }
+
         // The member config owns the answer window. QB's per-question timer is
         // the question's own default and must not override the parent setting.
         val timeLimitSec = document.rules.timeLimitSec
-        val items = set.items.map {
+        val items = visualItems.map {
             it.copy(timeLimitSec = timeLimitSec, recommendedTimeSec = timeLimitSec)
         }
         if (!QuizQuestionCache.replaceCloudSet(set.attemptUid, items, set.expiresAt, scope, nowMs)) {
@@ -218,6 +248,9 @@ object CloudQuizPreparer {
             return Outcome.Unavailable("题目保存失败，请重试")
         }
         QuizCloudOutbox.begin(set.attemptUid)
+        runCatching {
+            QuizVisualAssetStore.prune(QuizVisualAssetStore.protectedShas(items))
+        }.onFailure { Log.w(TAG, "question figure cache cleanup failed", it) }
         QuizRuntime.refresh()
         PolicyFlowTrace.event(
             "quiz.prepare.fetched",
@@ -234,6 +267,42 @@ object CloudQuizPreparer {
                 "available=${set.available} revision=${document.revision}",
         )
         return Outcome.Ready
+    }
+
+    private sealed interface VisualAttachResult {
+        data class Ready(val items: List<QuizItem>) : VisualAttachResult
+        data class Failed(val reason: String) : VisualAttachResult
+    }
+
+    private suspend fun attachVisuals(
+        set: QbClient.CloudQuestionSet,
+    ): VisualAttachResult {
+        if (set.imageUrls.isEmpty()) return VisualAttachResult.Ready(set.items)
+        val semaphore = Semaphore(VISUAL_DOWNLOAD_CONCURRENCY)
+        val outcomes = coroutineScope {
+            set.items.map { item ->
+                async {
+                    val url = set.imageUrls[item.questionId]
+                        ?: return@async Result.success(item)
+                    semaphore.withPermit { downloadVisual(item, url) }
+                }
+            }.awaitAll()
+        }
+        val failure = outcomes.firstOrNull { it.isFailure }?.exceptionOrNull()
+        if (failure != null) {
+            // Never put a URL or a signature into the log or the trace.
+            return VisualAttachResult.Failed(failure.javaClass.simpleName)
+        }
+        return VisualAttachResult.Ready(outcomes.mapNotNull { it.getOrNull() })
+    }
+
+    private fun downloadVisual(item: QuizItem, url: String): Result<QuizItem> = try {
+        QuizVisualAssetStore.fetchImage(QuizVisualAssetStore.QB_FIGURE_ASSET_ID, url)
+            .map { stored -> item.copy(visual = QuizVisual(rich = stored.visual)) }
+    } catch (error: CancellationException) {
+        throw error
+    } catch (error: Exception) {
+        Result.failure(error)
     }
 
     /**

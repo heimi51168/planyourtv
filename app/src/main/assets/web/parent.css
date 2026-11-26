@@ -556,6 +556,10 @@ body.parent-open .modal-root { z-index: 80; }
   overflow-wrap: anywhere;
 }
 
+.parent-hint.is-warn {
+  color: var(--warn);
+}
+
 .parent-intro-note {
   margin: 0;
   padding: 10px 14px 0;
@@ -640,7 +644,7 @@ body.parent-open .modal-root { z-index: 80; }
   top: var(--parent-bar-h, 62px);
   z-index: 2;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
   margin: 18px -16px 10px;
   padding: 8px 16px;
@@ -859,6 +863,13 @@ body.parent-open .modal-root { z-index: 80; }
 
 .parent-media-module-row { min-height: 64px; }
 
+/* The setup summary under each module: sound state and the chosen track at a glance. */
+.parent-media-module-audio {
+  margin-top: 2px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
 .parent-media-module-action {
   display: flex;
   flex: 0 0 auto;
@@ -919,6 +930,88 @@ body.parent-open .modal-root { z-index: 80; }
   margin-top: 12px;
 }
 
+/* Audio resources reuse the poster wall; the cover is a glyph because sound has no frame. */
+.parent-media-audio-cover {
+  display: block;
+  background: var(--surface-2);
+}
+
+.parent-media-audio-glyph {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 32%, #14212a),
+    color-mix(in srgb, var(--surface-2) 82%, #000)
+  );
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 36px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.parent-media-audio-usage {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+  max-width: 72%;
+  pointer-events: none;
+}
+
+.parent-media-usage-badge {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.58);
+  color: #fff;
+  font-size: 9.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  backdrop-filter: blur(4px);
+}
+
+.parent-media-audio-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.parent-media-audio-card-source {
+  overflow: hidden;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.parent-media-audio-player-stage {
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.parent-media-audio-player {
+  display: block;
+  width: 100%;
+}
+
+.parent-media-audio-preview-cover {
+  display: block;
+}
+
 .parent-media-audio-none { margin-bottom: 12px; }
 
 .parent-media-audio-row {
@@ -948,6 +1041,30 @@ body.parent-open .modal-root { z-index: 80; }
 }
 
 .parent-media-audio-pick:disabled { opacity: 1; }
+
+/* Listening is separate from choosing, so a selected row stays previewable. */
+.parent-media-audio-preview {
+  flex: 0 0 38px;
+  align-self: center;
+  width: 38px;
+  height: 38px;
+  margin: 6px 6px 6px 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--accent);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.parent-media-audio-preview:active { background: var(--line); }
+
+.parent-media-audio-preview:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 
 .parent-media-audio-mark {
   display: grid;
@@ -1233,6 +1350,30 @@ body.parent-open .modal-root { z-index: 80; }
   background: var(--surface-2);
 }
 
+/* The preview player: a downloaded film streams from the TV, an un-downloaded catalogue
+   film plays straight from its cloud address, and the phone handles both in the native player. */
+.parent-media-player-stage {
+  margin-bottom: 12px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #000;
+}
+
+.parent-media-player {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+}
+
+.parent-media-player-error {
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  color: var(--danger);
+  font-size: 12.5px;
+}
+
 .parent-media-cover-caption {
   position: absolute;
   right: 0;
@@ -1306,55 +1447,17 @@ body.parent-open .modal-root { z-index: 80; }
 .parent-media-sheet-footer .parent-btn { width: 100%; }
 .parent-media-sheet-footer .parent-progress-track { margin-bottom: 2px; }
 
-.parent-media-stage {
+.parent-media-option-wrap {
   position: relative;
-  margin-top: 12px;
-  overflow: hidden;
-  border-radius: 14px;
-  background: var(--surface-2);
+  min-width: 0;
 }
 
-.parent-media-stage-cover {
-  position: relative;
+.parent-media-option-wrap > .parent-media-option {
+  display: block;
+  flex: none;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-  background: var(--surface-2);
+  min-width: 0;
 }
-
-.parent-media-stage-caption {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 30px 14px 11px;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.66));
-  color: #fff;
-  font-size: 12px;
-}
-
-.parent-media-stage-caption strong {
-  overflow: hidden;
-  font-size: 14px;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.parent-media-strip {
-  display: flex;
-  gap: 10px;
-  margin: 12px -18px 0;
-  padding: 0 18px 6px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.parent-media-strip::-webkit-scrollbar { display: none; }
 
 .parent-media-option {
   flex: 0 0 132px;
@@ -1365,6 +1468,36 @@ body.parent-open .modal-root { z-index: 80; }
   color: var(--ink);
   font: inherit;
   text-align: start;
+}
+
+/* A separate control, not a nested button: the card keeps selection while this stays usable
+   even when the card is disabled at the rotation limit. */
+.parent-media-option-preview {
+  position: absolute;
+  right: 6px;
+  bottom: 29px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.58);
+  color: #fff;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+  backdrop-filter: blur(6px);
+}
+
+.parent-media-option-preview:active { background: rgba(0, 0, 0, 0.8); }
+
+.parent-media-option-preview:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .parent-media-option-cover {
@@ -1447,18 +1580,23 @@ body.parent-open .modal-root { z-index: 80; }
 
 .parent-media-lock-hint { margin: 8px 0 0; }
 
-/* A grid keeps a longer rotation visible without adding a separate editor page. */
-.parent-media-lock-grid {
+/* A grid keeps a longer library visible without adding a separate editor page. Both the
+   wallpaper rotation and the single-choice quiz intro use it. */
+.parent-media-option-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px 8px;
   margin-top: 12px;
 }
 
-.parent-media-lock-grid .parent-media-option {
+.parent-media-option-grid .parent-media-option {
   flex: none;
   width: auto;
   min-width: 0;
+}
+
+.parent-media-option-grid .parent-media-option-wrap > .parent-media-option {
+  width: 100%;
 }
 
 .parent-media-interval {
@@ -1506,6 +1644,63 @@ body.parent-open .modal-root { z-index: 80; }
 }
 
 .parent-media-picker-empty p { margin: 0 0 6px; color: var(--muted); font-size: 13px; }
+
+.parent-media-library-hint {
+  margin: -2px 4px 10px;
+}
+
+/* Resource setup page: every control commits with one save at the bottom. */
+.parent-media-config-page { padding-bottom: 8px; }
+
+.parent-media-config-preview-hint { margin: 0 0 10px; }
+
+.parent-media-config-section {
+  margin: 0 0 14px;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.parent-media-config-title {
+  margin: 0 0 4px;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.parent-media-config-section > .parent-hint { margin: 0 0 4px; }
+.parent-media-config-section .parent-media-option-grid { margin-top: 10px; }
+.parent-media-config-section .parent-media-interval { margin-top: 14px; }
+.parent-media-config-section .parent-media-audio-list { margin-top: 12px; }
+.parent-media-config-section .parent-switch-row { margin-top: 10px; }
+
+.parent-media-config-empty {
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.parent-media-config-empty p { margin: 0 0 6px; color: var(--muted); font-size: 13px; }
+
+.parent-media-config-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px -16px -20px;
+  padding: 12px 16px calc(14px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+  background: var(--bar-bg);
+  backdrop-filter: blur(16px) saturate(1.2);
+}
+
+.parent-media-config-actions .parent-btn { width: 100%; }
+.parent-media-config-actions .parent-hint { margin: 0; text-align: center; }
 
 .parent-media-link {
   padding: 6px 4px;
@@ -2555,12 +2750,25 @@ body.parent-open .modal-root { z-index: 80; }
 
 .parent-control-stepper .parent-btn { flex: 0 0 52px; }
 
-.parent-control-stepper-value {
+.parent-control-stepper-input {
   flex: 1 1 auto;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--surface);
   color: var(--ink);
   font-size: 18px;
   font-weight: 650;
+  font-variant-numeric: tabular-nums;
   text-align: center;
+}
+
+.parent-control-stepper-unit {
+  flex: none;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .parent-window-note { margin: 0; padding: 8px 14px 10px; }
@@ -3106,3 +3314,770 @@ body.parent-open #modalRoot { z-index: 70; }
     max-height: calc(100dvh - 150px);
   }
 }
+
+/* ---------------------------------------------------------------------------
+   V56 setup pages: fixed title + tabs, one scrolling column, fixed save bar.
+   The old picker grid is left for the resource library; these pages use large
+   single-column cards so a preview can play inside the card itself.
+--------------------------------------------------------------------------- */
+
+.parent-root.parent-media-config-root { overflow: hidden; }
+
+.parent-root.parent-media-config-root .parent-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding-bottom: 0;
+}
+
+.parent-media-config-head {
+  flex: 0 0 auto;
+  min-width: 0;
+  background: var(--surface);
+}
+
+.parent-media-config-head .parent-bar {
+  position: static;
+}
+
+.parent-media-config-head .parent-ok,
+.parent-media-config-head .parent-error {
+  margin: 8px 16px;
+}
+
+.parent-config-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 10px;
+  background: var(--bar-bg);
+  border-bottom: 1px solid var(--line);
+}
+
+.parent-config-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 620;
+  text-align: center;
+}
+
+.parent-config-tab.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.parent-config-tab:active { transform: translateY(1px); }
+
+.parent-media-config-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px 16px 20px;
+}
+
+.parent-media-config-preview-hint { margin: 0 2px 12px; }
+
+.parent-media-config-foot {
+  flex: 0 0 auto;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 16px 12px;
+  border-top: 1px solid var(--line);
+  background: var(--bar-bg);
+  backdrop-filter: blur(16px) saturate(1.2);
+}
+
+.parent-media-config-foot .parent-btn { width: 100%; }
+.parent-media-config-foot .parent-hint { margin: 0; text-align: center; }
+
+.parent-config-block { margin: 0 0 18px; }
+
+.parent-config-block-title {
+  margin: 0 0 2px;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.parent-config-block > .parent-hint { margin: 0 2px 10px; }
+.parent-config-block .parent-switch-row { margin-top: 10px; }
+
+.parent-config-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.parent-config-card {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.parent-config-card.is-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-soft);
+}
+
+.parent-config-card-frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #000;
+}
+
+.parent-config-card-media {
+  position: absolute;
+  inset: 0;
+  display: block;
+  cursor: pointer;
+}
+
+.parent-config-card-media.is-default { cursor: default; }
+
+.parent-config-cover {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+.parent-config-card-default .parent-config-cover {
+  position: absolute;
+  inset: 0;
+}
+
+.parent-config-card-media.is-image-open .parent-media-img {
+  object-fit: contain;
+  background: #000;
+}
+
+.parent-config-play-glyph {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.52);
+  color: #fff;
+  font-size: 21px;
+  line-height: 1;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(6px);
+}
+
+.parent-config-kind {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 5;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.58);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.4;
+  pointer-events: none;
+  backdrop-filter: blur(6px);
+}
+
+.parent-config-check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 7;
+  display: grid;
+  place-items: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 4px;
+  border: 1.5px solid rgba(255, 255, 255, 0.82);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.46);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1;
+  backdrop-filter: blur(6px);
+}
+
+.parent-config-check.is-checked {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.parent-config-check.is-order {
+  width: auto;
+  padding: 0 9px;
+  border-radius: 999px;
+}
+
+.parent-config-check:disabled { opacity: 0.5; }
+
+.parent-config-close,
+.parent-config-delete {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 7;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.58);
+  color: #fff;
+  font: inherit;
+  font-size: 20px;
+  line-height: 1;
+  backdrop-filter: blur(6px);
+}
+
+.parent-config-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px 12px;
+}
+
+.parent-config-card-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 620;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.parent-config-card-sub {
+  flex: 0 1 auto;
+  max-width: 55%;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.parent-config-player-stage {
+  position: absolute;
+  inset: 0;
+  background: #000;
+}
+
+.parent-config-player {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  object-fit: contain;
+}
+
+.parent-config-player-stage .parent-media-player-error {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  left: 8px;
+  z-index: 8;
+  border-radius: 10px;
+}
+
+.parent-config-empty {
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.parent-config-empty p { margin: 0 0 6px; color: var(--muted); font-size: 13px; }
+
+.parent-config-audio-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.parent-config-audio {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.parent-config-audio.is-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-soft);
+}
+
+.parent-config-audio-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 54px 12px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: start;
+}
+
+.parent-config-audio-main:active { background: var(--surface-2); }
+.parent-config-audio-main.is-static { cursor: default; }
+
+.parent-config-audio-mark {
+  flex: 0 0 36px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  line-height: 1;
+}
+
+.parent-config-audio-text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.parent-config-audio-name {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.parent-config-audio-sub {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.parent-config-audio .parent-config-check {
+  top: 30px;
+  right: 10px;
+  transform: translateY(-50%);
+}
+
+.parent-config-audio-stage {
+  position: relative;
+  padding: 26px 12px 10px;
+  border-top: 1px solid var(--line);
+}
+
+.parent-config-audio-player {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+}
+
+.parent-config-audio-close {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--muted);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.parent-config-audio-stage .parent-media-player-error {
+  margin-top: 4px;
+  border-radius: 9px;
+}
+
+/* ------------------------------------------------------------------ V58 fruit ledger */
+
+.parent-fruit-summary .parent-field-label { margin-bottom: 4px; }
+
+.parent-fruit-balance {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.parent-fruit-rate-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.parent-fruit-rate { font-size: 14px; font-weight: 620; }
+
+.parent-fruit-actions {
+  display: flex;
+  gap: 9px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.parent-fruit-actions .parent-btn { flex: 1 1 150px; }
+
+/* Income and expense are equally ordinary bookkeeping; the colour only separates them. */
+.parent-btn.expense {
+  border-color: transparent;
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.parent-fruit-warn { color: var(--warn); }
+
+.parent-fruit-direction {
+  display: flex;
+  gap: 6px;
+  margin: 4px 0 10px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.parent-fruit-direction-choice {
+  flex: 1 1 0;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 620;
+}
+
+.parent-fruit-direction-choice[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+
+.parent-fruit-direction-hint { margin: 0 0 2px; }
+.parent-fruit-conversion { margin-top: 6px; font-variant-numeric: tabular-nums; }
+.parent-fruit-quick-label { margin: 0 0 6px; }
+.parent-fruit-quick-empty { margin: 0 0 8px; }
+.parent-fruit-project-group + .parent-fruit-project-group { margin-top: 10px; }
+
+.parent-fruit-filters {
+  display: flex;
+  gap: 6px;
+  margin: 14px 0 8px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.parent-fruit-filter {
+  flex: 1 1 0;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 620;
+}
+
+.parent-fruit-filter[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+
+.parent-fruit-day {
+  margin: 14px 4px 6px;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 620;
+}
+
+.parent-fruit-list {
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.parent-fruit-entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 58px;
+  padding: 10px 14px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  text-align: start;
+  font: inherit;
+}
+
+.parent-fruit-entry:last-child { border-bottom: 0; }
+.parent-fruit-entry.is-clickable:active { background: var(--surface-2); }
+
+.parent-fruit-entry-main {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.parent-fruit-entry-title {
+  overflow: hidden;
+  font-size: 14.5px;
+  font-weight: 620;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.parent-fruit-entry-meta {
+  color: var(--muted);
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+
+.parent-fruit-entry-amount {
+  flex: 0 0 auto;
+  font-size: 15px;
+  font-weight: 680;
+  font-variant-numeric: tabular-nums;
+}
+
+.parent-fruit-entry-amount.is-income,
+.parent-fruit-detail-amount.is-income { color: var(--ok); }
+
+.parent-fruit-entry-amount.is-expense,
+.parent-fruit-detail-amount.is-expense { color: var(--danger); }
+
+.parent-fruit-detail-amount {
+  margin: 10px 0 4px;
+  font-size: 24px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.parent-fruit-entry.is-voided .parent-fruit-entry-title,
+.parent-fruit-entry.is-voided .parent-fruit-entry-meta,
+.parent-fruit-entry.is-voided .parent-fruit-entry-amount,
+.parent-fruit-detail-amount.is-voided {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+.parent-fruit-empty { padding: 18px 14px; }
+.parent-fruit-error { text-align: center; }
+.parent-fruit-loading { min-height: 90px; }
+
+.parent-fruit-quick-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.parent-fruit-quick-head .parent-field-label { margin: 0; }
+
+.parent-fruit-quick-chips {
+  display: flex;
+  gap: 7px;
+  margin-top: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.parent-fruit-chip {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 19px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13.5px;
+}
+
+.parent-fruit-chip:active { border-color: var(--accent); color: var(--accent); }
+
+.parent-fruit-project-list { margin-top: 10px; }
+
+.parent-fruit-project {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.parent-fruit-project:last-child { border-bottom: 0; }
+
+.parent-fruit-project-main {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.parent-fruit-project .parent-btn {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 0 12px;
+  font-size: 13.5px;
+}
+
+.parent-link {
+  min-height: 34px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 620;
+}
+
+.parent-link:disabled { opacity: 0.45; }
+
+@media (max-width: 420px) {
+  .parent-media-config-body { padding-inline: 12px; }
+  .parent-media-config-foot { padding-inline: 12px; }
+  .parent-config-tabs { padding-inline: 12px; }
+  .parent-media-config-head .parent-ok,
+  .parent-media-config-head .parent-error { margin-inline: 12px; }
+}
+
+/* Aerial personalization is a same-origin full-screen iframe above the quiz bottom nav.
+   Nothing in the iframe is reimplemented: it is the real Aerial page at /<token>/. The
+   parent center stays mounted underneath, so the return button only removes this layer. */
+.parent-aerial-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.parent-aerial-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+  min-height: 56px;
+  /* The parent shell draws its 48dp menu button at the top right, over the WebView.
+     Reserve that circle plus its 8dp margin so the title and hint never run under it. */
+  padding: max(8px, env(safe-area-inset-top)) 64px 8px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bar-bg);
+  backdrop-filter: blur(16px) saturate(1.2);
+}
+
+.parent-aerial-back {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.parent-aerial-back:active { background: var(--surface-2); }
+
+.parent-aerial-heading {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.parent-aerial-title {
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.parent-aerial-hint {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.parent-aerial-frame {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  border: 0;
+  background: var(--bg);
+}
+
+body.parent-aerial-open { overflow: hidden; }

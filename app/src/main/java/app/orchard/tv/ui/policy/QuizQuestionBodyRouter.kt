@@ -9,11 +9,14 @@ import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
@@ -90,135 +93,183 @@ private fun QuizChoiceQuestionBody(
     onOptionClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val scope = rememberCoroutineScope()
     val promptScroll = remember(item.questionId) { ScrollState(0) }
     val optionsScroll = remember(item.questionId) { ScrollState(0) }
     var promptFocused by remember(item.questionId) { mutableStateOf(false) }
-    val scrollStep = with(LocalDensity.current) { 80.dp.toPx() }
     val lastFocus = if (item.isMultipleChoice) confirmFocus else exitFocus
+    // Exam layout for questions with a figure: the prompt gets its own
+    // full-width strip, then the answers keep the left of the body and the
+    // figure sits to their right. Keeping the figure beside the option rows
+    // avoids a wide empty card next to a short prompt. Text-only questions
+    // keep the original card, width and focus chain unchanged.
+    val hasVisual = item.visual?.rich != null
+    val visualHeight = 190.dp
 
     Column(modifier = modifier.fillMaxWidth()) {
-        Box(
+        QuizPromptCard(
+            item = item,
+            promptFocus = promptFocus,
+            promptScroll = promptScroll,
+            promptFocused = promptFocused,
+            optionFocuses = optionFocuses,
+            onPromptFocusChanged = { promptFocused = it },
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = 190.dp)
-                .clip(RoundedCornerShape(18.dp))
-                .background(if (promptFocused) Palette.FillStrong else Palette.Fill),
+                .heightIn(max = 190.dp),
+        )
+        Spacer(Modifier.height(12.dp))
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Column(
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .onFocusChanged { promptFocused = it.isFocused }
-                    .focusRequester(promptFocus)
-                    .onKeyEvent { event ->
-                        val key = event.nativeKeyEvent.keyCode
-                        when (key) {
-                            NativeKeyEvent.KEYCODE_DPAD_UP,
-                            NativeKeyEvent.KEYCODE_DPAD_DOWN -> {
-                                val down = key == NativeKeyEvent.KEYCODE_DPAD_DOWN
-                                if (event.type == KeyEventType.KeyDown) {
-                                    if (down && promptScroll.value >= promptScroll.maxValue) {
-                                        if (event.nativeKeyEvent.repeatCount == 0) {
-                                            optionFocuses.firstOrNull()?.let {
-                                                runCatching { it.requestFocus() }
-                                            }
-                                        }
-                                    } else {
-                                        val delta = when {
-                                            down && promptScroll.value < promptScroll.maxValue -> scrollStep
-                                            !down && promptScroll.value > 0 -> -scrollStep
-                                            else -> 0f
-                                        }
-                                        if (delta != 0f) {
-                                            scope.launch {
-                                                promptScroll.animateScrollBy(
-                                                    delta,
-                                                    spring(dampingRatio = 1f, stiffness = 500f),
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                                true
-                            }
-
-                            // The prompt keeps Up/Down for reading. Left/Right skip
-                            // straight to the answers, so the buttons are reachable
-                            // without scrolling a long prompt to its end.
-                            NativeKeyEvent.KEYCODE_DPAD_LEFT,
-                            NativeKeyEvent.KEYCODE_DPAD_RIGHT -> {
-                                if (event.type == KeyEventType.KeyDown &&
-                                    event.nativeKeyEvent.repeatCount == 0
-                                ) {
-                                    optionFocuses.firstOrNull()?.let {
-                                        runCatching { it.requestFocus() }
-                                    }
-                                }
-                                true
-                            }
-
-                            else -> if (event.isSelect()) {
-                                if (event.type == KeyEventType.KeyDown) {
-                                    optionFocuses.firstOrNull()?.let {
-                                        runCatching { it.requestFocus() }
-                                    }
-                                }
-                                true
-                            } else {
-                                false
-                            }
-                        }
-                    }
-                    .focusProperties { canFocus = true }
-                    .focusable()
-                    .quizScrollBar(promptScroll, promptFocused)
-                    .verticalScroll(promptScroll)
-                    .padding(start = 18.dp, end = 24.dp, top = 12.dp, bottom = 12.dp),
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .quizScrollBar(optionsScroll, false),
             ) {
-                BasicText(
-                    item.prompt,
-                    style = Type.Title,
-                    modifier = Modifier.fillMaxWidth(),
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(optionsScroll)
+                        .latestBringIntoView(optionsScroll)
+                        .padding(end = 14.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    item.options.forEachIndexed { index, option ->
+                        QuizOptionButton(
+                            label = optionLabel(index) + "  " + option,
+                            onClick = { onOptionClick(index) },
+                            focusRequester = optionFocuses[index],
+                            enabled = !submitting,
+                            selected = index in selectedIndices,
+                            multiple = item.isMultipleChoice,
+                            // Up/Left and Down/Right both walk the answer list.
+                            // The first answer returns to the prompt; the last
+                            // hands over to confirmation (multiple) or exit
+                            // (single).
+                            onKey = linearDpadFocus(
+                                previous = if (index == 0) promptFocus else optionFocuses[index - 1],
+                                next = if (index == item.options.lastIndex) {
+                                    lastFocus
+                                } else {
+                                    optionFocuses[index + 1]
+                                },
+                            ),
+                        )
+                    }
+                }
+            }
+            if (hasVisual) {
+                QuizQuestionVisual(
+                    item = item,
+                    modifier = Modifier
+                        .height(visualHeight)
+                        .width(quizVisualWidth(item, visualHeight)),
                 )
             }
         }
-        Spacer(Modifier.height(12.dp))
-        Box(
+    }
+}
+
+/**
+ * The focusable prompt card. It keeps Up/Down for reading and hands Left/Right
+ * (or OK) to the answers, so a long prompt never blocks the D-pad path.
+ */
+@Composable
+private fun QuizPromptCard(
+    item: QuizItem,
+    promptFocus: FocusRequester,
+    promptScroll: ScrollState,
+    promptFocused: Boolean,
+    optionFocuses: List<FocusRequester>,
+    onPromptFocusChanged: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val scope = rememberCoroutineScope()
+    val scrollStep = with(LocalDensity.current) { 80.dp.toPx() }
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(18.dp))
+            .background(if (promptFocused) Palette.FillStrong else Palette.Fill),
+    ) {
+        Column(
             modifier = Modifier
-                .weight(1f)
                 .fillMaxWidth()
-                .quizScrollBar(optionsScroll, false),
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(optionsScroll)
-                    .latestBringIntoView(optionsScroll)
-                    .padding(end = 14.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                item.options.forEachIndexed { index, option ->
-                    QuizOptionButton(
-                        label = optionLabel(index) + "  " + option,
-                        onClick = { onOptionClick(index) },
-                        focusRequester = optionFocuses[index],
-                        enabled = !submitting,
-                        selected = index in selectedIndices,
-                        multiple = item.isMultipleChoice,
-                        // Up/Left and Down/Right both walk the answer list. The
-                        // first answer returns to the prompt; the last hands over
-                        // to confirmation (multiple) or exit (single).
-                        onKey = linearDpadFocus(
-                            previous = if (index == 0) promptFocus else optionFocuses[index - 1],
-                            next = if (index == item.options.lastIndex) {
-                                lastFocus
-                            } else {
-                                optionFocuses[index + 1]
-                            },
-                        ),
-                    )
+                .onFocusChanged { onPromptFocusChanged(it.isFocused) }
+                .focusRequester(promptFocus)
+                .onKeyEvent { event ->
+                    val key = event.nativeKeyEvent.keyCode
+                    when (key) {
+                        NativeKeyEvent.KEYCODE_DPAD_UP,
+                        NativeKeyEvent.KEYCODE_DPAD_DOWN -> {
+                            val down = key == NativeKeyEvent.KEYCODE_DPAD_DOWN
+                            if (event.type == KeyEventType.KeyDown) {
+                                if (down && promptScroll.value >= promptScroll.maxValue) {
+                                    if (event.nativeKeyEvent.repeatCount == 0) {
+                                        optionFocuses.firstOrNull()?.let {
+                                            runCatching { it.requestFocus() }
+                                        }
+                                    }
+                                } else {
+                                    val delta = when {
+                                        down && promptScroll.value < promptScroll.maxValue -> scrollStep
+                                        !down && promptScroll.value > 0 -> -scrollStep
+                                        else -> 0f
+                                    }
+                                    if (delta != 0f) {
+                                        scope.launch {
+                                            promptScroll.animateScrollBy(
+                                                delta,
+                                                spring(dampingRatio = 1f, stiffness = 500f),
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            true
+                        }
+
+                        // The prompt keeps Up/Down for reading. Left/Right skip
+                        // straight to the answers, so the buttons are reachable
+                        // without scrolling a long prompt to its end.
+                        NativeKeyEvent.KEYCODE_DPAD_LEFT,
+                        NativeKeyEvent.KEYCODE_DPAD_RIGHT -> {
+                            if (event.type == KeyEventType.KeyDown &&
+                                event.nativeKeyEvent.repeatCount == 0
+                            ) {
+                                optionFocuses.firstOrNull()?.let {
+                                    runCatching { it.requestFocus() }
+                                }
+                            }
+                            true
+                        }
+
+                        else -> if (event.isSelect()) {
+                            if (event.type == KeyEventType.KeyDown) {
+                                optionFocuses.firstOrNull()?.let {
+                                    runCatching { it.requestFocus() }
+                                }
+                            }
+                            true
+                        } else {
+                            false
+                        }
+                    }
                 }
-            }
+                .focusProperties { canFocus = true }
+                .focusable()
+                .quizScrollBar(promptScroll, promptFocused)
+                .verticalScroll(promptScroll)
+                .padding(start = 18.dp, end = 24.dp, top = 12.dp, bottom = 12.dp),
+        ) {
+            BasicText(
+                item.prompt,
+                style = Type.Title,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }

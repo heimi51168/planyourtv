@@ -5,11 +5,14 @@ import app.orchard.tv.BuildConfig
 import app.orchard.tv.policy.FamilyAvatarStore
 import app.orchard.tv.policy.FamilyHub
 import app.orchard.tv.policy.LocalPolicyRuntime
+import app.orchard.tv.policy.MemberSwitchAuth
 import app.orchard.tv.policy.PolicyInstalledApps
 import app.orchard.tv.policy.PolicyModeCoordinator
 import app.orchard.tv.policy.PolicyProduct
 import app.orchard.tv.policy.SourceEntrySettings
 import app.orchard.tv.policy.SubjectSwitcher
+import app.orchard.tv.policy.SwitchProtectionSettings
+import app.orchard.tv.policy.SystemEntrySettings
 import app.orchard.tv.policy.UserConfigPinSettings
 import app.orchard.tv.policy.media.OfficialAudioCatalog
 import app.orchard.tv.policy.media.OfficialAudioDownloader
@@ -24,7 +27,18 @@ import app.orchard.tv.quiz.QuizSubjectScope
 import app.orchard.tv.update.Updates
 import com.planyourtv.policy.FamilyIds
 import com.planyourtv.policy.FamilyMember
+import com.planyourtv.policy.FruitAccountCodec
+import com.planyourtv.policy.FruitAccountResult
+import com.planyourtv.policy.FruitAccountRules
+import com.planyourtv.policy.FruitError
+import com.planyourtv.policy.credit
+import com.planyourtv.policy.deleteQuickProject
+import com.planyourtv.policy.recordManualExpense
+import com.planyourtv.policy.setExchangeRate
+import com.planyourtv.policy.voidCredit
+import com.planyourtv.policy.voidManualExpense
 import com.planyourtv.policy.LocalDayGroup
+import com.planyourtv.policy.LocalFruitAccountStore
 import com.planyourtv.policy.LocalPin
 import com.planyourtv.policy.LocalRecovery
 import com.planyourtv.policy.LocalRules
@@ -35,9 +49,11 @@ import com.planyourtv.policy.MemberStatus
 import com.planyourtv.policy.PinResult
 import com.planyourtv.policy.PolicyMode
 import com.planyourtv.policy.PolicyRuntime
+import com.planyourtv.policy.PolicySource
 import com.planyourtv.policy.RemoteHandoffState
 import com.planyourtv.policy.SessionState
 import com.planyourtv.policy.SwitchPinExempt
+import com.planyourtv.policy.SwitchProtection
 import com.planyourtv.policy.UnlockRoute
 import com.planyourtv.policy.UnlockRoutePlan
 import com.planyourtv.policy.UnlockRoutePlanner
@@ -68,11 +84,11 @@ object ParentCenterActions {
 
     /**
      * Web rules contract. V5 makes the three child unlock routes independent, adds the shared
-     * public per-session cap and one daily count per route. V3/V4 pages cannot express those
-     * fields and are rejected so they reload before writing.
+     * public per-session cap and one daily count per route. V6 adds the V58 fruit route, so a
+     * V5 page must reload rather than save rules that would silently drop the fruit switch.
      */
-    const val RULES_CONTRACT_VERSION = 5
-    private const val MIN_RULES_CONTRACT_VERSION = 5
+    const val RULES_CONTRACT_VERSION = 6
+    private const val MIN_RULES_CONTRACT_VERSION = 6
 
     data class Outcome(
         val ok: Boolean,
@@ -142,8 +158,17 @@ object ParentCenterActions {
             .put("autoUpdate", Updates.auto)
             .put("update", updateJson(context))
             .put("sourceEntriesVisible", SourceEntrySettings.isVisible())
+            // LOCAL-only device switch; default off. CLOUD has no projected field yet, so the
+            // snapshot shows the effective value (off) even if a LOCAL setting is stored.
+            .put(
+                "showUninstallEntry",
+                ui.mode == PolicyMode.LOCAL && SystemEntrySettings.isVisible(),
+            )
             // Defaults to true: the web user-configuration tab keeps asking for the parent PIN.
             .put("userConfigRequirePin", UserConfigPinSettings.isRequired())
+            // Local-only device policy shared by every TV member switch. The credential itself
+            // remains per-member and is never exposed here.
+            .put("switchProtection", switchProtectionJson())
             .put("quizEntryVisible", QuizSettings.isLockEntryVisible())
             .put("introVideo", QuizIntroVideo.snapshot(context))
             // The main page only needs the current roles. Opening "Videos & wallpapers"
@@ -182,16 +207,23 @@ object ParentCenterActions {
                 },
             )
             .put("rules", rulesJson(rules))
+            // V58 account summaries only: full ledgers are served by /api/parent/fruit/ledger,
+            // so polling the snapshot cannot carry hundreds of history rows per member.
+            .put("fruitAccounts", fruitAccountsJson(family, ui))
             .put(
                 "capabilities",
                 JSONObject()
                     .put("canEditRules", ui.mode == PolicyMode.LOCAL && !readOnlyLocal)
+                    // V58 LOCAL accounts only. HOSTED has its own writer; this page must never
+                    // pretend a local edit could change the remote account.
+                    .put("canEditLocalFruit", canEditLocalFruit())
                     // Child-mode off and first-PIN setup stay on the TV: they change the
                     // authorization the web page itself depends on.
                     .put("canToggleChildMode", false)
                     .put("canChangePin", ui.mode == PolicyMode.LOCAL && !readOnlyLocal)
                     .put("canToggleQuizEntry", ui.mode == PolicyMode.LOCAL && !readOnlyLocal)
                     .put("canToggleSources", ui.mode == PolicyMode.LOCAL && !readOnlyLocal)
+                    .put("canToggleSystemEntries", ui.mode == PolicyMode.LOCAL && !readOnlyLocal)
                     .put("canEditIntroVideos", ui.mode == PolicyMode.LOCAL && !readOnlyLocal)
                     .put("canEndSession", localSessionActive)
                     .put("canSetupPin", false)
@@ -297,6 +329,41 @@ object ParentCenterActions {
             .put("notes", notes)
     }
 
+/**
+     * Current-data-source fruit summary for the account cards. V58 ships LOCAL only; in a hosted
+     * partition this stays empty rather than leaking the LOCAL balances into a remote projection.
+     */
+    private fun fruitAccountsJson(
+        family: FamilyHub.UiState,
+        ui: com.planyourtv.policy.PolicyUiState,
+    ): JSONObject {
+        val result = JSONObject()
+        if (ui.mode != PolicyMode.LOCAL || ui.source != PolicySource.LOCAL) return result
+        family.members.forEach { member ->
+            val account = LocalFruitAccountStore.load(member.userId) ?: return@forEach
+            result.put(
+                member.userId,
+                JSONObject()
+                    .put("availableFruitHundredths", account.availableFruitHundredths)
+                    .put("exchangeRateMinutesPerFruit", account.exchangeRateMinutesPerFruit)
+                    .put("enabled", account.enabled)
+                    .put("revision", account.revision)
+                    .put("entryCount", account.entries.size),
+            )
+        }
+        return result
+    }
+
+    private fun switchProtectionJson(): JSONObject {
+        val policy = SwitchProtectionSettings.current()
+        return JSONObject()
+            .put("migrated", SwitchProtectionSettings.isMigrated())
+            .put("required", policy.required)
+            .put("exemptDays", JSONArray(policy.exemptDays))
+            .put("exemptStartMinute", policy.exemptStartMinute)
+            .put("exemptEndMinute", policy.exemptEndMinute)
+    }
+
     private fun familyJson(family: FamilyHub.UiState): JSONObject = JSONObject()
         .put("available", family.ready)
         .put("id", family.familyId)
@@ -376,6 +443,8 @@ object ParentCenterActions {
         .put("quizGateEnabled", set.quizGateEnabled)
         .put("studyEarnEnabled", set.studyEarnEnabled)
         .put("directStartEnabled", set.directStartEnabled)
+        .put("fruitExchangeEnabled", set.fruitExchangeEnabled)
+        .put("fruitExchangeDailyLimitCount", set.fruitExchangeDailyLimitCount)
 
     /** Read-only projection of today's route counts; the configuration page never renders it. */
     private fun routeCountsJson(plan: UnlockRoutePlan?, rules: LocalRules): JSONObject {
@@ -404,6 +473,7 @@ object ParentCenterActions {
         UnlockRoute.QUIZ -> "quiz"
         UnlockRoute.STUDY_REWARD -> "studyReward"
         UnlockRoute.DIRECT -> "directFree"
+        UnlockRoute.FRUIT -> "fruit"
     }
 
     fun rulesJson(rules: LocalRules): JSONObject = JSONObject()
@@ -440,6 +510,8 @@ object ParentCenterActions {
         .put("quizGateEnabled", rules.quizGateEnabled)
         .put("studyEarnEnabled", rules.studyEarnEnabled)
         .put("directStartEnabled", rules.directStartEnabled)
+        .put("fruitExchangeEnabled", rules.fruitExchangeEnabled)
+        .put("fruitExchangeDailyLimitCount", rules.fruitExchangeDailyLimitCount)
 
     private fun windowsJson(windows: List<LocalTimeWindow>): JSONArray {
         val array = JSONArray()
@@ -548,6 +620,8 @@ object ParentCenterActions {
             before.quizGateEnabled != next.quizGateEnabled ||
             before.studyEarnEnabled != next.studyEarnEnabled ||
             before.directStartEnabled != next.directStartEnabled ||
+            before.fruitExchangeEnabled != next.fruitExchangeEnabled ||
+            before.fruitExchangeDailyLimitCount != next.fruitExchangeDailyLimitCount ||
             before.quizDailyLimitCount != next.quizDailyLimitCount ||
             before.studyRewardDailyLimitCount != next.studyRewardDailyLimitCount ||
             before.directDailyFreeCount != next.directDailyFreeCount
@@ -748,6 +822,17 @@ object ParentCenterActions {
     }
 
     /**
+     * The effective device-wide switch requirement for writes that create a member. After the
+     * global migration it follows that policy. Before the migration succeeds it keeps the old
+     * device-wide fallback, but does not infer a global policy from the dormant per-member flags:
+     * those flags may legitimately differ and a new member follows the page's explicit choice.
+     */
+    private fun switchProtectionRequired(): Boolean {
+        if (SwitchProtectionSettings.isMigrated()) return SwitchProtectionSettings.current().required
+        return MemberSwitchAuth.legacyFallbackActive()
+    }
+
+    /**
      * Adds a local child without changing which member the TV executes. The member always
      * starts from clean local defaults: no rules, quiz settings, level packages or AI
      * generation parameters are copied from a sibling, so a mismatched grade/textbook range
@@ -766,17 +851,17 @@ object ParentCenterActions {
         val name = body.optString("name", "")
         val preset = body.optString("avatarPreset", FamilyAvatarStore.DEFAULT_PRESET)
         val scope = memberGradeSelection(body) ?: return error("SUBJECT_GRADE_INVALID")
-        // Switch protection is opt-in. Members added with it off may stay on the initial
-        // credential; turning it on later forces the parent to set a custom password.
-        val switchPinRequired = body.optBoolean("switchPinRequired", false)
+        // Every new member must get its own 6-digit user password, even while the device-wide
+        // switch protection is off. That password is what the TV asks for once the parent
+        // turns protection on, and requiring it here keeps an old cached page from creating a
+        // member that can never be switched into. The legacy per-member flag still decides
+        // whether the stored member is marked as protected.
+        val switchPinRequired =
+            switchProtectionRequired() || body.optBoolean("switchPinRequired", false)
         val switchPin = body.optString("switchPin", "").trim().takeIf { it.isNotEmpty() }
-        if (switchPin != null && !MemberPin.isValid(switchPin)) {
-            return error("SUBJECT_PIN_INVALID")
-        }
-        if (switchPinRequired && switchPin == null) return error("SUBJECT_PIN_REQUIRED")
-        if (switchPinRequired && switchPin == MemberPin.INITIAL) {
-            return error("SUBJECT_PIN_WEAK")
-        }
+            ?: return error("SUBJECT_PIN_REQUIRED")
+        if (!MemberPin.isValid(switchPin)) return error("SUBJECT_PIN_INVALID")
+        if (switchPin == MemberPin.INITIAL) return error("SUBJECT_PIN_WEAK")
         val exempt = switchPinExemptSelection(
             body = body,
             defaultDays = emptyList(),
@@ -884,7 +969,267 @@ object ParentCenterActions {
             )
         }
         FamilyAvatarStore.deleteAllForMember(context, member.familyId, member.userId)
+        // The fruit ledger is independent of the PIN/rule reset, so deleting the child is the
+        // one action that removes it.
+        LocalFruitAccountStore.deleteMember(member.userId)
         return ok("SUBJECT_DELETED")
+    }
+
+    // ------------------------------------------------------------ fruit ledger
+
+    /**
+     * LOCAL fruit accounts are editable only while the LOCAL partition is the live data
+     * source. A cloud-bound TV still shows the local roster, but writing a LOCAL ledger there
+     * would look like remote management without being it, so the page hides the editor and
+     * the raw routes reject the write.
+     */
+    fun canEditLocalFruit(): Boolean {
+        val ui = PolicyModeCoordinator.state.value
+        if (ui.mode != PolicyMode.LOCAL || !ui.loaded || ui.source != PolicySource.LOCAL) {
+            return false
+        }
+        if (PolicyProduct.cloudEnabled && PolicyRuntime.state.value.bound) return false
+        return FamilyHub.isReady
+    }
+
+    /**
+     * Full ledger for one local member. This is deliberately independent of the TV's active
+     * member, session and lock screen: the parent may read it any time the LOCAL web is open.
+     */
+    fun fruitLedger(userId: String): Outcome {
+        val ui = PolicyModeCoordinator.state.value
+        if (ui.mode != PolicyMode.LOCAL || ui.source != PolicySource.LOCAL) {
+            return error("FRUIT_LOCAL_ONLY")
+        }
+        val member = FamilyHub.state.value.members.firstOrNull {
+            it.userId == userId && it.status == MemberStatus.ACTIVE
+        } ?: return error("FRUIT_MEMBER_NOT_FOUND")
+        val account = LocalFruitAccountStore.loadOrCreate(
+            member.userId,
+            System.currentTimeMillis(),
+        ) ?: return error("FRUIT_ACCOUNT_MISSING")
+        return Outcome(
+            ok = true,
+            code = "OK",
+            messageKey = "FRUIT_LEDGER",
+            snapshot = JSONObject()
+                .put("ok", true)
+                .put("userId", member.userId)
+                .put("memberName", member.displayName)
+                .put("editable", canEditLocalFruit())
+                .put("account", FruitAccountCodec.toJson(account)),
+        )
+    }
+
+    /**
+     * Adds whole fruits to the LOCAL ledger. The optional `requestId` makes a retried POST
+     * idempotent: the store keeps the recent IDs in the same atomic document as the balance.
+     */
+    fun creditFruit(body: JSONObject): Outcome {
+        if (!canEditLocalFruit()) return error("FRUIT_LOCAL_ONLY")
+        val member = fruitMember(body) ?: return error("FRUIT_MEMBER_NOT_FOUND")
+        val revision = expectedRevision(body) ?: return error("FRUIT_REVISION_CONFLICT")
+        val fruits = parseIntInRange(body, "fruits", 1, FruitAccountRules.MAX_CREDIT_FRUITS)
+            ?: return error("FRUIT_FRUITS_INVALID")
+        val title = body.optString("title", "")
+        val note = when {
+            !body.has("note") || body.isNull("note") -> null
+            body.opt("note") is String -> body.optString("note", "")
+            else -> return error("FRUIT_NOTE_INVALID")
+        }
+        val saveQuick = body.optBoolean("saveQuickProject", false)
+        // The field is optional and only meaningful when the parent is saving a quick project.
+        // Older/cached pages send JSON null when they do not want one; treat null as absent.
+        val defaultFruits = if (
+            saveQuick &&
+            body.has("quickProjectDefaultFruits") &&
+            !body.isNull("quickProjectDefaultFruits")
+        ) {
+            parseIntInRange(
+                body,
+                "quickProjectDefaultFruits",
+                1,
+                FruitAccountRules.MAX_CREDIT_FRUITS,
+            ) ?: return error("FRUIT_FRUITS_INVALID")
+        } else {
+            null
+        }
+        val requestId = body.optString("requestId", "").trim().takeIf { it.isNotEmpty() }
+        if (requestId != null && requestId.length > 120) {
+            return error("FRUIT_REQUEST_INVALID")
+        }
+        LocalFruitAccountStore.loadOrCreate(member.userId, System.currentTimeMillis())
+            ?: return error("FRUIT_ACCOUNT_MISSING")
+        val result = LocalFruitAccountStore.update(member.userId, revision) { account ->
+            account.credit(
+                fruits = fruits,
+                title = title,
+                note = note,
+                saveQuickProject = saveQuick,
+                quickProjectDefaultFruits = defaultFruits,
+                now = System.currentTimeMillis(),
+                requestId = requestId,
+            )
+        }
+        return fruitOutcome(result, "FRUIT_CREDITED")
+    }
+
+    /**
+     * Records fruits spent outside the TV wheel as an immediately committed EXCHANGE row. It
+     * never creates a pending reservation or touches the running session; the current rate is
+     * only a snapshot for the ledger. Manual spending is allowed while the TV exchange switch
+     * is disabled because it is bookkeeping, not a session start.
+     */
+    fun expenseFruit(body: JSONObject): Outcome {
+        if (!canEditLocalFruit()) return error("FRUIT_LOCAL_ONLY")
+        val member = fruitMember(body) ?: return error("FRUIT_MEMBER_NOT_FOUND")
+        val revision = expectedRevision(body) ?: return error("FRUIT_REVISION_CONFLICT")
+        val fruits = parseIntInRange(body, "fruits", 1, FruitAccountRules.MAX_CREDIT_FRUITS)
+            ?: return error("FRUIT_FRUITS_INVALID")
+        val title = body.optString("title", "")
+        val note = when {
+            !body.has("note") || body.isNull("note") -> null
+            body.opt("note") is String -> body.optString("note", "")
+            else -> return error("FRUIT_NOTE_INVALID")
+        }
+        val saveQuick = body.optBoolean("saveQuickProject", false)
+        val defaultFruits = if (
+            saveQuick &&
+            body.has("quickProjectDefaultFruits") &&
+            !body.isNull("quickProjectDefaultFruits")
+        ) {
+            parseIntInRange(
+                body,
+                "quickProjectDefaultFruits",
+                1,
+                FruitAccountRules.MAX_CREDIT_FRUITS,
+            ) ?: return error("FRUIT_FRUITS_INVALID")
+        } else {
+            null
+        }
+        val requestId = body.optString("requestId", "").trim().takeIf { it.isNotEmpty() }
+        if (requestId != null && requestId.length > 120) {
+            return error("FRUIT_REQUEST_INVALID")
+        }
+        LocalFruitAccountStore.loadOrCreate(member.userId, System.currentTimeMillis())
+            ?: return error("FRUIT_ACCOUNT_MISSING")
+        val result = LocalFruitAccountStore.update(member.userId, revision) { account ->
+            account.recordManualExpense(
+                fruits = fruits,
+                title = title,
+                note = note,
+                saveQuickProject = saveQuick,
+                quickProjectDefaultFruits = defaultFruits,
+                now = System.currentTimeMillis(),
+                requestId = requestId,
+            )
+        }
+        return fruitOutcome(result, "FRUIT_EXPENSE_RECORDED")
+    }
+
+    /** Reverses only a manual expense; a TV exchange stays non-refundable. */
+    fun voidFruitExpense(body: JSONObject): Outcome {
+        if (!canEditLocalFruit()) return error("FRUIT_LOCAL_ONLY")
+        val member = fruitMember(body) ?: return error("FRUIT_MEMBER_NOT_FOUND")
+        val revision = expectedRevision(body) ?: return error("FRUIT_REVISION_CONFLICT")
+        val entryId = body.optString("entryId", "").trim()
+        if (entryId.isEmpty()) return error("FRUIT_ENTRY_NOT_FOUND")
+        val result = LocalFruitAccountStore.update(member.userId, revision) { account ->
+            account.voidManualExpense(entryId, System.currentTimeMillis())
+        }
+        return fruitOutcome(result, "FRUIT_EXPENSE_VOIDED")
+    }
+
+    /**
+     * Reverses one unused credit with a negative ADJUST row. Exchanges are never refunded by
+     * this route; it only refuses a credit whose fruits have already been spent.
+     */
+    fun voidFruit(body: JSONObject): Outcome {
+        if (!canEditLocalFruit()) return error("FRUIT_LOCAL_ONLY")
+        val member = fruitMember(body) ?: return error("FRUIT_MEMBER_NOT_FOUND")
+        val revision = expectedRevision(body) ?: return error("FRUIT_REVISION_CONFLICT")
+        val entryId = body.optString("entryId", "").trim()
+        if (entryId.isEmpty()) return error("FRUIT_ENTRY_NOT_FOUND")
+        val result = LocalFruitAccountStore.update(member.userId, revision) { account ->
+            account.voidCredit(entryId, System.currentTimeMillis())
+        }
+        return fruitOutcome(result, "FRUIT_VOIDED")
+    }
+
+    /** Changes the LOCAL rate only. Existing exchange rows keep their rate snapshot. */
+    fun setFruitSettings(body: JSONObject): Outcome {
+        if (!canEditLocalFruit()) return error("FRUIT_LOCAL_ONLY")
+        val member = fruitMember(body) ?: return error("FRUIT_MEMBER_NOT_FOUND")
+        val revision = expectedRevision(body) ?: return error("FRUIT_REVISION_CONFLICT")
+        val rate = parseIntInRange(
+            body,
+            "exchangeRateMinutesPerFruit",
+            FruitAccountRules.MIN_RATE,
+            FruitAccountRules.MAX_RATE,
+        ) ?: return error("FRUIT_RATE_INVALID")
+        val result = LocalFruitAccountStore.update(member.userId, revision) { account ->
+            account.setExchangeRate(rate, System.currentTimeMillis())
+        }
+        return fruitOutcome(result, "FRUIT_SETTINGS_SAVED")
+    }
+
+    fun deleteFruitQuickProject(body: JSONObject): Outcome {
+        if (!canEditLocalFruit()) return error("FRUIT_LOCAL_ONLY")
+        val member = fruitMember(body) ?: return error("FRUIT_MEMBER_NOT_FOUND")
+        val revision = expectedRevision(body) ?: return error("FRUIT_REVISION_CONFLICT")
+        val projectId = body.optString("projectId", "").trim()
+        if (projectId.isEmpty()) return error("FRUIT_PROJECT_NOT_FOUND")
+        val result = LocalFruitAccountStore.update(member.userId, revision) { account ->
+            account.deleteQuickProject(projectId, System.currentTimeMillis())
+        }
+        return fruitOutcome(result, "FRUIT_PROJECT_DELETED")
+    }
+
+    private fun fruitMember(body: JSONObject): FamilyMember? {
+        val userId = body.optString("userId", "").trim()
+        if (userId.isEmpty()) return null
+        return FamilyHub.state.value.members.firstOrNull {
+            it.userId == userId && it.status == MemberStatus.ACTIVE
+        }
+    }
+
+    /** The page must send the revision it read, so a stale tab cannot overwrite a newer row. */
+    private fun expectedRevision(body: JSONObject): Long? {
+        if (!body.has("expectedRevision")) return null
+        val raw = body.opt("expectedRevision")
+        if (raw !is Number) return null
+        val value = raw.toDouble()
+        if (value != Math.floor(value) || value < 0.0 || value > Long.MAX_VALUE.toDouble()) {
+            return null
+        }
+        return value.toLong()
+    }
+
+    private fun fruitOutcome(result: FruitAccountResult, successKey: String): Outcome =
+        when (result) {
+            is FruitAccountResult.Ok -> ok(successKey)
+            is FruitAccountResult.Rejected -> error(fruitErrorCode(result.error))
+        }
+
+    private fun fruitErrorCode(error: FruitError): String = when (error) {
+        FruitError.ACCOUNT_MISSING -> "FRUIT_ACCOUNT_MISSING"
+        FruitError.ACCOUNT_DISABLED -> "FRUIT_ACCOUNT_DISABLED"
+        FruitError.RATE_INVALID -> "FRUIT_RATE_INVALID"
+        FruitError.FRUITS_INVALID -> "FRUIT_FRUITS_INVALID"
+        FruitError.TITLE_INVALID -> "FRUIT_TITLE_INVALID"
+        FruitError.NOTE_INVALID -> "FRUIT_NOTE_INVALID"
+        FruitError.REQUEST_DUPLICATE -> "FRUIT_REQUEST_DUPLICATE"
+        FruitError.BALANCE_INSUFFICIENT -> "FRUIT_BALANCE_INSUFFICIENT"
+        FruitError.BALANCE_LIMIT -> "FRUIT_BALANCE_LIMIT"
+        FruitError.ENTRY_NOT_FOUND -> "FRUIT_ENTRY_NOT_FOUND"
+        FruitError.ENTRY_NOT_PENDING -> "FRUIT_ENTRY_NOT_PENDING"
+        FruitError.ENTRY_NOT_CREDIT -> "FRUIT_VOID_NOT_ALLOWED"
+        FruitError.ENTRY_ALREADY_VOIDED -> "FRUIT_ENTRY_ALREADY_VOIDED"
+        FruitError.VOID_NOT_ALLOWED -> "FRUIT_VOID_NOT_ALLOWED"
+        FruitError.PROJECT_LIMIT -> "FRUIT_PROJECT_LIMIT"
+        FruitError.PROJECT_NOT_FOUND -> "FRUIT_PROJECT_NOT_FOUND"
+        FruitError.REVISION_CONFLICT -> "FRUIT_REVISION_CONFLICT"
+        FruitError.PERSIST_FAILED -> "FRUIT_PERSIST_FAILED"
     }
 
     /**
@@ -900,6 +1245,86 @@ object ParentCenterActions {
         }
         if (!UserConfigPinSettings.setRequired(requirePin)) return error("SAVE_FAILED")
         return ok("USER_CONFIG_PIN_SAVED")
+    }
+
+    /**
+     * Enables or reconfigures the device-wide switch password policy for every TV member.
+     *
+     * Turning protection on (or changing its waiver window) only increases or describes the
+     * protection, so the page's parent login and editor lease are the authorization; asking for
+     * another PIN here made the switch look broken. Turning it off is a different action and is
+     * handled by [disableSwitchProtection] behind the fresh FAMILY_EDIT proof.
+     *
+     * Members that still use the initial `123456` credential are reported through the snapshot's
+     * `switchPinInitial` flag. The page shows them as a warning, but enabling is not refused:
+     * refusing it left the switch off and hid the very settings the parent was trying to open.
+     * The setting is local-only and never enters the family document or the cloud.
+     */
+    fun enableSwitchProtection(body: JSONObject): Outcome {
+        if (body.has("required") &&
+            (body.opt("required") as? Boolean) != true
+        ) {
+            // Disabling must go through the PIN-guarded route, never the unprotected one.
+            return error("SWITCH_PROTECTION_INVALID")
+        }
+        return applySwitchProtection(body)
+    }
+
+    /** Turns the device-wide switch password policy off; the HTTP route adds FAMILY_EDIT. */
+    fun disableSwitchProtection(): Outcome =
+        applySwitchProtection(JSONObject().put("required", false))
+
+    private fun applySwitchProtection(body: JSONObject): Outcome {
+        if (!canEditFamily()) {
+            return error(if (!FamilyHub.isReady) "FAMILY_NOT_READY" else "READ_ONLY")
+        }
+        val current = SwitchProtectionSettings.current()
+        val required = if (body.has("required")) {
+            body.opt("required") as? Boolean ?: return error("SWITCH_PROTECTION_INVALID")
+        } else {
+            current.required
+        }
+        val next = if (!required) {
+            SwitchProtection(required = false)
+        } else {
+            val days = if (body.has("exemptDays")) {
+                parseSwitchProtectionDays(body.optJSONArray("exemptDays"))
+                    ?: return error("SWITCH_PROTECTION_INVALID")
+            } else {
+                current.exemptDays
+            }
+            val start = if (body.has("exemptStartMinute")) {
+                body.opt("exemptStartMinute") as? Int
+                    ?: return error("SWITCH_PROTECTION_INVALID")
+            } else {
+                current.exemptStartMinute
+            }
+            val end = if (body.has("exemptEndMinute")) {
+                body.opt("exemptEndMinute") as? Int
+                    ?: return error("SWITCH_PROTECTION_INVALID")
+            } else {
+                current.exemptEndMinute
+            }
+            SwitchProtection(
+                required = true,
+                exemptDays = days,
+                exemptStartMinute = start,
+                exemptEndMinute = end,
+            ).normalized() ?: return error("SWITCH_PROTECTION_INVALID")
+        }
+        if (!SwitchProtectionSettings.setPolicy(next)) return error("SAVE_FAILED")
+        return ok("SWITCH_PROTECTION_SAVED")
+    }
+
+    private fun parseSwitchProtectionDays(array: JSONArray?): List<Int>? {
+        if (array == null) return null
+        val parsed = ArrayList<Int>(array.length())
+        for (index in 0 until array.length()) {
+            val value = array.opt(index)
+            if (value !is Int || value !in 1..7) return null
+            parsed.add(value)
+        }
+        return SwitchPinExempt.normalizeDays(parsed)
     }
 
     /**
@@ -1012,6 +1437,24 @@ object ParentCenterActions {
         val enabled = body.optBoolean("enabled", !SourceEntrySettings.isVisible())
         if (!SourceEntrySettings.setVisible(enabled)) return error("SAVE_FAILED")
         return ok("SOURCE_SAVED")
+    }
+
+    /**
+     * Releases or hides the maker's Settings/security/app-manager/market entries and the desktop
+     * menu's "App info"/"Uninstall" rows in LOCAL child mode. Device-level and LOCAL-only: a
+     * bound TV has no cloud projection for it, so the page must not pretend the switch exists
+     * there. The web page confirms an enable before sending it.
+     */
+    fun setSystemEntries(body: JSONObject): Outcome {
+        val ui = PolicyModeCoordinator.state.value
+        if (ui.mode != PolicyMode.LOCAL) return error("NOT_READY")
+        if (PolicyProduct.cloudEnabled && PolicyRuntime.state.value.bound) {
+            return error("READ_ONLY")
+        }
+        if (!body.has("visible")) return error("BAD_REQUEST")
+        val visible = body.optBoolean("visible", false)
+        if (!SystemEntrySettings.setVisible(visible)) return error("SAVE_FAILED")
+        return ok("SYSTEM_ENTRY_SAVED")
     }
 
     /**
@@ -1141,6 +1584,76 @@ object ParentCenterActions {
             PolicyVideoLibrary.EditResult.Busy -> error("MEDIA_BUSY")
         }
     }
+
+    /**
+     * The wallpaper page saves its whole draft in one request: ordered rotation, image hold,
+     * master sound switch and background music. The TV validates every id and the audio switch
+     * together before writing, so the child never observes a half-applied configuration.
+     */
+    fun saveMediaWallpaper(context: Context, body: JSONObject): Outcome {
+        val array = body.optJSONArray("ids") ?: return error("MEDIA_PLAYLIST_INVALID")
+        if (array.length() > PolicyVideoLibrary.WALLPAPER_MAX_ITEMS) {
+            return error("MEDIA_PLAYLIST_TOO_LONG")
+        }
+        val ids = ArrayList<String>(array.length())
+        for (index in 0 until array.length()) {
+            ids += bodyArrayString(array, index)
+        }
+        val intervalMs = body.optLong(
+            "intervalMs",
+            PolicyVideoLibrary.WALLPAPER_DEFAULT_INTERVAL_MS,
+        )
+        val sound = body.optBoolean("sound", false)
+        val audioId = body.optString("audioId", "").trim()
+        return when (
+            PolicyVideoLibrary.saveLockConfig(
+                context.applicationContext,
+                ids,
+                intervalMs,
+                sound,
+                audioId,
+            )
+        ) {
+            PolicyVideoLibrary.EditResult.Ok -> ok("MEDIA_WALLPAPER_SAVED")
+            PolicyVideoLibrary.EditResult.NotFound -> error("MEDIA_NOT_FOUND")
+            PolicyVideoLibrary.EditResult.PlaylistTooLong -> error("MEDIA_PLAYLIST_TOO_LONG")
+            PolicyVideoLibrary.EditResult.PlaylistInvalid -> error("MEDIA_PLAYLIST_INVALID")
+            PolicyVideoLibrary.EditResult.RoleInvalid -> error("MEDIA_SOUND_UNAVAILABLE")
+            PolicyVideoLibrary.EditResult.DeleteFailed -> error("MEDIA_DOWNLOAD_FAILED")
+            PolicyVideoLibrary.EditResult.NotReady -> error("MEDIA_NOT_READY")
+            PolicyVideoLibrary.EditResult.Busy -> error("MEDIA_BUSY")
+        }
+    }
+
+    /**
+     * Saves the quiz-intro visual and its optional custom audio together. A local picture is a
+     * valid visual; the hosted cloud path is unchanged and remains video-only.
+     */
+    fun saveQuizIntro(context: Context, body: JSONObject): Outcome {
+        val id = body.optString("id", "").trim()
+        val audioEnabled = body.optBoolean("audioEnabled", false)
+        val audioId = body.optString("audioId", "").trim()
+        return when (
+            PolicyVideoLibrary.saveQuizIntro(
+                context.applicationContext,
+                id,
+                audioEnabled,
+                audioId,
+            )
+        ) {
+            PolicyVideoLibrary.EditResult.Ok -> ok("MEDIA_QUIZ_SAVED")
+            PolicyVideoLibrary.EditResult.NotFound -> error("MEDIA_NOT_FOUND")
+            PolicyVideoLibrary.EditResult.RoleInvalid -> error("MEDIA_QUIZ_AUDIO_INVALID")
+            PolicyVideoLibrary.EditResult.DeleteFailed -> error("MEDIA_DOWNLOAD_FAILED")
+            PolicyVideoLibrary.EditResult.NotReady -> error("MEDIA_NOT_READY")
+            PolicyVideoLibrary.EditResult.Busy -> error("MEDIA_BUSY")
+            PolicyVideoLibrary.EditResult.PlaylistTooLong,
+            PolicyVideoLibrary.EditResult.PlaylistInvalid -> error("MEDIA_ROLE_INVALID")
+        }
+    }
+
+    private fun bodyArrayString(array: JSONArray, index: Int): String =
+        array.optString(index, "").trim()
 
     fun deleteMedia(context: Context, body: JSONObject): Outcome {
         val id = body.optString("id", "").trim()
@@ -1328,6 +1841,8 @@ object ParentCenterActions {
             ?: return ParsedRules.Invalid("RULES_INVALID_ROUTE_COUNTS")
         val directCount = parseRouteCount(json, "directDailyFreeCount")
             ?: return ParsedRules.Invalid("RULES_INVALID_ROUTE_COUNTS")
+        val fruitCount = parseRouteCount(json, "fruitExchangeDailyLimitCount")
+            ?: return ParsedRules.Invalid("RULES_INVALID_ROUTE_COUNTS")
         val rest = json.optInt("restMinutes", -1)
         val buffer = json.optInt("sessionScreenOffBufferMinutes", -1)
         if (rest < 0 || buffer < 0) return ParsedRules.Invalid("RULES_INVALID")
@@ -1413,6 +1928,14 @@ object ParentCenterActions {
         } else {
             previous?.directStartEnabled ?: LocalRules.DEFAULTS.directStartEnabled
         }
+        val fruitEnabled = if (json.has("fruitExchangeEnabled")) {
+            json.optBoolean(
+                "fruitExchangeEnabled",
+                LocalRules.DEFAULTS.fruitExchangeEnabled,
+            )
+        } else {
+            previous?.fruitExchangeEnabled ?: LocalRules.DEFAULTS.fruitExchangeEnabled
+        }
         val parsed = LocalRules(
             dayGroups = dayGroups,
             sessionLimitMinutes = direct,
@@ -1420,6 +1943,8 @@ object ParentCenterActions {
             quizDailyLimitCount = quizCount,
             studyRewardDailyLimitCount = studyRewardCount,
             directDailyFreeCount = directCount,
+            fruitExchangeEnabled = fruitEnabled,
+            fruitExchangeDailyLimitCount = fruitCount,
             restMinutes = rest,
             sessionScreenOffBufferMinutes = buffer,
             quizGateEnabled = quizGate,
@@ -1437,9 +1962,19 @@ object ParentCenterActions {
         return ParsedRules.Valid(parsed)
     }
 
-    /** A web route count: a whole number in 0..[LocalRules.MAX_ROUTE_DAILY_COUNT]. */
-    private fun parseRouteCount(json: JSONObject, key: String): Int? =
-        parseIntInRange(json, key, 0, LocalRules.MAX_ROUTE_DAILY_COUNT)
+    /**
+     * A web route count: -1 = 不限制, 0 = 从不, 1..[LocalRules.MAX_ROUTE_DAILY_COUNT] = 每日上限。
+     * 旧版页面提交的 1000 统一归一化为不限制（2026-11-26）。
+     */
+    private fun parseRouteCount(json: JSONObject, key: String): Int? {
+        val value = parseIntInRange(json, key, -1, LocalRules.MAX_ROUTE_DAILY_COUNT)
+            ?: return null
+        return if (value == LEGACY_UNLIMITED_ROUTE_COUNT) {
+            LocalRules.DEFAULT_ROUTE_DAILY_COUNT
+        } else {
+            value
+        }
+    }
 
     /** Exact whole-number read; `optInt` would wrap values outside the Int range. */
     private fun parseIntInRange(json: JSONObject, key: String, min: Int, max: Int): Int? {
@@ -1518,4 +2053,6 @@ object ParentCenterActions {
     }
 
     private const val ALL_VALID_APP_SENTINEL = "all_valid_app"
+    /** 旧版内置默认次数；新页面与云端统一用 -1 表示不限制。 */
+    private const val LEGACY_UNLIMITED_ROUTE_COUNT = 1000
 }

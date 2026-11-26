@@ -81,7 +81,10 @@ class QuizCurriculumTest {
         assertFalse(data.textbooksFor(2, "ENGLISH").contains("YILIN"))
         assertTrue(data.textbooksFor(3, "ENGLISH").contains("YILIN"))
         assertTrue(data.textbooksFor(6, "ENGLISH").contains("YILIN"))
-        assertEquals(listOf("KEJIAO", "SUJIAO", "RENJIAO_EJ"), data.textbooksFor(4, "SCIENCE"))
+        assertEquals(
+            listOf("KEJIAO", "SUJIAO", "RENJIAO_EJ", "DAXIANG", "JIREN", "QINGDAO", "XIANGKE", "YUEJIAO_KJ"),
+            data.textbooksFor(4, "SCIENCE"),
+        )
         assertEquals(
             listOf("HUASHIDA", "HUJIAO", "ZHEJIAO", "GENERAL", "ALL"),
             data.textbooksFor(7, "SCIENCE"),
@@ -90,6 +93,34 @@ class QuizCurriculumTest {
         // Removed options stay in the global table so old scopes and bank rows
         // remain readable; only the picker stops offering them.
         assertTrue(data.textbookIds().containsAll(listOf("RENAI", "NIUJIN", "LUKE")))
+    }
+
+    @Test
+    fun primaryCatalogAddsRegionalEditionsWithoutChangingDefaults() {
+        val data = QuizCurriculum.current()!!
+        assertEquals("RENJIAO", data.defaultTextbook(1, "MATH"))
+        assertEquals("PEP", data.defaultTextbook(1, "ENGLISH"))
+        assertEquals("KEJIAO", data.defaultTextbook(1, "SCIENCE"))
+
+        listOf(1, 6).forEach { grade ->
+            assertTrue(data.textbooksFor(grade, "MATH").contains("BEIJING"))
+            assertTrue(data.textbooksFor(grade, "MATH").contains("JIJIAO"))
+        }
+        assertFalse(data.textbooksFor(1, "ENGLISH").contains("NIUJIN"))
+        assertTrue(data.textbooksFor(3, "ENGLISH").contains("NIUJIN"))
+        assertTrue(data.textbooksFor(3, "ENGLISH").contains("KEJIAO_GZ"))
+        assertTrue(data.textbooksFor(3, "ENGLISH").contains("XIANGSHAO"))
+        // Partial uxb editions (HUIJIAO math, LUKE / MINJIAO English) stay out
+        // until every published grade and term has a unit catalog.
+        assertFalse(data.textbooksFor(6, "MATH").contains("HUIJIAO"))
+        assertFalse(data.textbooksFor(6, "ENGLISH").contains("LUKE"))
+        assertEquals(
+            listOf("KEJIAO", "SUJIAO", "RENJIAO_EJ", "DAXIANG", "JIREN", "QINGDAO", "XIANGKE", "YUEJIAO_KJ"),
+            data.textbooksFor(1, "SCIENCE"),
+        )
+        assertEquals("北京版", data.textbooks.first { it.id == "BEIJING" }.labels["zh"])
+        assertEquals("教科版（广州）", data.textbooks.first { it.id == "KEJIAO_GZ" }.labels["zh"])
+        assertEquals("粤教科技版", data.textbooks.first { it.id == "YUEJIAO_KJ" }.labels["zh"])
     }
 
     @Test

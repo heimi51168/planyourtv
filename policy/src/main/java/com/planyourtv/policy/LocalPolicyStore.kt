@@ -270,6 +270,7 @@ object LocalPolicyStore {
             PolicyKeys.HOSTED_RUNTIME_V2,
             PolicyKeys.HOSTED_GUARD_V2,
             PolicyKeys.HOSTED_STUDY_ROUND_V1,
+            PolicyKeys.HOSTED_FRUIT_FACTS_V1,
         )
         bases.forEach { TvStore.remove(it) }
         hostedSubjects().forEach { id ->
@@ -415,7 +416,14 @@ object LocalPolicyStore {
      */
     private fun JSONObject.storedRouteCount(key: String): Int? {
         if (!has(key)) return LocalRules.DEFAULT_ROUTE_DAILY_COUNT
-        return storedIntInRange(key, -1, LocalRules.MAX_ROUTE_DAILY_COUNT)
+        val value = storedIntInRange(key, -1, LocalRules.MAX_ROUTE_DAILY_COUNT) ?: return null
+        // 2026-11-26：旧版默认 1000 次只是「足够大」，统一按不限制读取；
+        // 保存后本地文档立即写成 -1，不再保留历史字面量。
+        return if (value == LEGACY_UNLIMITED_ROUTE_COUNT) {
+            LocalRules.DEFAULT_ROUTE_DAILY_COUNT
+        } else {
+            value
+        }
     }
 
     /**
@@ -449,6 +457,7 @@ object LocalPolicyStore {
         val quizCount = json.storedRouteCount("quizDailyLimitCount") ?: return null
         val studyRewardCount = json.storedRouteCount("studyRewardDailyLimitCount") ?: return null
         val directFreeCount = json.storedRouteCount("directDailyFreeCount") ?: return null
+        val fruitCount = json.storedRouteCount("fruitExchangeDailyLimitCount") ?: return null
         val rest = json.optInt("restMinutes", -1)
         val buffer = json.optInt("sessionScreenOffBufferMinutes", -1)
         if (session !in 1..LocalRules.MAX_DAILY_MINUTES ||
@@ -456,6 +465,7 @@ object LocalPolicyStore {
             quizCount !in -1..LocalRules.MAX_ROUTE_DAILY_COUNT ||
             studyRewardCount !in -1..LocalRules.MAX_ROUTE_DAILY_COUNT ||
             directFreeCount !in -1..LocalRules.MAX_ROUTE_DAILY_COUNT ||
+            fruitCount !in -1..LocalRules.MAX_ROUTE_DAILY_COUNT ||
             rest !in 0..LocalRules.MAX_REST_MINUTES ||
             buffer !in LocalRules.MIN_SESSION_BUFFER_MINUTES..LocalRules.MAX_SESSION_BUFFER_MINUTES
         ) {
@@ -484,6 +494,13 @@ object LocalPolicyStore {
             quizDailyLimitCount = quizCount,
             studyRewardDailyLimitCount = studyRewardCount,
             directDailyFreeCount = directFreeCount,
+            // V58 fields postdate schema 3, so old documents must keep loading with the
+            // route closed and the unlimited default count (2026-11-26 起与果园统一).
+            fruitExchangeEnabled = json.optBoolean(
+                "fruitExchangeEnabled",
+                LocalRules.DEFAULTS.fruitExchangeEnabled,
+            ),
+            fruitExchangeDailyLimitCount = fruitCount,
         )
     }
 
@@ -811,6 +828,29 @@ object LocalPolicyStore {
         TvStore.sync()
     }
 
+    /**
+     * The cloud fruit account projection. There is no LOCAL twin by design: the hosted guard
+     * reads only this member-scoped cache, and unbinding deletes it with the rest of HOSTED.
+     */
+    fun loadHostedFruitFacts(hostedScope: String?): HostedFruitFacts? {
+        if (!TvStore.isReady) return null
+        return HostedFruitFacts.decode(
+            TvStore.getString(
+                PolicyKeys.hostedScoped(PolicyKeys.HOSTED_FRUIT_FACTS_V1, hostedScope),
+                null,
+            ),
+        )
+    }
+
+    fun saveHostedFruitFacts(facts: HostedFruitFacts, hostedScope: String?) {
+        if (!TvStore.isReady || hostedScope.isNullOrBlank()) return
+        TvStore.putString(
+            PolicyKeys.hostedScoped(PolicyKeys.HOSTED_FRUIT_FACTS_V1, hostedScope),
+            facts.encode().toString(),
+        )
+        TvStore.sync()
+    }
+
     /** Removes local rules/PIN/recovery but keeps the mode and cloud data. Used by recovery reset. */
     fun resetLocalSetup() {
         if (!TvStore.isReady) return
@@ -889,6 +929,8 @@ private fun LocalRuleSet.toJson(): JSONObject = JSONObject()
     .put("quizDailyLimitCount", quizDailyLimitCount)
     .put("studyRewardDailyLimitCount", studyRewardDailyLimitCount)
     .put("directDailyFreeCount", directDailyFreeCount)
+    .put("fruitExchangeEnabled", fruitExchangeEnabled)
+    .put("fruitExchangeDailyLimitCount", fruitExchangeDailyLimitCount)
 
 /** Strict schema-3 windows: any malformed entry invalidates the whole document. */
 private fun JSONArray.toWindowsStrict(): List<LocalTimeWindow>? = buildList {
@@ -949,3 +991,6 @@ private fun JSONObject.nullableLimit(key: String): NullableLimit? {
 }
 
 private data class NullableLimit(val value: Int?)
+
+/** 旧版内置默认次数；读取时归一化为「不限制」（-1）。 */
+private const val LEGACY_UNLIMITED_ROUTE_COUNT = 1000

@@ -96,6 +96,8 @@ import app.orchard.tv.system.FrameStats
 import app.orchard.tv.wallpaper.AerialFormats
 import app.orchard.tv.wallpaper.ScreensaverMode
 import app.orchard.tv.system.SystemScreensaver
+import app.orchard.tv.system.WhaleyBoot
+import app.orchard.tv.system.WhaleyCecSwitch
 import app.orchard.tv.system.Diagnostics
 import app.orchard.tv.system.MissingClipboard
 import app.orchard.tv.system.Sounds
@@ -229,6 +231,7 @@ class MainActivity : ComponentActivity() {
         }
         super.onCreate(savedInstanceState)
         if (savedInstanceState == null && reopenAsHome()) return
+        WhaleyBoot.turnOffPowerLight(this)
         startReal(savedInstanceState)
     }
 
@@ -345,6 +348,16 @@ class MainActivity : ComponentActivity() {
             val childRestricted = policyState.loaded &&
                 policyState.mode != com.planyourtv.policy.PolicyMode.NONE &&
                 policyState.guardState != com.planyourtv.policy.GuardStatus.PARENT_OVERRIDE
+            // LOCAL reads the live switch at click time: the parent may have turned the
+            // system-entry/uninstall switch on or off from the phone while this menu is open.
+            // CLOUD keeps its previous behaviour until it gains a projected field.
+            val canManageApps: () -> Boolean = {
+                if (PolicyModeCoordinator.mode == com.planyourtv.policy.PolicyMode.LOCAL) {
+                    PolicyModeCoordinator.appManagementAllowed()
+                } else {
+                    !childRestricted
+                }
+            }
             LaunchedEffect(showHome) {
                 // The window keeps focus while the lock screen is replaced by Home, so
                 // HomeScreen's onWindowFocusChanged path never asks for the first tile.
@@ -358,12 +371,12 @@ class MainActivity : ComponentActivity() {
                             onLaunch = ::launch,
                             onOpen = ::open,
                             onAppInfo = {
-                                if (!childRestricted) {
+                                if (canManageApps()) {
                                     open(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", it, null)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                                 }
                             },
                             onUninstall = {
-                                if (!childRestricted) {
+                                if (canManageApps()) {
                                     open(Intent(Intent.ACTION_DELETE, Uri.fromParts("package", it, null)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                                 }
                             },
@@ -396,6 +409,19 @@ class MainActivity : ComponentActivity() {
             IntentFilter(Intent.ACTION_SCREEN_ON).apply { addAction(Intent.ACTION_SCREEN_OFF) },
             ContextCompat.RECEIVER_NOT_EXPORTED,
         )
+        // Whaley: a device switched on over HDMI-CEC takes the TV while Home is in front and the
+        // owner turned it on (WhaleyCecSwitch); the setting changes in Control Center take effect at once.
+        if (WhaleyBoot.isWhaley(this)) lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                try {
+                    snapshotFlow { AerialSettings.cecSwitch }.collect { on ->
+                        if (on) WhaleyCecSwitch.start(this@MainActivity) else WhaleyCecSwitch.stop()
+                    }
+                } finally {
+                    WhaleyCecSwitch.stop()
+                }
+            }
+        }
         // Control Center shows things that change while it is open (Home Guard binds a few seconds
         // after Aerial starts): look again every few seconds, only while it is open and Aerial is on screen.
         lifecycleScope.launch {
@@ -510,7 +536,11 @@ class MainActivity : ComponentActivity() {
             DiagLog.i("$reason: ${id ?: pkg} is not in Kids mode; not opening it")
             return
         }
-        if (!again && SystemClock.elapsedRealtime() - bootSourceOpenedAt < 15_000) return
+        if (!again && SystemClock.elapsedRealtime() - bootSourceOpenedAt < 15_000) {
+            // Said in the log: silent, it hid why the target stayed shut (issue #1725).
+            DiagLog.i("$reason: ${id ?: pkg} was opened ${(SystemClock.elapsedRealtime() - bootSourceOpenedAt) / 1000} s ago; not again")
+            return
+        }
         if (!again && !BootOpen.due(this)) {
             DiagLog.i("$reason: already opened ${id ?: pkg} since the TV came on")
             return
@@ -682,7 +712,7 @@ class MainActivity : ComponentActivity() {
         } else null
         DiagLog.i(
             "display ${m.widthPixels}x${m.heightPixels} ${m.densityDpi}dpi, canvas density ${canvasDensity(m)}, uhd ${UhdCanvas.scale(this)} (${UhdCanvas.why}); $modes; " +
-                "hwui ${systemProperty("debug.hwui.renderer")}, soft_layer=${DiagLog.softLayer(this)}, saver_fade_offscreen=${DiagLog.saverFadeOffscreen(this)}",
+                "hwui ${systemProperty("debug.hwui.renderer")}, soft_layer=${DiagLog.softLayer(this)}, soft_clock=${DiagLog.softClock(this)} (gles ${DiagLog.glesMajor(this)}), saver_fade_offscreen=${DiagLog.saverFadeOffscreen(this)}",
         )
         window.decorView.viewTreeObserver.addOnDrawListener {
             draws++
@@ -778,6 +808,12 @@ class MainActivity : ComponentActivity() {
             if (asked && !SystemScreensaver.startFirmware(this)) DiagLog.i("no system screensaver to start")
             return
         }
+        // Standby instead of a screensaver (issue #1436), on the timer only: Back must not put the
+        // TV to sleep. Where the guard cannot do it (it went off since), the clock shows instead.
+        if (Wallpapers.screensaver == ScreensaverMode.Sleep && !asked) {
+            if (HomeGuardService.sleep("screensaver")) return
+            DiagLog.i("standby chosen, but the guard cannot put the TV to sleep; the clock instead")
+        }
         // Aerials over the aerial wallpaper, or the owner's videos over their video wallpaper: Home
         // carries the wallpaper's film on, the same player in the same format, so there is no black
         // between them; the dream would be a new player in a new window, and showed black even in
@@ -867,20 +903,23 @@ class MainActivity : ComponentActivity() {
         // taking focus (TCL MT5879: a press 18 ms after onPause, focus gone 400 ms later), and a
         // timer set then would start the screensaver over the app's video (issue #974).
         if (!vm.resumed) return
-        if (AerialSettings.screensaverMinutes != AerialSettings.NEVER) {
+        val never = AerialSettings.screensaverMinutes == AerialSettings.NEVER
+        if (!never) {
             val idle = idleBeforeScreensaver()
             idleHandler.postDelayed(showScreensaver, idle)
             if (idle > SAVER_AHEAD_MS) idleHandler.postDelayed(prepareScreensaver, idle - SAVER_AHEAD_MS)
-            if (holdsOffTheDream() && window.attributes.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON == 0) {
-                window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-            }
         }
         // Not with "System": the firmware's screensaver is wanted then, and holding the screen on
         // held it off (Xiaomi's starts on its own timer, screen_saver_timeout).
-        else if (Wallpapers.screensaver != ScreensaverMode.System &&
-            window.attributes.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON == 0 && screenNeverOff()) {
-            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        }
+        val keepOn = Wallpapers.screensaver != ScreensaverMode.System &&
+            if (never) screenNeverOff() else holdsOffTheDream()
+        val held = window.attributes.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON != 0
+        if (keepOn && !held) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        // Let go once it is no longer wanted, as when "System" is chosen after a delay that held
+        // off the dream: the flag stayed until Aerial restarted, and neither the screen nor the
+        // firmware's screensaver went off (issue #1609, read from the code). Not while Aerial's
+        // own screensaver shows, which holds the screen itself until releaseScreen.
+        else if (!keepOn && held && !vm.screensaverVisible) window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
     /**
@@ -1062,7 +1101,11 @@ class MainActivity : ComponentActivity() {
         )
         ContextCompat.registerReceiver(
             this, volumeReceiver,
-            IntentFilter("android.media.VOLUME_CHANGED_ACTION"),
+            // Mute changes too: Sony BRAVIA VH21 (Android 12) mutes music at power-on and its
+            // audio output service unmutes it a while later with no volume change, and Control
+            // Center went on showing muted with sound playing (issue #1530: ADJUST_MUTE, then
+            // ADJUST_UNMUTE 19 min later, both from com.sony.dtv.audiooutput).
+            IntentFilter("android.media.VOLUME_CHANGED_ACTION").apply { addAction("android.media.STREAM_MUTE_CHANGED_ACTION") },
             ContextCompat.RECEIVER_EXPORTED,
         )
         ContextCompat.registerReceiver(
@@ -1128,6 +1171,7 @@ class MainActivity : ComponentActivity() {
             minuteReceiverOn = true
         }
         KidsWatch.homeInFront = true
+        Weather.whileShown(true)
         idleHandler.removeCallbacks(endHomeBounce)
         vm.homeBounce = false
         DiagLog.i("onResume; screensaver after ${idleBeforeScreensaver() / 1000} s")
@@ -1178,6 +1222,7 @@ class MainActivity : ComponentActivity() {
         cancelStudyLaunchCheck()
         if (minuteReceiverOn) { runCatching { unregisterReceiver(minuteReceiver) }; minuteReceiverOn = false }
         KidsWatch.homeInFront = false
+        Weather.whileShown(false)
         Updates.onHomePaused()
         DiagLog.i("onPause")
         // Only a start that was actually underway when Aerial lost the front. A permission dialog

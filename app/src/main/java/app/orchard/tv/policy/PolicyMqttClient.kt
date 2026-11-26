@@ -4,6 +4,8 @@ import android.content.Context
 import android.os.SystemClock
 import android.util.Log
 import app.orchard.tv.BuildConfig
+import app.orchard.tv.policy.media.CloudMediaCommands
+import app.orchard.tv.policy.media.CloudMediaSync
 import com.planyourtv.policy.Activation
 import com.planyourtv.policy.PolicyFlowTrace
 import com.planyourtv.policy.PolicyRuntime
@@ -73,7 +75,11 @@ object PolicyMqttClient {
     private var commandTopic = ""
     private var responseTopic = ""
 
+    @Volatile
+    private var appContext: Context? = null
+
     fun install(context: Context) {
+        appContext = context.applicationContext
         val url = BuildConfig.TV_MQTT_URL.trim()
         if (url.isEmpty()) {
             Log.i(TAG, "TV_MQTT_URL is empty; MQTT command channel disabled")
@@ -317,6 +323,12 @@ object PolicyMqttClient {
             // now so the TV reacts immediately instead of waiting for the next poll. Concurrent
             // fetches are deduped inside requestSync.
             PolicyRuntime.requestSync()
+            // V50: the same notice also covers the child media page, which is not part of the
+            // policy config. The sync coalesces overlapping notices and is a no-op outside CLOUD.
+            CloudMediaSync.request("config-changed")
+            // 2026-11-26: 果时可用性（余额/路线开关）不在 config 快照里，由独立接口提供。
+            // config_changed 需同时刷新，否则家长改完「果时解锁」要等下一次轮询才生效。
+            PolicyModeCoordinator.refreshHostedFruitFacts()
             if (json.optString("command", "").isBlank()) return
         }
 
@@ -343,6 +355,14 @@ object PolicyMqttClient {
             "hostedRule" to PolicyModeCoordinator.isHostedRuleActive(),
         )
 
+        // A fruit replay must keep the exact reason/status of the first attempt: a redelivered
+// rejection cannot become an accepted start just because the TV is now idle.
+        if (commandId.isNotBlank() && command == "start_fruit_session") {
+            previousFruitResult(commandId)?.let { previous ->
+                ack(correlationId, previous.accepted, command, previous.reason, previous.status)
+                return
+            }
+        }
         // QoS 1 can redeliver on the same connection. Replaying "start" would now hit BUSY and
         // look like a failure, so return the remembered result for the same commandId.
         if (commandId.isNotBlank()) {
@@ -357,6 +377,7 @@ object PolicyMqttClient {
         val hostedRule = PolicyModeCoordinator.isHostedRuleActive()
         val v10Command = command == "set_activation" ||
             command == "start_session" ||
+            command == "start_fruit_session" ||
             command == "start_parent_override"
         if (hostedRule && v10Command && (issuedAt <= 0L || stale)) {
             Log.i(TAG, "ignore stale or untimestamped command: $command")
@@ -426,13 +447,21 @@ object PolicyMqttClient {
                     }
                     hasScope && scope == null ->
                         SessionStartResult.Rejected(RejectReason.GUARD_DISABLED)
-                    else -> PolicyModeCoordinator.startRemoteManualSession(
-                        durationSeconds = durationSeconds,
-                        expectedEpoch = expectedEpoch,
-                        allowedPackages = scope,
-                        expiresAtEpochMs = expiresAt,
-                        recordId = recordId,
-                    )
+                    else -> {
+                        // A TV-initiated fruit exchange is the one dispatch the child has
+                        // already confirmed. Starting it here keeps the orchard's debit and
+                        // the timer atomic: a refusal below ACKs false and rolls the fruit back.
+                        val autoStart =
+                            PolicyModeCoordinator.consumeHostedFruitDispatch(durationSeconds)
+                        PolicyModeCoordinator.startRemoteManualSession(
+                            durationSeconds = durationSeconds,
+                            expectedEpoch = expectedEpoch,
+                            allowedPackages = scope,
+                            expiresAtEpochMs = expiresAt,
+                            recordId = recordId,
+                            autoStart = autoStart,
+                        )
+                    }
                 }
                 val ok = result is SessionStartResult.Started ||
                     result is SessionStartResult.Pending
@@ -455,6 +484,54 @@ object PolicyMqttClient {
                 )
                 ack(correlationId, ok, command, rejectReason, status)
                 ok
+            }
+            "start_fruit_session" -> {
+                // Uniapp fruit exchange (2026-11-25). The parent already confirmed in the
+                // orchard page, so an idle TV starts immediately; a busy TV rejects with a
+                // reason and the backend rolls the fruit debit back.
+                val receivedAt = SystemClock.elapsedRealtime()
+                val durationSeconds = data?.optLong("durationSeconds", 0L) ?: 0L
+                val expectedEpoch =
+                    data?.optLong("expectedEpoch", Long.MIN_VALUE) ?: Long.MIN_VALUE
+                val expiresAt = (data?.optLong("expiresAtEpochMs", 0L) ?: 0L).takeIf { it > 0L }
+                val memberId = data?.optLong("memberId", 0L) ?: 0L
+                val hasScope = data?.has("allowedPackages") == true
+                val scope = if (hasScope) parsePackages(data?.optJSONArray("allowedPackages")) else null
+                val result = when {
+                    !hostedRule -> SessionStartResult.Rejected(RejectReason.GUARD_DISABLED)
+                    hasScope && scope == null ->
+                        SessionStartResult.Rejected(RejectReason.INVALID_SCOPE)
+                    else -> PolicyModeCoordinator.startRemoteFruitSession(
+                        durationSeconds = durationSeconds,
+                        expectedEpoch = expectedEpoch,
+                        allowedPackages = scope,
+                        expiresAtEpochMs = expiresAt,
+                        memberId = memberId,
+                    )
+                }
+                val ok = result is SessionStartResult.Started
+                val rejectReason = (result as? SessionStartResult.Rejected)?.reason?.name
+                val status = if (ok) "SESSION_ACTIVE" else null
+                if (rejectReason != null) {
+                    Log.i(TAG, "start_fruit_session rejected: $rejectReason")
+                }
+                PolicyFlowTrace.event(
+                    "mqtt.start_fruit_session",
+                    "duration" to durationSeconds,
+                    "memberId" to memberId,
+                    "pkgs" to scope?.size,
+                    "result" to (status ?: "REJECTED"),
+                    "reason" to rejectReason,
+                    "elapsedMs" to (SystemClock.elapsedRealtime() - receivedAt),
+                )
+                ack(correlationId, ok, command, rejectReason, status)
+                if (commandId.isNotBlank()) {
+                    rememberFruitResult(
+                        commandId,
+                        FruitCommandResult(ok, rejectReason, status),
+                    )
+                }
+                true
             }
             "start_parent_override" -> {
                 val requested = data?.optLong("durationSeconds", 0L) ?: 0L
@@ -511,6 +588,26 @@ object PolicyMqttClient {
                 // sync and the local admission finish.
                 true
             }
+            "wallpaper_preload" -> {
+                // V52 assets-first: ack acceptance immediately, download in the background.
+                // Progress arrives over the device HTTP report endpoint, not this channel.
+                val accepted = CloudMediaSync.onPreloadCommand(data)
+                ack(correlationId, accepted, command)
+                accepted
+            }
+            "wallpaper_media" -> {
+                // V56 media center: ack only means the command was accepted. Downloads run in
+                // the background and the page reads real state from the HTTP report snapshot.
+                val context = appContext
+                val accepted = if (context == null) {
+                    Log.w(TAG, "wallpaper_media command without a context")
+                    false
+                } else {
+                    CloudMediaCommands.handle(context, data)
+                }
+                ack(correlationId, accepted, command)
+                accepted
+            }
             "tmp_unlock_monitor", "pause_guard" -> {
                 if (stale) {
                     // The verifier already rejected expired envelopes; this also covers a
@@ -549,7 +646,9 @@ object PolicyMqttClient {
             "recordId" to recordId,
             "handled" to handled,
         )
-        if (commandId.isNotBlank()) rememberResult(commandId, handled)
+        if (commandId.isNotBlank() && command != "start_fruit_session") {
+            rememberResult(commandId, handled)
+        }
         if (command == "stop_session" || command == "cancel_session") {
             ack(correlationId, handled, command)
         }
@@ -581,11 +680,32 @@ object PolicyMqttClient {
         ): Boolean = size > APPLIED_COMMAND_LIMIT
     }
 
+    private data class FruitCommandResult(
+        val accepted: Boolean,
+        val reason: String?,
+        val status: String?,
+    )
+
+    /** Fruit dedup keeps the rejection reason; the generic map only remembers a Boolean. */
+    private val fruitCommandResults = object :
+        LinkedHashMap<String, FruitCommandResult>(16, 0.75f, true) {
+        override fun removeEldestEntry(
+            eldest: MutableMap.MutableEntry<String, FruitCommandResult>?,
+        ): Boolean = size > APPLIED_COMMAND_LIMIT
+    }
+
     private fun previousResult(commandId: String): Boolean? =
         synchronized(appliedCommands) { appliedCommands[commandId] }
 
     private fun rememberResult(commandId: String, handled: Boolean) {
         synchronized(appliedCommands) { appliedCommands[commandId] = handled }
+    }
+
+    private fun previousFruitResult(commandId: String): FruitCommandResult? =
+        synchronized(fruitCommandResults) { fruitCommandResults[commandId] }
+
+    private fun rememberFruitResult(commandId: String, result: FruitCommandResult) {
+        synchronized(fruitCommandResults) { fruitCommandResults[commandId] = result }
     }
 
     /**

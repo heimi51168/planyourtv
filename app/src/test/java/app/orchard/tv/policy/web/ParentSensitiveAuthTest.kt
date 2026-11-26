@@ -67,7 +67,7 @@ class ParentSensitiveAuthTest {
     }
 
     private fun verify(
-        scope: String = "RULES_EDIT",
+        scope: String = "USER_EDIT",
         pinValue: String = pin,
         editorToken: String = editor,
         nowMs: Long = System.currentTimeMillis(),
@@ -85,21 +85,21 @@ class ParentSensitiveAuthTest {
     }
 
     @Test
-    fun correctPinIssuesAScopedRulesProofThatCanSaveRepeatedly() {
+    fun correctPinIssuesAScopedUserEditProofThatCanSaveRepeatedly() {
         val now = System.currentTimeMillis()
         val result = verify(nowMs = now) as ParentSensitiveAuth.VerifyResult.Ok
-        assertEquals(ParentSensitiveAuth.Scope.RULES_EDIT, result.scope)
+        assertEquals(ParentSensitiveAuth.Scope.USER_EDIT, result.scope)
         assertEquals(now + 5 * 60_000L, result.expiresAtMs)
 
         assertEquals(
             ParentSensitiveAuth.Status.OK,
-            ParentSensitiveAuth.check(result.token, ParentSensitiveAuth.Scope.RULES_EDIT, editor, now),
+            ParentSensitiveAuth.check(result.token, ParentSensitiveAuth.Scope.USER_EDIT, editor, now),
         )
         assertEquals(
             ParentSensitiveAuth.Status.OK,
             ParentSensitiveAuth.check(
                 result.token,
-                ParentSensitiveAuth.Scope.RULES_EDIT,
+                ParentSensitiveAuth.Scope.USER_EDIT,
                 editor,
                 now + 60_000L,
             ),
@@ -138,7 +138,7 @@ class ParentSensitiveAuthTest {
             ParentSensitiveAuth.Status.EXPIRED,
             ParentSensitiveAuth.check(
                 token,
-                ParentSensitiveAuth.Scope.RULES_EDIT,
+                ParentSensitiveAuth.Scope.USER_EDIT,
                 "another-editor-token",
                 now,
             ),
@@ -184,7 +184,7 @@ class ParentSensitiveAuthTest {
         )
         assertEquals(
             ParentSensitiveAuth.Status.SCOPE,
-            ParentSensitiveAuth.check(token, ParentSensitiveAuth.Scope.RULES_EDIT, editor, now),
+            ParentSensitiveAuth.check(token, ParentSensitiveAuth.Scope.USER_EDIT, editor, now),
         )
         assertEquals(
             ParentSensitiveAuth.Status.OK,
@@ -224,13 +224,13 @@ class ParentSensitiveAuthTest {
         ParentSensitiveAuth.release(token, "another-editor-token")
         assertEquals(
             ParentSensitiveAuth.Status.OK,
-            ParentSensitiveAuth.check(token, ParentSensitiveAuth.Scope.RULES_EDIT, editor, now),
+            ParentSensitiveAuth.check(token, ParentSensitiveAuth.Scope.USER_EDIT, editor, now),
         )
 
         ParentSensitiveAuth.release(token, editor)
         assertEquals(
             ParentSensitiveAuth.Status.EXPIRED,
-            ParentSensitiveAuth.check(token, ParentSensitiveAuth.Scope.RULES_EDIT, editor, now),
+            ParentSensitiveAuth.check(token, ParentSensitiveAuth.Scope.USER_EDIT, editor, now),
         )
     }
 
@@ -251,7 +251,7 @@ class ParentSensitiveAuthTest {
         assertEquals(0L, QuizAccess.sensitiveActionLockedSeconds())
         assertEquals(
             ParentSensitiveAuth.Status.REQUIRED,
-            ParentSensitiveAuth.check(null, ParentSensitiveAuth.Scope.RULES_EDIT, editor, now),
+            ParentSensitiveAuth.check(null, ParentSensitiveAuth.Scope.USER_EDIT, editor, now),
         )
     }
 
@@ -292,7 +292,7 @@ class ParentSensitiveAuthTest {
         ParentSensitiveAuth.invalidate()
         assertEquals(
             ParentSensitiveAuth.Status.EXPIRED,
-            ParentSensitiveAuth.check(token, ParentSensitiveAuth.Scope.RULES_EDIT, editor, now),
+            ParentSensitiveAuth.check(token, ParentSensitiveAuth.Scope.USER_EDIT, editor, now),
         )
     }
 
@@ -300,7 +300,7 @@ class ParentSensitiveAuthTest {
     fun missingProofIsReportedAsRequired() {
         assertEquals(
             ParentSensitiveAuth.Status.REQUIRED,
-            ParentSensitiveAuth.check("", ParentSensitiveAuth.Scope.RULES_EDIT, editor),
+            ParentSensitiveAuth.check("", ParentSensitiveAuth.Scope.USER_EDIT, editor),
         )
         assertFalse(
             ParentSensitiveAuth.check(null, ParentSensitiveAuth.Scope.TAKE_OVER, editor) ==

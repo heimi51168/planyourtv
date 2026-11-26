@@ -54,6 +54,18 @@ enum class RejectReason {
     STALE_EPOCH,
     PARENT_OVERRIDE,
     BUSY,
+    /** A quiz round is on screen or settling; a remote start must not interrupt it. */
+    QUIZ_ACTIVE,
+    /** Focused study mode or a study-to-earn round is in progress. */
+    STUDY_ACTIVE,
+    /** A remote grant is already waiting for the child; the phone must resolve it first. */
+    PENDING_GRANT,
+    /** An app is in front, so someone is using the TV (allowed or not). */
+    FOREGROUND_IN_USE,
+    /** The TV's active member is not the member this command is for. */
+    MEMBER_MISMATCH,
+    /** Member/foreground state is not fresh enough; a remote start fails closed. */
+    STATE_UNKNOWN,
     RESTING,
     SCREEN_OFF,
     OUTSIDE_WINDOW,

@@ -269,6 +269,7 @@ object PolicyStateCodec {
         .put("quiz", quizGranted)
         .put("studyReward", studyRewardGranted)
         .put("directFree", directGranted)
+        .put("fruit", fruitGranted)
 
     private fun JSONObject.toRouteUsage(): RouteUsage? {
         val date = optString("date", "")
@@ -277,11 +278,15 @@ object PolicyStateCodec {
         val study = optInt("studyReward", -1)
         val direct = optInt("directFree", -1)
         if (quiz < 0 || study < 0 || direct < 0) return null
+        // A snapshot written before V58 has no fruit count. Treat it as zero instead of
+        // corrupting the whole day's ledger; the other three counts stay strict.
+        val fruit = optInt("fruit", 0).coerceAtLeast(0)
         return RouteUsage(
             date = date,
             quizGranted = quiz,
             studyRewardGranted = study,
             directGranted = direct,
+            fruitGranted = fruit,
         )
     }
 

@@ -92,6 +92,24 @@ class QuizConfigDocumentValidatorTest {
         assertTrue("rules.feedback.autoNext:UNSUPPORTED_AUTO_NEXT" in codes)
     }
 
+    @Test
+    fun topicScopeIsAcceptedForCloudLevelsButRejectedForLocalLevels() {
+        val cloud = decode("valid-cloud.json")
+        val cloudTopic = cloud.copy(
+            levels = listOf(cloud.levels.first().copy(scopeType = "TOPIC")),
+        )
+        assertTrue(QuizConfigDocumentValidator.validate(cloudTopic).isEmpty())
+
+        val local = decode("valid-local.json")
+        val localTopic = local.copy(
+            levels = listOf(local.levels.first().copy(scopeType = "TOPIC")),
+        )
+        val codes = QuizConfigDocumentValidator.validate(localTopic)
+            .map { "${it.field}:${it.code}" }
+            .toSet()
+        assertTrue("levels[0].scopeType:INVALID" in codes)
+    }
+
     private fun decode(name: String): QuizConfigDocument {
         val raw = checkNotNull(
             javaClass.classLoader?.getResource("quiz-doc/$name"),

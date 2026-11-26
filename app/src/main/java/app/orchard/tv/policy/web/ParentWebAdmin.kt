@@ -17,6 +17,7 @@ import fi.iki.elonen.NanoHTTPD.Method
 import fi.iki.elonen.NanoHTTPD.Response
 import org.json.JSONObject
 import java.io.ByteArrayInputStream
+import java.io.FileInputStream
 
 /**
  * HTTP surface of the web parent center.
@@ -132,6 +133,18 @@ object ParentWebAdmin {
                     media(context, session)
                 session.method == Method.GET && path == "/api/parent/media/poster" ->
                     mediaPoster(context, session)
+                // A ticket is the only header-free way for a <video> element to prove the
+                // editor lease; the stream route then serves the local file with Range.
+                session.method == Method.POST && path == "/api/parent/media/ticket" ->
+                    mediaTicket(context, session)
+                session.method == Method.GET && path == "/api/parent/media/file" ->
+                    mediaFile(context, session)
+                // Audio ids can collide with a local video id, so music has its own ticket
+                // kind and stream route instead of sharing the video namespace.
+                session.method == Method.POST && path == "/api/parent/media/audio/ticket" ->
+                    audioTicket(context, session)
+                session.method == Method.GET && path == "/api/parent/media/audio/file" ->
+                    audioFile(context, session)
                 session.method == Method.POST && path == "/api/parent/media/refresh" ->
                     write(context, session) { ParentCenterActions.refreshMedia(context) }
                 session.method == Method.POST && path == "/api/parent/media/download" ->
@@ -142,6 +155,12 @@ object ParentWebAdmin {
                     write(context, session) { ParentCenterActions.selectMedia(context, it) }
                 session.method == Method.POST && path == "/api/parent/media/playlist" ->
                     write(context, session) { ParentCenterActions.saveMediaPlaylist(context, it) }
+                // V56 one-save pages: the wallpaper draft and quiz-intro draft each commit as
+                // one request, so the page does not need a chain of selections.
+                session.method == Method.POST && path == "/api/parent/media/wallpaper" ->
+                    write(context, session) { ParentCenterActions.saveMediaWallpaper(context, it) }
+                session.method == Method.POST && path == "/api/parent/media/quiz" ->
+                    write(context, session) { ParentCenterActions.saveQuizIntro(context, it) }
                 session.method == Method.POST && path == "/api/parent/media/delete" ->
                     write(context, session) { ParentCenterActions.deleteMedia(context, it) }
                 session.method == Method.POST && path == "/api/parent/media/sound" ->
@@ -160,6 +179,10 @@ object ParentWebAdmin {
                 session.method == Method.POST && path == "/api/parent/media/audio/delete" ->
                     write(context, session) { ParentCenterActions.deleteAudio(context, it) }
                 session.method == Method.GET && path == "/api/parent/apps" -> apps(context, session)
+                // V58 full fruit ledger. The snapshot only carries per-member summaries; the
+                // history can be hundreds of rows, so the page fetches one member on demand.
+                session.method == Method.GET && path == "/api/parent/fruit/ledger" ->
+                    fruitLedger(session)
                 session.method == Method.GET && path == "/api/parent/icon" -> icon(context, session)
                 // A family photo is editor-only data, so this route requires the same lease as
                 // the rest of the page. The <img> tag cannot send that header; the page fetches
@@ -201,15 +224,56 @@ object ParentWebAdmin {
                 // center login plus editor lease is the authentication on this side.
                 session.method == Method.POST && path == "/api/parent/subjects/activate" ->
                     write(context, session) { ParentCenterActions.activateSubject(it) }
-                // V47: user-configuration edits keep the RULES_EDIT proof unless the parent
-                // deliberately turned off the extra PIN prompts for that tab. System routes
+                // V59: user-configuration and fruit-ledger edits share one USER_EDIT proof.
+                // The V47 switch decides whether that proof is asked for at all; when it is
+                // on, one PIN per visit covers every save inside the page. System routes
                 // below keep their scope unconditionally.
                 session.method == Method.POST && path == "/api/parent/rules" ->
                     write(
                         context,
                         session,
-                        sensitiveScope = rulesSensitiveScope(),
+                        sensitiveScope = userEditSensitiveScope(),
                     ) { ParentCenterActions.setRules(it) }
+                // V58 fruit bookkeeping is user configuration too, so it follows the same
+                // switch instead of keeping a separate always-on PIN. Every route below also
+                // refuses a non-LOCAL data source.
+                session.method == Method.POST && path == "/api/parent/fruit/credit" ->
+                    write(
+                        context,
+                        session,
+                        sensitiveScope = userEditSensitiveScope(),
+                    ) { ParentCenterActions.creditFruit(it) }
+                session.method == Method.POST && path == "/api/parent/fruit/expense" ->
+                    write(
+                        context,
+                        session,
+                        sensitiveScope = userEditSensitiveScope(),
+                    ) { ParentCenterActions.expenseFruit(it) }
+                session.method == Method.POST && path == "/api/parent/fruit/expense/void" ->
+                    write(
+                        context,
+                        session,
+                        sensitiveScope = userEditSensitiveScope(),
+                    ) { ParentCenterActions.voidFruitExpense(it) }
+                session.method == Method.POST && path == "/api/parent/fruit/void" ->
+                    write(
+                        context,
+                        session,
+                        sensitiveScope = userEditSensitiveScope(),
+                    ) { ParentCenterActions.voidFruit(it) }
+                session.method == Method.POST && path == "/api/parent/fruit/settings" ->
+                    write(
+                        context,
+                        session,
+                        sensitiveScope = userEditSensitiveScope(),
+                    ) { ParentCenterActions.setFruitSettings(it) }
+                session.method == Method.POST &&
+                    path == "/api/parent/fruit/quick-projects/delete" ->
+                    write(
+                        context,
+                        session,
+                        sensitiveScope = userEditSensitiveScope(),
+                    ) { ParentCenterActions.deleteFruitQuickProject(it) }
                 // Turning the extra user-config prompts off is a deliberate reduction of
                 // protection, so it needs a single-use USER_CONFIG proof. Turning them back
                 // on only restores protection and needs no proof. Two explicit routes keep
@@ -223,6 +287,20 @@ object ParentWebAdmin {
                     ) { ParentCenterActions.setUserConfigPin(false) }
                 session.method == Method.POST && path == "/api/parent/user-config-pin/enable" ->
                     write(context, session) { ParentCenterActions.setUserConfigPin(true) }
+                // V57: enabling the device-wide TV member-switch policy (and editing its waiver
+                // window) only adds protection, so the page login plus editor lease authorize
+                // it. Refusing this behind FAMILY_EDIT made turning the switch on require an
+                // extra PIN even though the parent was already editing the device settings.
+                session.method == Method.POST && path == "/api/parent/switch-protection" ->
+                    write(context, session) { ParentCenterActions.enableSwitchProtection(it) }
+                // Turning protection off is the one direction that needs the same fresh parent
+                // proof as family edits; the unprotected route above rejects `required=false`.
+                session.method == Method.POST && path == "/api/parent/switch-protection/disable" ->
+                    write(
+                        context,
+                        session,
+                        sensitiveScope = ParentSensitiveAuth.Scope.FAMILY_EDIT,
+                    ) { ParentCenterActions.disableSwitchProtection() }
                 // Turning child mode off or creating its first PIN changes what the web page
                 // itself is authorized by, so those stay TV-only.
                 session.method == Method.POST && path == "/api/parent/child-mode" ->
@@ -242,21 +320,29 @@ object ParentWebAdmin {
                     write(context, session) { ParentCenterActions.requestUpdateCheck() }
                 session.method == Method.POST && path == "/api/parent/update/install" ->
                     write(context, session) { ParentCenterActions.installUpdate() }
-                // Rules, source visibility and the quiz-entry display switch are only reachable
-                // from the PIN-gated Time & Apps page; the server repeats that check because
-                // hiding the UI entry is not an authorization boundary.
+                // Rules, source visibility, the quiz-entry display switch and the
+                // system-entry/uninstall switch are user configuration. They follow the same V47
+                // switch, so turning the prompts off really is all-or-none for this area; the
+                // server still repeats that check because hiding the UI entry is not an
+                // authorization boundary.
                 session.method == Method.POST && path == "/api/parent/source-entries" ->
                     write(
                         context,
                         session,
-                        sensitiveScope = ParentSensitiveAuth.Scope.RULES_EDIT,
+                        sensitiveScope = userEditSensitiveScope(),
                     ) { ParentCenterActions.setSourceEntries(it) }
                 session.method == Method.POST && path == "/api/parent/quiz-entry" ->
                     write(
                         context,
                         session,
-                        sensitiveScope = ParentSensitiveAuth.Scope.RULES_EDIT,
+                        sensitiveScope = userEditSensitiveScope(),
                     ) { ParentCenterActions.setQuizEntry(it) }
+                session.method == Method.POST && path == "/api/parent/system-entries" ->
+                    write(
+                        context,
+                        session,
+                        sensitiveScope = userEditSensitiveScope(),
+                    ) { ParentCenterActions.setSystemEntries(it) }
                 // The old switch deleted an unstarted challenge; a cached page must not
                 // reach that behavior through a deprecated route.
                 session.method == Method.POST && path == "/api/parent/quiz" ->
@@ -317,15 +403,20 @@ object ParentWebAdmin {
         }
         val takeover = session.headers[TAKEOVER_HEADER] == "1"
         return when (val result = ParentWebAccess.acquire(quizToken(session), takeover)) {
-            is ParentWebAccess.AcquireOutcome.Ok -> json(
-                Response.Status.OK,
-                JSONObject()
-                    .put("ok", true)
-                    .put("editorToken", result.editorToken)
-                    .put("expiresAtMs", result.expiresAtMs)
-                    .put("quizBound", result.quizBound)
-                    .put("gate", gateJson()),
-            )
+            is ParentWebAccess.AcquireOutcome.Ok -> {
+                // Only one page edits at a time. A takeover must also end any stream the
+                // previous editor left running, not just its JSON access.
+                ParentMediaTickets.revokeAll()
+                json(
+                    Response.Status.OK,
+                    JSONObject()
+                        .put("ok", true)
+                        .put("editorToken", result.editorToken)
+                        .put("expiresAtMs", result.expiresAtMs)
+                        .put("quizBound", result.quizBound)
+                        .put("gate", gateJson()),
+                )
+            }
             is ParentWebAccess.AcquireOutcome.Rejected -> when (result.code) {
                 "WEB_LOCAL_ONLY" -> webLocalOnly()
                 "WEB_EDITING" -> jsonError(Response.Status.CONFLICT, result.code)
@@ -462,6 +553,7 @@ object ParentWebAdmin {
         // A release may arrive after the lease already expired; it is best effort.
         val editor = session.headers[EDITOR_HEADER]
         ParentSensitiveAuth.releaseAll(editor)
+        ParentMediaTickets.revokeEditor(editor)
         ParentWebAccess.release(editor)
         return json(Response.Status.OK, JSONObject().put("ok", true))
     }
@@ -563,6 +655,123 @@ object ParentWebAdmin {
         val bytes = PolicyVideoLibrary.poster(context, id)
             ?: return jsonError(Response.Status.NOT_FOUND, "MEDIA_NOT_FOUND")
         return bytes(Response.Status.OK, "image/jpeg", bytes)
+    }
+
+    /**
+     * Exchanges the editor lease for a short-lived ticket that a native <video> can carry in
+     * its URL. Only complete local files qualify; a cloud film that has not been downloaded is
+     * previewed by the phone directly from the catalogue URL and gets no ticket.
+     */
+    private fun mediaTicket(context: Context, session: IHTTPSession): Response {
+        if (!requirePostHeader(session)) return jsonError(Response.Status.FORBIDDEN, "REQUEST_HEADER")
+        if (session.headers["content-type"]?.startsWith("application/json") != true) {
+            return jsonError(Response.Status.UNSUPPORTED_MEDIA_TYPE, "CONTENT_TYPE")
+        }
+        val check = editorCheck(session)
+        val result = check.second
+        if (result is ParentWebAccess.EditorCheck.Failed) return editorError(result.code)
+        val editor = check.first ?: return jsonError(Response.Status.UNAUTHORIZED, "EDITOR_REQUIRED")
+        val id = cachedJsonBody(session)?.optString("id", "").orEmpty()
+        if (PolicyVideoLibrary.playbackFile(context, id) == null) {
+            return jsonError(Response.Status.NOT_FOUND, "MEDIA_NOT_FOUND")
+        }
+        return json(
+            Response.Status.OK,
+            JSONObject()
+                .put("ok", true)
+                .put("ticket", ParentMediaTickets.mint(editor, id)),
+        )
+    }
+
+    /**
+     * Streams one published local film to the parent page. Browsers seek with Range requests and
+     * mobile Safari will not play without 206 support. This route never contacts the cloud: an
+     * un-downloaded catalog film is played by the phone from its own URL, and the TV keeps the
+     * cache-only execution rule intact.
+     */
+    private fun mediaFile(context: Context, session: IHTTPSession): Response {
+        val id = session.parameters["id"]?.firstOrNull().orEmpty()
+        val ticket = session.parameters["ticket"]?.firstOrNull().orEmpty()
+        if (!ParentMediaTickets.check(ticket, id, kind = ParentMediaTickets.KIND_MEDIA)) {
+            return jsonError(Response.Status.FORBIDDEN, "MEDIA_TICKET_REQUIRED")
+        }
+        val playback = PolicyVideoLibrary.playbackFile(context, id)
+            ?: return jsonError(Response.Status.NOT_FOUND, "MEDIA_NOT_FOUND")
+        return streamLocalFile(session, playback.file, playback.mime)
+    }
+
+    /**
+     * The same header-free ticket trade as a film, bound to the audio namespace. Only complete
+     * local uploads and verified downloads qualify; an un-downloaded cloud track is downloaded
+     * first and can then be previewed from the TV.
+     */
+    private fun audioTicket(context: Context, session: IHTTPSession): Response {
+        if (!requirePostHeader(session)) return jsonError(Response.Status.FORBIDDEN, "REQUEST_HEADER")
+        if (session.headers["content-type"]?.startsWith("application/json") != true) {
+            return jsonError(Response.Status.UNSUPPORTED_MEDIA_TYPE, "CONTENT_TYPE")
+        }
+        val check = editorCheck(session)
+        val result = check.second
+        if (result is ParentWebAccess.EditorCheck.Failed) return editorError(result.code)
+        val editor = check.first ?: return jsonError(Response.Status.UNAUTHORIZED, "EDITOR_REQUIRED")
+        val id = cachedJsonBody(session)?.optString("id", "").orEmpty()
+        if (PolicyAudioLibrary.playbackFile(context, id) == null) {
+            return jsonError(Response.Status.NOT_FOUND, "AUDIO_NOT_FOUND")
+        }
+        return json(
+            Response.Status.OK,
+            JSONObject()
+                .put("ok", true)
+                .put("ticket", ParentMediaTickets.mint(
+                    editor,
+                    id,
+                    kind = ParentMediaTickets.KIND_AUDIO,
+                )),
+        )
+    }
+
+    private fun audioFile(context: Context, session: IHTTPSession): Response {
+        val id = session.parameters["id"]?.firstOrNull().orEmpty()
+        val ticket = session.parameters["ticket"]?.firstOrNull().orEmpty()
+        if (!ParentMediaTickets.check(ticket, id, kind = ParentMediaTickets.KIND_AUDIO)) {
+            return jsonError(Response.Status.FORBIDDEN, "AUDIO_TICKET_REQUIRED")
+        }
+        val playback = PolicyAudioLibrary.playbackFile(context, id)
+            ?: return jsonError(Response.Status.NOT_FOUND, "AUDIO_NOT_FOUND")
+        return streamLocalFile(session, playback.file, playback.mime)
+    }
+
+    /** Range-aware local file streaming shared by video and audio previews. */
+    private fun streamLocalFile(session: IHTTPSession, file: java.io.File, mime: String): Response {
+        val total = file.length()
+        if (total <= 0L) return jsonError(Response.Status.NOT_FOUND, "MEDIA_NOT_FOUND")
+        return when (val range = parseByteRange(session.headers["range"], total)) {
+            ByteRange.Unsatisfiable -> bytes(
+                Response.Status.RANGE_NOT_SATISFIABLE,
+                mime,
+                ByteArray(0),
+            ).apply { addHeader("Content-Range", "bytes */$total") }
+            is ByteRange.Partial -> {
+                val input = FileInputStream(file).apply { channel.position(range.start) }
+                NanoHTTPD.newFixedLengthResponse(
+                    Response.Status.PARTIAL_CONTENT,
+                    mime,
+                    BoundedInputStream(input, range.length),
+                    range.length,
+                ).apply {
+                    addHeader("Content-Range", "bytes ${range.start}-${range.endInclusive}/$total")
+                    addHeader("Accept-Ranges", "bytes")
+                }.let(::decorate)
+            }
+            ByteRange.Whole -> NanoHTTPD.newFixedLengthResponse(
+                Response.Status.OK,
+                mime,
+                FileInputStream(file),
+                total,
+            ).apply {
+                addHeader("Accept-Ranges", "bytes")
+            }.let(::decorate)
+        }
     }
 
     /**
@@ -683,6 +892,38 @@ object ParentWebAdmin {
         )
     }
 
+    /**
+     * One member's full LOCAL fruit ledger. The page asks for the shared
+     * [ParentSensitiveAuth.Scope.USER_EDIT] proof when the parent enabled the user-config PIN
+     * prompts; with the switch off this is a normal editor-only read.
+     */
+    private fun fruitLedger(session: IHTTPSession): Response {
+        val check = editorCheck(session)
+        if (check.second is ParentWebAccess.EditorCheck.Failed) {
+            return editorError((check.second as ParentWebAccess.EditorCheck.Failed).code)
+        }
+        val scope = userEditSensitiveScope()
+        if (scope != null) {
+            val editor = check.first
+                ?: return jsonError(Response.Status.UNAUTHORIZED, "EDITOR_REQUIRED")
+            val sensitive = ParentSensitiveAuth.check(
+                token = session.headers[SENSITIVE_HEADER],
+                scope = scope,
+                editorToken = editor,
+            )
+            if (sensitive != ParentSensitiveAuth.Status.OK) return sensitiveError(sensitive)
+        }
+        val userId = session.parameters["userId"]?.firstOrNull().orEmpty()
+        val outcome = ParentCenterActions.fruitLedger(userId)
+        if (!outcome.ok) return jsonError(outcomeStatus(outcome.code), outcome.code)
+        val ledger = outcome.snapshot ?: return jsonError(Response.Status.INTERNAL_ERROR, "INTERNAL")
+        ledger.put(
+            "editorRemainingMs",
+            (check.second as ParentWebAccess.EditorCheck.Ok).remainingMs,
+        )
+        return json(Response.Status.OK, ledger)
+    }
+
     private fun icon(context: Context, session: IHTTPSession): Response {
         val check = editorCheck(session)
         if (check.second is ParentWebAccess.EditorCheck.Failed) {
@@ -780,12 +1021,13 @@ object ParentWebAdmin {
     }
 
     /**
-     * The rules route belongs to the user-configuration tab. Its extra proof disappears only
-     * when the parent turned that tab's PIN prompts off; every system-configuration route
+     * The one switch for every user-configuration write: time rules, the Time & Apps
+     * switches, the shared fruit ledger and the source/quiz display toggles. It disappears
+     * only when the parent turned those PIN prompts off; every system-configuration route
      * keeps its fixed scope.
      */
-    internal fun rulesSensitiveScope(): ParentSensitiveAuth.Scope? =
-        if (UserConfigPinSettings.isRequired()) ParentSensitiveAuth.Scope.RULES_EDIT else null
+    internal fun userEditSensitiveScope(): ParentSensitiveAuth.Scope? =
+        if (UserConfigPinSettings.isRequired()) ParentSensitiveAuth.Scope.USER_EDIT else null
 
     private fun write(
         context: Context,
@@ -898,10 +1140,15 @@ object ParentWebAdmin {
         "STATE_CHANGED", "READ_ONLY", "NOT_READY", "SESSION_NOT_ACTIVE",
         "FAMILY_NOT_READY", "SUBJECT_UPDATE_FAILED", "TV_BUSY",
         "MEDIA_BUSY", "MEDIA_NOT_READY", "MEDIA_IN_USE",
-        "MEDIA_SOUND_UNAVAILABLE", "RECOVERY_NOT_SET", "RECOVERY_FAILED", "LOCAL_ONLY" ->
+        "MEDIA_SOUND_UNAVAILABLE", "RECOVERY_NOT_SET", "RECOVERY_FAILED", "LOCAL_ONLY",
+        "FRUIT_LOCAL_ONLY", "FRUIT_ACCOUNT_MISSING", "FRUIT_REVISION_CONFLICT",
+        "FRUIT_VOID_NOT_ALLOWED", "FRUIT_ENTRY_ALREADY_VOIDED",
+        "FRUIT_BALANCE_INSUFFICIENT" ->
             Response.Status.CONFLICT
         "RECOVERY_LOCKED" -> Response.Status.TOO_MANY_REQUESTS
-        "MEDIA_NOT_FOUND", "SUBJECT_NOT_FOUND" -> Response.Status.NOT_FOUND
+        "MEDIA_NOT_FOUND", "SUBJECT_NOT_FOUND", "FRUIT_MEMBER_NOT_FOUND",
+        "FRUIT_ENTRY_NOT_FOUND", "FRUIT_PROJECT_NOT_FOUND" ->
+            Response.Status.NOT_FOUND
         "MEDIA_NO_SPACE", "CATALOG_UNAVAILABLE" -> Response.Status.SERVICE_UNAVAILABLE
         "MEDIA_BAD_FORMAT" -> Response.Status.UNSUPPORTED_MEDIA_TYPE
         "MEDIA_TOO_LARGE" -> Response.Status.PAYLOAD_TOO_LARGE
@@ -1027,6 +1274,9 @@ object ParentWebAdmin {
         response.addHeader(
             "Content-Security-Policy",
             "default-src 'self'; img-src 'self' data: blob:" + mediaImageOrigin() + "; " +
+                // Local films come from this TV; an un-downloaded catalog film is previewed
+                // by the phone from the same media host that already serves its cover.
+                "media-src 'self' blob:" + mediaImageOrigin() + "; " +
                 "script-src 'self'; style-src 'self'; connect-src 'self'; " +
                 "base-uri 'none'; frame-ancestors 'none'",
         )
@@ -1034,8 +1284,8 @@ object ParentWebAdmin {
     }
 
     /**
-     * Covers before a download are loaded straight from the compile-time media host; the
-     * catalogue parser already rejects every other host. The page itself stays same-origin.
+     * Covers and un-downloaded previews are loaded straight from the compile-time media host;
+     * the catalogue parser already rejects every other host. The page itself stays same-origin.
      */
     private fun mediaImageOrigin(): String {
         val raw = BuildConfig.TV_MEDIA_CATALOG_URL.trim()

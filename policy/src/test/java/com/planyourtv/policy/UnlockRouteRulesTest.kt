@@ -33,9 +33,11 @@ class UnlockRouteRulesTest {
         assertTrue(defaults.hasUnlockRoute)
         assertEquals(20, defaults.sessionLimitMinutes)
         assertEquals(600, defaults.sessionCapMinutes)
-        assertEquals(1000, defaults.quizDailyLimitCount)
-        assertEquals(1000, defaults.studyRewardDailyLimitCount)
-        assertEquals(1000, defaults.directDailyFreeCount)
+        // 2026-11-26: 默认与果园统一为「不限制」（-1）；旧的 1000 在读取时归一化。
+        assertEquals(-1, defaults.quizDailyLimitCount)
+        assertEquals(-1, defaults.studyRewardDailyLimitCount)
+        assertEquals(-1, defaults.directDailyFreeCount)
+        assertEquals(-1, defaults.fruitExchangeDailyLimitCount)
     }
 
     @Test

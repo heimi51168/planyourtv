@@ -7,8 +7,8 @@
   <meta name="theme-color" content="#eaf4ff" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#111315" media="(prefers-color-scheme: dark)">
   <title>家长网页</title>
-  <link rel="stylesheet" href="quiz.css?v=61">
-  <link rel="stylesheet" href="parent.css?v=61">
+  <link rel="stylesheet" href="quiz.css?v=62">
+  <link rel="stylesheet" href="parent.css?v=65">
 </head>
 <body>
   <header class="top">
@@ -71,210 +71,19 @@
 
     <section id="editor" class="hidden">
       <section id="view-generate" class="view">
-        <section id="generateHome">
-          <section class="card gen-card">
-            <button id="openGenConfig" class="gen-head" type="button">
-              <span class="card-head">
-                <span class="eyebrow" data-i18n="genConfigTitle"></span>
-                <span class="edit">
-                  <span data-i18n="editRange"></span>
-                  <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
-                </span>
-              </span>
-              <span id="homeGenMain" class="main-line"></span>
-              <span id="homeGenSub" class="sub-line"></span>
-            </button>
-
-            <div class="gen-action">
-              <div id="genScopeStatus" class="scope-status hidden" role="status" aria-live="polite">
-                <span id="genScopeStatusText" class="scope-status-text"></span>
-                <div id="genScopeStatusActions" class="scope-status-actions hidden">
-                  <button id="alignGenToAnswer" class="btn secondary small" type="button" data-i18n="alignToAnswerScope"></button>
-                  <button id="editGenScope" class="btn text small" type="button" data-i18n="editGenerationScope"></button>
-                </div>
-                <p id="genScopeStatusNote" class="scope-status-note hidden" data-i18n="alignReplacesRequirement"></p>
-              </div>
-
-              <div id="generateIdle">
-                <button id="generate" class="btn primary block" type="button" data-i18n="generateStart"></button>
-                <p class="hint gen-disclaimer" data-i18n="generateDisclaimer"></p>
-                <p id="generateSetupHint" class="hint hidden" role="status"></p>
-              </div>
-
-              <div id="generateRunning" class="hidden">
-                <div class="progress-track" aria-hidden="true"><div id="progressFill" class="progress-fill"></div></div>
-                <div class="progress-row">
-                  <span id="generateProgress" role="status"></span>
-                  <button id="cancelGenerate" class="link-btn" type="button" data-i18n="generateStop"></button>
-                </div>
-                <p class="gen-refresh-note" role="note">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16h.01"/></svg>
-                  <span data-i18n="generateDoNotRefresh"></span>
-                </p>
-              </div>
-
-              <div id="generateDone" class="hidden">
-                <div class="done-row">
-                  <span class="done-icon" aria-hidden="true">✓</span>
-                  <span id="generatedCount"></span>
-                </div>
-                <button id="openQuestions" class="list-row" type="button">
-                  <span data-i18n="viewQuestionList"></span>
-                  <span id="listCount" class="list-count"></span>
-                  <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
-                </button>
-              </div>
-
-              <p id="generateError" class="error" role="alert"></p>
-              <p id="generateOk" class="ok" role="status"></p>
-              <p id="bankMeta" class="bank-meta"></p>
-              <p id="stockNotice" class="hint hidden"></p>
-            </div>
-          </section>
-
-          <button id="openAnswerConfig" class="card cfg-card" type="button">
-            <span class="card-head">
-              <span class="card-title">
-                <span class="eyebrow" data-i18n="answerConfigTitle"></span>
-                <span id="homeAnswerScopeMode" class="scope-mode-label" aria-live="polite"></span>
-              </span>
-              <span class="edit">
-                <span data-i18n="editRange"></span>
-                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
-              </span>
-            </span>
-            <span id="homeAnswerMain" class="answer-summary"></span>
-            <span id="homeAnswerA11y" class="sr-only"></span>
-            <span id="homeAnswerSub" class="sub-line"></span>
-            <span id="homeAnswerWarning" class="home-warning hidden" role="status" aria-live="polite"></span>
-          </button>
-        </section>
-
-        <section id="genConfigPage" class="subpage hidden">
-          <header class="page-head">
-            <button id="backFromGen" class="back-btn" type="button" data-i18n-aria="back">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-            </button>
-            <h1 data-i18n="genConfigTitle"></h1>
-          </header>
-          <p id="genSetupHint" class="hint hidden" role="status"></p>
-
-          <div class="field">
-            <span class="field-label" data-i18n="genGradeLabel"></span>
-            <div id="genGradeChips" class="chip-row" role="group" data-i18n-aria="genGradeLabel"></div>
-            <p id="genGradeHint" class="hint hidden"></p>
-          </div>
-
-          <div id="genSemesterField" class="field">
-            <span class="field-label" data-i18n="scopeSemester"></span>
-            <div id="genSemester" class="chip-row" role="group" data-i18n-aria="scopeSemester"></div>
-          </div>
-
-          <div id="genSubjectField" class="field">
-            <span class="field-label" data-i18n="genSubjectLabel"></span>
-            <div id="genSubjects" class="chip-row" role="group" data-i18n-aria="genSubjectLabel">
-              <button class="choice-chip" type="button" data-subject="chinese" aria-pressed="false" data-i18n="subjectChinese"></button>
-              <button class="choice-chip" type="button" data-subject="math" aria-pressed="true" data-i18n="subjectMath"></button>
-              <button class="choice-chip" type="button" data-subject="english" aria-pressed="false" data-i18n="subjectEnglish"></button>
-              <button class="choice-chip" type="button" data-subject="science" aria-pressed="false" data-i18n="subjectScience"></button>
-              <button class="choice-chip" type="button" data-subject="all" aria-pressed="false" data-i18n="subjectAll"></button>
-            </div>
-          </div>
-
-          <div id="genTextbookField" class="field">
-            <span class="field-label" id="genTextbookLabel" data-i18n="genTextbookLabel"></span>
-            <div id="genTextbook" class="chip-row" role="group" aria-labelledby="genTextbookLabel"></div>
-            <p class="hint gen-textbook-hint" data-i18n="genTextbookHint"></p>
-          </div>
-
-          <div class="field">
-            <span class="field-label" id="genRequirementLabel" data-i18n="genRequirementLabel"></span>
-            <div id="genRequirementSamples" class="chip-row sample-row" role="group"
-              aria-labelledby="genRequirementLabel" data-i18n-aria="genRequirementSamples"></div>
-            <input id="genRequirement" type="text" maxlength="30" autocomplete="off"
-              aria-labelledby="genRequirementLabel" data-i18n-placeholder="genRequirementPlaceholder">
-            <p id="genRequirementScope" class="hint requirement-hint"></p>
-          </div>
-
-          <div class="field">
-            <span class="field-label" data-i18n="genDifficulty"></span>
-            <div id="genDifficultyChips" class="chip-row" role="group" data-i18n-aria="genDifficulty"></div>
-          </div>
-
-          <div class="field">
-            <span class="field-label" data-i18n="genCount"></span>
-            <div id="targetCounts" class="chip-row" role="group" data-i18n-aria="genCount">
-              <button class="choice-chip target-chip" type="button" data-target="20" aria-pressed="true">20</button>
-              <button class="choice-chip target-chip" type="button" data-target="30" aria-pressed="false">30</button>
-              <button class="choice-chip target-chip" type="button" data-target="50" aria-pressed="false">50</button>
-            </div>
-          </div>
-
-          <div class="field">
-            <span class="field-label" id="genQuestionTypeLabel" data-i18n="genQuestionType"></span>
-            <div id="genQuestionTypeChips" class="chip-row" role="group"
-              aria-labelledby="genQuestionTypeLabel"></div>
-            <p class="hint" data-i18n="genTypeHint"></p>
-          </div>
-
-          <div class="field">
-            <span class="field-label" id="genOptionsLabel" data-i18n="genOptions"></span>
-            <div id="genOptionsChips" class="chip-row" role="group" aria-labelledby="genOptionsLabel"></div>
-          </div>
-
-          <div class="field">
-            <div class="gen-prompt-head">
-              <label for="genPrompt" data-i18n="genPromptLabel"></label>
-              <div class="gen-prompt-actions">
-                <span id="genPromptBadge" class="gen-badge"></span>
-                <button id="copyGenPrompt" class="btn text small" type="button"
-                  data-i18n="genCopyPrompt"></button>
-              </div>
-            </div>
-            <textarea id="genPrompt" class="gen-prompt" rows="3" maxlength="400"
-              data-i18n-placeholder="genPromptPlaceholder"></textarea>
-          </div>
-
-          <label class="toggle-row" for="genAutoAdd">
-            <span class="toggle-copy">
-              <span class="toggle-title" data-i18n="genAutoAdd"></span>
-              <span class="toggle-hint" data-i18n="genAutoAddHint"></span>
-            </span>
-            <span class="switch">
-              <input id="genAutoAdd" type="checkbox" checked>
-              <span class="switch-track" aria-hidden="true"></span>
-            </span>
-          </label>
-
-          <p id="rangeError" class="error" role="alert"></p>
-          <div class="sticky-bar">
-            <button id="saveRange" class="btn primary" type="button" data-i18n="saveConfig"></button>
-          </div>
-        </section>
-
-        <section id="answerConfigPage" class="subpage hidden">
-          <header class="page-head">
-            <button id="backFromAnswer" class="back-btn" type="button" data-i18n-aria="back">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-            </button>
-            <h1 data-i18n="answerConfigTitle"></h1>
-          </header>
-
+        <section id="generateHome" class="answer-home">
           <div id="answerTabs" class="page-tabs" role="tablist">
             <button type="button" role="tab" data-answer-tab="scope" aria-selected="true" data-i18n="answerScopeTitle"></button>
             <button type="button" role="tab" data-answer-tab="rules" aria-selected="false" data-i18n="answerRulesTitle"></button>
           </div>
 
           <div id="answerPaneScope">
-            <p id="levelsTotalHint" class="hint levels-total" aria-live="polite"></p>
-
             <div id="levelListSection">
               <div id="addLevelRow" class="level-add-row single">
                 <button id="addLevel" class="level-add-card course" type="button">
                   <span class="level-add-plus" aria-hidden="true">+</span>
                   <span class="level-add-copy">
                     <span class="level-add-title" data-i18n="levelAddPackageTitle"></span>
-                    <span class="level-add-meta" data-i18n="levelAddPackageMeta"></span>
                   </span>
                 </button>
               </div>
@@ -284,7 +93,6 @@
                 <span class="field-label" data-i18n="levelListTitle"></span>
                 <span id="levelListCount" class="level-count" aria-live="polite"></span>
               </div>
-              <p class="hint level-lead" data-i18n="levelListLead"></p>
 
               <div id="levelList" class="level-list"></div>
 
@@ -397,8 +205,8 @@
 
           <p id="settingsState" class="ok fold-status" role="status"></p>
           <p id="settingsError" class="error fold-status" role="alert"></p>
-          <div id="answerSaveBar" class="sticky-bar hidden">
-            <button id="saveAnswer" class="btn primary" type="button" data-i18n="saveConfig"></button>
+          <div id="answerSaveBar" class="answer-save-inline hidden">
+            <button id="saveAnswer" class="btn primary block" type="button" data-i18n="saveConfig"></button>
           </div>
         </section>
 
@@ -583,37 +391,14 @@
           </div>
         </section>
 
-        <section id="questionsPage" class="subpage hidden">
-          <header class="page-head">
-            <button id="backFromQuestions" class="back-btn" type="button" data-i18n-aria="back">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-            </button>
-            <h1 data-i18n="questionListTitle"></h1>
-            <button id="selectAll" class="head-action" type="button" data-i18n="selectAll"></button>
-          </header>
-
-          <p id="questionMeta" class="list-meta"></p>
-          <p id="genMultiWarning" class="hint hidden" data-i18n="genMultiReviewWarning"></p>
-          <div id="questionList"></div>
-          <p id="questionEmpty" class="empty hidden" data-i18n="generateNoQuestions"></p>
-          <p id="questionError" class="error" role="alert"></p>
-
-          <div class="sticky-bar split">
-            <span id="stickySelected"></span>
-            <button id="addSelected" class="btn primary" type="button" data-i18n="addToBank"></button>
-          </div>
-        </section>
       </section>
 
       <section id="view-bank" class="view hidden">
         <div id="bankHome">
-          <div class="section-head">
-            <div>
-              <p id="bankCounts" class="muted"></p>
-              <p id="bankSourceCounts" class="muted"></p>
-            </div>
-            <div class="head-actions">
-              <!-- Keep import clear of the native parent shell's floating menu. -->
+          <div class="section-head bank-head">
+            <div class="head-actions bank-head-actions">
+              <!-- Keep actions clear of the native parent shell's floating menu. -->
+              <button id="openBankGenerate" class="btn small bank-head-action" type="button" data-i18n="bankGenerateAction"></button>
               <button id="openBankImport" class="btn small bank-head-action" type="button" data-i18n="bankImportAction"></button>
               <button id="refreshBank" class="btn small bank-head-action" type="button" data-i18n="refresh"></button>
             </div>
@@ -883,6 +668,163 @@
       <section id="view-user" class="view hidden"></section>
       <section id="view-system" class="view hidden"></section>
 
+      <section id="genConfigPage" class="subpage hidden">
+        <header class="page-head">
+          <button id="backFromGen" class="back-btn" type="button" data-i18n-aria="back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+          </button>
+          <h1 data-i18n="genConfigTitle"></h1>
+        </header>
+
+        <div class="field">
+          <span class="field-label" data-i18n="genGradeLabel"></span>
+          <div id="genGradeChips" class="chip-row" role="group" data-i18n-aria="genGradeLabel"></div>
+          <p id="genGradeHint" class="hint hidden"></p>
+        </div>
+
+        <div id="genSemesterField" class="field">
+          <span class="field-label" data-i18n="scopeSemester"></span>
+          <div id="genSemester" class="chip-row" role="group" data-i18n-aria="scopeSemester"></div>
+        </div>
+
+        <div id="genSubjectField" class="field">
+          <span class="field-label" data-i18n="genSubjectLabel"></span>
+          <div id="genSubjects" class="chip-row" role="group" data-i18n-aria="genSubjectLabel">
+            <button class="choice-chip" type="button" data-subject="chinese" aria-pressed="false" data-i18n="subjectChinese"></button>
+            <button class="choice-chip" type="button" data-subject="math" aria-pressed="true" data-i18n="subjectMath"></button>
+            <button class="choice-chip" type="button" data-subject="english" aria-pressed="false" data-i18n="subjectEnglish"></button>
+            <button class="choice-chip" type="button" data-subject="science" aria-pressed="false" data-i18n="subjectScience"></button>
+            <button class="choice-chip" type="button" data-subject="all" aria-pressed="false" data-i18n="subjectAll"></button>
+          </div>
+        </div>
+
+        <div id="genTextbookField" class="field">
+          <span class="field-label" id="genTextbookLabel" data-i18n="genTextbookLabel"></span>
+          <div id="genTextbook" class="chip-row" role="group" aria-labelledby="genTextbookLabel"></div>
+          <p class="hint gen-textbook-hint" data-i18n="genTextbookHint"></p>
+        </div>
+
+        <div class="field">
+          <span class="field-label" id="genRequirementLabel" data-i18n="genRequirementLabel"></span>
+          <div id="genRequirementSamples" class="chip-row sample-row" role="group"
+            aria-labelledby="genRequirementLabel" data-i18n-aria="genRequirementSamples"></div>
+          <input id="genRequirement" type="text" maxlength="30" autocomplete="off"
+            aria-labelledby="genRequirementLabel" data-i18n-placeholder="genRequirementPlaceholder">
+          <p id="genRequirementScope" class="hint requirement-hint"></p>
+        </div>
+
+        <div class="field">
+          <span class="field-label" data-i18n="genDifficulty"></span>
+          <div id="genDifficultyChips" class="chip-row" role="group" data-i18n-aria="genDifficulty"></div>
+        </div>
+
+        <div class="field">
+          <span class="field-label" data-i18n="genCount"></span>
+          <div id="targetCounts" class="chip-row" role="group" data-i18n-aria="genCount">
+            <button class="choice-chip target-chip" type="button" data-target="20" aria-pressed="true">20</button>
+            <button class="choice-chip target-chip" type="button" data-target="30" aria-pressed="false">30</button>
+            <button class="choice-chip target-chip" type="button" data-target="50" aria-pressed="false">50</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="field-label" id="genQuestionTypeLabel" data-i18n="genQuestionType"></span>
+          <div id="genQuestionTypeChips" class="chip-row" role="group"
+            aria-labelledby="genQuestionTypeLabel"></div>
+          <p class="hint" data-i18n="genTypeHint"></p>
+        </div>
+
+        <div class="field">
+          <span class="field-label" id="genOptionsLabel" data-i18n="genOptions"></span>
+          <div id="genOptionsChips" class="chip-row" role="group" aria-labelledby="genOptionsLabel"></div>
+        </div>
+
+        <div class="field">
+          <div class="gen-prompt-head">
+            <label for="genPrompt" data-i18n="genPromptLabel"></label>
+            <div class="gen-prompt-actions">
+              <span id="genPromptBadge" class="gen-badge"></span>
+              <button id="copyGenPrompt" class="btn text small" type="button"
+                data-i18n="genCopyPrompt"></button>
+            </div>
+          </div>
+          <textarea id="genPrompt" class="gen-prompt" rows="3" maxlength="400"
+            data-i18n-placeholder="genPromptPlaceholder"></textarea>
+        </div>
+
+        <label class="toggle-row" for="genAutoAdd">
+          <span class="toggle-copy">
+            <span class="toggle-title" data-i18n="genAutoAdd"></span>
+            <span class="toggle-hint" data-i18n="genAutoAddHint"></span>
+          </span>
+          <span class="switch">
+            <input id="genAutoAdd" type="checkbox" checked>
+            <span class="switch-track" aria-hidden="true"></span>
+          </span>
+        </label>
+
+        <div id="genScopeStatus" class="scope-status hidden" role="status" aria-live="polite">
+          <span id="genScopeStatusText" class="scope-status-text"></span>
+          <div id="genScopeStatusActions" class="scope-status-actions hidden">
+            <button id="alignGenToAnswer" class="btn secondary small" type="button" data-i18n="alignToAnswerScope"></button>
+          </div>
+          <p id="genScopeStatusNote" class="scope-status-note hidden" data-i18n="alignReplacesRequirement"></p>
+        </div>
+
+        <div id="generateRunning" class="hidden">
+          <div class="progress-track" aria-hidden="true"><div id="progressFill" class="progress-fill"></div></div>
+          <div class="progress-row">
+            <span id="generateProgress" role="status"></span>
+            <button id="cancelGenerate" class="link-btn" type="button" data-i18n="generateStop"></button>
+          </div>
+          <p class="gen-refresh-note" role="note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16h.01"/></svg>
+            <span data-i18n="generateDoNotRefresh"></span>
+          </p>
+        </div>
+
+        <div id="generateDone" class="hidden">
+          <div class="done-row">
+            <span class="done-icon" aria-hidden="true">✓</span>
+            <span id="generatedCount"></span>
+          </div>
+          <button id="openQuestions" class="list-row" type="button">
+            <span data-i18n="viewQuestionList"></span>
+            <span id="listCount" class="list-count"></span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+          </button>
+        </div>
+
+        <p id="generateError" class="error" role="alert"></p>
+        <p id="generateOk" class="ok" role="status"></p>
+        <p id="generateSetupHint" class="hint hidden" role="status"></p>
+        <p id="rangeError" class="error" role="alert"></p>
+        <div class="sticky-bar">
+          <button id="generate" class="btn primary" type="button" data-i18n="generateStart"></button>
+        </div>
+      </section>
+
+      <section id="questionsPage" class="subpage hidden">
+        <header class="page-head">
+          <button id="backFromQuestions" class="back-btn" type="button" data-i18n-aria="back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+          </button>
+          <h1 data-i18n="questionListTitle"></h1>
+          <button id="selectAll" class="head-action" type="button" data-i18n="selectAll"></button>
+        </header>
+
+        <p id="questionMeta" class="list-meta"></p>
+        <p id="genMultiWarning" class="hint hidden" data-i18n="genMultiReviewWarning"></p>
+        <div id="questionList"></div>
+        <p id="questionEmpty" class="empty hidden" data-i18n="generateNoQuestions"></p>
+        <p id="questionError" class="error" role="alert"></p>
+
+        <div class="sticky-bar split">
+          <span id="stickySelected"></span>
+          <button id="addSelected" class="btn primary" type="button" data-i18n="addToBank"></button>
+        </div>
+      </section>
+
       <section id="aiConfigPage" class="subpage hidden">
         <header class="page-head">
           <button id="backFromAi" class="back-btn" type="button" data-i18n-aria="back">
@@ -1126,7 +1068,7 @@
 
   <div id="parentCenterRoot" class="parent-root hidden"></div>
 
-  <script src="parent.js?v=64"></script>
-  <script src="quiz.js?v=65"></script>
+  <script src="parent.js?v=68"></script>
+  <script src="quiz.js?v=66"></script>
 </body>
 </html>

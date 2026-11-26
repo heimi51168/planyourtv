@@ -54,6 +54,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
@@ -70,6 +71,9 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.orchard.tv.BuildConfig
 import app.orchard.tv.R
+import app.orchard.tv.system.HomeStatus
+import app.orchard.tv.update.Updates
+import app.orchard.tv.guard.HomeGuardService
 import app.orchard.tv.settings.AerialSettings
 import app.orchard.tv.settings.ClockHours
 import app.orchard.tv.settings.Restricted
@@ -125,7 +129,7 @@ fun WallpaperSheet(
     onPin: (on: Boolean) -> Unit,
     /** Kids and Elders mode's setup (behind the PIN). */
     onKids: () -> Unit,
-    /** Version, Aerial credit and the MIT license. */
+/** Version, Aerial credit and the MIT license. */
     onAbout: () -> Unit,
     /** The sheet is all the way in (true) or not: Home need not draw under it then ([SheetCovers]). */
     onSettled: (Boolean) -> Unit = {},
@@ -301,6 +305,7 @@ fun WallpaperSheet(
                         when {
                             Wallpapers.screensaver == ScreensaverMode.Videos -> stringResource(R.string.ss_videos_hint)
                             Wallpapers.screensaver == ScreensaverMode.System -> stringResource(R.string.ss_system_hint)
+                            Wallpapers.screensaver == ScreensaverMode.Sleep -> stringResource(R.string.ss_sleep_hint)
                             Wallpapers.screensaverFollows -> stringResource(R.string.ss_follow_hint)
                             AerialSettings.backStartsScreensaver -> stringResource(R.string.ss_back_hint)
                             else -> null
@@ -370,7 +375,7 @@ fun WallpaperSheet(
                     SettingRow(R.string.wp_weather_city, null, note, first = true) { WeatherValue() }
                 }
 
-                // Last, as on a phone's Settings: one row, and the page behind it does the rest.
+// Last, as on a phone's Settings: one row, and the page behind it does the rest.
                 Spacer(Modifier.height(22.dp))
                 SectionTitle(R.string.about_section)
                 Group { note ->
@@ -623,8 +628,13 @@ private fun <T> Choices(
 ) {
     SettingRow(label, hint, note, first) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            options.forEach { (value, text) ->
-                Chip(if (text is Int) stringResource(text) else text.toString(), on = current == value) { choose(value) }
+            options.forEachIndexed { index, (value, text) ->
+                Chip(
+                    if (text is Int) stringResource(text) else text.toString(),
+                    on = current == value,
+                    rowStart = index == 0,
+                    rowEnd = index == options.lastIndex,
+                ) { choose(value) }
             }
         }
     }
@@ -632,10 +642,13 @@ private fun <T> Choices(
 
 /** Parental PIN on or off; either way goes through the PIN pad (issue #10). */
 @Composable
-private fun PinChoice(onPin: (on: Boolean) -> Unit, onFocused: () -> Unit) {
+private fun PinChoice(onPin: (on: Boolean) -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        listOf(false to R.string.st_pin_off, true to R.string.st_pin_on).forEach { (on, label) ->
-            Chip(stringResource(label), on = AerialSettings.pinSet == on, onFocused = onFocused) {
+        listOf(false to R.string.st_pin_off, true to R.string.st_pin_on).forEachIndexed { index, (on, label) ->
+            Chip(
+                stringResource(label), on = AerialSettings.pinSet == on,
+                rowStart = index == 0, rowEnd = index == 1,
+            ) {
                 if (AerialSettings.pinSet != on) onPin(on)
             }
         }
@@ -669,8 +682,22 @@ private fun WeatherValue() {
 
 /** A pill to pick one of a few options: a check on the chosen one, white when focused. */
 @Composable
-private fun Chip(label: String, on: Boolean, onFocused: (() -> Unit)? = null, onClick: () -> Unit) {
-    Pressable(onClick = onClick, focusedScale = 1.06f) { state ->
+private fun Chip(
+    label: String,
+    on: Boolean,
+    onFocused: (() -> Unit)? = null,
+    compact: Boolean = false,
+    rowStart: Boolean = false,
+    rowEnd: Boolean = false,
+    onClick: () -> Unit,
+) {
+    Pressable(
+        onClick = onClick, focusedScale = 1.06f,
+        modifier = Modifier.focusProperties {
+            if (rowStart) left = FocusRequester.Cancel
+            if (rowEnd) right = FocusRequester.Cancel
+        },
+    ) { state ->
         if (onFocused != null) LaunchedEffect(state.focused) { if (state.focused) onFocused() }
         val bg by animateColorAsState(
             when {
@@ -682,9 +709,9 @@ private fun Chip(label: String, on: Boolean, onFocused: (() -> Unit)? = null, on
         )
         val fg = if (state.focused) Palette.OnFocus else Palette.Label
         Row(
-            Modifier.clip(RoundedCornerShape(50)).drawBehind { drawRect(bg) }.height(40.dp).padding(horizontal = 20.dp),
+            Modifier.clip(RoundedCornerShape(50)).drawBehind { drawRect(bg) }.height(40.dp).padding(horizontal = if (compact) 15.dp else 20.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 8.dp),
         ) {
             if (on) GlyphIcon(Glyph.Check, fg, 14.dp)
             BasicText(label, style = Type.Body.copy(color = fg))
@@ -695,7 +722,13 @@ private fun Chip(label: String, on: Boolean, onFocused: (() -> Unit)? = null, on
 /** A pill that does something rather than choosing a value: white when focused, a glyph after its label. */
 @Composable
 private fun ActionChip(label: String, glyph: Glyph, onClick: () -> Unit) {
-    Pressable(onClick = onClick, focusedScale = 1.06f) { state ->
+    Pressable(
+        onClick = onClick, focusedScale = 1.06f,
+        modifier = Modifier.focusProperties {
+            left = FocusRequester.Cancel
+            right = FocusRequester.Cancel
+        },
+    ) { state ->
         val bg by animateColorAsState(if (state.focused) Palette.Focus else Palette.FillStrong, tween(140, easing = Motion.EaseOut), label = "action-bg")
         val fg = if (state.focused) Palette.OnFocus else Palette.Label
         Row(
@@ -711,33 +744,46 @@ private fun ActionChip(label: String, glyph: Glyph, onClick: () -> Unit) {
 
 @Composable
 private fun ScreensaverChoice(onStart: () -> Unit) {
+    // Standby only where the guard can put the TV to sleep (issue #1436), or still chosen.
+    val sleep = remember { HomeGuardService.canSleep } || Wallpapers.screensaver == ScreensaverMode.Sleep
+    val context = LocalContext.current
+    // No film catalogue in the community snapshot: no aerial choice.
+    val modes = buildList {
+        if (Aerials.available(context)) add(ScreensaverMode.Aerial to R.string.ss_aerial)
+        add(ScreensaverMode.Photos to R.string.ss_photos)
+        add(ScreensaverMode.Clock to R.string.ss_clock)
+        add(ScreensaverMode.Videos to R.string.ss_videos)
+        add(ScreensaverMode.System to R.string.ss_system)
+        if (sleep) add(ScreensaverMode.Sleep to R.string.ss_sleep)
+    }
+    val hasStart = Wallpapers.screensaver != ScreensaverMode.Sleep
     // The choice first, then the action that tries it.
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        val context = LocalContext.current
-        // No film catalogue in the community snapshot: no aerial choice.
-        val modes = remember {
-            buildList {
-                if (Aerials.available(context)) add(ScreensaverMode.Aerial to R.string.ss_aerial)
-                add(ScreensaverMode.Photos to R.string.ss_photos)
-                add(ScreensaverMode.Clock to R.string.ss_clock)
-                add(ScreensaverMode.Videos to R.string.ss_videos)
-                add(ScreensaverMode.System to R.string.ss_system)
-            }
+    // Six choices with Standby: narrower chips and gaps, so the row's label keeps its room.
+    Row(horizontalArrangement = Arrangement.spacedBy(if (sleep) 8.dp else 10.dp)) {
+        modes.forEachIndexed { index, (mode, label) ->
+            Chip(
+                stringResource(label), on = Wallpapers.screensaver == mode, compact = sleep,
+                rowStart = index == 0, rowEnd = !hasStart && index == modes.lastIndex,
+            ) { Wallpapers.chooseScreensaver(mode) }
         }
-        modes.forEach { (mode, label) ->
-            Chip(stringResource(label), on = Wallpapers.screensaver == mode) { Wallpapers.chooseScreensaver(mode) }
-        }
-        Spacer(Modifier.width(6.dp))
-        Pressable(onClick = onStart, focusedScale = 1.06f) { state ->
+        if (!sleep) Spacer(Modifier.width(6.dp))
+        // Nothing to try with Standby: starting it puts the TV to sleep. With its chip the row has
+        // no room for "Start Now" in words (it wrapped to two lines and pushed the row's label out,
+        // TCL MT5879): the play glyph alone then, still read out by its name.
+        val start = stringResource(R.string.ss_start)
+        if (hasStart) Pressable(
+            onClick = onStart, focusedScale = 1.06f, label = start,
+            modifier = Modifier.focusProperties { right = FocusRequester.Cancel },
+        ) { state ->
             val bg by animateColorAsState(if (state.focused) Palette.Focus else Palette.FillStrong, tween(140, easing = Motion.EaseOut), label = "ss-start")
             val fg = if (state.focused) Palette.OnFocus else Palette.Label
             Row(
-                Modifier.clip(RoundedCornerShape(50)).drawBehind { drawRect(bg) }.height(40.dp).padding(horizontal = 20.dp),
+                Modifier.clip(RoundedCornerShape(50)).drawBehind { drawRect(bg) }.height(40.dp).then(if (sleep) Modifier.width(40.dp) else Modifier.padding(horizontal = 20.dp)),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = if (sleep) Arrangement.Center else Arrangement.spacedBy(8.dp),
             ) {
                 GlyphIcon(Glyph.Play, fg, 14.dp)
-                BasicText(stringResource(R.string.ss_start), style = Type.Body.copy(color = fg))
+                if (!sleep) BasicText(start, style = Type.Body.copy(color = fg), maxLines = 1)
             }
         }
     }

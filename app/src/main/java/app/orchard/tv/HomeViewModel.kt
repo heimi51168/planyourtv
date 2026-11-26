@@ -34,6 +34,7 @@ import app.orchard.tv.policy.PolicyAppInventory
 import app.orchard.tv.policy.PolicyHomeReady
 import app.orchard.tv.policy.PolicyModeCoordinator
 import app.orchard.tv.policy.SourceEntrySettings
+import app.orchard.tv.policy.SystemEntrySettings
 import app.orchard.tv.settings.AerialSettings
 import app.orchard.tv.settings.Restricted
 import app.orchard.tv.system.XgimiBoost
@@ -69,7 +70,11 @@ private const val POLL_QUIET_MS = 400L
 
 sealed interface Overlay {
     data object None : Overlay
-    data class ControlCenter(val page: CcPage = CcPage.Main) : Overlay
+    data class ControlCenter(
+        val page: CcPage = CcPage.Main,
+        /** Return from Input settings to its row in the input list. */
+        val focusInputSettings: Boolean = false,
+    ) : Overlay
     /** [inFolder]: the menu was opened inside that folder, and closes back to it. */
     data class AppMenu(val key: String, val anchor: Rect, val inFolder: String? = null) : Overlay
     data class Folder(val id: String) : Overlay
@@ -234,11 +239,17 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         // An app renamed on the phone page.
         viewModelScope.launch { snapshotFlow { AppNames.all }.drop(1).collect { if (loaded) arrange() } }
         viewModelScope.launch { snapshotFlow { AerialSettings.previewApps }.drop(1).collect { if (loaded) arrange() } }
-        // The parent-center source-entry switch and the session gate change whether pinned inputs
-        // join the grid. The policy state ticks every second in a session, so keep only its changes.
+        // The parent-center source/system-entry switches and the session gate change whether
+        // pinned inputs and maker entries join the grid. The policy state ticks every second in a
+        // session, so keep only changes to the resulting gates.
         viewModelScope.launch {
-            combine(SourceEntrySettings.visible, PolicyModeCoordinator.state) { _, _ ->
-                PolicyModeCoordinator.sourceEntriesAllowed()
+            combine(
+                SourceEntrySettings.visible,
+                SystemEntrySettings.visible,
+                PolicyModeCoordinator.state,
+            ) { _, _, _ ->
+                PolicyModeCoordinator.sourceEntriesAllowed() to
+                    PolicyModeCoordinator.appManagementAllowed()
             }.distinctUntilChanged().drop(1).collect { if (loaded) arrange() }
         }
         // Into or out of Kids and Elders mode, or its tiles chosen: another Home.
@@ -480,8 +491,12 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         // Names typed on the phone page stand in for the apps' own, everywhere Home shows one.
         // Policy filtering stays at this presentation layer: AppCatalog keeps the full tile
         // cache, and an APPS grant only changes what is handed to LayoutStore.
+        val managementAllowed = PolicyModeCoordinator.appManagementAllowed()
         val named = all
             .map { e -> AppNames.of(e.key)?.let { e.copy(label = it) } ?: e }
+            // Child mode also takes "App info" and "Uninstall" out of every app's menu. The
+            // catalog itself stays policy-free; this arranged copy is what the menu reads.
+            .map { e -> if (managementAllowed) e else e.copy(manageable = false) }
             .filter { PolicyModeCoordinator.allowsHomePackage(it.packageName) }
         val arrangement = store.arrange(named + pinned) { folder, inside ->
             val shown = inside.take(9).map { it.art }

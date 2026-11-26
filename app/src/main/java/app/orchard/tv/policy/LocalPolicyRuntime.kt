@@ -5,13 +5,21 @@ import android.os.PowerManager
 import android.os.SystemClock
 import android.util.Log
 import app.orchard.tv.R
+import app.orchard.tv.guard.HomeGuardService
 import app.orchard.tv.quiz.QuizLaunchTarget
+import app.orchard.tv.quiz.QuizRuntime
 import app.orchard.tv.system.BootOpen
 import com.planyourtv.policy.AccessMode
 import com.planyourtv.policy.Activation
 import com.planyourtv.policy.BootEvidence
+import com.planyourtv.policy.FruitAccountSnapshot
+import com.planyourtv.policy.FruitAccountRules
+import com.planyourtv.policy.FruitFacts
+import com.planyourtv.policy.FruitReserveResult
 import com.planyourtv.policy.GuardSnapshot
 import com.planyourtv.policy.GuardStatus
+import com.planyourtv.policy.HostedFruitFacts
+import com.planyourtv.policy.LocalFruitAccountStore
 import com.planyourtv.policy.LocalPolicyStore
 import com.planyourtv.policy.LocalRecovery
 import com.planyourtv.policy.LocalRestPolicy
@@ -22,6 +30,7 @@ import com.planyourtv.policy.LocalSessionEnd
 import com.planyourtv.policy.ManualTimerScope
 import com.planyourtv.policy.LocalTimeWindow
 import com.planyourtv.policy.LockReason
+import com.planyourtv.policy.MemberStatus
 import com.planyourtv.policy.OverrideLease
 import com.planyourtv.policy.PendingGrantSnapshot
 import com.planyourtv.policy.PendingGrantSource
@@ -106,6 +115,12 @@ object LocalPolicyRuntime {
     private const val SETTLED_SESSION_LIMIT = 64
     private const val KEPT_USAGE_DAYS = 3
     private const val LEDGER_RETENTION_DAYS = 31
+    /**
+     * A remote fruit start is refused when the last successful foreground query is older than
+     * this. The guard polls once a second; 3 s tolerates one slow binder call (cold boot can
+     * take seconds) without letting a stale snapshot authorize a start.
+     */
+    private const val FOREGROUND_STALE_MS = 3_000L
     private val USAGE_DATE = Regex("""\d{4}-\d{2}-\d{2}""")
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -172,6 +187,13 @@ object LocalPolicyRuntime {
     private val studyDays = LinkedHashMap<String, Long>()
     /** Last foreground package reported by the guard; memory-only, used to resume on return. */
     private var foregroundPackage: String? = null
+    /**
+     * Last time the guard got a fresh answer from the foreground source. The poll only calls
+     * [onForegroundChanged] when the front app changes, so a child who stays in one app would
+     * otherwise look stale; [noteForegroundObserved] is called after every successful query.
+     */
+    @Volatile
+    private var foregroundObservedAtMs = 0L
     private var breakUntil = 0L
     private var lastSessionEndedAt = 0L
     /** Sessions already settled, keyed by id, so a crash cannot add their usage twice. */
@@ -197,6 +219,13 @@ object LocalPolicyRuntime {
      */
     private var hostedSubjectId = 0L
     private val hostedScope: String? get() = LocalPolicyStore.hostedScopeOf(hostedSubjectId)
+    /**
+     * The cloud fruit projection for the current hosted member. It is a HOSTED cache only and
+     * is refreshed by the coordinator from the orchard device context; the LOCAL ledger is
+     * never read or written for it. Cached per scope so a member switch cannot leak a balance.
+     */
+    private var hostedFruitFacts: HostedFruitFacts? = null
+    private var hostedFruitFactsScope: String? = null
     private var policyEpoch = 0L
     private var studyMode = false
     /** Launchable packages, cached so an all-apps policy can publish a concrete APPS scope. */
@@ -209,6 +238,20 @@ object LocalPolicyRuntime {
     private var usageSink: RuleUsageSink? = null
     private var lastUsageReportedSeconds = 0L
     private val spokenThresholds = mutableSetOf<Long>()
+    /**
+     * A Web credit or rate edit must refresh the child lock screen without waiting for a tick.
+     * Only the active member's account is visible there; edits to another child's ledger stay
+     * silent until that child becomes active.
+     */
+    private val fruitAccountListener: (String, FruitAccountSnapshot) -> Unit = { memberId, _ ->
+        if (initialized) {
+            scope.launch {
+                synchronized(this@LocalPolicyRuntime) {
+                    if (memberId == FamilyHub.state.value.activeUserId) publish()
+                }
+            }
+        }
+    }
 
     private val _state = MutableStateFlow(PolicyUiState(mode = PolicyMode.LOCAL, loaded = false))
     val state: StateFlow<PolicyUiState> = _state.asStateFlow()
@@ -573,6 +616,7 @@ object LocalPolicyRuntime {
         // Execution is manual-only; a stored AUTO cursor is never restored.
         activation = Activation.MANUAL
         loadRuleSets(subjectConfig, allowLegacyFallback = isDefaultSubject)
+        LocalFruitAccountStore.addListener(fruitAccountListener)
         restoreRuntimePartition(allowLegacyFallback = isDefaultSubject)
         recoveryComplete = true
         initialized = true
@@ -690,6 +734,10 @@ object LocalPolicyRuntime {
             },
             study = guardSnapshot.study.takeIf { guardStatus == GuardStatus.STUDY_MODE },
         )
+        // V58: a fruit debit is written before the session starts. After a process death the
+        // route can only tell which reservations really started once the session/settled state
+        // above is loaded. This never runs for the hosted partition: its account is separate.
+        if (!hosted) reconcileFruitLedgers()
     }
 
     /** Loads the entertainment and study ledgers; the study ledger never feeds [usedSeconds]. */
@@ -1018,6 +1066,8 @@ object LocalPolicyRuntime {
         guardStatus = GuardStatus.ENFORCING
         parentOverrideUntil = 0L
         studyMode = false
+        foregroundPackage = null
+        foregroundObservedAtMs = 0L
         saveGuardState(phase = GuardStatus.ENFORCING, override = null, study = null)
         LocalPolicyStore.saveParentOverrideActive(false)
         // A pending remote grant belongs to the previous guard; the new mode must not inherit
@@ -1051,6 +1101,8 @@ object LocalPolicyRuntime {
     fun deactivate() {
         cancelStudyRound("GUARD_INACTIVE", bringHome = false)
         active = false
+        foregroundPackage = null
+        foregroundObservedAtMs = 0L
         ticker?.cancel()
         ticker = null
         val hadPending = pendingRemoteStart != null
@@ -1216,6 +1268,7 @@ object LocalPolicyRuntime {
     fun onForegroundChanged(pkg: String) {
         if (!initialized || pkg.isBlank()) return
         foregroundPackage = pkg
+        foregroundObservedAtMs = SystemClock.elapsedRealtime()
         val configured = rules?.normalized()
         val unlimited = pkg in configured?.effectiveUnlimitedPackages.orEmpty()
         if (unlimited) {
@@ -1239,6 +1292,15 @@ object LocalPolicyRuntime {
         if (pkg == context?.packageName || pkg in current.plan.allowedPackages) {
             resumeSession(System.currentTimeMillis(), emitCue = true)
         }
+    }
+
+    /**
+     * The guard's foreground source answered successfully, even when the front app did not
+     * change. Cheap enough for the usage-stats worker; [startRemoteFruitSession] uses it to
+     * tell "idle for a while" from "the poll has not run since boot".
+     */
+    fun noteForegroundObserved() {
+        foregroundObservedAtMs = SystemClock.elapsedRealtime()
     }
 
     /** Parent PIN from the lock screen: child mode pauses until the override ends. */
@@ -1624,6 +1686,8 @@ object LocalPolicyRuntime {
         LocalPolicyStore.clearHostedExecution()
         hostedSubjectId = 0L
         hostedExecutionLoaded = false
+        hostedFruitFacts = null
+        hostedFruitFactsScope = null
     }
 
     /** Reporting is optional. Without a sink the local engine still runs entirely offline. */
@@ -1790,6 +1854,7 @@ object LocalPolicyRuntime {
         restRemainingSeconds = 0L
         recoveryComplete = true
         checkpointRuntime(durable = true, forceSync = true)
+        reconcileFruitLedgers()
         publish()
     }
 
@@ -2355,6 +2420,164 @@ object LocalPolicyRuntime {
         )
     }
 
+    /**
+     * V58 child fruit exchange. The account debit and the session are one logical transaction:
+     * the session id is generated first, the balance is reserved as `PENDING`, only then is the
+     * normal admitted session started, and the row becomes `COMMITTED` afterwards. A failure
+     * before the session exists restores the fruits; once the session is running there is no
+     * refund, even if the child leaves early. The hosted account is a separate system in V58,
+     * so only LOCAL mode may enter here.
+     */
+    @Synchronized
+    fun startFruitSession(fruits: Int, title: String): SessionStartResult {
+        if (!initialized || !active) {
+            return rejectFruitSession(RejectReason.GUARD_DISABLED, fruits)
+        }
+        if (source != PolicySource.LOCAL || activation != Activation.MANUAL) {
+            return rejectFruitSession(RejectReason.INVALID_COMMAND, fruits)
+        }
+        if (studyMode) return rejectFruitSession(RejectReason.BUSY, fruits)
+        val configured = rules?.normalized()?.takeIf { it.isUsable }
+            ?: return rejectFruitSession(RejectReason.INVALID_COMMAND, fruits)
+        if (!configured.fruitRouteActive) {
+            return rejectFruitSession(RejectReason.INVALID_COMMAND, fruits)
+        }
+        if (fruits !in 1..FruitAccountRules.MAX_EXCHANGE_FRUITS) {
+            return rejectFruitSession(RejectReason.INVALID_COMMAND, fruits)
+        }
+        val memberId = FamilyHub.state.value.activeUserId
+        val account = memberId.takeIf { it.isNotBlank() }
+            ?.let { LocalFruitAccountStore.load(it) }
+            ?: return rejectFruitSession(
+                RejectReason.INVALID_COMMAND,
+                fruits,
+                "accountMissing",
+            )
+        val rate = account.exchangeRateMinutesPerFruit
+        if (!account.enabled || !account.rateValid) {
+            return rejectFruitSession(RejectReason.INVALID_COMMAND, fruits, "accountUnavailable")
+        }
+        val expectedSeconds = fruits.toLong() * rate.toLong() * 60L
+        if (expectedSeconds <= 0L) {
+            return rejectFruitSession(RejectReason.INVALID_COMMAND, fruits, "durationZero")
+        }
+        val facts = FruitFacts(
+            accountPresent = true,
+            accountEnabled = account.enabled,
+            exchangeRateMinutesPerFruit = rate,
+            availableFruitHundredths = account.availableFruitHundredths,
+            selectedFruits = fruits,
+            supported = true,
+        )
+        val admission = admitStart(
+            origin = SessionOrigin.LOCAL,
+            durationSeconds = expectedSeconds,
+            expectedEpoch = null,
+            requestedScope = null,
+            expiresAtEpochMs = null,
+            confirmingPending = false,
+            route = UnlockRoute.FRUIT,
+            fruit = facts,
+        )
+        if (admission is StartAdmission.Refused) {
+            return rejectFruitSession(admission.reason, fruits)
+        }
+        val ready = admission as StartAdmission.Ready
+        // The planner is the only authority for "how many whole fruits fit"; a mismatch means
+        // the exchange would promise minutes the session cannot grant.
+        if (ready.budgetSeconds != expectedSeconds) {
+            return rejectFruitSession(RejectReason.INVALID_COMMAND, fruits, "budgetMismatch")
+        }
+        val sessionId = newRuleSessionId()
+        val now = ready.nowMs
+        val reservation = LocalFruitAccountStore.reserveExchange(
+            memberId = memberId,
+            fruits = fruits,
+            sessionId = sessionId,
+            title = title.trim().ifEmpty { "FRUIT" },
+            now = now,
+        )
+        if (reservation is FruitReserveResult.Rejected) {
+            return rejectFruitSession(
+                RejectReason.INVALID_COMMAND,
+                fruits,
+                "reserve:${reservation.error.name}",
+            )
+        }
+        val entry = (reservation as FruitReserveResult.Ok).reservation.entry
+        // The account rate used for the debit must be the same rate the session was planned
+        // with. A parent editing the rate from the Web between those two steps would otherwise
+        // create a ledger row that disagrees with the granted minutes; void and ask again.
+        if (entry.minutesPerFruit != rate || entry.minutes != fruits * rate) {
+            LocalFruitAccountStore.voidExchange(memberId, entry.id, System.currentTimeMillis())
+            return rejectFruitSession(RejectReason.INVALID_COMMAND, fruits, "rateChanged")
+        }
+        return try {
+            commitStart(
+                ready,
+                origin = SessionOrigin.LOCAL,
+                route = UnlockRoute.FRUIT,
+                sessionId = sessionId,
+            )
+            // The session is now established; from here on the exchange is final.
+            LocalFruitAccountStore.commitExchange(
+                memberId,
+                entry.id,
+                System.currentTimeMillis(),
+            )
+            PolicyFlowTrace.event(
+                "session.fruit.start",
+                "fruits" to fruits,
+                "rate" to rate,
+                "seconds" to expectedSeconds,
+                "balance" to entry.fruitHundredths,
+                "member" to memberId,
+            )
+            SessionStartResult.Started
+        } catch (error: Throwable) {
+            // If startPlan already put the session in memory, it is running and must stay
+            // charged; only a failure before that point refunds the reservation.
+            if (session?.plan?.sessionId == sessionId) {
+                runCatching {
+                    LocalFruitAccountStore.commitExchange(
+                        memberId,
+                        entry.id,
+                        System.currentTimeMillis(),
+                    )
+                }
+                Log.w(TAG, "fruit session started but commit was retried", error)
+                SessionStartResult.Started
+            } else {
+                LocalFruitAccountStore.voidExchange(
+                    memberId,
+                    entry.id,
+                    System.currentTimeMillis(),
+                )
+                Log.e(TAG, "fruit session failed after reserve; restored", error)
+                SessionStartResult.Rejected(RejectReason.INVALID_COMMAND)
+            }
+        }
+    }
+
+    /** One log line per refused fruit exchange; the wheel shows the mapped message. */
+    private fun rejectFruitSession(
+        reason: RejectReason,
+        fruits: Int,
+        detail: String = "-",
+    ): SessionStartResult {
+        PolicyFlowTrace.event(
+            "session.fruit.reject",
+            "reason" to reason,
+            "detail" to detail,
+            "fruits" to fruits,
+            "source" to source,
+            "guard" to guardStatus,
+            "studyMode" to studyMode,
+            "session" to (session != null),
+        )
+        return SessionStartResult.Rejected(reason)
+    }
+
     /** One log line per refused direct start; the lock screen shows the same reason. */
     private fun rejectDirectSession(reason: RejectReason, detail: String = "-"): SessionStartResult {
         PolicyFlowTrace.event(
@@ -2403,6 +2626,13 @@ object LocalPolicyRuntime {
         allowedPackages: Set<String>?,
         expiresAtEpochMs: Long? = null,
         recordId: Int = 0,
+        /**
+         * TV-initiated hosted fruit exchange: the child already confirmed the exchange on the
+         * lock screen, so the dispatch that follows the HTTP request arms and starts in one
+         * step. The pending gate is never shown or spoken; a failed start is returned as a
+         * rejection so the caller ACKs false and the orchard rolls the fruit back.
+         */
+        autoStart: Boolean = false,
     ): SessionStartResult {
         PolicyFlowTrace.event(
             "grant.mqtt.seen",
@@ -2411,6 +2641,7 @@ object LocalPolicyRuntime {
             "pkgs" to allowedPackages?.size,
             "epoch" to expectedEpoch,
             "localEpoch" to policyEpoch,
+            "autoStart" to autoStart,
         )
         val configured = rules?.normalized()?.takeIf { it.isUsable }
             ?: return SessionStartResult.Rejected(RejectReason.INVALID_COMMAND)
@@ -2437,6 +2668,7 @@ object LocalPolicyRuntime {
                     )
                     publish()
                 }
+                if (autoStart) return confirmRemoteManualSession()
                 return SessionStartResult.Pending
             }
             if (existing.expectedEpoch != policyEpoch) {
@@ -2476,10 +2708,114 @@ object LocalPolicyRuntime {
                     source = PendingSource.MQTT,
                     deadlineEpochMs = admission.windowEndEpochMs,
                     validUntilLabel = "",
+                    announce = !autoStart,
                 )
-                SessionStartResult.Pending
+                if (!autoStart) return SessionStartResult.Pending
+                val started = confirmRemoteManualSession()
+                if (started is SessionStartResult.Rejected) {
+                    // The exchange must fail as one unit: leaving the armed gate behind would
+                    // show a start button for a grant the orchard is about to roll back.
+                    pendingRemoteStart?.let { dropPending(it, rememberRecord = false) }
+                }
+                started
             }
         }
+    }
+
+    /**
+     * Uniapp fruit exchange delivered as `start_fruit_session` (2026-11-25).
+     *
+     * <p>Unlike [startRemoteManualSession], this never arms the pending gate: the parent already
+     * confirmed the exchange in the orchard page, and the TV is idle (checked below), so the
+     * session starts in this same callback. It keeps `outsidePlan=false` so the TV's START /
+     * PROGRESS / END usage stream settles the fruit `points_usage_records` row, exactly like
+     * the record-less auto-start path used by a TV-initiated exchange.
+     *
+     * <p>Every check is in-memory: no HTTP, no member switch, no package scan, no quiz refresh.
+     * The fruit transaction holds the device row lock while waiting for this ACK, so a backend
+     * call here would deadlock.
+     */
+    @Synchronized
+    fun startRemoteFruitSession(
+        durationSeconds: Long,
+        expectedEpoch: Long,
+        allowedPackages: Set<String>?,
+        expiresAtEpochMs: Long? = null,
+        memberId: Long,
+    ): SessionStartResult {
+        val startedAt = SystemClock.elapsedRealtime()
+        fun reject(reason: RejectReason): SessionStartResult {
+            PolicyFlowTrace.event(
+                "fruit.busy",
+                "reason" to reason,
+                "memberId" to memberId,
+                "elapsedMs" to (SystemClock.elapsedRealtime() - startedAt),
+                "session" to (session != null),
+                "studyMode" to studyMode,
+                "studyRound" to (studyRound != null),
+                "pending" to (pendingRemoteStart != null),
+            )
+            return SessionStartResult.Rejected(reason)
+        }
+
+        if (!initialized || !active) return reject(RejectReason.GUARD_DISABLED)
+        // This path is hosted-manual only; a local TV keeps its own fruit flow.
+        if (source != PolicySource.HOSTED || activation != Activation.MANUAL) {
+            return reject(RejectReason.INVALID_COMMAND)
+        }
+        if (guardStatus == GuardStatus.PARENT_OVERRIDE) {
+            return reject(RejectReason.PARENT_OVERRIDE)
+        }
+        if (session != null) return reject(RejectReason.BUSY)
+        if (studyMode || studyRound != null) return reject(RejectReason.STUDY_ACTIVE)
+        if (pendingRemoteStart != null) return reject(RejectReason.PENDING_GRANT)
+        // The fruit target must be the child this TV is currently showing. Switching members
+        // here would need HTTP, which is forbidden while the backend holds the device lock.
+        // Hosted manual mode follows the cloud active member, not the local FamilyHub roster:
+        // FamilyHub only backs quiz/avatar state and is never synced from the cloud.
+        val hostedMemberId = PolicyRuntime.state.value.cloudActiveMemberId
+            ?: return reject(RejectReason.STATE_UNKNOWN)
+        if (memberId <= 0L || memberId != hostedMemberId) {
+            return reject(RejectReason.MEMBER_MISMATCH)
+        }
+        // Cached snapshot only: isRoundActive() re-reads the store and the cloud plan.
+        if (!QuizRuntime.isStateLoaded()) return reject(RejectReason.STATE_UNKNOWN)
+        if (QuizRuntime.isRoundActiveCached()) return reject(RejectReason.QUIZ_ACTIVE)
+        if (!isScreenInteractive()) return reject(RejectReason.SCREEN_OFF)
+        val observedAt = foregroundObservedAtMs
+        if (observedAt <= 0L ||
+            SystemClock.elapsedRealtime() - observedAt > FOREGROUND_STALE_MS
+        ) {
+            return reject(RejectReason.STATE_UNKNOWN)
+        }
+        val foreground = foregroundPackage
+        if (foreground.isNullOrBlank()) return reject(RejectReason.STATE_UNKNOWN)
+        // Idle means the guard's own surface or a stock launcher. Any app in front is "in use",
+        // including an allowed one: the parent asked for a new timer, not to share the screen.
+        if (!isIdleForeground(foreground)) return reject(RejectReason.FOREGROUND_IN_USE)
+
+        val admission = admitStart(
+            origin = SessionOrigin.REMOTE,
+            durationSeconds = durationSeconds,
+            expectedEpoch = expectedEpoch,
+            requestedScope = allowedPackages,
+            expiresAtEpochMs = expiresAtEpochMs,
+            confirmingPending = false,
+            remoteVisibleScope = true,
+        )
+        if (admission is StartAdmission.Refused) return reject(admission.reason)
+        val ready = admission as StartAdmission.Ready
+        commitStart(ready, SessionOrigin.REMOTE)
+        PolicyFlowTrace.event(
+            "fruit.commit",
+            "duration" to durationSeconds,
+            "pkgs" to ready.scope.allowedPackages.size,
+            "unlimited" to ready.scope.allowedPackages.count {
+                it in ready.configured.effectiveUnlimitedPackages
+            },
+            "elapsedMs" to (SystemClock.elapsedRealtime() - startedAt),
+        )
+        return SessionStartResult.Started
     }
 
     /**
@@ -2771,6 +3107,7 @@ object LocalPolicyRuntime {
         expiresAtEpochMs: Long?,
         route: UnlockRoute? = null,
         outsidePlan: Boolean = false,
+        fruit: FruitFacts = FruitFacts.UNAVAILABLE,
     ): SessionStartResult = when (
         val admission = admitStart(
             origin = origin,
@@ -2783,6 +3120,7 @@ object LocalPolicyRuntime {
             confirmingPending = false,
             route = route,
             outsidePlan = outsidePlan,
+            fruit = fruit,
         )
     ) {
         is StartAdmission.Refused -> SessionStartResult.Rejected(admission.reason)
@@ -2806,6 +3144,13 @@ object LocalPolicyRuntime {
         confirmingPending: Boolean,
         route: UnlockRoute? = null,
         outsidePlan: Boolean = false,
+        fruit: FruitFacts = FruitFacts.UNAVAILABLE,
+        /**
+         * Fruit remote start: the requested scope names entertainment packages, but the
+         * running plan must expose the same visible scope as the web / TV single timer
+         * (entertainment + unlimited + study-reward apps).
+         */
+        remoteVisibleScope: Boolean = false,
     ): StartAdmission {
         if (!initialized || !active) return StartAdmission.Refused(RejectReason.GUARD_DISABLED)
         if (durationSeconds <= 0) {
@@ -2863,11 +3208,13 @@ object LocalPolicyRuntime {
         }
         // Every local route (quiz, study reward, direct start, the lock-screen timer and the
         // parent Web timer) shares one visible app scope: entertainment, unlimited, and the
-        // study apps the parent authorized. Remote grants keep their own explicit scope.
-        val scope = if (origin == SessionOrigin.LOCAL) {
-            resolveSessionScope(configured)
-        } else {
-            resolveScope(configured, requestedScope)
+        // study apps the parent authorized. A remote fruit start is the exception: the phone
+        // names entertainment packages, but execution must match that same visible scope.
+        // Other remote grants keep their own explicit scope.
+        val scope = when {
+            origin == SessionOrigin.LOCAL -> resolveSessionScope(configured)
+            remoteVisibleScope -> resolveSessionScope(configured, requestedScope)
+            else -> resolveScope(configured, requestedScope)
         } ?: return StartAdmission.Refused(RejectReason.INVALID_SCOPE)
         val secondsLeft = window?.let { (it.endSecond - secondOfDay(now)).coerceAtLeast(1) } ?: 0
         // V29 has no automatic/manual switch on the page: the local rules are the manual rules.
@@ -2885,6 +3232,7 @@ object LocalPolicyRuntime {
                     now = now,
                     quizEarnedSeconds = durationSeconds.takeIf { route == UnlockRoute.QUIZ },
                     busy = false,
+                    fruit = fruit,
                 )
                 if (!decision.available) {
                     return StartAdmission.Refused(decision.reason.toRejectReason())
@@ -2918,6 +3266,7 @@ object LocalPolicyRuntime {
         remoteRecordId: Int = 0,
         route: UnlockRoute? = null,
         outsidePlan: Boolean = false,
+        sessionId: String? = null,
     ) {
         // Commit only after every check passes and the scope is resolved. A rejected command
         // must leave study mode intact.
@@ -2939,6 +3288,7 @@ object LocalPolicyRuntime {
             remoteRecordId = remoteRecordId,
             route = route,
             outsidePlan = outsidePlan,
+            sessionIdOverride = sessionId,
         )
     }
 
@@ -2953,6 +3303,8 @@ object LocalPolicyRuntime {
         validUntilLabel: String,
         userName: String = "",
         userIconUrl: String = "",
+        /** False for an auto-started dispatch: the confirmation start publishes the only frame. */
+        announce: Boolean = true,
     ) {
         if (studyMode) {
             studyMode = false
@@ -2989,6 +3341,7 @@ object LocalPolicyRuntime {
             "epoch" to policyEpoch,
         )
         checkpointRuntime(durable = true, forceSync = true)
+        if (!announce) return
         publish()
         // The arm itself is what the child hears; START is spoken only after confirmation.
         PolicyVoiceBus.emit(PolicyVoiceCue.GRANT_READY)
@@ -3060,13 +3413,25 @@ object LocalPolicyRuntime {
     }
 
     /**
-     * Local-session scope: configured entertainment, unlimited and (when enabled) study apps.
-     * The parent Web timer keeps it fixed for the session; the other local routes publish the
-     * live union so a rule edit is visible at once.
+     * Session visible scope: configured entertainment, unlimited and (when enabled) study apps.
+     * A null [requested] means all of them (local routes plus an all-apps grant). A fruit remote
+     * start passes its entertainment subset: it must intersect to at least one runnable
+     * entertainment package, then the local unlimited/study additions are restored — never a
+     * silent widening to every visible app when the intersection is empty.
      */
-    private fun resolveSessionScope(configured: LocalRules): ResolvedScope? {
+    private fun resolveSessionScope(
+        configured: LocalRules,
+        requested: Set<String>? = null,
+    ): ResolvedScope? {
         val visible = configured.sessionVisiblePackages(installedPackages)
-        return if (visible.isEmpty()) null else ResolvedScope(AccessMode.APPS, visible)
+        if (visible.isEmpty()) return null
+        if (requested == null) return ResolvedScope(AccessMode.APPS, visible)
+        val entertainment = requested intersect visible
+        if (entertainment.isEmpty()) return null
+        val packages = (entertainment +
+            configured.effectiveUnlimitedPackages +
+            configured.manualStudyRewardPackages()) intersect visible
+        return if (packages.isEmpty()) null else ResolvedScope(AccessMode.APPS, packages)
     }
 
     @Synchronized
@@ -3308,6 +3673,8 @@ object LocalPolicyRuntime {
         remoteRecordId: Int = 0,
         route: UnlockRoute? = null,
         outsidePlan: Boolean = false,
+        /** V58: the fruit debit must name the session before the session is created. */
+        sessionIdOverride: String? = null,
     ) {
         // A started plan is the only state that owns the timer; never leave an armed grant
         // beside it (a confirm already cleared it, this is the defensive path).
@@ -3318,7 +3685,7 @@ object LocalPolicyRuntime {
         sessionOrigin = origin?.toSessionOrigin(remoteRecordId)
         // The parent's out-of-plan timer is deliberately absent from the hosted usage ledger.
         sessionReportUsage = !outsidePlan && usageSink != null
-        val sessionId = newRuleSessionId()
+        val sessionId = sessionIdOverride?.takeIf { it.isNotBlank() } ?: newRuleSessionId()
         val plan = PolicyExecutionPlan(
             id = sessionId,
             source = PolicyPlanSource.RULE,
@@ -3675,6 +4042,113 @@ object LocalPolicyRuntime {
         (routeUsage ?: RouteUsage(date = dayKey)).normalizedFor(dayKey)
 
     /**
+     * The active data source's fruit account, projected for the planner. LOCAL reads the V58
+     * ledger; HOSTED reads the orchard device-context cache for the current cloud member. The
+     * two documents are never mixed: switching source switches this projection only.
+     */
+    private fun currentFruitFacts(selectedFruits: Int? = null): FruitFacts {
+        if (source == PolicySource.HOSTED) {
+            val hosted = hostedFruitFactsForScope() ?: return FruitFacts.UNAVAILABLE
+            if (!hosted.routeEnabled) return FruitFacts.UNAVAILABLE
+            return FruitFacts(
+                accountPresent = true,
+                accountEnabled = true,
+                exchangeRateMinutesPerFruit = hosted.exchangeRateMinutesPerFruit,
+                availableFruitHundredths = hosted.availableFruitHundredths,
+                selectedFruits = selectedFruits,
+                supported = true,
+                hostedMaxFruits = hosted.maxFruits,
+                hostedRemaining = hosted.dailyRemaining,
+            )
+        }
+        if (source != PolicySource.LOCAL) return FruitFacts.UNAVAILABLE
+        val memberId = FamilyHub.state.value.activeUserId
+        if (memberId.isBlank()) return FruitFacts()
+        val account = LocalFruitAccountStore.load(memberId) ?: return FruitFacts()
+        return FruitFacts(
+            accountPresent = true,
+            accountEnabled = account.enabled,
+            exchangeRateMinutesPerFruit = account.exchangeRateMinutesPerFruit,
+            availableFruitHundredths = account.availableFruitHundredths,
+            selectedFruits = selectedFruits,
+            supported = true,
+        )
+    }
+
+    /**
+     * Reads the hosted fruit cache for the current scope. The cached field is only trusted for
+     * the scope it was loaded under; a member switch re-reads that member's own document.
+     */
+    /** The cached orchard projection for the active hosted member; null outside hosted execution. */
+    @Synchronized
+    fun currentHostedFruitFacts(): HostedFruitFacts? = hostedFruitFactsForScope()
+
+    private fun hostedFruitFactsForScope(): HostedFruitFacts? {
+        if (source != PolicySource.HOSTED) return null
+        val scope = hostedScope ?: return null
+        if (scope != hostedFruitFactsScope) {
+            hostedFruitFactsScope = scope
+            hostedFruitFacts = LocalPolicyStore.loadHostedFruitFacts(scope)
+                ?.takeIf { it.memberId == hostedSubjectId }
+        }
+        return hostedFruitFacts?.takeIf { it.memberId == hostedSubjectId }
+    }
+
+    /**
+     * Writes the orchard's fruit context into the HOSTED cache and republishes the lock screen.
+     * Only the coordinator calls this, and only with the cloud member that is active now; a
+     * late response for a previous member is rejected instead of overwriting the new cache.
+     */
+    @Synchronized
+    fun setHostedFruitFacts(facts: HostedFruitFacts?): Boolean {
+        if (source != PolicySource.HOSTED) return false
+        val scope = hostedScope ?: return false
+        if (facts != null && facts.memberId != hostedSubjectId) return false
+        hostedFruitFacts = facts
+        hostedFruitFactsScope = scope
+        if (facts != null) {
+            LocalPolicyStore.saveHostedFruitFacts(facts, scope)
+        }
+        publish()
+        return true
+    }
+
+    /**
+     * Settles fruit reservations left by a crash. Only the active member can own a session in
+     * this runtime, so another member's pending row cannot describe a started session and is
+     * restored. The rows themselves stay in their own account documents; nothing is merged.
+     */
+    private fun reconcileFruitLedgers() {
+        if (source != PolicySource.LOCAL) return
+        val family = FamilyHub.state.value
+        val now = System.currentTimeMillis()
+        val activeSessionId = session?.plan?.sessionId
+        family.members
+            .filter { it.status == MemberStatus.ACTIVE }
+            .forEach { member ->
+                val sessionExists: (String) -> Boolean = if (member.userId == family.activeUserId) {
+                    { id -> id == activeSessionId || settledSessions.containsKey(id) }
+                } else {
+                    { false }
+                }
+                val result = LocalFruitAccountStore.reconcilePending(
+                    memberId = member.userId,
+                    now = now,
+                    sessionExists = sessionExists,
+                ) ?: return@forEach
+                if (result.committedEntryIds.isNotEmpty() || result.voidedEntryIds.isNotEmpty()) {
+                    PolicyFlowTrace.event(
+                        "fruit.reconcile",
+                        "member" to member.userId,
+                        "committed" to result.committedEntryIds.size,
+                        "voided" to result.voidedEntryIds.size,
+                        "balance" to result.account.availableFruitHundredths,
+                    )
+                }
+            }
+    }
+
+    /**
      * The one V44 projection used by admission and by the published UI state. [busy] is false
      * when the caller has already checked session/study/rest gates; the entry checks below
      * remain in [admitStart] so the planner never becomes the only gate.
@@ -3685,6 +4159,7 @@ object LocalPolicyRuntime {
         now: LocalDateTime,
         quizEarnedSeconds: Long? = null,
         busy: Boolean = false,
+        fruit: FruitFacts = FruitFacts.UNAVAILABLE,
     ): UnlockRouteDecision {
         val plan = UnlockRoutePlanner.plan(
             rules = configured,
@@ -3698,14 +4173,18 @@ object LocalPolicyRuntime {
                 busy = busy,
             ),
             quizEarnedSeconds = quizEarnedSeconds,
+            fruit = fruit,
         )
         return plan.decision(route)
     }
 
-    private fun unlockRoutePlan(now: LocalDateTime): UnlockRoutePlan? {
+    private fun unlockRoutePlan(
+        now: LocalDateTime,
+        fruit: FruitFacts = currentFruitFacts(),
+    ): UnlockRoutePlan? {
         val configured = rules?.normalized()?.takeIf { it.isUsable } ?: return null
         return UnlockRoutePlanner.plan(
-            rules = configured,
+            rules = withHostedFruitSwitch(configured),
             usage = normalizedRouteUsage(),
             usedSeconds = usedSeconds,
             date = dayKey,
@@ -3715,6 +4194,22 @@ object LocalPolicyRuntime {
                 resting = breakUntil > System.currentTimeMillis(),
                 busy = session != null || studyRound != null || pendingRemoteStart != null,
             ),
+            fruit = fruit,
+        )
+    }
+
+    /**
+     * The hosted fruit route is driven by the orchard's live verdict, not by a LOCAL switch that
+     * a cloud snapshot deliberately does not carry. The local daily counter is bypassed because
+     * the backend already enforces its own daily count; [FruitFacts.hostedRemaining] supplies
+     * the display value. Every other route and every LOCAL plan is untouched.
+     */
+    private fun withHostedFruitSwitch(configured: LocalRules): LocalRules {
+        if (source != PolicySource.HOSTED) return configured
+        val hosted = hostedFruitFactsForScope()
+        return configured.copy(
+            fruitExchangeEnabled = hosted?.routeEnabled == true,
+            fruitExchangeDailyLimitCount = -1,
         )
     }
 
@@ -3748,6 +4243,14 @@ object LocalPolicyRuntime {
         UnlockRouteReason.INVALID_RULES,
         UnlockRouteReason.STUDY_NOT_CONFIGURED,
         UnlockRouteReason.NOT_EARNED,
+        // The fruit wheel already names these on its card; reaching a start with one means the
+        // account changed after the page was drawn.
+        UnlockRouteReason.ACCOUNT_DISABLED,
+        UnlockRouteReason.BALANCE_EMPTY,
+        UnlockRouteReason.BALANCE_BELOW_ONE,
+        UnlockRouteReason.CAP_TOO_SMALL,
+        UnlockRouteReason.EXCHANGE_TOO_LARGE,
+        UnlockRouteReason.WINDOW_TOO_SHORT,
         -> RejectReason.INVALID_COMMAND
     }
 
@@ -4018,6 +4521,7 @@ object LocalPolicyRuntime {
         val studyUsed = studyUsedSeconds(dayKey)
         val studyLimit = configured?.studyDailyLimitFor(nowDateTime.dayOfWeek.value)
         val entertainmentUnlimited = configured?.effectiveUnlimitedPackages.orEmpty()
+        val fruitFacts = currentFruitFacts()
         val effectiveRemaining = current?.let {
             SessionTiming.effectiveRemainingSeconds(
                 budgetRemainingSeconds = it.remainingSeconds,
@@ -4043,7 +4547,17 @@ object LocalPolicyRuntime {
             quizGateEnabled = configured?.quizRouteActive == true,
             studyEarnEnabled = configured?.studyRouteActive == true,
             directStartEnabled = configured?.directRouteActive == true,
-            unlockRoutePlan = unlockRoutePlan(nowDateTime),
+            unlockRoutePlan = unlockRoutePlan(nowDateTime, fruitFacts),
+            fruitAvailableFruitHundredths = if (fruitFacts.supported) {
+                fruitFacts.availableFruitHundredths
+            } else {
+                0L
+            },
+            fruitExchangeRateMinutesPerFruit = if (fruitFacts.supported) {
+                fruitFacts.exchangeRateMinutesPerFruit
+            } else {
+                0
+            },
             studyModeAvailable = configured?.studyRouteActive == true,
             studyModeActive = studyMode,
             studyPackages = configured?.takeIf { it.studyRouteActive }
@@ -4245,6 +4759,15 @@ object LocalPolicyRuntime {
     private fun isScreenInteractive(): Boolean =
         (context?.getSystemService(Context.POWER_SERVICE) as? PowerManager)?.isInteractive ?: true
 
+    /**
+     * Idle for a remote fruit start: the guard's own surface (child desktop, parent center,
+     * lock screen) or a stock launcher. Any other app means someone is using the TV.
+     */
+    private fun isIdleForeground(pkg: String): Boolean {
+        if (pkg == context?.packageName) return true
+        return HomeGuardService.stockHomes()?.containsKey(pkg) == true
+    }
+
     private fun currentWindow(configured: LocalRules, now: LocalDateTime): LocalTimeWindow? =
         configured.windowsFor(now.dayOfWeek.value)
             .firstOrNull { it.contains(secondOfDay(now)) }
@@ -4280,6 +4803,7 @@ object LocalPolicyRuntime {
         dayUsage.clear()
         studyDays.clear()
         foregroundPackage = null
+        foregroundObservedAtMs = 0L
         breakUntil = 0L
         lastSessionEndedAt = 0L
         settledSessions.clear()
@@ -4318,6 +4842,7 @@ object LocalPolicyRuntime {
         resetInMemoryForTest()
         // The V40 subject cache survives an in-memory reset; without this the next initialize()
         // restores the previous test's session and ledger.
+        FamilyHub.state.value.members.forEach { LocalFruitAccountStore.deleteMember(it.userId) }
         FamilyHub.resetSubjectDocumentsForTest()
         LocalPolicyStore.resetLocalSetup()
         LocalPolicyStore.clearSettledGrantRecordIds()

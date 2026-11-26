@@ -9,17 +9,17 @@ import com.planyourtv.policy.switchPinExemptAt
 import java.time.LocalDateTime
 
 /**
- * The TV lock screen's per-member switch password guard.
+ * The TV lock screen's switch password guard.
  *
- * Whether a prompt is shown is stored on the target [FamilyMember] (`switchPinRequired`), so
- * each child can be protected independently. A member may also select weekdays and one same-day
- * time range where the prompt is skipped, so a grandparent can switch without the child's code.
- * This object only evaluates that waiver, verifies the 6-digit password and counts failures per
- * target member; one child's mistakes never lock out a sibling.
+ * The switch and its optional waiver window are device-wide ([SwitchProtectionSettings]); the
+ * target member's 6-digit credential is still verified individually, and failed attempts lock
+ * out only that member. The old per-member `switchPinRequired` and exemption fields remain in
+ * storage for compatibility but are ignored once global migration succeeds.
  *
- * Upgraded devices may still carry the old device-wide key. [migrateLegacyToMembers] copies an
- * old "on" value to every existing member once. Until that write succeeds, [requiresPin] keeps
- * honoring the old value so an upgrade can never silently remove protection.
+ * Upgraded devices may still carry the old device-wide key or per-member protection.
+ * [migrateLegacyToMembers] first copies the pre-V48 device-wide key to the roster, then
+ * [SwitchProtectionSettings] derives the global policy. Until both writes succeed, [requiresPin]
+ * keeps honoring the old value so an upgrade can never silently remove protection.
  *
  * Failed attempts are in memory only; a reboot resets them, which is acceptable for a 6-digit
  * convenience password that is not parent authorization.
@@ -51,50 +51,78 @@ object MemberSwitchAuth {
     }
 
     /**
-     * Applies the old device-wide switch to the roster once. A failed roster write leaves the
-     * old value active for this boot and retries on the next start.
+     * Applies the old device-wide switch to the roster once and marks the per-member migration.
+     * A failed roster write leaves the old value active for this boot and retries on the next
+     * start.
+     *
+     * @return true when the old fallback is no longer needed.
      */
-    fun migrateLegacyToMembers() {
-        val loaded = prefs ?: return
+    fun migrateLegacyToMembers(): Boolean {
+        val loaded = prefs ?: return false
         if (loaded.getBoolean(KEY_MIGRATED, false)) {
             legacyFallbackRequired = false
-            return
+            return true
         }
         if (legacyFallbackRequired && !FamilyHub.migrateLegacySwitchPinRequired(true)) {
             Log.w(TAG, "legacy member-switch migration failed; keeping the old guard")
-            return
+            return false
         }
         val stored = runCatching {
             loaded.edit().putBoolean(KEY_MIGRATED, true).commit()
         }.getOrDefault(false)
         if (stored) legacyFallbackRequired = false
+        return stored
     }
+
+    /** True until the pre-V48 device-wide switch has been copied and marked migrated. */
+    fun legacyFallbackActive(): Boolean = legacyFallbackRequired
 
     /**
      * True when entering [member] must ask for its password at [now].
      *
-     * A per-member waiver is only considered when protection is on. The legacy upgrade fallback
-     * always wins: until the old device-wide switch is migrated, no exemption may weaken it.
+     * The global policy wins as soon as its migration write succeeds. Before that, the legacy
+     * device-wide fallback or the old per-member flag is used. The fallback always wins over a
+     * waiver: during an upgrade no exemption may weaken existing protection.
      */
     fun requiresPin(
         member: FamilyMember,
         now: LocalDateTime = LocalDateTime.now(),
     ): Boolean {
+        if (SwitchProtectionSettings.isMigrated()) {
+            val current = SwitchProtectionSettings.current()
+            return current.required &&
+                !current.isExemptAt(now.dayOfWeek.value, now.hour * 60 + now.minute)
+        }
         if (legacyFallbackRequired) return true
         if (!member.switchPinRequired) return false
         return !isExemptNow(member, now)
     }
 
-    /** Whether the member's configured day/time waiver applies at [now]. */
+    /** Whether the active day/time waiver applies to [member] at [now]. */
     fun isExemptNow(
         member: FamilyMember,
         now: LocalDateTime = LocalDateTime.now(),
-    ): Boolean =
-        !legacyFallbackRequired &&
+    ): Boolean {
+        if (SwitchProtectionSettings.isMigrated()) {
+            val current = SwitchProtectionSettings.current()
+            return current.required &&
+                current.isExemptAt(now.dayOfWeek.value, now.hour * 60 + now.minute)
+        }
+        return !legacyFallbackRequired &&
             member.switchPinExemptAt(
                 dayOfWeek = now.dayOfWeek.value,
                 minuteOfDay = now.hour * 60 + now.minute,
             )
+    }
+
+    /** Whether the global policy currently protects switching at all. */
+    fun protectionEnabled(member: FamilyMember): Boolean {
+        if (SwitchProtectionSettings.isMigrated()) {
+            return SwitchProtectionSettings.current().required
+        }
+        if (legacyFallbackRequired) return true
+        return member.switchPinRequired
+    }
 
     @Synchronized
     fun verify(userId: String, candidate: String): VerifyResult {

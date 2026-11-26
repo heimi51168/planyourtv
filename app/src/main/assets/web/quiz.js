@@ -27,7 +27,7 @@
       gate_scan_title: "请从电视扫码",
       gate_scan_text: "打开电视锁屏上的「开始答题闯关」，用手机扫描电视上的专用二维码。",
       gate_pair_title: "家长验证",
-      gate_pair_text: "请输入电视上的 6 位家长密码。验证后当天内再次打开无需输入；次日 0 点后需要重新验证。临时解锁只作用于电视锁屏。",
+      gate_pair_text: "请输入电视上的 6 位设备管理员密码。验证后当天内再次打开无需再输入设备管理员密码；次日 0 点后需要重新验证。临时解锁只作用于电视锁屏。",
       gate_pair_expired: "二维码已过期，请在电视上刷新后重新扫码。",
       gate_in_use_badge: "使用中",
       gate_in_use_heading: "另一台手机正在使用",
@@ -35,7 +35,7 @@
       gate_in_use_title: "约 10 秒后自动恢复",
       gate_in_use_text: "若对方已离开，本页会自动更新；\n对方点「退出家长设置」可立即释放。",
       gate_takeover_button: "仍要接管",
-      gate_takeover_note: "需要家长密码；对方手机会立即退出。",
+      gate_takeover_note: "需要设备管理员密码；对方手机会立即退出。",
       webDisabledTitleBound: "网页已停用",
       webDisabledTitleBinding: "正在绑定远程",
       webDisabledTitleNoChild: "网页家长中心不可用",
@@ -51,26 +51,26 @@
       webDisabledRefresh: "刷新状态",
       webDisabledRefreshFailed: "连接电视失败，请确认手机和电视在同一 Wi-Fi 后重试。",
       webDisabledHint: "网页只在电视开启本地儿童模式且未绑定远程时可用。",
-      pinLabel: "请输入家长密码",
+      pinLabel: "请输入设备管理员密码",
       pinButton: "进入设置",
-      forgotPin: "忘记密码？",
-      recoveryTitle: "用恢复码重置密码",
-      recoveryLead: "输入首次开启儿童模式时保存的 12 位恢复码，再设置新的 6 位家长密码。恢复码只显示过一次，网页和电视都无法找回。",
+      forgotPin: "忘记设备管理员密码？",
+      recoveryTitle: "用恢复码重置设备管理员密码",
+      recoveryLead: "输入首次开启儿童模式时保存的 12 位恢复码，再设置新的 6 位设备管理员密码。恢复码只显示过一次，网页和电视都无法找回。",
       recoveryCodeLabel: "恢复码",
-      recoveryNewPinLabel: "新的家长密码（6 位数字）",
-      recoveryConfirmLabel: "再次输入新密码",
-      recoverySubmit: "重置密码",
+      recoveryNewPinLabel: "新的设备管理员密码（6 位数字）",
+      recoveryConfirmLabel: "再次输入新设备管理员密码",
+      recoverySubmit: "重置设备管理员密码",
       recoveryCancel: "返回登录",
-      recoveryDone: "家长密码已重置，请用新密码登录。",
-      recoveryMismatch: "两次输入的新密码不一致。",
+      recoveryDone: "设备管理员密码已重置，请用新设备管理员密码登录。",
+      recoveryMismatch: "两次输入的新设备管理员密码不一致。",
       recoveryFormat: "请输入 12 位恢复码。",
       err_RECOVERY_INVALID: "恢复码不正确。",
       err_RECOVERY_LOCKED: "恢复码错误次数过多，请稍后再试。",
       err_RECOVERY_LOCKED_RETRY: "恢复码错误次数过多，请在 {n} 秒后重试。",
       err_RECOVERY_NOT_SET: "这台电视没有保存恢复码，无法在网页重置。恢复码只在首次开启儿童模式时显示一次。",
       err_RECOVERY_FAILED: "重置失败，请重试。",
-      err_NEW_PIN_INVALID: "新密码必须是 6 位数字。",
-      err_PIN_TOO_SIMPLE: "请不要使用 123456 或 666666 这类简单密码。",
+      err_NEW_PIN_INVALID: "新设备管理员密码必须是 6 位数字。",
+      err_PIN_TOO_SIMPLE: "请不要使用 123456 或 666666 这类简单设备管理员密码。",
       editor_locked: "本轮闯关进行中，网页只能查看摘要。",
       challengeTitle: "本次闯关",
       challengeHint: "题目只属于本次闯关；发布后电视锁屏才会显示入口。",
@@ -110,13 +110,13 @@
       qErrMinCorrect: "至少答对题数不能超过题目数量。",
       qErrNumber: "请填写有效的数字。",
       qErrAnswer: "请选择正确答案。",
-      err_PIN_INVALID: "家长密码不正确。",
+      err_PIN_INVALID: "设备管理员密码不正确。",
       err_PIN_LOCKED: "尝试次数过多，请稍后再试。",
-      err_PIN_NOT_SET: "电视还没有设置家长密码。",
+      err_PIN_NOT_SET: "电视还没有设置设备管理员密码。",
       err_PARENT_IN_USE: "当前已有家长在使用，请让已登录的手机退出「家长设置」后再试。",
       err_PAIR_EXPIRED: "二维码已过期，请在电视上刷新后重新扫码。",
-      err_ADMIN_REQUIRED: "请先完成家长验证。",
-      err_ADMIN_EXPIRED: "授权已过期，请重新输入家长密码。",
+      err_ADMIN_REQUIRED: "请先验证设备管理员密码。",
+      err_ADMIN_EXPIRED: "授权已过期，请重新输入设备管理员密码。",
       err_ORIGIN: "请求来源不合法。",
       err_CONTENT_TYPE: "请求格式不正确。",
       err_INVALID_JSON: "请求内容无法读取。",
@@ -370,7 +370,7 @@
       gate_scan_title: "Scan from the TV",
       gate_scan_text: "Open “Start quiz challenge” on the TV lock screen and scan its dedicated QR code.",
       gate_pair_title: "Parent verification",
-      gate_pair_text: "Enter the 6-digit parent password shown on the TV. After verification, this phone can reopen the page without a PIN until local midnight. The temporary unlock only applies on the TV lock screen.",
+      gate_pair_text: "Enter the 6-digit device admin password shown on the TV. After verification, this phone can reopen the page without the device admin password until local midnight. The temporary unlock only applies on the TV lock screen.",
       gate_pair_expired: "The QR code expired. Refresh it on the TV and scan again.",
       gate_in_use_badge: "In use",
       gate_in_use_heading: "Another phone is in use",
@@ -378,7 +378,7 @@
       gate_in_use_title: "Auto-resumes in about 10 seconds",
       gate_in_use_text: "If the other phone has left, this page refreshes automatically.\nExit parent settings there to release it now.",
       gate_takeover_button: "Take over",
-      gate_takeover_note: "Parent password required; the other phone is signed out immediately.",
+      gate_takeover_note: "Device admin password required; the other phone is signed out immediately.",
       webDisabledTitleBound: "Web page disabled",
       webDisabledTitleBinding: "Remote binding in progress",
       webDisabledTitleNoChild: "Web parent center unavailable",
@@ -394,26 +394,26 @@
       webDisabledRefresh: "Refresh status",
       webDisabledRefreshFailed: "Could not reach the TV. Check that the phone and TV share the same Wi-Fi and try again.",
       webDisabledHint: "This page is available only while local child mode is on and the TV is not bound to remote management.",
-      pinLabel: "Enter parent password",
+      pinLabel: "Enter device admin password",
       pinButton: "Open settings",
-      forgotPin: "Forgot password?",
-      recoveryTitle: "Reset with a recovery code",
-      recoveryLead: "Enter the 12-digit recovery code saved when child mode was first enabled, then choose a new 6-digit parent password. The code was shown only once; neither this page nor the TV can retrieve it.",
+      forgotPin: "Forgot device admin password?",
+      recoveryTitle: "Reset device admin password",
+      recoveryLead: "Enter the 12-digit recovery code saved when child mode was first enabled, then choose a new 6-digit device admin password. The code was shown only once; neither this page nor the TV can retrieve it.",
       recoveryCodeLabel: "Recovery code",
-      recoveryNewPinLabel: "New parent password (6 digits)",
-      recoveryConfirmLabel: "Enter the new password again",
-      recoverySubmit: "Reset password",
+      recoveryNewPinLabel: "New device admin password (6 digits)",
+      recoveryConfirmLabel: "Enter the new device admin password again",
+      recoverySubmit: "Reset device admin password",
       recoveryCancel: "Back to sign-in",
-      recoveryDone: "The parent password was reset. Sign in with the new password.",
-      recoveryMismatch: "The new passwords do not match.",
+      recoveryDone: "The device admin password was reset. Sign in with the new device admin password.",
+      recoveryMismatch: "The new device admin passwords do not match.",
       recoveryFormat: "Enter the 12-digit recovery code.",
       err_RECOVERY_INVALID: "The recovery code is incorrect.",
       err_RECOVERY_LOCKED: "Too many wrong recovery codes. Try again later.",
       err_RECOVERY_LOCKED_RETRY: "Too many wrong recovery codes. Try again in {n}s.",
       err_RECOVERY_NOT_SET: "This TV has no saved recovery code, so it cannot be reset from this page. The code is shown only once, when child mode is first enabled.",
       err_RECOVERY_FAILED: "The reset failed. Try again.",
-      err_NEW_PIN_INVALID: "The new password must be 6 digits.",
-      err_PIN_TOO_SIMPLE: "Do not use a simple password such as 123456 or 666666.",
+      err_NEW_PIN_INVALID: "The new device admin password must be 6 digits.",
+      err_PIN_TOO_SIMPLE: "Do not use a simple device admin password such as 123456 or 666666.",
       editor_locked: "A challenge is running. This page can only show its summary.",
       challengeTitle: "This challenge",
       challengeHint: "Questions belong only to this challenge. The lock-screen entry appears after you publish.",
@@ -453,13 +453,13 @@
       qErrMinCorrect: "Required correct answers cannot exceed the question count.",
       qErrNumber: "Enter a valid number.",
       qErrAnswer: "Choose the correct answer.",
-      err_PIN_INVALID: "The parent password is incorrect.",
+      err_PIN_INVALID: "The device admin password is incorrect.",
       err_PIN_LOCKED: "Too many attempts. Try again later.",
-      err_PIN_NOT_SET: "The TV has no parent password yet.",
+      err_PIN_NOT_SET: "The TV has no device admin password yet.",
       err_PARENT_IN_USE: "A parent is already using the settings. Ask them to exit parent settings on their phone, then try again.",
       err_PAIR_EXPIRED: "The QR code expired. Refresh it on the TV and scan again.",
-      err_ADMIN_REQUIRED: "Verify the parent password first.",
-      err_ADMIN_EXPIRED: "The setup session expired. Enter the parent password again.",
+      err_ADMIN_REQUIRED: "Verify the device admin password first.",
+      err_ADMIN_EXPIRED: "The setup session expired. Enter the device admin password again.",
       err_ORIGIN: "The request origin is not allowed.",
       err_CONTENT_TYPE: "Unsupported request format.",
       err_INVALID_JSON: "The request could not be read.",
@@ -713,7 +713,7 @@
       gate_scan_title: "Сканируйте с телевизора",
       gate_scan_text: "Откройте «Начать викторину» на экране блокировки и отсканируйте специальный QR-код.",
       gate_pair_title: "Проверка родителя",
-      gate_pair_text: "Введите 6-значный пароль родителя с телевизора. После проверки страница открывается без пароля до местной полуночи. Временная разблокировка действует только на экране блокировки телевизора.",
+      gate_pair_text: "Введите 6-значный пароль администратора устройства с телевизора. После проверки страница открывается без пароля администратора устройства до местной полуночи. Временная разблокировка действует только на экране блокировки телевизора.",
       gate_pair_expired: "QR-код устарел. Обновите его на телевизоре и отсканируйте снова.",
       gate_in_use_badge: "Используется",
       gate_in_use_heading: "Другой телефон сейчас использует настройки",
@@ -721,7 +721,7 @@
       gate_in_use_title: "Восстановится примерно через 10 секунд",
       gate_in_use_text: "Если другой телефон уже вышел, страница обновится сама.\nВыход из настроек освобождает доступ сразу.",
       gate_takeover_button: "Перехватить управление",
-      gate_takeover_note: "Нужен пароль родителя; другой телефон сразу выйдет из настроек.",
+      gate_takeover_note: "Нужен пароль администратора устройства; другой телефон сразу выйдет из настроек.",
       webDisabledTitleBound: "Веб-страница отключена",
       webDisabledTitleBinding: "Идёт привязка к удалённому управлению",
       webDisabledTitleNoChild: "Веб-центр родителя недоступен",
@@ -737,26 +737,26 @@
       webDisabledRefresh: "Обновить состояние",
       webDisabledRefreshFailed: "Не удалось связаться с телевизором. Убедитесь, что телефон и телевизор в одной сети Wi-Fi, и повторите.",
       webDisabledHint: "Страница доступна, только когда на телевизоре включён локальный детский режим и нет привязки к удалённому управлению.",
-      pinLabel: "Введите пароль родителя",
+      pinLabel: "Введите пароль администратора устройства",
       pinButton: "Открыть настройки",
-      forgotPin: "Забыли пароль?",
-      recoveryTitle: "Сброс по коду восстановления",
-      recoveryLead: "Введите 12-значный код восстановления, сохранённый при первом включении детского режима, и задайте новый 6-значный пароль родителя. Код показывался только один раз; ни страница, ни телевизор не могут его восстановить.",
+      forgotPin: "Забыли пароль администратора устройства?",
+      recoveryTitle: "Сброс пароля администратора устройства",
+      recoveryLead: "Введите 12-значный код восстановления, сохранённый при первом включении детского режима, и задайте новый 6-значный пароль администратора устройства. Код показывался только один раз; ни страница, ни телевизор не могут его восстановить.",
       recoveryCodeLabel: "Код восстановления",
-      recoveryNewPinLabel: "Новый пароль родителя (6 цифр)",
-      recoveryConfirmLabel: "Повторите новый пароль",
-      recoverySubmit: "Сбросить пароль",
+      recoveryNewPinLabel: "Новый пароль администратора устройства (6 цифр)",
+      recoveryConfirmLabel: "Повторите новый пароль администратора устройства",
+      recoverySubmit: "Сбросить пароль администратора устройства",
       recoveryCancel: "Назад ко входу",
-      recoveryDone: "Пароль родителя сброшен. Войдите с новым паролем.",
-      recoveryMismatch: "Пароли не совпадают.",
+      recoveryDone: "Пароль администратора устройства сброшен. Войдите с новым паролем администратора устройства.",
+      recoveryMismatch: "Новые пароли администратора устройства не совпадают.",
       recoveryFormat: "Введите 12-значный код восстановления.",
       err_RECOVERY_INVALID: "Неверный код восстановления.",
       err_RECOVERY_LOCKED: "Слишком много неверных кодов восстановления. Попробуйте позже.",
       err_RECOVERY_LOCKED_RETRY: "Слишком много неверных кодов восстановления. Повторите через {n} с.",
       err_RECOVERY_NOT_SET: "На этом телевизоре нет кода восстановления, поэтому сброс со страницы невозможен. Код показывается только один раз при первом включении детского режима.",
       err_RECOVERY_FAILED: "Не удалось сбросить пароль. Повторите попытку.",
-      err_NEW_PIN_INVALID: "Новый пароль должен состоять из 6 цифр.",
-      err_PIN_TOO_SIMPLE: "Не используйте простой пароль вроде 123456 или 666666.",
+      err_NEW_PIN_INVALID: "Новый пароль администратора устройства должен состоять из 6 цифр.",
+      err_PIN_TOO_SIMPLE: "Не используйте простой пароль администратора устройства вроде 123456 или 666666.",
       editor_locked: "Викторина идёт. Страница показывает только сводку.",
       challengeTitle: "Эта викторина",
       challengeHint: "Вопросы принадлежат только этой викторине. Вход появится после публикации.",
@@ -796,13 +796,13 @@
       qErrMinCorrect: "Нужно верных больше, чем вопросов.",
       qErrNumber: "Введите корректное число.",
       qErrAnswer: "Выберите правильный ответ.",
-      err_PIN_INVALID: "Неверный пароль родителя.",
+      err_PIN_INVALID: "Неверный пароль администратора устройства.",
       err_PIN_LOCKED: "Слишком много попыток. Повторите позже.",
-      err_PIN_NOT_SET: "На телевизоре ещё нет пароля родителя.",
+      err_PIN_NOT_SET: "На телевизоре ещё нет пароля администратора устройства.",
       err_PARENT_IN_USE: "Настройки уже открыты у другого родителя. Попросите его выйти из настроек на своём телефоне и повторите попытку.",
       err_PAIR_EXPIRED: "QR-код устарел. Обновите его на телевизоре.",
-      err_ADMIN_REQUIRED: "Сначала подтвердите пароль родителя.",
-      err_ADMIN_EXPIRED: "Сеанс истёк. Введите пароль родителя снова.",
+      err_ADMIN_REQUIRED: "Сначала подтвердите пароль администратора устройства.",
+      err_ADMIN_EXPIRED: "Сеанс истёк. Введите пароль администратора устройства снова.",
       err_ORIGIN: "Источник запроса не разрешён.",
       err_CONTENT_TYPE: "Неподдерживаемый формат запроса.",
       err_INVALID_JSON: "Запрос не удалось прочитать.",
@@ -1056,7 +1056,7 @@
       gate_scan_title: "Скануйте з телевізора",
       gate_scan_text: "Відкрийте «Почати вікторину» на екрані блокування й відскануйте спеціальний QR-код.",
       gate_pair_title: "Перевірка батьків",
-      gate_pair_text: "Введіть 6-значний пароль батьків із телевізора. Після перевірки сторінка відкривається без пароля до місцевої півночі. Тимчасове розблокування діє лише на екрані блокування телевізора.",
+      gate_pair_text: "Введіть 6-значний пароль адміністратора пристрою із телевізора. Після перевірки сторінка відкривається без пароля адміністратора пристрою до місцевої півночі. Тимчасове розблокування діє лише на екрані блокування телевізора.",
       gate_pair_expired: "QR-код застарів. Оновіть його на телевізорі й відскануйте знову.",
       gate_in_use_badge: "Використовується",
       gate_in_use_heading: "Інший телефон зараз використовує налаштування",
@@ -1064,7 +1064,7 @@
       gate_in_use_title: "Відновиться приблизно через 10 секунд",
       gate_in_use_text: "Якщо інший телефон уже вийшов, сторінка оновиться сама.\nВихід із налаштувань звільняє доступ одразу.",
       gate_takeover_button: "Перехопити керування",
-      gate_takeover_note: "Потрібен пароль батьків; інший телефон одразу вийде з налаштувань.",
+      gate_takeover_note: "Потрібен пароль адміністратора пристрою; інший телефон одразу вийде з налаштувань.",
       webDisabledTitleBound: "Вебсторінку вимкнено",
       webDisabledTitleBinding: "Триває прив'язка до віддаленого керування",
       webDisabledTitleNoChild: "Веб-центр батьків недоступний",
@@ -1080,26 +1080,26 @@
       webDisabledRefresh: "Оновити стан",
       webDisabledRefreshFailed: "Не вдалося зв'язатися з телевізором. Переконайтеся, що телефон і телевізор в одній мережі Wi-Fi, і повторіть.",
       webDisabledHint: "Сторінка доступна, лише коли на телевізорі ввімкнено локальний дитячий режим і немає прив'язки до віддаленого керування.",
-      pinLabel: "Введіть пароль батьків",
+      pinLabel: "Введіть пароль адміністратора пристрою",
       pinButton: "Відкрити налаштування",
-      forgotPin: "Забули пароль?",
-      recoveryTitle: "Скидання за кодом відновлення",
-      recoveryLead: "Введіть 12-значний код відновлення, збережений під час першого ввімкнення дитячого режиму, і задайте новий 6-значний пароль батьків. Код показувався лише один раз; ні ця сторінка, ні телевізор не можуть його відновити.",
+      forgotPin: "Забули пароль адміністратора пристрою?",
+      recoveryTitle: "Скидання пароля адміністратора пристрою",
+      recoveryLead: "Введіть 12-значний код відновлення, збережений під час першого ввімкнення дитячого режиму, і задайте новий 6-значний пароль адміністратора пристрою. Код показувався лише один раз; ні ця сторінка, ні телевізор не можуть його відновити.",
       recoveryCodeLabel: "Код відновлення",
-      recoveryNewPinLabel: "Новий пароль батьків (6 цифр)",
-      recoveryConfirmLabel: "Повторіть новий пароль",
-      recoverySubmit: "Скинути пароль",
+      recoveryNewPinLabel: "Новий пароль адміністратора пристрою (6 цифр)",
+      recoveryConfirmLabel: "Повторіть новий пароль адміністратора пристрою",
+      recoverySubmit: "Скинути пароль адміністратора пристрою",
       recoveryCancel: "Назад до входу",
-      recoveryDone: "Пароль батьків скинуто. Увійдіть із новим паролем.",
-      recoveryMismatch: "Паролі не збігаються.",
+      recoveryDone: "Пароль адміністратора пристрою скинуто. Увійдіть із новим паролем адміністратора пристрою.",
+      recoveryMismatch: "Нові паролі адміністратора пристрою не збігаються.",
       recoveryFormat: "Введіть 12-значний код відновлення.",
       err_RECOVERY_INVALID: "Неправильний код відновлення.",
       err_RECOVERY_LOCKED: "Забагато неправильних кодів відновлення. Спробуйте пізніше.",
       err_RECOVERY_LOCKED_RETRY: "Забагато неправильних кодів відновлення. Повторіть через {n} с.",
       err_RECOVERY_NOT_SET: "На цьому телевізорі немає коду відновлення, тому скидання зі сторінки неможливе. Код показується лише один раз під час першого ввімкнення дитячого режиму.",
       err_RECOVERY_FAILED: "Не вдалося скинути пароль. Спробуйте ще раз.",
-      err_NEW_PIN_INVALID: "Новий пароль має складатися з 6 цифр.",
-      err_PIN_TOO_SIMPLE: "Не використовуйте простий пароль, як-от 123456 або 666666.",
+      err_NEW_PIN_INVALID: "Новий пароль адміністратора пристрою має складатися з 6 цифр.",
+      err_PIN_TOO_SIMPLE: "Не використовуйте простий пароль адміністратора пристрою, як-от 123456 або 666666.",
       editor_locked: "Вікторина триває. Сторінка показує лише підсумок.",
       challengeTitle: "Ця вікторина",
       challengeHint: "Питання належать лише цій вікторині. Вхід з'явиться після публікації.",
@@ -1139,13 +1139,13 @@
       qErrMinCorrect: "Потрібно правильних більше, ніж питань.",
       qErrNumber: "Введіть коректне число.",
       qErrAnswer: "Виберіть правильну відповідь.",
-      err_PIN_INVALID: "Неправильний пароль батьків.",
+      err_PIN_INVALID: "Неправильний пароль адміністратора пристрою.",
       err_PIN_LOCKED: "Забагато спроб. Спробуйте пізніше.",
-      err_PIN_NOT_SET: "На телевізорі ще немає пароля батьків.",
+      err_PIN_NOT_SET: "На телевізорі ще немає пароля адміністратора пристрою.",
       err_PARENT_IN_USE: "Налаштування вже відкрито в іншого з батьків. Попросіть його вийти з налаштувань на своєму телефоні й спробуйте ще раз.",
       err_PAIR_EXPIRED: "QR-код застарів. Оновіть його на телевізорі.",
-      err_ADMIN_REQUIRED: "Спершу підтвердьте пароль батьків.",
-      err_ADMIN_EXPIRED: "Сеанс завершився. Введіть пароль батьків ще раз.",
+      err_ADMIN_REQUIRED: "Спершу підтвердьте пароль адміністратора пристрою.",
+      err_ADMIN_EXPIRED: "Сеанс завершився. Введіть пароль адміністратора пристрою ще раз.",
       err_ORIGIN: "Джерело запиту не дозволене.",
       err_CONTENT_TYPE: "Непідтримуваний формат запиту.",
       err_INVALID_JSON: "Запит не вдалося прочитати.",
@@ -1399,7 +1399,7 @@
       gate_scan_title: "Теледидардан сканерлеңіз",
       gate_scan_text: "Құлыптау экранында «Викторинаны бастау» ашып, арнайы QR-кодты сканерлеңіз.",
       gate_pair_title: "Ата-ананы растау",
-      gate_pair_text: "Теледидардағы 6 таңбалы ата-ана құпиясөзін енгізіңіз. Тексеруден кейін бет жергілікті түн ортасына дейін құпиясөзсіз ашылады. Уақытша ашу тек теледидар құлыптау экранында әрекет етеді.",
+      gate_pair_text: "Теледидардағы 6 таңбалы құрылғы әкімшісінің құпиясөзін енгізіңіз. Тексеруден кейін бет жергілікті түн ортасына дейін құрылғы әкімшісінің құпиясөзінсіз ашылады. Уақытша ашу тек теледидар құлыптау экранында әрекет етеді.",
       gate_pair_expired: "QR-код ескірді. Теледидарда жаңартып, қайта сканерлеңіз.",
       gate_in_use_badge: "Қолданылуда",
       gate_in_use_heading: "Басқа телефон қазір баптауды қолданып тұр",
@@ -1407,7 +1407,7 @@
       gate_in_use_title: "Шамамен 10 секундтан кейін қалпына келеді",
       gate_in_use_text: "Басқа телефон шыққан болса, бет өзі жаңарады.\nБаптаудан шығу қолжетімділікті бірден босатады.",
       gate_takeover_button: "Басқарып алу",
-      gate_takeover_note: "Ата-ана құпиясөзі қажет; басқа телефон бірден шығады.",
+      gate_takeover_note: "Құрылғы әкімшісінің құпиясөзі қажет; басқа телефон бірден шығады.",
       webDisabledTitleBound: "Веб-бет өшірілді",
       webDisabledTitleBinding: "Қашықтан басқаруға байлау жүруде",
       webDisabledTitleNoChild: "Веб ата-ана орталығы қолжетімсіз",
@@ -1423,26 +1423,26 @@
       webDisabledRefresh: "Күйді жаңарту",
       webDisabledRefreshFailed: "Теледидармен байланысу мүмкін болмады. Телефон мен теледидар бір Wi-Fi желісінде екенін тексеріп, қайталаңыз.",
       webDisabledHint: "Бет тек теледидарда жергілікті бала режимі қосулы және қашықтан басқаруға байланыс жоқ кезде қолжетімді.",
-      pinLabel: "Ата-ана құпиясөзін енгізіңіз",
+      pinLabel: "Құрылғы әкімшісінің құпиясөзін енгізіңіз",
       pinButton: "Баптауды ашу",
-      forgotPin: "Құпиясөзді ұмыттыңыз ба?",
-      recoveryTitle: "Қалпына келтіру кодымен қалпына келтіру",
-      recoveryLead: "Балалар режимін алғаш қосқанда сақталған 12 таңбалы қалпына келтіру кодын енгізіп, жаңа 6 таңбалы ата-ана құпиясөзін орнатыңыз. Код бір рет қана көрсетілген; оны бұл бет те, теледидар да қайта көрсете алмайды.",
+      forgotPin: "Құрылғы әкімшісінің құпиясөзін ұмыттыңыз ба?",
+      recoveryTitle: "Құрылғы әкімшісінің құпиясөзін қалпына келтіру",
+      recoveryLead: "Балалар режимін алғаш қосқанда сақталған 12 таңбалы қалпына келтіру кодын енгізіп, жаңа 6 таңбалы құрылғы әкімшісінің құпиясөзін орнатыңыз. Код бір рет қана көрсетілген; оны бұл бет те, теледидар да қайта көрсете алмайды.",
       recoveryCodeLabel: "Қалпына келтіру коды",
-      recoveryNewPinLabel: "Жаңа ата-ана құпиясөзі (6 сан)",
-      recoveryConfirmLabel: "Жаңа құпиясөзді қайталаңыз",
-      recoverySubmit: "Құпиясөзді қалпына келтіру",
+      recoveryNewPinLabel: "Жаңа құрылғы әкімшісінің құпиясөзі (6 сан)",
+      recoveryConfirmLabel: "Жаңа құрылғы әкімшісінің құпиясөзін қайталаңыз",
+      recoverySubmit: "Құрылғы әкімшісінің құпиясөзін қалпына келтіру",
       recoveryCancel: "Кіруге оралу",
-      recoveryDone: "Ата-ана құпиясөзі қалпына келтірілді. Жаңа құпиясөзбен кіріңіз.",
-      recoveryMismatch: "Құпиясөздер сәйкес емес.",
+      recoveryDone: "Құрылғы әкімшісінің құпиясөзі қалпына келтірілді. Жаңа құрылғы әкімшісінің құпиясөзімен кіріңіз.",
+      recoveryMismatch: "Жаңа құрылғы әкімшісінің құпиясөздері сәйкес емес.",
       recoveryFormat: "12 таңбалы қалпына келтіру кодын енгізіңіз.",
       err_RECOVERY_INVALID: "Қалпына келтіру коды дұрыс емес.",
       err_RECOVERY_LOCKED: "Қалпына келтіру коды тым көп қате енгізілді. Кейінірек қайталаңыз.",
       err_RECOVERY_LOCKED_RETRY: "Қалпына келтіру коды тым көп қате енгізілді. {n} секундтан кейін қайталаңыз.",
       err_RECOVERY_NOT_SET: "Бұл теледидарда қалпына келтіру коды сақталмаған, сондықтан оны беттен қалпына келтіру мүмкін емес. Код балалар режимін алғаш қосқанда бір рет қана көрсетіледі.",
       err_RECOVERY_FAILED: "Қалпына келтіру сәтсіз аяқталды. Қайталап көріңіз.",
-      err_NEW_PIN_INVALID: "Жаңа құпиясөз 6 саннан тұруы керек.",
-      err_PIN_TOO_SIMPLE: "123456 немесе 666666 сияқты қарапайым құпиясөзді қолданбаңыз.",
+      err_NEW_PIN_INVALID: "Жаңа құрылғы әкімшісінің құпиясөзі 6 саннан тұруы керек.",
+      err_PIN_TOO_SIMPLE: "123456 немесе 666666 сияқты қарапайым құрылғы әкімшісінің құпиясөзін қолданбаңыз.",
       editor_locked: "Викторина жүріп жатыр. Бет тек қорытындыны көрсетеді.",
       challengeTitle: "Осы викторина",
       challengeHint: "Сұрақтар тек осы викторинаға тиесілі. Кіру жарияланғаннан кейін пайда болады.",
@@ -1482,13 +1482,13 @@
       qErrMinCorrect: "Қажетті дұрыс жауап сұрақ санынан көп болмайды.",
       qErrNumber: "Дұрыс сан енгізіңіз.",
       qErrAnswer: "Дұрыс жауапты таңдаңыз.",
-      err_PIN_INVALID: "Ата-ана құпиясөзі дұрыс емес.",
+      err_PIN_INVALID: "Құрылғы әкімшісінің құпиясөзі дұрыс емес.",
       err_PIN_LOCKED: "Әрекет тым көп. Кейінірек қайталаңыз.",
-      err_PIN_NOT_SET: "Теледидарда әзірге ата-ана құпиясөзі жоқ.",
+      err_PIN_NOT_SET: "Теледидарда әзірге құрылғы әкімшісінің құпиясөзі жоқ.",
       err_PARENT_IN_USE: "Баптау қазір басқа ата-анада ашық. Одан өз телефонында баптаудан шығуды сұрап, қайта көріңіз.",
       err_PAIR_EXPIRED: "QR-код ескірді. Теледидарда жаңартыңыз.",
-      err_ADMIN_REQUIRED: "Алдымен ата-ана құпиясөзін растаңыз.",
-      err_ADMIN_EXPIRED: "Сеанс аяқталды. Ата-ана құпиясөзін қайта енгізіңіз.",
+      err_ADMIN_REQUIRED: "Алдымен құрылғы әкімшісінің құпиясөзін растаңыз.",
+      err_ADMIN_EXPIRED: "Сеанс аяқталды. Құрылғы әкімшісінің құпиясөзін қайта енгізіңіз.",
       err_ORIGIN: "Сұрау көзі рұқсат етілмеген.",
       err_CONTENT_TYPE: "Сұрау пішімі қолдау көрсетілмейді.",
       err_INVALID_JSON: "Сұрауды оқу мүмкін болмады.",
@@ -2255,13 +2255,15 @@
       saveConfig: "保存",
       back: "返回",
       generateStart: "生成题目",
+      generateRunningAction: "生成中…",
       generateStartCount: "生成 {n} 道题",
       generateDisclaimer: "题目由 AI 生成，可能无法完全匹配最新教材的单元顺序和内容，仅供练习参考；请以学校教材为准。",
       genTextbookHint: "教材版本按 2026 年六三学制主流版本整理；找不到请选「综合」。",
       generateStop: "停止",
       generateProviderRequired: "请先在「我的 · AI 出题」配置模型 API 密钥。",
-      viewQuestionList: "查看题目清单",
+      viewQuestionList: "查看题目",
       generateDoneShort: "已生成 {n} 道",
+      generateAddedShort: "已加入 {n} 道题",
       bankMetaCount: "题库 {n} 题",
       homeAnswerMain: "{scope} · 每轮 {n} 题",
       homeAnswerSub: "每轮 {n} 题 · {seconds} 秒/题 · 每题 +{minutes} 分钟",
@@ -2335,13 +2337,15 @@
       saveConfig: "Save",
       back: "Back",
       generateStart: "Generate questions",
+      generateRunningAction: "Generating…",
       generateStartCount: "Generate {n} questions",
       generateDisclaimer: "Questions are generated by AI and may not fully match the unit order or content of the latest textbooks. For practice reference only; follow the school textbook.",
       genTextbookHint: "Textbook editions follow mainstream 2026 6–3 school-system editions. Choose “General” if yours is not listed.",
       generateStop: "Stop",
       generateProviderRequired: "Set the model API key in Me · AI questions first.",
-      viewQuestionList: "Review questions",
+      viewQuestionList: "View questions",
       generateDoneShort: "{n} generated",
+      generateAddedShort: "Added {n} questions",
       bankMetaCount: "Bank: {n} questions",
       homeAnswerMain: "{scope} · {n} per round",
       homeAnswerSub: "{n} per round · {seconds}s each · +{minutes} min per question",
@@ -2415,13 +2419,15 @@
       saveConfig: "Сохранить",
       back: "Назад",
       generateStart: "Сгенерировать вопросы",
+      generateRunningAction: "Создание…",
       generateStartCount: "Создать {n} вопросов",
       generateDisclaimer: "Вопросы создаёт ИИ; они могут не полностью совпадать с порядком разделов и содержанием новейших учебников. Только для тренировки; ориентируйтесь на школьный учебник.",
       genTextbookHint: "Версии учебников соответствуют основным изданиям 2026 года для системы 6–3. Если вашей нет, выберите «Общий».",
       generateStop: "Стоп",
       generateProviderRequired: "Сначала укажите ключ API модели в разделе «Я · Вопросы ИИ».",
-      viewQuestionList: "Проверить вопросы",
+      viewQuestionList: "Посмотреть вопросы",
       generateDoneShort: "Сгенерировано: {n}",
+      generateAddedShort: "Добавлено вопросов: {n}",
       bankMetaCount: "Банк: {n} вопр.",
       homeAnswerMain: "{scope} · {n} за раунд",
       homeAnswerSub: "{n} за раунд · {seconds} с на вопрос · +{minutes} мин за вопрос",
@@ -2495,6 +2501,7 @@
       saveConfig: "Зберегти",
       back: "Назад",
       generateStart: "Згенерувати питання",
+      generateRunningAction: "Генерація…",
       generateStartCount: "Згенерувати {n} питань",
       generateDisclaimer: "Питання створює ШІ; вони можуть не повністю збігатися з порядком розділів і змістом найновіших підручників. Лише для тренування; орієнтуйтеся на шкільний підручник.",
       genTextbookHint: "Версії підручників відповідають основним виданням 2026 року для системи 6–3. Якщо вашої немає, виберіть «Загальний».",
@@ -2502,6 +2509,7 @@
       generateProviderRequired: "Спочатку вкажіть ключ API моделі в розділі «Я · Питання ШІ».",
       viewQuestionList: "Переглянути питання",
       generateDoneShort: "Згенеровано: {n}",
+      generateAddedShort: "Додано питань: {n}",
       bankMetaCount: "Банк: {n} питань",
       homeAnswerMain: "{scope} · {n} за раунд",
       homeAnswerSub: "{n} за раунд · {seconds} с на питання · +{minutes} хв за питання",
@@ -2575,6 +2583,7 @@
       saveConfig: "Сақтау",
       back: "Артқа",
       generateStart: "Сұрақ жасау",
+      generateRunningAction: "Жасалуда…",
       generateStartCount: "{n} сұрақ жасау",
       generateDisclaimer: "Сұрақтарды AI жасайды; олар ең жаңа оқулықтардың бөлім ретімен және мазмұнымен толық сәйкес келмеуі мүмкін. Тек жаттығуға арналған; мектеп оқулығын басшылыққа алыңыз.",
       genTextbookHint: "Оқулық нұсқалары 2026 жылғы 6–3 жүйесінің негізгі басылымдарына сәйкес. Өзіңіздікі тізімде жоқ болса, «Жалпы» нұсқасын таңдаңыз.",
@@ -2582,6 +2591,7 @@
       generateProviderRequired: "Алдымен «Мен · AI сұрақтары» бөлімінде модель API кілтін баптаңыз.",
       viewQuestionList: "Сұрақтарды қарау",
       generateDoneShort: "{n} сұрақ жасалды",
+      generateAddedShort: "{n} сұрақ қосылды",
       bankMetaCount: "Банк: {n} сұрақ",
       homeAnswerMain: "{scope} · раундта {n} сұрақ",
       homeAnswerSub: "раундта {n} · сұраққа {seconds} с · сұраққа +{minutes} мин",
@@ -2910,6 +2920,7 @@
     zh: {
       bankImport: "导入题库",
       bankImportAction: "手动导入",
+      bankGenerateAction: "AI课时同步出题",
       bankSourceLine: "预置 + AI {course} 道 · 手动导入 {custom} 道 · 错题 {wrong} 道 · 总 {total} / {capacity}",
       bankSourceCustomTag: "标签：{name}",
       goImportBank: "导入题库",
@@ -3228,7 +3239,8 @@ difficulty 只能是 easy、medium、hard。
     },
     en: {
       bankImport: "Import bank",
-      bankImportAction: "Manual import",
+      bankImportAction: "Import",
+      bankGenerateAction: "AI questions",
       bankSourceLine: "Preset + AI {course} · Manual {custom} · Wrong {wrong} · Total {total} / {capacity}",
       bankSourceCustomTag: "Tag: {name}",
       goImportBank: "Import bank",
@@ -3547,7 +3559,8 @@ Extra requirements: none`,
     },
     ru: {
       bankImport: "Импорт банка",
-      bankImportAction: "Импорт вручную",
+      bankImportAction: "Импорт",
+      bankGenerateAction: "Вопросы ИИ",
       bankSourceLine: "Готовые + ИИ {course} · Ручной импорт {custom} · Ошибки {wrong} · Всего {total} / {capacity}",
       bankSourceCustomTag: "Тег: {name}",
       goImportBank: "Импортировать банк",
@@ -3866,7 +3879,8 @@ difficulty — только easy, medium или hard.
     },
     uk: {
       bankImport: "Імпорт банку",
-      bankImportAction: "Імпорт вручну",
+      bankImportAction: "Імпорт",
+      bankGenerateAction: "Питання ШІ",
       bankSourceLine: "Готові + ШІ {course} · Ручне імпортування {custom} · Помилки {wrong} · Усього {total} / {capacity}",
       bankSourceCustomTag: "Тег: {name}",
       goImportBank: "Імпортувати банк",
@@ -4185,7 +4199,8 @@ difficulty — лише easy, medium або hard.
     },
     kk: {
       bankImport: "Банкіні импорттау",
-      bankImportAction: "Қолмен импорттау",
+      bankImportAction: "Импорт",
+      bankGenerateAction: "ЖИ сұрақтары",
       bankSourceLine: "Дайын + ЖИ {course} · Қолмен импорт {custom} · Қателер {wrong} · Барлығы {total} / {capacity}",
       bankSourceCustomTag: "Тег: {name}",
       goImportBank: "Банкіні импорттау",
@@ -4507,21 +4522,21 @@ difficulty — тек easy, medium немесе hard.
   const V23_TEXTS = {
     zh: {
       title: "家长网页",
-      gate_pair_text: "请输入电视上的 6 位家长密码。验证后当天内再次打开无需输入；次日 0 点后需要重新验证。临时解锁只作用于电视锁屏。",
+      gate_pair_text: "请输入电视上的 6 位设备管理员密码。验证后当天内再次打开无需再输入设备管理员密码；次日 0 点后需要重新验证。临时解锁只作用于电视锁屏。",
       footer: "答题闯关只在电视上开始和结算；临时解锁仅在电视锁屏时可用，关屏或重启后恢复守护。",
       unlockTitle: "临时解锁",
-      unlockLead: "仅在电视锁屏时可用。输入家长密码后，电视临时解锁；关屏或重启电视即恢复守护。",
+      unlockLead: "仅在电视锁屏时可用。输入设备管理员密码后，电视临时解锁；关屏或重启电视即恢复守护。",
       unlockAction: "临时解锁电视",
       lockActionsLabel: "锁屏操作",
       manualTitle: "开启单次使用",
-      manualLead: "仅在手动模式和电视锁屏时可用。时长和密码在这里填写，计时由电视开始和执行。",
+      manualLead: "仅在手动模式和电视锁屏时可用。时长和设备管理员密码在这里填写，计时由电视开始和执行。",
       manualDurationLabel: "本次时长",
       manualDurationUnit: "分钟",
       manualDecrease: "减少 5 分钟",
       manualIncrease: "增加 5 分钟",
-      manualAction: "输入密码并开始",
+      manualAction: "输入设备管理员密码并开始",
       manualDialogTitle: "开启单次使用",
-      manualDialogLead: "电视将立即开始 {minutes} 分钟计时。请输入家长密码；密码不会保存在手机上。",
+      manualDialogLead: "电视将立即开始 {minutes} 分钟计时。请输入设备管理员密码；密码不会保存在手机上。",
       manualChecking: "正在读取电视状态…",
       manualSubmit: "确认开始",
       manualReason_OK: "电视已锁屏，可以开启一次手动计时。",
@@ -4536,9 +4551,9 @@ difficulty — тек easy, medium немесе hard.
       manualRestWait: "电视正在休息，约 {minutes} 分钟后可以开始。",
       manualSessionActive: "电视正在计时，剩余约 {minutes} 分钟。",
       manualError_INVALID_DURATION: "时长不正确，请重新选择。",
-      unlockDialogTitle: "输入家长密码",
-      unlockDialogLead: "密码只用于本次解锁，不会保存在手机上。",
-      unlockPinLabel: "家长密码",
+      unlockDialogTitle: "输入设备管理员密码",
+      unlockDialogLead: "设备管理员密码只用于本次解锁，不会保存在手机上。",
+      unlockPinLabel: "设备管理员密码",
       unlockSubmit: "确认解锁",
       unlockChecking: "正在读取电视状态…",
       unlockReason_OK: "电视已锁屏，可以临时解锁。",
@@ -4549,31 +4564,31 @@ difficulty — тек easy, medium немесе hard.
       unlockReason_SCREEN_OFF: "电视屏幕已关闭，请先打开电视。",
       unlockReason_NOT_ON_LOCK_SCREEN: "电视当前不在锁屏界面，请在电视上返回锁屏后再试。",
       unlockReason_SETUP_REQUIRED: "电视还没完成儿童模式设置。",
-      unlockReason_PIN_NOT_SET: "电视还没有设置家长密码。",
-      unlockReason_DEFAULT_PIN: "请先在电视上修改初始密码。",
+      unlockReason_PIN_NOT_SET: "电视还没有设置设备管理员密码。",
+      unlockReason_DEFAULT_PIN: "请先在电视上修改初始设备管理员密码。",
       unlockReason_NOT_LOCAL: "只有本地模式的电视支持家长网页。",
       unlockReason_NOT_READY: "电视状态同步中，请稍后再试。",
       unlockReason_STATE_CHANGED: "电视状态已变化，请稍后再试。",
       unlockReason_OFFLINE: "无法连接电视，请确认手机和电视在同一局域网。",
-      unlockPinLength: "请输入 6 位家长密码。",
+      unlockPinLength: "请输入 6 位设备管理员密码。",
     },
     en: {
       title: "Parent web page",
-      gate_pair_text: "Enter the 6-digit parent password shown on the TV. After verification, this phone can reopen the page without a PIN until local midnight. The temporary unlock only applies on the TV lock screen.",
+      gate_pair_text: "Enter the 6-digit device admin password shown on the TV. After verification, this phone can reopen the page without the device admin password until local midnight. The temporary unlock only applies on the TV lock screen.",
       footer: "Quizzes start and settle on the TV only; temporary unlock is available only on the TV lock screen and ends when the screen turns off or the TV restarts.",
       unlockTitle: "Temporary unlock",
-      unlockLead: "Available only while the TV is on its lock screen. Enter the parent password to unlock the TV temporarily; turning the TV screen off or restarting it restores the guard.",
+      unlockLead: "Available only while the TV is on its lock screen. Enter the device admin password to unlock the TV temporarily; turning the TV screen off or restarting it restores the guard.",
       unlockAction: "Unlock TV temporarily",
       lockActionsLabel: "Lock-screen actions",
       manualTitle: "Start one session",
-      manualLead: "Available only in manual mode while the TV is on its lock screen. Choose the duration and enter the password here; the TV starts and runs the timer.",
+      manualLead: "Available only in manual mode while the TV is on its lock screen. Choose the duration and enter the device admin password here; the TV starts and runs the timer.",
       manualDurationLabel: "Session length",
       manualDurationUnit: "minutes",
       manualDecrease: "Decrease by 5 minutes",
       manualIncrease: "Increase by 5 minutes",
-      manualAction: "Enter password and start",
+      manualAction: "Enter device admin password and start",
       manualDialogTitle: "Start one session",
-      manualDialogLead: "The TV will start a {minutes}-minute timer immediately. Enter the parent password; it is not saved on the phone.",
+      manualDialogLead: "The TV will start a {minutes}-minute timer immediately. Enter the device admin password; it is not saved on the phone.",
       manualChecking: "Checking the TV state…",
       manualSubmit: "Start timer",
       manualReason_OK: "The TV is locked and ready for one manual session.",
@@ -4588,9 +4603,9 @@ difficulty — тек easy, medium немесе hard.
       manualRestWait: "The TV is resting; a session can start in about {minutes} minutes.",
       manualSessionActive: "The TV timer is running with about {minutes} minutes left.",
       manualError_INVALID_DURATION: "That duration is not valid. Choose another.",
-      unlockDialogTitle: "Enter the parent password",
-      unlockDialogLead: "The password is used only for this unlock and is not saved on the phone.",
-      unlockPinLabel: "Parent password",
+      unlockDialogTitle: "Enter the device admin password",
+      unlockDialogLead: "The device admin password is used only for this unlock and is not saved on the phone.",
+      unlockPinLabel: "Device admin password",
       unlockSubmit: "Unlock",
       unlockChecking: "Reading TV status…",
       unlockReason_OK: "The TV is locked and can be unlocked temporarily.",
@@ -4601,31 +4616,31 @@ difficulty — тек easy, medium немесе hard.
       unlockReason_SCREEN_OFF: "The TV screen is off. Turn the TV on first.",
       unlockReason_NOT_ON_LOCK_SCREEN: "The TV is not on the lock screen right now. Return to the lock screen on the TV and try again.",
       unlockReason_SETUP_REQUIRED: "Kids mode setup is not complete on the TV.",
-      unlockReason_PIN_NOT_SET: "No parent password is set on the TV.",
-      unlockReason_DEFAULT_PIN: "Change the default parent password on the TV first.",
+      unlockReason_PIN_NOT_SET: "No device admin password is set on the TV.",
+      unlockReason_DEFAULT_PIN: "Change the default device admin password on the TV first.",
       unlockReason_NOT_LOCAL: "The parent web page is only available on a TV in local mode.",
       unlockReason_NOT_READY: "TV status is still syncing. Try again shortly.",
       unlockReason_STATE_CHANGED: "The TV state changed. Try again.",
       unlockReason_OFFLINE: "Cannot reach the TV. Check that the phone and TV are on the same LAN.",
-      unlockPinLength: "Enter the 6-digit parent password.",
+      unlockPinLength: "Enter the 6-digit device admin password.",
     },
     ru: {
       title: "Веб-страница для родителей",
-      gate_pair_text: "Введите 6-значный пароль родителя с телевизора. После проверки страница открывается без пароля до местной полуночи. Временная разблокировка действует только на экране блокировки телевизора.",
+      gate_pair_text: "Введите 6-значный пароль администратора устройства с телевизора. После проверки страница открывается без пароля администратора устройства до местной полуночи. Временная разблокировка действует только на экране блокировки телевизора.",
       footer: "Викторина начинается и завершается только на телевизоре; временная разблокировка доступна только на экране блокировки и снимается при выключении экрана или перезапуске.",
       unlockTitle: "Временная разблокировка",
-      unlockLead: "Доступно только когда телевизор на экране блокировки. Введите пароль родителя, чтобы временно разблокировать телевизор; выключение экрана или перезапуск вернут защиту.",
+      unlockLead: "Доступно только когда телевизор на экране блокировки. Введите пароль администратора устройства, чтобы временно разблокировать телевизор; выключение экрана или перезапуск вернут защиту.",
       unlockAction: "Временно разблокировать телевизор",
       lockActionsLabel: "Действия на экране блокировки",
       manualTitle: "Запустить один сеанс",
-      manualLead: "Доступно только в ручном режиме и когда телевизор на экране блокировки. Выберите длительность и введите пароль здесь; таймер запускает и ведёт телевизор.",
+      manualLead: "Доступно только в ручном режиме и когда телевизор на экране блокировки. Выберите длительность и введите пароль администратора устройства здесь; таймер запускает и ведёт телевизор.",
       manualDurationLabel: "Длительность",
       manualDurationUnit: "минут",
       manualDecrease: "Уменьшить на 5 минут",
       manualIncrease: "Увеличить на 5 минут",
-      manualAction: "Ввести пароль и начать",
+      manualAction: "Ввести пароль администратора устройства и начать",
       manualDialogTitle: "Запуск одного сеанса",
-      manualDialogLead: "Телевизор сразу запустит таймер на {minutes} мин. Введите пароль родителя; на телефоне он не сохраняется.",
+      manualDialogLead: "Телевизор сразу запустит таймер на {minutes} мин. Введите пароль администратора устройства; на телефоне он не сохраняется.",
       manualChecking: "Проверяем состояние телевизора…",
       manualSubmit: "Запустить таймер",
       manualReason_OK: "Телевизор заблокирован; можно запустить один ручной сеанс.",
@@ -4640,9 +4655,9 @@ difficulty — тек easy, medium немесе hard.
       manualRestWait: "Телевизор отдыхает; сеанс можно начать примерно через {minutes} мин.",
       manualSessionActive: "Таймер идёт, осталось около {minutes} мин.",
       manualError_INVALID_DURATION: "Недопустимая длительность. Выберите другую.",
-      unlockDialogTitle: "Введите пароль родителя",
-      unlockDialogLead: "Пароль используется только для этой разблокировки и не сохраняется на телефоне.",
-      unlockPinLabel: "Пароль родителя",
+      unlockDialogTitle: "Введите пароль администратора устройства",
+      unlockDialogLead: "Пароль администратора устройства используется только для этой разблокировки и не сохраняется на телефоне.",
+      unlockPinLabel: "Пароль администратора устройства",
       unlockSubmit: "Разблокировать",
       unlockChecking: "Читаем состояние телевизора…",
       unlockReason_OK: "Телевизор заблокирован; можно временно разблокировать.",
@@ -4653,31 +4668,31 @@ difficulty — тек easy, medium немесе hard.
       unlockReason_SCREEN_OFF: "Экран телевизора выключен. Сначала включите телевизор.",
       unlockReason_NOT_ON_LOCK_SCREEN: "Сейчас на телевизоре не показан экран блокировки. Вернитесь к экрану блокировки на телевизоре и повторите.",
       unlockReason_SETUP_REQUIRED: "Настройка детского режима на телевизоре не завершена.",
-      unlockReason_PIN_NOT_SET: "На телевизоре не задан пароль родителя.",
-      unlockReason_DEFAULT_PIN: "Сначала смените начальный пароль на телевизоре.",
+      unlockReason_PIN_NOT_SET: "На телевизоре не задан пароль администратора устройства.",
+      unlockReason_DEFAULT_PIN: "Сначала смените начальный пароль администратора устройства на телевизоре.",
       unlockReason_NOT_LOCAL: "Веб-страница родителей доступна только в локальном режиме.",
       unlockReason_NOT_READY: "Состояние телевизора ещё синхронизируется. Повторите позже.",
       unlockReason_STATE_CHANGED: "Состояние телевизора изменилось. Повторите.",
       unlockReason_OFFLINE: "Нет связи с телевизором. Убедитесь, что телефон и телевизор в одной локальной сети.",
-      unlockPinLength: "Введите 6-значный пароль родителя.",
+      unlockPinLength: "Введите 6-значный пароль администратора устройства.",
     },
     uk: {
       title: "Веб-сторінка для батьків",
-      gate_pair_text: "Введіть 6-значний пароль батьків із телевізора. Після перевірки сторінка відкривається без пароля до місцевої півночі. Тимчасове розблокування діє лише на екрані блокування телевізора.",
+      gate_pair_text: "Введіть 6-значний пароль адміністратора пристрою із телевізора. Після перевірки сторінка відкривається без пароля адміністратора пристрою до місцевої півночі. Тимчасове розблокування діє лише на екрані блокування телевізора.",
       footer: "Вікторина починається й завершується лише на телевізорі; тимчасове розблокування доступне лише на екрані блокування і знімається після вимкнення екрана або перезапуску.",
       unlockTitle: "Тимчасове розблокування",
-      unlockLead: "Доступне лише коли телевізор на екрані блокування. Введіть пароль батьків, щоб тимчасово розблокувати телевізор; вимкнення екрана або перезапуск повернуть захист.",
+      unlockLead: "Доступне лише коли телевізор на екрані блокування. Введіть пароль адміністратора пристрою, щоб тимчасово розблокувати телевізор; вимкнення екрана або перезапуск повернуть захист.",
       unlockAction: "Тимчасово розблокувати телевізор",
       lockActionsLabel: "Дії на екрані блокування",
       manualTitle: "Запустити один сеанс",
-      manualLead: "Доступно лише в ручному режимі й коли телевізор на екрані блокування. Виберіть тривалість і введіть пароль тут; таймер запускає й веде телевізор.",
+      manualLead: "Доступно лише в ручному режимі й коли телевізор на екрані блокування. Виберіть тривалість і введіть пароль адміністратора пристрою тут; таймер запускає й веде телевізор.",
       manualDurationLabel: "Тривалість",
       manualDurationUnit: "хвилин",
       manualDecrease: "Зменшити на 5 хвилин",
       manualIncrease: "Збільшити на 5 хвилин",
-      manualAction: "Ввести пароль і почати",
+      manualAction: "Ввести пароль адміністратора пристрою і почати",
       manualDialogTitle: "Запуск одного сеансу",
-      manualDialogLead: "Телевізор одразу запустить таймер на {minutes} хв. Введіть пароль батьків; на телефоні він не зберігається.",
+      manualDialogLead: "Телевізор одразу запустить таймер на {minutes} хв. Введіть пароль адміністратора пристрою; на телефоні він не зберігається.",
       manualChecking: "Перевіряємо стан телевізора…",
       manualSubmit: "Запустити таймер",
       manualReason_OK: "Телевізор заблокований; можна запустити один ручний сеанс.",
@@ -4692,9 +4707,9 @@ difficulty — тек easy, medium немесе hard.
       manualRestWait: "Телевізор відпочиває; сеанс можна почати приблизно через {minutes} хв.",
       manualSessionActive: "Таймер працює, лишилося близько {minutes} хв.",
       manualError_INVALID_DURATION: "Неприпустима тривалість. Виберіть іншу.",
-      unlockDialogTitle: "Введіть пароль батьків",
-      unlockDialogLead: "Пароль використовується лише для цього розблокування і не зберігається на телефоні.",
-      unlockPinLabel: "Пароль батьків",
+      unlockDialogTitle: "Введіть пароль адміністратора пристрою",
+      unlockDialogLead: "Пароль адміністратора пристрою використовується лише для цього розблокування і не зберігається на телефоні.",
+      unlockPinLabel: "Пароль адміністратора пристрою",
       unlockSubmit: "Розблокувати",
       unlockChecking: "Читаємо стан телевізора…",
       unlockReason_OK: "Телевізор заблокований; можна тимчасово розблокувати.",
@@ -4705,31 +4720,31 @@ difficulty — тек easy, medium немесе hard.
       unlockReason_SCREEN_OFF: "Екран телевізора вимкнено. Спершу увімкніть телевізор.",
       unlockReason_NOT_ON_LOCK_SCREEN: "Зараз на телевізорі не показано екран блокування. Поверніться до екрана блокування на телевізорі та повторіть спробу.",
       unlockReason_SETUP_REQUIRED: "Налаштування дитячого режиму на телевізорі не завершено.",
-      unlockReason_PIN_NOT_SET: "На телевізорі не задано пароль батьків.",
-      unlockReason_DEFAULT_PIN: "Спершу змініть початковий пароль на телевізорі.",
+      unlockReason_PIN_NOT_SET: "На телевізорі не задано пароль адміністратора пристрою.",
+      unlockReason_DEFAULT_PIN: "Спершу змініть початковий пароль адміністратора пристрою на телевізорі.",
       unlockReason_NOT_LOCAL: "Веб-сторінка батьків доступна лише в локальному режимі.",
       unlockReason_NOT_READY: "Стан телевізора ще синхронізується. Спробуйте пізніше.",
       unlockReason_STATE_CHANGED: "Стан телевізора змінився. Спробуйте ще раз.",
       unlockReason_OFFLINE: "Немає зв'язку з телевізором. Перевірте, що телефон і телевізор в одній локальній мережі.",
-      unlockPinLength: "Введіть 6-значний пароль батьків.",
+      unlockPinLength: "Введіть 6-значний пароль адміністратора пристрою.",
     },
     kk: {
       title: "Ата-аналарға арналған веб-бет",
-      gate_pair_text: "Теледидардағы 6 таңбалы ата-ана құпиясөзін енгізіңіз. Тексеруден кейін бет жергілікті түн ортасына дейін құпиясөзсіз ашылады. Уақытша ашу тек теледидар құлыптау экранында әрекет етеді.",
+      gate_pair_text: "Теледидардағы 6 таңбалы құрылғы әкімшісінің құпиясөзін енгізіңіз. Тексеруден кейін бет жергілікті түн ортасына дейін құрылғы әкімшісінің құпиясөзінсіз ашылады. Уақытша ашу тек теледидар құлыптау экранында әрекет етеді.",
       footer: "Викторина тек теледидарда басталады және есептеледі; уақытша ашу тек құлыптау экранында қолжетімді және экран өшкенде немесе теледидар қайта іске қосылғанда жойылады.",
       unlockTitle: "Уақытша ашу",
-      unlockLead: "Тек теледидар құлыптау экранында қолжетімді. Ата-ана құпиясөзін енгізіп, теледидарды уақытша ашыңыз; экранды өшірсеңіз немесе теледидарды қайта іске қоссаңыз, қорғаныс қайтады.",
+      unlockLead: "Тек теледидар құлыптау экранында қолжетімді. Құрылғы әкімшісінің құпиясөзін енгізіп, теледидарды уақытша ашыңыз; экранды өшірсеңіз немесе теледидарды қайта іске қоссаңыз, қорғаныс қайтады.",
       unlockAction: "Теледидарды уақытша ашу",
       lockActionsLabel: "Құлыптау экранындағы әрекеттер",
       manualTitle: "Бір сеансты бастау",
-      manualLead: "Тек қолмен режимінде және теледидар құлыптау экранында болғанда қолжетімді. Ұзақтықты таңдап, құпиясөзді осында енгізіңіз; таймерді теледидар бастайды және жүргізеді.",
+      manualLead: "Тек қолмен режимінде және теледидар құлыптау экранында болғанда қолжетімді. Ұзақтықты таңдап, құрылғы әкімшісінің құпиясөзін осында енгізіңіз; таймерді теледидар бастайды және жүргізеді.",
       manualDurationLabel: "Ұзақтығы",
       manualDurationUnit: "минут",
       manualDecrease: "5 минутқа азайту",
       manualIncrease: "5 минутқа қосу",
-      manualAction: "Құпиясөзді енгізіп бастау",
+      manualAction: "Құрылғы әкімшісінің құпиясөзін енгізіп бастау",
       manualDialogTitle: "Бір сеансты бастау",
-      manualDialogLead: "Теледидар бірден {minutes} минуттық таймерді бастайды. Ата-ана құпиясөзін енгізіңіз; ол телефонда сақталмайды.",
+      manualDialogLead: "Теледидар бірден {minutes} минуттық таймерді бастайды. Құрылғы әкімшісінің құпиясөзін енгізіңіз; ол телефонда сақталмайды.",
       manualChecking: "Теледидар күйі тексерілуде…",
       manualSubmit: "Таймерді бастау",
       manualReason_OK: "Теледидар құлыптаулы; бір қолмен сеансын бастауға болады.",
@@ -4744,9 +4759,9 @@ difficulty — тек easy, medium немесе hard.
       manualRestWait: "Теледидар демалып тұр; сеансты шамамен {minutes} минуттан кейін бастауға болады.",
       manualSessionActive: "Таймер жүріп жатыр, шамамен {minutes} минут қалды.",
       manualError_INVALID_DURATION: "Ұзақтық жарамсыз. Басқа мәнді таңдаңыз.",
-      unlockDialogTitle: "Ата-ана құпиясөзін енгізіңіз",
-      unlockDialogLead: "Құпиясөз тек осы ашу үшін пайдаланылады және телефонда сақталмайды.",
-      unlockPinLabel: "Ата-ана құпиясөзі",
+      unlockDialogTitle: "Құрылғы әкімшісінің құпиясөзін енгізіңіз",
+      unlockDialogLead: "Құрылғы әкімшісінің құпиясөзі тек осы ашу үшін пайдаланылады және телефонда сақталмайды.",
+      unlockPinLabel: "Құрылғы әкімшісінің құпиясөзі",
       unlockSubmit: "Ашу",
       unlockChecking: "Теледидар күйі оқылып жатыр…",
       unlockReason_OK: "Теледидар құлыптаулы; уақытша ашуға болады.",
@@ -4757,13 +4772,13 @@ difficulty — тек easy, medium немесе hard.
       unlockReason_SCREEN_OFF: "Теледидар экраны өшіп тұр. Алдымен теледидарды қосыңыз.",
       unlockReason_NOT_ON_LOCK_SCREEN: "Қазір теледидарда құлыптау экраны көрсетілмей тұр. Теледидарда құлыптау экранына оралып, қайталап көріңіз.",
       unlockReason_SETUP_REQUIRED: "Теледидарда балалар режимінің баптауы аяқталмаған.",
-      unlockReason_PIN_NOT_SET: "Теледидарда ата-ана құпиясөзі орнатылмаған.",
-      unlockReason_DEFAULT_PIN: "Алдымен теледидарда бастапқы құпиясөзді өзгертіңіз.",
+      unlockReason_PIN_NOT_SET: "Теледидарда құрылғы әкімшісінің құпиясөзі орнатылмаған.",
+      unlockReason_DEFAULT_PIN: "Алдымен теледидарда бастапқы құрылғы әкімшісінің құпиясөзін өзгертіңіз.",
       unlockReason_NOT_LOCAL: "Ата-аналарға арналған веб-бет тек жергілікті режимде қолжетімді.",
       unlockReason_NOT_READY: "Теледидар күйі әлі синхрондалып жатыр. Сәл кейінірек қайталаңыз.",
       unlockReason_STATE_CHANGED: "Теледидар күйі өзгерді. Қайталап көріңіз.",
       unlockReason_OFFLINE: "Теледидармен байланыс жоқ. Телефон мен теледидардың бір жергілікті желіде екенін тексеріңіз.",
-      unlockPinLength: "6 таңбалы ата-ана құпиясөзін енгізіңіз.",
+      unlockPinLength: "6 таңбалы құрылғы әкімшісінің құпиясөзін енгізіңіз.",
     },
   };
 
@@ -5974,13 +5989,17 @@ difficulty — тек easy, medium немесе hard.
     multiple: "genTypeMultiple",
     mixed: "genTypeMixed",
   };
+  // Pages of the home tab. The AI generation page and the generated-question
+  // list live outside the four tab views: the AI page is opened from the bank
+  // tab, so it must not switch the active tab or disturb the bank list.
   const GEN_PAGE_IDS = {
     home: "generateHome",
-    gen: "genConfigPage",
-    answer: "answerConfigPage",
     package: "packageEditorPage",
     tagSource: "tagSourcePage",
     level: "levelEditorPage",
+  };
+  const GLOBAL_PAGE_IDS = {
+    aiGen: "genConfigPage",
     questions: "questionsPage",
   };
   const MAX_LEVELS = 20;
@@ -6279,6 +6298,10 @@ let presetBank = { bankId: "", total: 0, available: 0 };
   let genScopeSetup = false;
   let genPrefsSaveTimer = null;
   let genPage = "home";
+  // A full-page flow that is not owned by one tab. `globalReturn` remembers
+  // where it was opened from so Back restores the exact tab and scroll.
+  let globalPage = "";
+  let globalReturn = null;
   let answerTab = "scope";
   // Android WebView can deliver a late compatibility click at the same screen
   // point after a handler has already changed the page. Debounce every click
@@ -7506,7 +7529,6 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       }
     }
     syncGenerateComposer(true);
-    renderStock();
     renderHome();
     renderGenerate();
     renderProvider();
@@ -7524,29 +7546,12 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     if (activeModal === "manualDialog") {
       $("manualDialogLead").textContent = t("manualDialogLead", { minutes: manualMinutes });
     }
-    if (genPage === "answer") renderAnswerPage();
     if (genPage === "level") renderLevelEditor();
-    if (genPage === "questions") renderQuestions();
+    if (globalPage === "questions") renderQuestions();
     updateParentAppDownloadRow();
     if (webDisabled) renderWebDisabled();
     if (window.ParentCenterUI && window.ParentCenterUI.setLang) {
       window.ParentCenterUI.setLang(lang);
-    }
-  }
-
-  function renderStock() {
-    const counts = currentCounts();
-    if ($("bankMeta")) $("bankMeta").textContent = t("bankMetaCount", { n: counts.total });
-    let notice = "";
-    if (counts.inRound > 0) {
-      notice = t("inRoundNotice");
-    } else if (publicState && publicState.enabled !== false && publicState.source !== "CLOUD" &&
-               (publicState.bankState === "empty" || publicState.bankState === "insufficient")) {
-      notice = t("insufficientNotice");
-    }
-    if ($("stockNotice")) {
-      $("stockNotice").textContent = notice;
-      $("stockNotice").classList.toggle("hidden", !notice);
     }
   }
 
@@ -7575,146 +7580,10 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     return t(GEN_QUESTION_TYPE_LABEL_KEYS[genQuestionTypeValue] || "genTypeSingle");
   }
 
-  // The home card shows at most three level rows. One level keeps its full
-  // name, two or three levels get a numbered row each, and longer lists keep
-  // the first and last row with an ellipsis count between them. The hidden
-  // text leaves the collapsed middle levels available to screen readers.
-  function renderAnswerSummary(levels) {
-    const host = $("homeAnswerMain");
-    if (!host) return;
-    const hidden = $("homeAnswerA11y");
-    host.textContent = "";
-    host.classList.remove("single", "empty");
-    if (hidden) hidden.textContent = "";
-
-    const entries = levels.map((level, index) => {
-      const base = String(level.name || "").trim() ||
-        packageSummaryText(level) ||
-        t("levelFallbackName", { n: index + 1 });
-      return {
-        ordinal: index + 1,
-        // Keep paused levels in the parent's overview but label them so this
-        // card does not imply the child can still pick them.
-        name: level.enabled === false
-          ? base + " · " + t("levelPausedLabel")
-          : base,
-      };
-    });
-    if (!entries.length) {
-      host.classList.add("empty");
-      host.textContent = t("levelEmptyTitle");
-      return;
-    }
-
-    const rows = [];
-    if (entries.length <= 3) {
-      entries.forEach((entry) => rows.push({ ordinal: entry.ordinal, name: entry.name }));
-    } else {
-      rows.push({ ordinal: entries[0].ordinal, name: entries[0].name });
-      rows.push({ more: entries.length - 2 });
-      rows.push({
-        ordinal: entries[entries.length - 1].ordinal,
-        name: entries[entries.length - 1].name,
-      });
-      if (hidden) {
-        hidden.textContent = entries.slice(1, -1)
-          .map((entry) => `${entry.ordinal}. ${entry.name}`)
-          .join(" · ");
-      }
-    }
-
-    const single = entries.length === 1;
-    host.classList.toggle("single", single);
-    rows.forEach((row) => {
-      const line = document.createElement("span");
-      line.className = "level-summary-line";
-      if (row.more) {
-        line.classList.add("level-summary-more");
-        const mark = document.createElement("span");
-        mark.className = "level-summary-mark";
-        mark.textContent = "⋯";
-        mark.setAttribute("aria-hidden", "true");
-        const text = document.createElement("span");
-        text.className = "level-summary-name";
-        text.textContent = t("levelMore", { n: row.more });
-        line.append(mark, text);
-      } else {
-        if (!single) {
-          const badge = document.createElement("span");
-          badge.className = "level-summary-badge";
-          badge.textContent = String(row.ordinal);
-          badge.setAttribute("aria-hidden", "true");
-          line.append(badge);
-        }
-        const text = document.createElement("span");
-        text.className = "level-summary-name";
-        text.textContent = row.name;
-        line.append(text);
-      }
-      host.append(line);
-    });
-  }
-
+  // The home tab is the answer-level configuration itself. Everything that
+  // used to be a summary card here now renders directly in its final place.
   function renderHome() {
-    if (!$("homeGenMain")) return;
-    if (!generationScopeReady()) {
-      // A later member has not picked a grade/subject yet. Never show the
-      // gallery defaults as if they belonged to this child.
-      $("homeGenMain").textContent = t("genScopeUnsetTitle");
-      $("homeGenSub").textContent = t("genScopeUnsetHint");
-    } else {
-      const subject = subjectLabel(genSubjectValue);
-      const book = genSubjectValue === "all" ? "" : textbookLabel(genTextbookId);
-      const requirement = normalizeRequirement(genRequirementValue);
-      $("homeGenMain").textContent = [
-        gradeText(genGradeValue, genSemesterValue),
-        subject,
-        book,
-        requirement || t("genRequirementMissing"),
-      ].filter(Boolean).join(" · ");
-      $("homeGenSub").textContent = [
-        generationQuestionTypeText(),
-        generationDifficultyText(),
-        t("targetN", { n: targetCount }),
-        genAutoAddValue ? t("genAutoAddShort") : t("genManualAddShort"),
-      ].join(" · ");
-    }
-
-    const config = currentConfig();
-    const pull = Number(config.pullCount || 5);
-    const scopeModeLabel = $("homeAnswerScopeMode");
-    const totalLevels = levelPackages.length;
-    if (scopeModeLabel) {
-      scopeModeLabel.textContent = totalLevels
-        ? t("levelCountLabel", { n: totalLevels })
-        : t("levelNoneLabel");
-    }
-    renderAnswerSummary(levelPackages);
-    const scoring = scoringValues(config);
-    $("homeAnswerSub").textContent = t("homeAnswerSub", {
-      n: pull,
-      easy: scoring.easyRewardMinutes,
-      medium: scoring.mediumRewardMinutes,
-      hard: scoring.hardRewardMinutes,
-      unlock: scoring.minUnlockMinutes > 0
-        ? t("homeUnlock", { n: scoring.minUnlockMinutes })
-        : t("homeUnlockNone"),
-    });
-    const warning = $("homeAnswerWarning");
-    if (warning) {
-      const short = Boolean(publicState) &&
-        publicState.enabled !== false &&
-        publicState.source !== "CLOUD" &&
-        scopeLoaded
-        ? shortLevels(pull)
-        : [];
-      warning.textContent = short.length
-        ? t("homeLevelsInsufficient", { n: short.length, pull })
-        : "";
-      warning.classList.toggle("hidden", !short.length);
-    }
-    updateGenerationScopeStatus();
-    renderStock();
+    if ($("answerTabs")) renderAnswerPage();
   }
 
   function updateTargetChips() {
@@ -7723,21 +7592,21 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       chip.textContent = t("targetN", { n: value });
       chip.setAttribute("aria-pressed", String(value === targetCount));
     });
-    if ($("generate")) $("generate").textContent = t("generateStartCount", { n: targetCount });
   }
 
   function renderGenerate() {
     if (!$("generate")) return;
     const adding = genState.phase === "adding";
     const running = genState.phase === "running" || adding;
+    const added = genState.phase === "added";
     const hasBatch = genState.batch.length > 0;
-    const done = hasBatch && !running;
+    const done = added || (hasBatch && !running);
     updateTargetChips();
-    $("generateIdle").classList.toggle("hidden", running || done);
     $("generateRunning").classList.toggle("hidden", !running);
     $("generateDone").classList.toggle("hidden", !done);
     const scopeReady = generationScopeReady();
     $("generate").disabled = running || !scopeReady;
+    $("generate").textContent = running ? t("generateRunningAction") : t("generateStart");
     const providerBlocked = providerState.aiSupported === false ||
       !providerState.consentAccepted || !providerState.configured;
     if ($("generateSetupHint")) {
@@ -7756,7 +7625,7 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     }
     $("cancelGenerate").classList.toggle("hidden", adding);
     $("cancelGenerate").disabled = genState.stopping;
-    $("openQuestions").disabled = !hasBatch;
+    $("openQuestions").disabled = !(hasBatch || added);
     $("generateProgress").textContent = adding
       ? t("generateAdding")
       : running
@@ -7769,9 +7638,11 @@ let presetBank = { bankId: "", total: 0, available: 0 };
         : 0;
     $("progressFill").style.width = percent + "%";
     if ($("generatedCount")) {
-      $("generatedCount").textContent = t("generateDoneShort", { n: genState.batch.length });
+      $("generatedCount").textContent = added
+        ? t("generateAddedShort", { n: genState.addedCount || 0 })
+        : t("generateDoneShort", { n: genState.batch.length });
     }
-    if ($("listCount")) $("listCount").textContent = String(genState.batch.length);
+    if ($("listCount")) $("listCount").textContent = added ? "" : String(genState.batch.length);
     $("generateError").textContent = genState.errorCode === "REQUIREMENT_INVALID_UNIT"
       ? requirementInvalidUnitText()
       : genState.errorCode ? codeText(genState.errorCode) : "";
@@ -7779,7 +7650,6 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       ? t(genState.noticeKey, { n: genState.noticeCount })
       : "";
     updateGenerationScopeStatus();
-    renderStock();
   }
 
   function optionLetter(index) {
@@ -7886,10 +7756,14 @@ let presetBank = { bankId: "", total: 0, available: 0 };
   // subpage look. A generate subpage can stay open in the background when the
   // custom-level entry jumps to the bank import page, so only the subpage of
   // the tab actually on screen may hide the top bar and bottom navigation.
+  // Global pages sit outside every tab, so they always take over the screen.
   function syncSubpageClass() {
     const bankSubpage = activeTab === "bank" && bankPage !== "home";
-    const genSubpage = activeTab === "generate" && genPage !== "home";
-    document.body.classList.toggle("subpage-open", aiPageOpen || genSubpage || bankSubpage);
+    const genSubpage = !globalPage && activeTab === "generate" && genPage !== "home";
+    document.body.classList.toggle(
+      "subpage-open",
+      Boolean(globalPage) || aiPageOpen || genSubpage || bankSubpage,
+    );
   }
 
   function showGenPage(page) {
@@ -7900,8 +7774,7 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       if (el) el.classList.toggle("hidden", name !== page);
     }
     syncSubpageClass();
-    if (page === "questions") renderQuestions();
-    if (page === "answer") renderAnswerPage();
+    if (page === "home") renderAnswerPage();
     if (page === "package") renderPackageEditor();
     if (page === "tagSource") renderTagSourcePage();
     if (page === "level") renderLevelEditor();
@@ -7921,11 +7794,67 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     window.scrollTo({ top: 0 });
   }
 
-  function backToGenerateHome() {
-    $("questionError").textContent = "";
-    showGenPage("home");
-    renderHome();
-    renderGenerate();
+  // The AI page and the generated-question list are reachable from both the
+  // home tab and the bank tab, so they live outside the tab views. `globalPage`
+  // tracks which one is open and `globalReturn` remembers the exact tab and
+  // scroll position to restore on Back.
+  function openGlobalPage(page) {
+    if (!GLOBAL_PAGE_IDS[page]) return;
+    if (!globalPage) {
+      globalReturn = {
+        tab: activeTab,
+        genPage,
+        bankPage,
+        scrollY: window.scrollY,
+      };
+    }
+    globalPage = page;
+    for (const name of Object.keys(TAB_VIEWS)) $(TAB_VIEWS[name]).classList.add("hidden");
+    for (const [name, id] of Object.entries(GLOBAL_PAGE_IDS)) {
+      if ($(id)) $(id).classList.toggle("hidden", name !== page);
+    }
+    syncSubpageClass();
+    window.scrollTo({ top: 0 });
+  }
+
+  function showGlobalPage(page) {
+    if (!globalPage || !GLOBAL_PAGE_IDS[page]) return;
+    globalPage = page;
+    for (const [name, id] of Object.entries(GLOBAL_PAGE_IDS)) {
+      if ($(id)) $(id).classList.toggle("hidden", name !== page);
+    }
+    syncSubpageClass();
+    window.scrollTo({ top: 0 });
+  }
+
+  function closeGlobalPage() {
+    if (!globalPage) return;
+    const back = globalReturn || {
+      tab: "generate", genPage: "home", bankPage: "home", scrollY: 0,
+    };
+    globalPage = "";
+    globalReturn = null;
+    for (const id of Object.values(GLOBAL_PAGE_IDS)) {
+      if ($(id)) $(id).classList.add("hidden");
+    }
+    genPage = GEN_PAGE_IDS[back.genPage] ? back.genPage : "home";
+    bankPage = ["import", "manage"].includes(back.bankPage) ? back.bankPage : "home";
+    for (const name of Object.keys(TAB_VIEWS)) {
+      $(TAB_VIEWS[name]).classList.toggle("hidden", name !== back.tab);
+    }
+    for (const [name, id] of Object.entries(GEN_PAGE_IDS)) {
+      if ($(id)) $(id).classList.toggle("hidden", name !== genPage);
+    }
+    if ($("bankHome")) $("bankHome").classList.toggle("hidden", bankPage !== "home");
+    if ($("bankImportPage")) {
+      $("bankImportPage").classList.toggle("hidden", bankPage !== "import");
+    }
+    if ($("bankManagePage")) {
+      $("bankManagePage").classList.toggle("hidden", bankPage !== "manage");
+    }
+    syncSubpageClass();
+    if (back.tab === "generate") renderAnswerPage();
+    window.scrollTo({ top: back.scrollY });
   }
 
   function discardPackageDraft() {
@@ -7946,19 +7875,6 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     resetScopeOptions();
   }
 
-  // Package changes are local until the parent taps Save, so leaving the
-  // answer page drops an unfinished draft. Rule changes still wait for the
-  // Save button on the rules tab.
-  function backFromAnswerPage() {
-    $("settingsError").textContent = "";
-    discardPackageDraft();
-    if (answerDirty) {
-      answerDirty = false;
-      loadAdminSession().catch(() => {});
-    }
-    backToGenerateHome();
-  }
-
   function backFromLevelEditor() {
     $("levelEditorError").textContent = "";
     if (packageEditorActive) {
@@ -7976,27 +7892,54 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       return;
     }
     discardPackageDraft();
-    showGenPage("answer");
+    showGenPage("home");
   }
 
-  function openGenConfigPage() {
+  function openAiGeneratePage() {
     $("rangeError").textContent = "";
     if (packageEditorActive) discardPackageDraft();
     syncGenerateComposer(true);
-    showGenPage("gen");
-  }
-
-  function openAnswerConfigPage() {
-    answerTab = "scope";
-    discardPackageDraft();
-    $("levelError").textContent = "";
-    showGenPage("answer");
+    renderGenerate();
+    openGlobalPage("aiGen");
   }
 
   function openQuestionsPage() {
     $("questionError").textContent = "";
     renderQuestions();
-    showGenPage("questions");
+    if (globalPage === "aiGen") {
+      showGlobalPage("questions");
+      return;
+    }
+    openGlobalPage("questions");
+  }
+
+  // The question-list page is always opened from the AI page, so Back returns
+  // there instead of dropping the parent on the tab underneath.
+  function backFromQuestionsPage() {
+    $("questionError").textContent = "";
+    if (globalPage === "questions") {
+      showGlobalPage("aiGen");
+      renderGenerate();
+      return;
+    }
+    closeGlobalPage();
+  }
+
+  // After auto-add there is nothing left to review, so the same row jumps to
+  // the bank's AI category; a manual review still opens the question list.
+  function openGeneratedQuestions() {
+    if (genState.phase === "added") {
+      openAddedQuestionsInBank();
+      return;
+    }
+    openQuestionsPage();
+  }
+
+  function openAddedQuestionsInBank() {
+    closeGlobalPage();
+    bankScope = "ai";
+    bankManualCollectionId = "";
+    setTab("bank", true);
   }
 
   async function addSelectedQuestions() {
@@ -8027,11 +7970,13 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       applyBankCounts(data.counts);
       selectedBatch.clear();
       genState = idleGeneration();
-      genState.noticeKey = "generateAdded";
-      genState.noticeCount = Number(data.appended || 0);
-      backToGenerateHome();
+      genState.phase = "added";
+      genState.addedCount = Number(data.appended || 0);
+      showGlobalPage("aiGen");
+      renderGenerate();
       refreshStatus();
       loadAdminSession().catch(() => {});
+      if (activeTab === "bank") loadBank(true);
     } catch (error) {
       $("questionError").textContent = errorText(error);
       renderQuestions();
@@ -8714,6 +8659,7 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       bankHasMore = false;
       bankManualCollectionId = "";
       bankRequest += 1;
+      closeGlobalPage();
       showGenPage("home");
       showBankPage("home");
       renderSubjectChip();
@@ -8741,27 +8687,11 @@ let presetBank = { bankId: "", total: 0, available: 0 };
 
   function renderBankCounts() {
     const counts = currentCounts();
-    if ($("bankCounts")) {
-      $("bankCounts").textContent = t("bankCountsLine", {
-        total: counts.total,
-        unused: counts.unused,
-        answered: counts.answered,
-      });
-    }
     if ($("bankManageEntryState")) {
       $("bankManageEntryState").textContent = t("bankManageEntryState", {
         course: bankSourceCounts.course,
         custom: bankSourceCounts.custom,
         wrong: counts.wrong,
-      });
-    }
-    if ($("bankSourceCounts")) {
-      $("bankSourceCounts").textContent = t("bankSourceLine", {
-        course: bankSourceCounts.course,
-        custom: bankSourceCounts.custom,
-        wrong: counts.wrong,
-        total: counts.total,
-        capacity: bankCapacity,
       });
     }
     if ($("bankInRoundNotice")) {
@@ -8947,16 +8877,6 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     }
     renderBankManualFilters();
     renderBankScopeActions();
-    if ($("bankSourceCounts")) {
-      $("bankSourceCounts").textContent =
-        bankScope === "ai" || bankScope === "manual"
-          ? t("bankPrivateCapacity", {
-            used: privateUsed(),
-            capacity: privateCapacity,
-            remaining: privateRemaining,
-          })
-          : "";
-    }
     // Built-in and wrong-book scopes keep a plain empty line. AI and manual
     // scopes replace it with one action: generate or import.
     const emptyKey = bankScope === "builtin" ? "bankEmptyBuiltin"
@@ -10445,7 +10365,6 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       $("bankManageError").textContent = "";
       renderBankManage();
       renderBank();
-      renderStock();
       await refreshStatus();
       try {
         await loadAdminSession();
@@ -10639,6 +10558,11 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     return {
       lang: () => lang,
       t: (key, vars) => t(key, vars),
+      // Header-free URLs (the preview <video>) must stay on this session prefix.
+      url: (path) => {
+        const text = String(path || "");
+        return text.startsWith("/api/") ? API_ROOT + text.slice(1) : API_ROOT + text;
+      },
       request: parentRequest,
       upload: parentUpload,
       blob: parentBlob,
@@ -10977,6 +10901,11 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     aiReturnTab = "generate";
     aiReturnParentCenter = false;
     $("aiConfigPage").classList.add("hidden");
+    globalPage = "";
+    globalReturn = null;
+    for (const id of Object.values(GLOBAL_PAGE_IDS)) {
+      if ($(id)) $(id).classList.add("hidden");
+    }
     showGenPage("home");
     showBankPage("home");
     renderSettings();
@@ -11165,6 +11094,9 @@ let presetBank = { bankId: "", total: 0, available: 0 };
 
   function setTab(tab, force) {
     if (!TAB_VIEWS[tab]) tab = "generate";
+    // The bottom nav is an escape hatch from the AI/question pages; Back on
+    // those pages restores the tab that opened them, the nav starts fresh.
+    if (globalPage) closeGlobalPage();
     const overlayTab = tab === "user" || tab === "system";
     if (!overlayTab && parentTabOpen()) {
       // Leaving the overlay releases the editor lease; returning reacquires it
@@ -11316,7 +11248,6 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     bankCapacity = Number(data.bankCapacity || 100000);
     applyBankCounts(data.bank);
     renderSync();
-    renderStock();
     renderBankCounts();
     renderBank();
     renderBankManage();
@@ -11324,7 +11255,7 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     renderGenerate();
     renderHome();
     renderBankImport();
-    if (genPage === "answer") renderAnswerPage();
+    if (globalPage === "questions") renderQuestions();
     syncDraftCollectionCounts();
   }
 
@@ -11473,6 +11404,12 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     }
     aiPageOpen = true;
     document.querySelectorAll("#editor > .view").forEach((view) => view.classList.add("hidden"));
+    // The AI page can be opened on top of the generation page; hide that page
+    // so the provider form is the only thing on screen, but keep `globalPage`
+    // set so closing the form returns to it.
+    if (globalPage && GLOBAL_PAGE_IDS[globalPage]) {
+      $(GLOBAL_PAGE_IDS[globalPage]).classList.add("hidden");
+    }
     $("aiConfigPage").classList.remove("hidden");
     syncSubpageClass();
     window.scrollTo({ top: 0 });
@@ -11482,6 +11419,17 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     if (!aiPageOpen) return;
     aiPageOpen = false;
     $("aiConfigPage").classList.add("hidden");
+    if (globalPage && GLOBAL_PAGE_IDS[globalPage]) {
+      // Return to the generation page that started this setup; the tab stays
+      // in the background and Back on the generation page restores it.
+      aiReturnTab = "generate";
+      aiReturnParentCenter = false;
+      $(GLOBAL_PAGE_IDS[globalPage]).classList.remove("hidden");
+      syncSubpageClass();
+      if (globalPage === "aiGen") renderGenerate();
+      window.scrollTo({ top: 0 });
+      return;
+    }
     const tab = TAB_VIEWS[aiReturnTab] ? aiReturnTab : "generate";
     activeTab = tab;
     for (const name of Object.keys(TAB_VIEWS)) {
@@ -11498,6 +11446,14 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       window.ParentCenterUI.open();
     }
     window.scrollTo({ top: 0 });
+  }
+
+  // Backing out of provider setup cancels the pending generate; otherwise a
+  // later consent acceptance would start a job from stale form state.
+  function backFromAiPage() {
+    pendingGenerate = false;
+    pendingProviderAction = "";
+    closeAiPage();
   }
 
   async function saveProvider() {
@@ -13306,16 +13262,6 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       n: levelPackages.length,
       max: levelLimits.maxLevels,
     });
-    if ($("levelsTotalHint")) {
-      $("levelsTotalHint").textContent = t("levelsTotalHint", {
-        used: levelPackages.length,
-        max: levelLimits.maxLevels,
-      });
-      $("levelsTotalHint").classList.toggle(
-        "warn",
-        levelPackages.length > levelLimits.maxLevels,
-      );
-    }
     const atMax = levelPackages.length >= levelLimits.maxLevels;
     if ($("addLevel")) $("addLevel").disabled = levelSaving || packageSaving || atMax;
     if ($("levelMaxHint")) {
@@ -13988,7 +13934,7 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     courseSourceScopeLock = null;
     resetScopeOptions();
     answerTab = "scope";
-    showGenPage("answer");
+    showGenPage("home");
   }
 
   function renderSourcePicker() {
@@ -14585,9 +14531,17 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     });
   }
 
-  function saveRange() {
+  // The AI page is the only place these settings are edited now, so its bottom
+  // button saves them and immediately starts the job instead of returning home.
+  function generateFromForm() {
     if (rangeSaving) return;
     $("rangeError").textContent = "";
+    // A retry starts a clean message area; the old job's error must not sit
+    // next to a new form-validation error.
+    $("generateError").textContent = "";
+    $("generateOk").textContent = "";
+    genState.errorCode = null;
+    genState.noticeKey = null;
     genRequirementValue = normalizeRequirement(
       $("genRequirement") ? $("genRequirement").value : genRequirementValue,
     );
@@ -14611,19 +14565,13 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       $("genPrompt").focus();
       return;
     }
-    const button = $("saveRange");
+    const button = $("generate");
     rangeSaving = true;
     setButtonSaving(button, true);
     saveGeneratePrefsNow()
       .then(() => {
         if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
-        showGenPage("home");
-        renderHome();
-        renderGenerate();
-        // 首页先返回；题库/范围刷新放后台，避免网络慢时看起来“没保存”。
-        if (answerScopeMode === "bound") {
-          loadAdminSession().then(() => renderHome()).catch(() => {});
-        }
+        return startGeneration();
       })
       .catch((error) => {
         $("rangeError").textContent = errorText(error);
@@ -14631,6 +14579,9 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       .finally(() => {
         rangeSaving = false;
         setButtonSaving(button, false);
+        // setButtonSaving restores the idle label; a running job must keep the
+        // button on the disabled "generating" state.
+        renderGenerate();
       });
   }
 
@@ -14795,7 +14746,6 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       renderBankCounts();
       renderBankManage();
     }
-    renderStock();
     renderGenerate();
     renderHome();
   }
@@ -14826,9 +14776,9 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       applyBankCounts(data.counts);
       selectedBatch.clear();
       genState = idleGeneration();
-      genState.noticeKey = "generateAdded";
-      genState.noticeCount = Number(data.appended || 0);
-      backToGenerateHome();
+      genState.phase = "added";
+      genState.addedCount = Number(data.appended || 0);
+      renderGenerate();
       refreshStatus();
       loadAdminSession().catch(() => {});
       if (activeTab === "bank") loadBank(true);
@@ -14882,7 +14832,9 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       renderGenerate();
       refreshStatus();
       if (activeTab === "bank") loadBank(true);
-      if (reviewOnReady) openQuestionsPage();
+      // Only pull the parent into the review list while this page is actually
+      // on screen; a background job must never navigate them away.
+      if (reviewOnReady && globalPage === "aiGen") openQuestionsPage();
     } catch (error) {
       if (token !== generationToken) return;
       if (["JOB_EXPIRED", "JOB_LOST", "INVALID_JOB", "INVALID_SUBJECT"].includes(error.code) ||
@@ -14983,7 +14935,6 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       const previous = publicState;
       publicState = await api("/api/quiz/status");
       applyBankCounts(publicState.bank);
-      renderStock();
       renderGenerate();
       renderBankCounts();
       renderBankManage();
@@ -15126,7 +15077,6 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       }
       renderBankCounts();
       renderBankManage();
-      renderStock();
     } catch (error) {
       if (request !== bankRequest) return;
       if (error.code !== "ADMIN_EXPIRED" && error.code !== "ADMIN_REQUIRED") {
@@ -15214,8 +15164,8 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       renderSync();
       renderSettings();
       renderAnswerPage();
-      $("settingsState").textContent = "";
-      backToGenerateHome();
+      // Stay on the rules tab so the parent sees the saved values in place.
+      $("settingsState").textContent = t("settingsSaved");
     } catch (error) {
       $("settingsError").textContent = errorText(error);
     } finally {
@@ -15254,7 +15204,7 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       $("pin").focus();
     });
     $("meAi").addEventListener("click", () => openProviderDialog(false));
-    $("backFromAi").addEventListener("click", closeAiPage);
+    $("backFromAi").addEventListener("click", backFromAiPage);
     $("mePrivacy").addEventListener("click", () => openModal("privacyInfoDialog"));
     $("unlockForm").addEventListener("submit", submitUnlock);
     $("manualMinus").addEventListener("click", () => adjustManualMinutes(-1));
@@ -15291,22 +15241,18 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     document.querySelectorAll("[data-provider-preset]").forEach((button) => {
       button.addEventListener("click", () => applyProviderPreset(button.dataset.providerPreset));
     });
-    bindReliableTap($("saveRange"), saveRange);
-    $("openGenConfig").addEventListener("click", openGenConfigPage);
-    $("openAnswerConfig").addEventListener("click", openAnswerConfigPage);
-    $("backFromGen").addEventListener("click", backToGenerateHome);
-    $("backFromAnswer").addEventListener("click", backFromAnswerPage);
-    $("backFromQuestions").addEventListener("click", backToGenerateHome);
-    $("openQuestions").addEventListener("click", openQuestionsPage);
+    bindReliableTap($("generate"), generateFromForm);
+    $("openBankGenerate").addEventListener("click", openAiGeneratePage);
+    $("backFromGen").addEventListener("click", closeGlobalPage);
+    $("backFromQuestions").addEventListener("click", backFromQuestionsPage);
+    $("openQuestions").addEventListener("click", openGeneratedQuestions);
     $("addSelected").addEventListener("click", addSelectedQuestions);
     bindReliableTap($("saveAnswer"), saveSettings);
-    $("generate").addEventListener("click", () => startGeneration());
     $("cancelGenerate").addEventListener("click", cancelGeneration);
     $("alignGenToAnswer").addEventListener("click", () => {
       if (!alignGenerationToAnswerScope()) return;
-      startGeneration();
+      generateFromForm();
     });
-    $("editGenScope").addEventListener("click", openGenConfigPage);
 
     $("selectAll").addEventListener("click", () => {
       const selectable = genState.batch
@@ -15464,9 +15410,16 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     });
     $("levelEmptyGen").addEventListener("click", () => {
       discardPackageDraft();
-      backToGenerateHome();
+      answerTab = "scope";
+      showGenPage("home");
+      openAiGeneratePage();
     });
-    $("levelEmptyConfig").addEventListener("click", openGenConfigPage);
+    $("levelEmptyConfig").addEventListener("click", () => {
+      discardPackageDraft();
+      answerTab = "scope";
+      showGenPage("home");
+      openAiGeneratePage();
+    });
 
     $("backFromPackage").addEventListener("click", closePackageEditor);
     $("packageName").addEventListener("input", () => {
@@ -15552,10 +15505,7 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     $("bankMore").addEventListener("click", () => loadBank(false));
     $("openBankImport").addEventListener("click", openBankImport);
     $("bankEmptyImport").addEventListener("click", openBankImport);
-    $("bankEmptyGenerate").addEventListener("click", () => {
-      setTab("generate", true);
-      openGenConfigPage();
-    });
+    $("bankEmptyGenerate").addEventListener("click", openAiGeneratePage);
     $("backFromImport").addEventListener("click", backFromImport);
     $("importTagName").addEventListener("focus", openImportTagSuggest);
     // Escape or a blur leaves the input focused in some browsers; a tap on the

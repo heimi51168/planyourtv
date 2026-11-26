@@ -289,4 +289,88 @@ class QuizSpeechTest {
         assertFalse(QuizProviderMeta.isOfficialDeepSeek("https://api.deepseek.com/chat"))
         assertFalse(QuizProviderMeta.isOfficialDeepSeek(""))
     }
+
+    @Test
+    fun cloudSpeechDoesNotRequireTheLocalConsentRecord() {
+        assertTrue(QuizSpeechSettings().cloudActive)
+        assertFalse(QuizSpeechSettings(enabled = false).cloudActive)
+        assertFalse(
+            QuizSpeechSettings(
+                readPrompt = false,
+                readOptions = false,
+                readAnswer = false,
+            ).cloudActive,
+        )
+        assertTrue(
+            QuizSpeechSettings(
+                initialized = false,
+                enabled = true,
+                readPrompt = true,
+                readOptions = false,
+                readAnswer = false,
+            ).cloudActive,
+        )
+    }
+
+    @Test
+    fun cloudQuestionPartsFollowTheParentChoices() {
+        val all = QuizCloudSpeechParts.question(item, QuizSpeechSettings())
+        assertEquals(listOf("stem", "option0", "option1", "option2"), all.map { it.name })
+        assertEquals("2+2=?", all[0].cacheText)
+        assertEquals("4", all[2].cacheText)
+
+        val promptOnly = QuizCloudSpeechParts.question(
+            item,
+            QuizSpeechSettings(readOptions = false),
+        )
+        assertEquals(listOf("stem"), promptOnly.map { it.name })
+
+        assertTrue(
+            QuizCloudSpeechParts.question(
+                item,
+                QuizSpeechSettings(enabled = false),
+            ).isEmpty(),
+        )
+    }
+
+    @Test
+    fun cloudOptionsRequestThePublishedSlotBehindEachDisplayPosition() {
+        val shuffled = item.copy(
+            options = listOf("5", "3", "4"),
+            optionOrder = listOf(2, 0, 1),
+            answerIndex = 1,
+        )
+        val parts = QuizCloudSpeechParts.question(shuffled, QuizSpeechSettings())
+        assertEquals(
+            listOf("stem", "option2", "option0", "option1"),
+            parts.map { it.name },
+        )
+        assertEquals(listOf("2+2=?", "5", "3", "4"), parts.map { it.cacheText })
+    }
+
+    @Test
+    fun cloudAnswerPartsUseTheAnswerTextAndSkipMissingExplanation() {
+        val withExplanation = item.copy(explanation = "  two plus two is four  ")
+        val parts = QuizCloudSpeechParts.answer(withExplanation, QuizSpeechSettings())
+        assertEquals(listOf("answer", "explanation"), parts.map { it.name })
+        assertEquals("4", parts[0].cacheText)
+        assertEquals("two plus two is four", parts[1].cacheText)
+
+        val noExplanation = QuizCloudSpeechParts.answer(item, QuizSpeechSettings())
+        assertEquals(listOf("answer"), noExplanation.map { it.name })
+
+        assertTrue(
+            QuizCloudSpeechParts.answer(
+                withExplanation,
+                QuizSpeechSettings(readAnswer = false),
+            ).isEmpty(),
+        )
+        assertTrue(
+            QuizCloudSpeechParts.answer(
+                item.copy(answerIndex = 9),
+                QuizSpeechSettings(),
+            ).isEmpty(),
+        )
+    }
+
 }

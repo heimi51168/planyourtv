@@ -156,6 +156,41 @@ class CloudQuizClientsTest {
     }
 
     @Test
+    fun imageUrlAcceptsOnlyPublicHttpsPng() {
+        assertNull(QbClient.parseImageUrl(itemJson("01HZXK8W6Q9V3M2N7B4T5R8YCD")))
+        assertNull(
+            QbClient.parseImageUrl(
+                itemJson("01HZXK8W6Q9V3M2N7B4T5R8YCD").put("imageUrl", JSONObject.NULL),
+            ),
+        )
+        val url = "https://quiz-assets.oss-cn-hangzhou.aliyuncs.com/qb_figure/abc.png"
+        assertEquals(
+            url,
+            QbClient.parseImageUrl(
+                itemJson("01HZXK8W6Q9V3M2N7B4T5R8YCD").put("imageUrl", url),
+            ),
+        )
+        listOf(
+            "http://example.com/figure.png",
+            "https://user:pass@example.com/figure.png",
+            "https://example.com/figure.jpg",
+            "https://example.com/",
+            "not-a-url",
+        ).forEach { bad ->
+            assertThrows(IOException::class.java) {
+                QbClient.parseImageUrl(
+                    itemJson("01HZXK8W6Q9V3M2N7B4T5R8YCD").put("imageUrl", bad),
+                )
+            }
+        }
+        assertThrows(IOException::class.java) {
+            QbClient.parseImageUrl(
+                itemJson("01HZXK8W6Q9V3M2N7B4T5R8YCD").put("imageUrl", 42),
+            )
+        }
+    }
+
+    @Test
     fun levelParserRejectsMoreThanTwentyLevels() {
         val levels = JSONArray()
         (1..21).forEach { levels.put(levelJson(it.toLong())) }
@@ -207,4 +242,56 @@ class CloudQuizClientsTest {
         .put("difficulty", "easy")
         .put("points", 1)
         .put("timeLimitSec", 60)
+
+    @Test
+    fun ttsResultAcceptsAStrictPublicMp3Url() {
+        val url = "https://cdn.example.com/qb_tts/abc.mp3"
+        val clip = QbClient.parseTtsResult(
+            JSONObject()
+                .put("part", "stem")
+                .put("url", url)
+                .put("generated", true),
+            expectedPart = "stem",
+        )
+        assertEquals(url, clip.url)
+        assertTrue(clip.generated)
+
+        val uppercase = QbClient.parseTtsResult(
+            JSONObject().put("part", "option0").put("url", url.uppercase()),
+            expectedPart = "option0",
+        )
+        assertTrue(uppercase.url.endsWith(".MP3"))
+    }
+
+    @Test
+    fun ttsResultRejectsPartMismatchAndUnsafeUrls() {
+        assertThrows(IOException::class.java) {
+            QbClient.parseTtsResult(
+                JSONObject()
+                    .put("part", "option0")
+                    .put("url", "https://example.com/a.mp3"),
+                expectedPart = "stem",
+            )
+        }
+        val badUrls = listOf<Any?>(
+            null,
+            42,
+            "",
+            "http://example.com/a.mp3",
+            "https://user:pass@example.com/a.mp3",
+            "https://example.com/a.wav",
+            "https://example.com/",
+            "not-a-url",
+            "https://example.com/" + "a".repeat(2048) + ".mp3",
+        )
+        badUrls.forEach { bad ->
+            assertThrows(IOException::class.java) {
+                QbClient.parseTtsResult(
+                    JSONObject().put("part", "stem").put("url", bad),
+                    expectedPart = "stem",
+                )
+            }
+        }
+    }
+
 }

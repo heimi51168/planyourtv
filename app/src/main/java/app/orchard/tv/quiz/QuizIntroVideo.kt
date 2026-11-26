@@ -89,6 +89,15 @@ object QuizIntroVideo {
         .mapNotNull { dir -> runCatching { readEntry(dir) }.getOrNull() }
         .sortedWith(compareByDescending<QuizIntroVideoEntry> { it.createdAt }.thenBy { it.id })
 
+    /** One published entry, without scanning the whole library. */
+    @Synchronized
+    fun find(context: Context, id: String): QuizIntroVideoEntry? {
+        if (!idPattern.matches(id)) return null
+        val dir = File(directory(context), id)
+        if (!dir.isDirectory) return null
+        return runCatching { readEntry(dir) }.getOrNull()
+    }
+
     private fun readEntry(dir: File): QuizIntroVideoEntry {
         val info = JSONObject(File(dir, "info.json").readText())
         val kind = PolicyMediaKind.fromWireOrDefault(info.optString("kind", ""))

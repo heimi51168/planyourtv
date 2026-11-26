@@ -50,6 +50,83 @@ class QuizUnitCatalogTest {
     }
 
     @Test
+    fun regionalEditionsCarryUnitTitlesWithoutLessonDepth() {
+        val catalog = QuizUnitCatalog.current()!!
+
+        val beijing = catalog.book(1, 1, "MATH", "BEIJING")
+        assertNotNull(beijing)
+        assertEquals("北京版", beijing!!.textbookName)
+        assertEquals("上册", beijing.volume)
+        assertEquals(5, beijing.maxUnitNo)
+        assertEquals("5以内数的认识和加、减法", beijing.unitTitle(1))
+        assertTrue(beijing.unit(1)!!.lessons.isEmpty())
+        assertEquals("REVIEW", beijing.unit(6)!!.kind)
+        assertFalse(beijing.unit(6)!!.isUnit)
+
+        val xiangshao = catalog.book(3, 1, "ENGLISH", "XIANGSHAO")
+        assertNotNull(xiangshao)
+        assertEquals("湘少版", xiangshao!!.textbookName)
+        assertEquals(10, xiangshao.maxUnitNo)
+        assertEquals("Hello!", xiangshao.unitTitle(1))
+        assertTrue(xiangshao.unit(1)!!.lessons.isEmpty())
+
+        val daxiang = catalog.book(1, 1, "SCIENCE", "DAXIANG")
+        assertNotNull(daxiang)
+        assertEquals("大象社版", daxiang!!.textbookName)
+        assertEquals(4, daxiang.maxUnitNo)
+        assertEquals("感官兄弟", daxiang.unitTitle(1))
+
+        val qingdao = catalog.book(4, 1, "SCIENCE", "QINGDAO")
+        assertNotNull(qingdao)
+        assertEquals(4, qingdao!!.maxUnitNo)
+        assertEquals("物体的运动", qingdao.unitTitle(1))
+
+        // Adding width must not rewrite an existing book's identity.
+        assertEquals(8, catalog.book(4, 1, "MATH", "RENJIAO")!!.maxUnitNo)
+    }
+
+    @Test
+    fun newEditionUnitScopesValidateAgainstTheCatalog() {
+        fun scope(subject: String, textbook: String, unitNo: Int): QuizAnswerScope? =
+            QuizAnswerScope.create(
+                grade = 4,
+                semester = 1,
+                subject = subject,
+                textbook = textbook,
+                scopeType = "UNIT",
+                unitNo = unitNo,
+                difficulty = null,
+            )
+
+        assertNotNull(scope("MATH", "BEIJING", 8))
+        assertNull(scope("MATH", "BEIJING", 9))
+        assertNotNull(scope("SCIENCE", "DAXIANG", 5))
+        assertNull(scope("SCIENCE", "DAXIANG", 6))
+        assertNotNull(
+            QuizAnswerScope.create(
+                grade = 3,
+                semester = 1,
+                subject = "ENGLISH",
+                textbook = "XIANGSHAO",
+                scopeType = "UNIT",
+                unitNo = 10,
+                difficulty = null,
+            ),
+        )
+        assertNull(
+            QuizAnswerScope.create(
+                grade = 3,
+                semester = 1,
+                subject = "ENGLISH",
+                textbook = "XIANGSHAO",
+                scopeType = "UNIT",
+                unitNo = 11,
+                difficulty = null,
+            ),
+        )
+    }
+
+    @Test
     fun editorVariantEditionsCarryTheirUnits() {
         val catalog = QuizUnitCatalog.current()!!
 

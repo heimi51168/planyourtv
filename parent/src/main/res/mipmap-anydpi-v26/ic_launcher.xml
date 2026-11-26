@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The apple-and-gear artwork keeps its cream plate and stays inside the
-     66/108 safe zone; legacy devices use the matching rounded-square PNGs. -->
+<!-- The apple-in-hand artwork keeps the TV app's position and size. The
+     orange parent ribbon fills the top-right corner of the 72/108 visible
+     viewport and bleeds past it, so launcher masks crop only the corner and
+     never the 家长 label. Legacy devices use the matching rounded-square
+     PNGs. -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@drawable/ic_launcher_background" />
     <foreground android:drawable="@mipmap/ic_launcher_foreground" />

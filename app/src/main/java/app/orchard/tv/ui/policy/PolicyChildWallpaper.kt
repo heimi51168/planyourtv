@@ -29,6 +29,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import app.orchard.tv.policy.FamilyHub
+import app.orchard.tv.policy.media.HostedMediaRoute
 import app.orchard.tv.policy.media.PolicyMediaKind
 import app.orchard.tv.policy.media.PolicyVideoLibrary
 import app.orchard.tv.policy.media.PolicyVideoSource
@@ -171,6 +172,10 @@ internal fun rememberPolicyChildWallpaperState(playing: Boolean = true): PolicyC
     // Each child-mode member owns a rotation. Switching the TV's member changes this id, so the
     // rotation must be resolved again even though no preference key was touched.
     val family by FamilyHub.state.collectAsState()
+    // V50: in CLOUD the library answers from the hosted snapshot instead of SharedPreferences.
+    // The snapshot is published by a background sync, so this revision is the re-read trigger
+    // that a preference listener cannot provide. It stays 0 in LOCAL/NONE.
+    val hostedRevision by HostedMediaRoute.revision.collectAsState()
     // The parent center is an overlay above the lock screen: choosing a wallpaper there must
     // update the picture underneath it without waiting for the next lock entry.
     var roleRevision by remember(context) { mutableIntStateOf(0) }
@@ -195,12 +200,12 @@ internal fun rememberPolicyChildWallpaperState(playing: Boolean = true): PolicyC
         mutableStateOf<Map<String, CachedWallpaperImage>>(emptyMap())
     }
     var lastShown by remember(context) { mutableStateOf<CachedWallpaperImage?>(null) }
-    val sound = remember(context, activeUserId, roleRevision) {
+    val sound = remember(context, activeUserId, roleRevision, hostedRevision) {
         // Preferences only. The player checks the item's audio capability separately.
         runCatching { PolicyVideoLibrary.lockSoundPreference(context) }.getOrDefault(true)
     }
 
-    LaunchedEffect(context, activeUserId, roleRevision) {
+    LaunchedEffect(context, activeUserId, roleRevision, hostedRevision) {
         // Keep the current picture when an unrelated preference (e.g. sound) changes; only
         // restart at the first item when the active one was removed or replaced.
         val previousId = selection?.items?.getOrNull(activeIndex)?.id

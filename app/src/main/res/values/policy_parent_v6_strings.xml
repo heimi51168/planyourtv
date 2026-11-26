@@ -6,8 +6,8 @@
     <string name="policy_v6_remote_done">Managed on phone</string>
     <string name="policy_v6_pin_local_only">This TV only</string>
     <string name="policy_v6_pin_migrating">Syncing; retry available</string>
-    <string name="policy_v6_password_pending">Password not synced</string>
-    <string name="policy_v6_remote_need_pin">Enter the parent password to start remote management.</string>
+    <string name="policy_v6_password_pending">Device admin password not synced</string>
+    <string name="policy_v6_remote_need_pin">Enter the device admin password to start remote management.</string>
 
     <string name="policy_v6_status_off">Off</string>
     <string name="policy_v6_status_local">Local rules active</string>
@@ -35,7 +35,7 @@
     <string name="policy_v6_migrate_step_upload">Uploading local settings</string>
     <string name="policy_v6_migrate_step_done">Done</string>
     <string name="policy_v6_migrate_failed">Upload failed. Check the network and try again.</string>
-    <string name="policy_v6_migrate_need_pin">Enter the parent password to finish the upload.</string>
+    <string name="policy_v6_migrate_need_pin">Enter the device admin password to finish the upload.</string>
     <string name="policy_v6_migrate_no_rules">Local rules are incomplete. Upload cannot start.</string>
 
     <string name="policy_v6_wait_config">Bound, waiting for cloud config</string>
@@ -97,11 +97,11 @@
     <string name="policy_v6_switch_off_confirm">Press OK again to turn off</string>
     <string name="policy_v6_switch_off_migrating">Migration is not finished. Turn it on again to continue.</string>
     <string name="policy_v6_remove_confirm">Press OK again to remove this window</string>
-    <string name="policy_v6_bind_note">After binding, TV rules and the password entry become read-only; local and cloud configurations stay independent. Manage them on your phone.</string>
+    <string name="policy_v6_bind_note">After binding, TV rules and the device admin password entry become read-only; local and cloud configurations stay independent. Manage them on your phone.</string>
     <string name="policy_v6_upload_done">Local settings uploaded. They are now read-only on the TV.</string>
 
     <string name="policy_v6_consent_title">Remote management and privacy</string>
-    <string name="policy_v6_consent_body">With remote management on, this TV reports device status, time progress and quiz records to the PlanYourTV cloud for remote management and record viewing on your phone, not for advertising or other purposes. The rules, parent password and AI model key (API Key) stored on this TV are never uploaded; cloud and local configurations stay independent. You can unbind on the phone at any time; reporting stops and the TV keeps its local settings. By continuing, you confirm that you are authorized to manage this TV.</string>
+    <string name="policy_v6_consent_body">With remote management on, this TV reports device status, time progress and quiz records to the PlanYourTV cloud for remote management and record viewing on your phone, not for advertising or other purposes. The rules, device admin password and AI model key (API Key) stored on this TV are never uploaded; cloud and local configurations stay independent. You can unbind on the phone at any time; reporting stops and the TV keeps its local settings. By continuing, you confirm that you are authorized to manage this TV.</string>
     <string name="policy_v6_consent_agree">Agree and show QR code</string>
     <string name="policy_v6_consent_cancel">Not now</string>
 

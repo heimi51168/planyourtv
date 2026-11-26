@@ -11,10 +11,10 @@ import kotlinx.coroutines.flow.asStateFlow
  * "user configuration" tab.
  *
  * OFF is the default for fresh and upgraded devices: entering Time & Apps, saving its rules,
- * saving the unlimited-app picker, and starting the out-of-plan timer do not ask for the
- * parent PIN again. Enabling the switch restores those prompts. Turning protection off again
- * needs a one-time USER_CONFIG proof. System configuration keeps every existing PIN gate
- * either way.
+ * saving the unlimited-app picker, starting the out-of-plan timer, and opening/editing the
+ * V58 fruit ledger do not ask for the parent PIN again. Enabling the switch restores those
+ * prompts. Turning protection off again needs a one-time USER_CONFIG proof. System
+ * configuration keeps every existing PIN gate either way.
  */
 object UserConfigPinSettings {
     private const val PREFS = "policy_user_config_pin"

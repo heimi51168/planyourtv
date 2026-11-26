@@ -92,6 +92,35 @@ object PolicyAudioLibrary {
 
     fun isOfficialId(id: String): Boolean = officialIdPattern.matches(id)
 
+    /** A complete local track the parent page may stream, with a browser-friendly MIME type. */
+    data class PlaybackFile(val file: File, val mime: String)
+
+    fun playbackFile(context: Context, id: String): PlaybackFile? {
+        val entry = entry(context, id) ?: return null
+        if (!entry.file.isFile || entry.file.length() <= 0L) return null
+        return PlaybackFile(entry.file, mimeOf(entry.file))
+    }
+
+    /**
+     * The stored file is always `audio.bin`, so the container is sniffed from its bytes. MP3
+     * and ADTS both start with a frame sync; the layer field separates them. A browser needs
+     * the real family to seek and decode reliably.
+     */
+    internal fun mimeOf(file: File): String {
+        val head = ByteArray(16)
+        val read = runCatching { file.inputStream().use { it.read(head) } }.getOrDefault(0)
+        if (read < 4) return "audio/mpeg"
+        val ascii = String(head, 0, read, Charsets.ISO_8859_1)
+        return when {
+            ascii.startsWith("ID3") -> "audio/mpeg"
+            ascii.startsWith("OggS") -> "audio/ogg"
+            read >= 8 && ascii.substring(4, 8) == "ftyp" -> "audio/mp4"
+            (head[0].toInt() and 0xFF) == 0xFF && (head[1].toInt() and 0xE0) == 0xE0 ->
+                if (((head[1].toInt() shr 1) and 0x03) == 0) "audio/aac" else "audio/mpeg"
+            else -> "audio/mpeg"
+        }
+    }
+
     private fun officialEntry(local: OfficialAudioLocal): PolicyAudioEntry = PolicyAudioEntry(
         id = local.id,
         name = local.track.name,

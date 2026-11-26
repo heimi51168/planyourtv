@@ -19,6 +19,8 @@ data class LocalRuleSet(
     val quizDailyLimitCount: Int = LocalRules.DEFAULTS.quizDailyLimitCount,
     val studyRewardDailyLimitCount: Int = LocalRules.DEFAULTS.studyRewardDailyLimitCount,
     val directDailyFreeCount: Int = LocalRules.DEFAULTS.directDailyFreeCount,
+    val fruitExchangeEnabled: Boolean = LocalRules.DEFAULTS.fruitExchangeEnabled,
+    val fruitExchangeDailyLimitCount: Int = LocalRules.DEFAULTS.fruitExchangeDailyLimitCount,
 ) {
     fun applyTo(rules: LocalRules): LocalRules = rules.copy(
         dayGroups = dayGroups,
@@ -32,6 +34,8 @@ data class LocalRuleSet(
         quizDailyLimitCount = quizDailyLimitCount,
         studyRewardDailyLimitCount = studyRewardDailyLimitCount,
         directDailyFreeCount = directDailyFreeCount,
+        fruitExchangeEnabled = fruitExchangeEnabled,
+        fruitExchangeDailyLimitCount = fruitExchangeDailyLimitCount,
     )
 
     /**
@@ -76,6 +80,8 @@ data class LocalRuleSet(
             quizDailyLimitCount = rules.quizDailyLimitCount,
             studyRewardDailyLimitCount = rules.studyRewardDailyLimitCount,
             directDailyFreeCount = rules.directDailyFreeCount,
+            fruitExchangeEnabled = rules.fruitExchangeEnabled,
+            fruitExchangeDailyLimitCount = rules.fruitExchangeDailyLimitCount,
         )
     }
 }
@@ -172,6 +178,9 @@ data class LocalRuleSets(
                     quizDailyLimitCount = previous.manual.quizDailyLimitCount,
                     studyRewardDailyLimitCount = previous.manual.studyRewardDailyLimitCount,
                     directDailyFreeCount = previous.manual.directDailyFreeCount,
+                    fruitExchangeEnabled = previous.manual.fruitExchangeEnabled,
+                    fruitExchangeDailyLimitCount =
+                        previous.manual.fruitExchangeDailyLimitCount,
                 ),
                 shared = shared.copy(
                     unlimitedPackages = previous.shared.unlimitedPackages,
@@ -239,6 +248,18 @@ data class LocalRuleSets(
                     "directDailyFreeCount",
                     manual.directDailyFreeCount,
                     previous.manual.directDailyFreeCount,
+                ),
+                // V58 fruit configuration is local-only. A cloud snapshot has no field for it,
+                // so an absent mask entry keeps the TV's own switches instead of resetting them.
+                fruitExchangeEnabled = pick(
+                    "fruitExchangeEnabled",
+                    manual.fruitExchangeEnabled,
+                    previous.manual.fruitExchangeEnabled,
+                ),
+                fruitExchangeDailyLimitCount = pick(
+                    "fruitExchangeDailyLimitCount",
+                    manual.fruitExchangeDailyLimitCount,
+                    previous.manual.fruitExchangeDailyLimitCount,
                 ),
             ),
             shared = shared.copy(

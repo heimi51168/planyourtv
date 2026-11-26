@@ -639,12 +639,21 @@ private fun PolicyLockScreen(
     var unlockChoiceMode by remember { mutableStateOf(false) }
     var unlockChoiceTarget by remember { mutableStateOf<AppEntry?>(null) }
     var unlockChoiceMessage by remember { mutableStateOf<Int?>(null) }
+    // V58 fruit wheel. It is a second modal over the same live desktop; [fruitFromChoice]
+    // remembers whether Back should return to the four-route card or straight to the lock screen.
+    var fruitMode by remember { mutableStateOf(false) }
+    var fruitFromChoice by remember { mutableStateOf(false) }
+    // Hosted fruit exchanges go through the orchard, so the wheel has a "submitting" phase and
+    // can show the backend's own rejection text. LOCAL exchanges stay synchronous and never set
+    // either value.
+    var fruitSubmitting by remember { mutableStateOf(false) }
+    var fruitMessageText by remember { mutableStateOf<String?>(null) }
     // The choice is drawn over this composition's live desktop, so the existing wallpaper player
     // keeps running. Hold only the rotation in the gate instead of letting the interval move the
     // picture behind the card; every close path (including this screen being replaced by a
     // session) hands the rotation back.
     val notifyChoiceOpen = rememberUpdatedState(onChoiceOpenChanged)
-    SideEffect { notifyChoiceOpen.value(unlockChoiceMode) }
+    SideEffect { notifyChoiceOpen.value(unlockChoiceMode || fruitMode) }
     // A quiz or recovery overlay owns the screen and must not compete with background music.
     // The same callback also releases it if this screen is replaced mid-flow by a session.
     val notifyQuizOpen = rememberUpdatedState(onQuizOpenChanged)
@@ -765,6 +774,12 @@ private fun PolicyLockScreen(
             state.activation == Activation.MANUAL
         )
     val routePlan = state.unlockRoutePlan?.takeIf { localUnlockRoutes }
+    // The hosted fruit card reads the orchard's live account, not a LOCAL ledger. Pull it when
+    // the lock screen appears in hosted mode and whenever the active child changes; a failure
+    // keeps the previous cache instead of blanking the card.
+    LaunchedEffect(hostedRuleGuard, state.cloudActiveMemberId, state.policyEpoch) {
+        if (hostedRuleGuard) PolicyModeCoordinator.refreshHostedFruitFacts()
+    }
     val studyEarnFeature = localUnlockRoutes && state.studyEarnEnabled &&
         state.studyEarnPackages.isNotEmpty()
     // Direct start is the child's own route: no PIN and no quiz. In hosted mode the cloud
@@ -852,6 +867,10 @@ private fun PolicyLockScreen(
             pendingMinutes = null
             guardPanelOpen = false
             unlockChoiceMode = false
+            fruitMode = false
+            fruitFromChoice = false
+            fruitSubmitting = false
+            fruitMessageText = null
             unlockChoiceTarget = null
             unlockChoiceMessage = null
         }
@@ -871,7 +890,7 @@ private fun PolicyLockScreen(
         // the single start gate, so close the local flow instead of leaving a confirm that
         // can only come back BUSY.
         if (state.sessionState == SessionState.PENDING &&
-            (durationMode || unlockChoiceMode ||
+            (durationMode || unlockChoiceMode || fruitMode ||
                 (pinMode && pinPurpose == PinPurpose.MANUAL_START))
         ) {
             pinMode = false
@@ -881,6 +900,10 @@ private fun PolicyLockScreen(
             error = null
             actionMessage = null
             unlockChoiceMode = false
+            fruitMode = false
+            fruitFromChoice = false
+            fruitSubmitting = false
+            fruitMessageText = null
             unlockChoiceTarget = null
             unlockChoiceMessage = null
         }
@@ -891,6 +914,7 @@ private fun PolicyLockScreen(
         quizMode,
         recoveryMode,
         unlockChoiceMode,
+        fruitMode,
         state.lockReason,
         // A redemption can move the session to PENDING without changing the lock reason
         // (it stays NONE), so follow the session too and hand focus to the start entry.
@@ -909,7 +933,8 @@ private fun PolicyLockScreen(
                 pinMode -> firstKeyFocus
                 durationMode -> durationFocus
                 // The quiz and recovery screens own focus; the choice overlay requests its own row.
-                quizMode || recoveryMode || unlockChoiceMode || promptMessage != null -> null
+                quizMode || recoveryMode || unlockChoiceMode || fruitMode ||
+                    promptMessage != null -> null
                 // The lock screen has no default selection. A granted redemption on the legacy
                 // sheet hands focus to the start button; the V10 desktop re-anchors below,
                 // where it can see whether the start tile is the dock's first enabled tile.
@@ -1187,6 +1212,10 @@ private fun PolicyLockScreen(
     fun openUnlockChoice(target: AppEntry?, traceEvent: String) {
         unlockChoiceTarget = target
         unlockChoiceMessage = null
+        // The hosted fruit row is part of this card. If the lock-screen pull raced the guard
+        // attach or failed, retry now so a later recomposition can offer the row instead of
+        // leaving the wheel unreachable for the whole stay on the card.
+        if (hostedRuleGuard) PolicyModeCoordinator.refreshHostedFruitFacts()
         // Stop the rotation in the same input frame, before the overlay's first composition.
         onChoiceOpenChanged(true)
         unlockChoiceMode = true
@@ -1195,6 +1224,124 @@ private fun PolicyLockScreen(
             "package" to (target?.packageName ?: "inputs"),
             "session" to state.sessionState,
         )
+    }
+
+    /**
+     * V58: the fruit route always stops at its wheel, even when it is the only available route.
+     * Starting a session here without the child choosing a whole-fruit count would silently
+     * charge for a duration they never saw.
+     */
+    fun openFruitExchange(target: AppEntry?, fromChoice: Boolean) {
+        unlockChoiceTarget = target
+        unlockChoiceMessage = null
+        fruitSubmitting = false
+        fruitMessageText = null
+        // The wheel's ceilings are the orchard's, and the lock screen may have been idle for
+        // hours (daily reset, parent edit). Pull one fresh context so the first wheel value is
+        // not planned against yesterday's balance; a failure keeps the previous cache.
+        if (hostedRuleGuard) PolicyModeCoordinator.refreshHostedFruitFacts()
+        // The wheel replaces the four-route card but keeps the same live desktop underneath.
+        onChoiceOpenChanged(true)
+        unlockChoiceMode = false
+        fruitFromChoice = fromChoice
+        fruitMode = true
+        PolicyFlowTrace.event(
+            "unlock.choice.fruit",
+            "package" to (target?.packageName ?: "inputs"),
+            "fromChoice" to fromChoice,
+            "session" to state.sessionState,
+        )
+    }
+
+    fun closeFruitExchange(returnToChoice: Boolean) {
+        fruitMode = false
+        fruitSubmitting = false
+        fruitMessageText = null
+        unlockChoiceMessage = null
+        if (returnToChoice && fruitFromChoice) {
+            fruitFromChoice = false
+            unlockChoiceMode = true
+        } else {
+            fruitFromChoice = false
+            unlockChoiceTarget = null
+        }
+    }
+
+    /**
+     * One fruit exchange attempt. The wheel value is deliberately not clamped here: the runtime
+     * re-reads the account and re-runs the planner, and a changed balance must reject rather than
+     * silently charge a different number of fruits.
+     */
+    fun launchFruitExchange(fruits: Int) {
+        val target = unlockChoiceTarget
+        if (hostedRuleGuard) {
+            // The orchard debits the cloud account and starts this TV's timer itself. No LOCAL
+            // ledger call: the two accounts never mix.
+            if (fruitSubmitting) return
+            fruitSubmitting = true
+            unlockChoiceMessage = null
+            fruitMessageText = null
+            PolicyModeCoordinator.startHostedFruitSession(fruits) { result ->
+                fruitSubmitting = false
+                if (result.started) {
+                    if (target == null) {
+                        QuizLaunchTarget.armInputs()
+                    } else {
+                        QuizLaunchTarget.confirm(target.packageName)
+                    }
+                    PolicyFlowTrace.event(
+                        "session.fruit.launch",
+                        "fruits" to fruits,
+                        "package" to (target?.packageName ?: "inputs"),
+                        "cloud" to true,
+                    )
+                    fruitMode = false
+                    fruitFromChoice = false
+                    unlockChoiceMode = false
+                    unlockChoiceTarget = null
+                    unlockChoiceMessage = null
+                    fruitMessageText = null
+                } else {
+                    if (target == null) QuizLaunchTarget.clear()
+                    // The orchard's text says exactly why (rest, check-in, quota…). Only a
+                    // transport failure has no business message and falls back to the generic.
+                    fruitMessageText = result.message
+                    if (result.message == null) {
+                        unlockChoiceMessage = R.string.policy_fruit_changed
+                    }
+                }
+            }
+            return
+        }
+        if (target == null) QuizLaunchTarget.armInputs() else QuizLaunchTarget.clear()
+        when (val result = PolicyModeCoordinator.startLocalFruitSession(
+            fruits,
+            target?.label ?: "TV",
+        )) {
+            SessionStartResult.Started -> {
+                if (target != null) QuizLaunchTarget.confirm(target.packageName)
+                PolicyFlowTrace.event(
+                    "session.fruit.launch",
+                    "fruits" to fruits,
+                    "package" to (target?.packageName ?: "inputs"),
+                )
+                fruitMode = false
+                fruitFromChoice = false
+                unlockChoiceMode = false
+                unlockChoiceTarget = null
+                unlockChoiceMessage = null
+            }
+            is SessionStartResult.Rejected -> {
+                if (target == null) QuizLaunchTarget.clear()
+                unlockChoiceMessage = when (result.reason) {
+                    RejectReason.RESTING -> R.string.policy_resting_title
+                    RejectReason.OUTSIDE_WINDOW -> R.string.policy_outside_window
+                    RejectReason.BUSY -> R.string.policy_route_busy
+                    else -> R.string.policy_fruit_changed
+                }
+            }
+            SessionStartResult.Pending -> Unit
+        }
     }
 
     /**
@@ -1264,6 +1411,10 @@ private fun PolicyLockScreen(
                         startDirect(app)
                         return
                     }
+                    UnlockRoute.FRUIT -> {
+                        openFruitExchange(app, fromChoice = false)
+                        return
+                    }
                     // A study route always names its app in the overlay, even when only one
                     // study app is installed.
                     UnlockRoute.STUDY_REWARD -> Unit
@@ -1326,6 +1477,11 @@ private fun PolicyLockScreen(
                         startDirect(null)
                         return
                     }
+                    UnlockRoute.FRUIT -> {
+                        QuizLaunchTarget.armInputs()
+                        openFruitExchange(null, fromChoice = false)
+                        return
+                    }
                     UnlockRoute.STUDY_REWARD -> Unit
                 }
             }
@@ -1347,7 +1503,7 @@ private fun PolicyLockScreen(
     // wakes the panel with BACK only when the lock screen's normal sheet is showing.
     SideEffect {
         PolicyPanelRefresh.setOverlayOpen(
-            recoveryMode || quizMode || unlockChoiceMode || promptMessage != null ||
+            recoveryMode || quizMode || unlockChoiceMode || fruitMode || promptMessage != null ||
                 durationMode || pinMode || guardPanelOpen,
         )
     }
@@ -1362,10 +1518,11 @@ private fun PolicyLockScreen(
         quizMode,
         recoveryMode,
         unlockChoiceMode,
+        fruitMode,
         promptMessage,
     ) {
         if (pinMode || durationMode || quizMode || recoveryMode || unlockChoiceMode ||
-            promptMessage != null
+            fruitMode || promptMessage != null
         ) {
             focusedAction = null
             focusedStudyPackage = null
@@ -1408,6 +1565,7 @@ private fun PolicyLockScreen(
                 unlockChoiceTarget = null
                 unlockChoiceMessage = null
             }
+            fruitMode -> closeFruitExchange(returnToChoice = fruitFromChoice)
             guardPanelOpen -> guardPanelOpen = false
             durationMode -> {
                 pendingMinutes = null
@@ -1497,7 +1655,7 @@ private fun PolicyLockScreen(
             guardWasOpen = false
             withFrameNanos { }
             if (desktopMenu && !pinMode && !durationMode && !quizMode &&
-                !recoveryMode && !unlockChoiceMode && promptMessage == null
+                !recoveryMode && !unlockChoiceMode && !fruitMode && promptMessage == null
             ) {
                 runCatching { guardFocus.requestFocus() }
             }
@@ -1527,18 +1685,21 @@ private fun PolicyLockScreen(
             }
             .focusRequester(idleFocus)
             // The choice overlay traps focus on its own rows; the desktop root must not keep a
-            // focusable node that focus search can fall back to.
+            // focusable node that focus search can fall back to. The fruit wheel likewise owns
+            // every D-pad key while it is open.
             .focusable(
                 enabled = (!desktopMenu || !dockFocusActive) &&
                     !unlockChoiceMode &&
+                    !fruitMode &&
                     !subjectSheetOpen,
             )
             .onPreviewKeyEvent { event ->
                 // The sheet itself holds focus while idle so no action is pre-selected.
                 // The first direction press enters the list; after that the column's own
-                // navigation takes over. The choice overlay consumes its own D-pad keys.
+                // navigation takes over. The choice overlay and the fruit wheel consume their
+                // own D-pad keys.
                 if (!pinMode && !durationMode && !guardPanelOpen && !dockFocusActive &&
-                    !unlockChoiceMode && !subjectSheetOpen &&
+                    !unlockChoiceMode && !fruitMode && !subjectSheetOpen &&
                     event.type == KeyEventType.KeyDown &&
                     event.nativeKeyEvent.repeatCount == 0
                 ) {
@@ -1900,7 +2061,9 @@ private fun PolicyLockScreen(
                 state = dockState,
                 // Focusing the status badge or the face returns to the shelf, as Up on Home does.
                 resetFocus = pillFocused || subjectFocused,
-                interactive = !subjectSheetOpen,
+                // The fruit wheel is modal: keep every desktop tile out of focus search so a
+                // missed focus request cannot hand the D-pad back to the grid behind it.
+                interactive = !subjectSheetOpen && !fruitMode,
                 // The tiles name themselves now. An action message owns the line under the dock,
                 // so names step aside while it is showing instead of overlapping it.
                 showNames = actionText == null,
@@ -1971,6 +2134,8 @@ private fun PolicyLockScreen(
                     studyApps = choiceStudyApps,
                     quizFeatureAvailable = quizFeatureVisible,
                     studyMinutes = state.studyEarnStudyMinutes,
+                    fruitBalanceHundredths = state.fruitAvailableFruitHundredths,
+                    fruitRateMinutes = state.fruitExchangeRateMinutesPerFruit,
                     messageRes = unlockChoiceMessage,
                     onQuiz = {
                         unlockChoiceMode = false
@@ -1995,11 +2160,39 @@ private fun PolicyLockScreen(
                             unlockChoiceMessage = null
                         }
                     },
+                    onFruit = {
+                        openFruitExchange(choiceTarget, fromChoice = true)
+                    },
                     onBack = {
                         unlockChoiceMode = false
                         unlockChoiceTarget = null
                         unlockChoiceMessage = null
                     },
+                )
+            }
+            // V58: the fruit wheel is the only new TV interaction panel. Its upper bound is
+            // already the planner's minimum of balance, session cap, daily count and window.
+            if (fruitMode && choicePlan != null) {
+                val fruitRate = state.fruitExchangeRateMinutesPerFruit
+                val rateSeconds = fruitRate.toLong() * 60L
+                val maxFruits = if (rateSeconds > 0L) {
+                    (choicePlan.fruit.grantSeconds / rateSeconds)
+                        .coerceAtMost(Int.MAX_VALUE.toLong())
+                        .toInt()
+                } else {
+                    0
+                }
+                PolicyFruitExchangeOverlay(
+                    targetLabel = choiceTarget?.label,
+                    maxFruits = maxFruits,
+                    remainingTries = choicePlan.fruit.remaining,
+                    balanceFruitHundredths = state.fruitAvailableFruitHundredths,
+                    rateMinutesPerFruit = fruitRate,
+                    messageRes = unlockChoiceMessage,
+                    submitting = fruitSubmitting,
+                    messageText = fruitMessageText,
+                    onExchange = ::launchFruitExchange,
+                    onBack = { closeFruitExchange(returnToChoice = fruitFromChoice) },
                 )
             }
             // Drawn after the dock and the choice overlay so the member sheet covers the whole
@@ -2013,6 +2206,7 @@ private fun PolicyLockScreen(
                         deviceNo = state.deviceNo,
                         members = state.cloudMembers,
                         activeMemberId = cloud.memberId,
+                        protection = state.switchProtection,
                         onDismiss = { subjectSheetOpen = false },
                     )
                     cloud != null -> CloudSubjectProfileOverlay(

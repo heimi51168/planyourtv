@@ -1,8 +1,8 @@
 {
  "schemaVersion": 1,
- "catalogVersion": 1336286492,
- "fetchedAt": "2026-11-12",
- "source": "https://basic.smartedu.cn/syncClassroom",
+ "catalogVersion": 2026112501,
+ "fetchedAt": "2026-11-25",
+ "source": "https://basic.smartedu.cn/syncClassroom + uxb_question_bank db/seed catalogs (2026-11)",
  "books": [
   {
    "grade": 1,
@@ -28379,6 +28379,5508 @@
       "四 调查心血管疾病情况",
       "五 调查本地区能源及其消耗情况"
      ]
+    }
+   ]
+  },
+  {
+   "grade": 1,
+   "semesters": [
+    1
+   ],
+   "subject": "MATH",
+   "textbook": "BEIJING",
+   "textbookName": "北京版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 5,
+   "units": [
+    {
+     "no": 1,
+     "title": "5以内数的认识和加、减法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "认识立体图形",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "10以内数的认识和加、减法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "20以内数的认识和进位加法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "数学百花园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "总复习",
+     "kind": "REVIEW",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 1,
+   "semesters": [
+    2
+   ],
+   "subject": "MATH",
+   "textbook": "BEIJING",
+   "textbookName": "北京版",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 8,
+   "units": [
+    {
+     "no": 1,
+     "title": "20以内的退位减法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "100以内数的认识",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "数据分类",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "100以内的加法和减法(一)",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "初步认识数量关系(一)",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "100以内的加法和减法(二)",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "认识平面图形",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "数学百花园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 9,
+     "title": "总复习",
+     "kind": "REVIEW",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 2,
+   "semesters": [
+    1
+   ],
+   "subject": "MATH",
+   "textbook": "BEIJING",
+   "textbookName": "北京版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 7,
+   "units": [
+    {
+     "no": 1,
+     "title": "认识厘米和米",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "表内乘法(一)",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "调查与分类",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "表内乘法(二)",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "表内除法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "倍的认识",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "数学百花园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "总复习",
+     "kind": "REVIEW",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 2,
+   "semesters": [
+    2
+   ],
+   "subject": "MATH",
+   "textbook": "BEIJING",
+   "textbookName": "北京版",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 7,
+   "units": [
+    {
+     "no": 1,
+     "title": "有余数的除法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "初步认识数量关系(二)",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "混合运算",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "万以内数的认识",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "万以内的加法和减法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "解决问题",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "数学百花园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "总复习",
+     "kind": "REVIEW",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 3,
+   "semesters": [
+    1
+   ],
+   "subject": "MATH",
+   "textbook": "BEIJING",
+   "textbookName": "北京版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 9,
+   "units": [
+    {
+     "no": 1,
+     "title": "多位数乘一位数",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "观察物体(一)",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "认识千米、分米和毫米",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "多位数除以一位数",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "图形的运动(一)",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "认识常见的数量关系(一)",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "角的初步认识",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "数据整理",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 9,
+     "title": "数学百花园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 10,
+     "title": "总复习",
+     "kind": "REVIEW",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 3,
+   "semesters": [
+    2
+   ],
+   "subject": "MATH",
+   "textbook": "BEIJING",
+   "textbookName": "北京版",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 7,
+   "units": [
+    {
+     "no": 1,
+     "title": "多位数乘两位数",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "线段、射线和直线",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "周长与面积",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "分数的初步认识",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "数量关系的应用(一)",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "长方形和正方形",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "数学百花园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "总复习",
+     "kind": "REVIEW",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 4,
+   "semesters": [
+    1
+   ],
+   "subject": "MATH",
+   "textbook": "BEIJING",
+   "textbookName": "北京版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 8,
+   "units": [
+    {
+     "no": 1,
+     "title": "大数的认识",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "运算定律",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "角的度量",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "多位数除以两位数",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "认识常见的数量关系(二)",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "探索计算中的规律",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "条形统计图",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "数学百花园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 9,
+     "title": "总复习",
+     "kind": "REVIEW",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 4,
+   "semesters": [
+    2
+   ],
+   "subject": "MATH",
+   "textbook": "BEIJING",
+   "textbookName": "北京版",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 8,
+   "units": [
+    {
+     "no": 1,
+     "title": "小数",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "小数加、减法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "平行与相交",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "图形变换",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "解决问题",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "生活中的负数",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "统计表",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "数学百花园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 9,
+     "title": "总复习",
+     "kind": "REVIEW",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 5,
+   "semesters": [
+    1
+   ],
+   "subject": "MATH",
+   "textbook": "BEIJING",
+   "textbookName": "北京版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 6,
+   "units": [
+    {
+     "no": 1,
+     "title": "小数乘法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "小数除法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "三角形、平行四边形和梯形(二)",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "统计",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "用字母表示数量关系",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "数学百花园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "总复习",
+     "kind": "REVIEW",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 5,
+   "semesters": [
+    2
+   ],
+   "subject": "MATH",
+   "textbook": "BEIJING",
+   "textbookName": "北京版",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 6,
+   "units": [
+    {
+     "no": 1,
+     "title": "长方体和正方体",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "折线统计图与可能性",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "因数和倍数",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "分数的意义和基本性质",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "分数的加法和减法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "数学百花园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "总复习",
+     "kind": "REVIEW",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 6,
+   "semesters": [
+    1
+   ],
+   "subject": "MATH",
+   "textbook": "BEIJING",
+   "textbookName": "北京版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 8,
+   "units": [
+    {
+     "no": 1,
+     "title": "分数乘法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "分数除法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "百分数",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "数量关系的应用(三)",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "圆",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "方向与位置",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "扇形统计图",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "数学百花园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 9,
+     "title": "总复习",
+     "kind": "REVIEW",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 6,
+   "semesters": [
+    2
+   ],
+   "subject": "MATH",
+   "textbook": "BEIJING",
+   "textbookName": "北京版",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 3,
+   "units": [
+    {
+     "no": 1,
+     "title": "圆柱和圆锥",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "比和比例",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "数学百花园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "总复习",
+     "kind": "REVIEW",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 1,
+   "semesters": [
+    1
+   ],
+   "subject": "MATH",
+   "textbook": "JIJIAO",
+   "textbookName": "冀教版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 5,
+   "units": [
+    {
+     "no": 1,
+     "title": "熟悉的数与加减法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "认识图形(一)",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "认识 11~20",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "20 以内的加法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "探索乐园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "期末复习",
+     "kind": "REVIEW",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 1,
+   "semesters": [
+    2
+   ],
+   "subject": "MATH",
+   "textbook": "JIJIAO",
+   "textbookName": "冀教版",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 5,
+   "units": [
+    {
+     "no": 1,
+     "title": "20 以内的减法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "分类(一)",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "100 以内的数与加减法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "两位数加减",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "探索乐园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "期末复习",
+     "kind": "REVIEW",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 2,
+   "semesters": [
+    1
+   ],
+   "subject": "MATH",
+   "textbook": "JIJIAO",
+   "textbookName": "冀教版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 6,
+   "units": [
+    {
+     "no": 1,
+     "title": "问题与运算(一)",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "乘法和除法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "乘法口诀",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "认识图形(二)",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "用乘法口诀求商",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "探索乐园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "期末复习",
+     "kind": "REVIEW",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 2,
+   "semesters": [
+    2
+   ],
+   "subject": "MATH",
+   "textbook": "JIJIAO",
+   "textbookName": "冀教版",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 6,
+   "units": [
+    {
+     "no": 1,
+     "title": "有余数的除法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "测量(一)",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "生活中的大数",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "分类(二)",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "三位数加减",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "探索乐园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "学段复习",
+     "kind": "REVIEW",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 3,
+   "semesters": [
+    1
+   ],
+   "subject": "MATH",
+   "textbook": "JIJIAO",
+   "textbookName": "冀教版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 5,
+   "units": [
+    {
+     "no": 1,
+     "title": "倍的认识",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "多位数乘一位数",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "线和角",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "多位数除以一位数",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "探索乐园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "期末复习",
+     "kind": "REVIEW",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 3,
+   "semesters": [
+    2
+   ],
+   "subject": "MATH",
+   "textbook": "JIJIAO",
+   "textbookName": "冀教版",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 8,
+   "units": [
+    {
+     "no": 1,
+     "title": "问题与运算(二)",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "观察物体",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "多位数乘法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "测量(二)",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "数据收集和整理",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "生活中的小数",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "图形的运动(一)",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "探索乐园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 9,
+     "title": "期末复习",
+     "kind": "REVIEW",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 4,
+   "semesters": [
+    1
+   ],
+   "subject": "MATH",
+   "textbook": "JIJIAO",
+   "textbookName": "冀教版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 6,
+   "units": [
+    {
+     "no": 1,
+     "title": "除数是两位数的除法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "多边形的认识",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "认识更大的数",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "周长",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "平均数",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "探索乐园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "期末复习",
+     "kind": "REVIEW",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 4,
+   "semesters": [
+    2
+   ],
+   "subject": "MATH",
+   "textbook": "JIJIAO",
+   "textbookName": "冀教版",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 9,
+   "units": [
+    {
+     "no": 1,
+     "title": "观察物体(二)",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "用字母表示数",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "三位数乘两位数",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "多边形的认识",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "分数的意义和性质",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "小数的认识",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "复式条形统计图",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "小数加法和减法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 9,
+     "title": "探索乐园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 10,
+     "title": "整理与评价",
+     "kind": "REVIEW",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 5,
+   "semesters": [
+    1
+   ],
+   "subject": "MATH",
+   "textbook": "JIJIAO",
+   "textbookName": "冀教版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 7,
+   "units": [
+    {
+     "no": 1,
+     "title": "小数的认识与加减法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "图形的运动 (二)",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "小数乘法和除法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "随机现象发生的可能性",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "小数应用问题",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "多边形的面积",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "探索乐园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "期末复习",
+     "kind": "REVIEW",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 5,
+   "semesters": [
+    2
+   ],
+   "subject": "MATH",
+   "textbook": "JIJIAO",
+   "textbookName": "冀教版",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 8,
+   "units": [
+    {
+     "no": 1,
+     "title": "图形的运动(二)",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "异分母分数加减法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "长方体和正方体",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "分数乘法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "长方体和正方体的体积",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "分数除法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "折线统计图",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "探索乐园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 9,
+     "title": "整理与评价",
+     "kind": "REVIEW",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 6,
+   "semesters": [
+    1
+   ],
+   "subject": "MATH",
+   "textbook": "JIJIAO",
+   "textbookName": "冀教版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 8,
+   "units": [
+    {
+     "no": 1,
+     "title": "含有字母的式子",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "分数乘法和除法",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "用数对表示位置",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "分数应用问题",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "比和比例",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "圆",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "百分数",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "探索乐园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 9,
+     "title": "期末复习",
+     "kind": "REVIEW",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 6,
+   "semesters": [
+    2
+   ],
+   "subject": "MATH",
+   "textbook": "JIJIAO",
+   "textbookName": "冀教版",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 5,
+   "units": [
+    {
+     "no": 1,
+     "title": "生活中的负数",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "位置",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "正比例反比例",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "圆柱和圆锥",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "探索乐园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "回顾与整理",
+     "kind": "REVIEW",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 3,
+   "semesters": [
+    1
+   ],
+   "subject": "ENGLISH",
+   "textbook": "NIUJIN",
+   "textbookName": "沪教牛津版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 8,
+   "units": [
+    {
+     "no": 1,
+     "title": "How do we feel?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "What's interesting about families?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "What do we look like?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "How do we have fun?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "What do we eat?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "What do we like about small animals?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "What do we know about weather?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "Why do we like birthdays?",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 3,
+   "semesters": [
+    2
+   ],
+   "subject": "ENGLISH",
+   "textbook": "NIUJIN",
+   "textbookName": "沪教牛津版",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 8,
+   "units": [
+    {
+     "no": 1,
+     "title": "How do we spend our free time?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "How do we make friends?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "What do we wear?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "What sounds can we hear?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "Where can we see colours?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "What are our homes like?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "What do we do at school?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "What do you do on Children's Day?",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 4,
+   "semesters": [
+    1
+   ],
+   "subject": "ENGLISH",
+   "textbook": "NIUJIN",
+   "textbookName": "沪教牛津版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 8,
+   "units": [
+    {
+     "no": 1,
+     "title": "Where do people live?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "Where do animals live?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "How do we use numbers?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "What do we buy?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "How are the seasons different?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "What's amazing about plants?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "How do we keep safe on the road?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "What do our grandparents do?",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 4,
+   "semesters": [
+    2
+   ],
+   "subject": "ENGLISH",
+   "textbook": "NIUJIN",
+   "textbookName": "沪教牛津版",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 8,
+   "units": [
+    {
+     "no": 1,
+     "title": "What is your daily schedule?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "What do we like about school?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "What's great about jobs?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "How can we make music?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "How do we make art?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "How do we measure time?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "How do things change?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "How do people get along with each other?",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 5,
+   "semesters": [
+    1
+   ],
+   "subject": "ENGLISH",
+   "textbook": "NIUJIN",
+   "textbookName": "沪教牛津版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 8,
+   "units": [
+    {
+     "no": 1,
+     "title": "What do we do at the weekend?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "How do we stay healthy?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "What do you know about different countries?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "What's interesting about holidays?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "What are living things?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "Why should we take care of the Earth?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "How do we celebrate festivals?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "How does music make us feel?",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 5,
+   "semesters": [
+    2
+   ],
+   "subject": "ENGLISH",
+   "textbook": "NIUJIN",
+   "textbookName": "沪教牛津版",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 9,
+   "units": [
+    {
+     "no": 1,
+     "title": "Tidy up!",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "Our new home",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "In the future",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "Reading is fun",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "At the weekend",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "Holidays",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "Open Day",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "Buying clothes",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 9,
+     "title": "Seeing the doctor",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 6,
+   "semesters": [
+    1
+   ],
+   "subject": "ENGLISH",
+   "textbook": "NIUJIN",
+   "textbookName": "沪教牛津版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 6,
+   "units": [
+    {
+     "no": 1,
+     "title": "Why do people move to new places?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "Why do we make art?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "How should we protect ourselves?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "What makes things move?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "How do inventions change our lives?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "What is a city?",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 6,
+   "semesters": [
+    2
+   ],
+   "subject": "ENGLISH",
+   "textbook": "NIUJIN",
+   "textbookName": "沪教牛津版",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 9,
+   "units": [
+    {
+     "no": 1,
+     "title": "You and me",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "Changes in our lives",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "Our school in the future",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "Art",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "Crafts",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "PE lessons",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "Helping others",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "Reading signs",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 9,
+     "title": "Reusing things",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 3,
+   "semesters": [
+    1
+   ],
+   "subject": "ENGLISH",
+   "textbook": "KEJIAO_GZ",
+   "textbookName": "教科版（广州）",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 8,
+   "units": [
+    {
+     "no": 1,
+     "title": "Letters in Our Life",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "English and Chinese",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "Who's Who?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "Colour a Keyboard",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "Set a Password",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "I Can Draw",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "Be a Good Listener",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "It's Time to Exercise!",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 3,
+   "semesters": [
+    2
+   ],
+   "subject": "ENGLISH",
+   "textbook": "KEJIAO_GZ",
+   "textbookName": "教科版（广州）",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 8,
+   "units": [
+    {
+     "no": 1,
+     "title": "Get Up",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "What a Day!",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "Plan My Day",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "Come and Join Us!",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "Our Classroom, Our Call",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "I'm on Duty",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "School Rules",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "A Polite Way",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 4,
+   "semesters": [
+    1
+   ],
+   "subject": "ENGLISH",
+   "textbook": "KEJIAO_GZ",
+   "textbookName": "教科版（广州）",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 8,
+   "units": [
+    {
+     "no": 1,
+     "title": "Come on In!",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "Help Yourself",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "I'm the Chef Today!",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "Help Out in the Kitchen",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "She Helps Me a Lot",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "I Love My Family",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "Family Time",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "Joy in the Air",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 4,
+   "semesters": [
+    2
+   ],
+   "subject": "ENGLISH",
+   "textbook": "KEJIAO_GZ",
+   "textbookName": "教科版（广州）",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 8,
+   "units": [
+    {
+     "no": 1,
+     "title": "The School Garden",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "Busy as a Bee",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "Grow Taller",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "Let's Do It!",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "How's the Weather?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "Tidy Up My Closet",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "Let's Make a Call!",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "The Best Place to Live",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 5,
+   "semesters": [
+    1
+   ],
+   "subject": "ENGLISH",
+   "textbook": "KEJIAO_GZ",
+   "textbookName": "教科版（广州）",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 7,
+   "units": [
+    {
+     "no": 1,
+     "title": "Learn Words in Chunks",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "It's for Everybody",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "Best Friends Forever",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "Here Comes a Typhoon!",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "A Trip to Harbin",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "Space Travel",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "Make a Bird Feeder",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 5,
+   "semesters": [
+    2
+   ],
+   "subject": "ENGLISH",
+   "textbook": "KEJIAO_GZ",
+   "textbookName": "教科版（广州）",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 12,
+   "units": [
+    {
+     "no": 1,
+     "title": "What's your favourite season?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "It's the middle of winter",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "We are going to have an English test",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "Have a good time in Hainan",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "Would you like to go with us?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "See you at the party",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "We will go by train",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "Ben's first trip to Beijing",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 9,
+     "title": "Be careful!",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 10,
+     "title": "How to stay safe",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 11,
+     "title": "Can you tell me the way?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 12,
+     "title": "I know a short cut",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 6,
+   "semesters": [
+    1
+   ],
+   "subject": "ENGLISH",
+   "textbook": "KEJIAO_GZ",
+   "textbookName": "教科版（广州）",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 7,
+   "units": [
+    {
+     "no": 1,
+     "title": "I Am Angry",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "Talk It Out",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "Work It Out Together",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "Cat or Dog?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "Shop Smart",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "Keep It Green",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "Play It Safe",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 6,
+   "semesters": [
+    2
+   ],
+   "subject": "ENGLISH",
+   "textbook": "KEJIAO_GZ",
+   "textbookName": "教科版（广州）",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 10,
+   "units": [
+    {
+     "no": 1,
+     "title": "Slow and steady wins the race",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "Waiting for another hare",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "What animal is it?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "We can save the animals",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "Dr Sun Yatsen",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "Early years of Deng Jiaxian",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "It's the polite thing to do",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "The magic words",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 9,
+     "title": "Where will you go?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 10,
+     "title": "I can't wait to see you",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 3,
+   "semesters": [
+    1
+   ],
+   "subject": "ENGLISH",
+   "textbook": "XIANGSHAO",
+   "textbookName": "湘少版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 10,
+   "units": [
+    {
+     "no": 1,
+     "title": "Hello!",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "What’s your name?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "How old are you?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "This is my family",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "Is this your pen?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "Touch your head",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "What colour is it?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "What’s this?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 9,
+     "title": "I like apples",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 10,
+     "title": "Happy birthday!",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 3,
+   "semesters": [
+    2
+   ],
+   "subject": "ENGLISH",
+   "textbook": "XIANGSHAO",
+   "textbookName": "湘少版",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 10,
+   "units": [
+    {
+     "no": 1,
+     "title": "How are you?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "What time is it?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "What’s the weather like?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "Do you like the dress?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "How many kites are there?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "There is an egg here",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "Wash your hands",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "Children’s Day",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 9,
+     "title": "I go there by bus",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 10,
+     "title": "Is she a driver?",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 4,
+   "semesters": [
+    1
+   ],
+   "subject": "ENGLISH",
+   "textbook": "XIANGSHAO",
+   "textbookName": "湘少版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 10,
+   "units": [
+    {
+     "no": 1,
+     "title": "This is our school",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "What time do you get up?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "I like dumplings",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "Look at the elephant",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "Can you play basketball?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "What are those?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "Whose watch is this?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "Don’t talk in the library",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 9,
+     "title": "Welcome to my home!",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 10,
+     "title": "What’s her job?",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 4,
+   "semesters": [
+    2
+   ],
+   "subject": "ENGLISH",
+   "textbook": "XIANGSHAO",
+   "textbookName": "湘少版",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 10,
+   "units": [
+    {
+     "no": 1,
+     "title": "It's on your head",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "What classes do you have this morning?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "Today is Wednesday",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "Class One gets 54 points",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "She helps students",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "What's your favourite season?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "What can you see?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "He is cleaning the window",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 9,
+     "title": "The Dragon Boat Festival",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 10,
+     "title": "What does that sign mean?",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 5,
+   "semesters": [
+    1
+   ],
+   "subject": "ENGLISH",
+   "textbook": "XIANGSHAO",
+   "textbookName": "湘少版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 10,
+   "units": [
+    {
+     "no": 1,
+     "title": "What does she look like?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "I'd like a sandwich",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "I can email my friends with the computer",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "Can I use your pencil, please?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "May I have a pet?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "Which one do you want?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "What chores do you do at home?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "What's your hobby?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 9,
+     "title": "I'm sorry",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 10,
+     "title": "The Spring Festival",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 5,
+   "semesters": [
+    2
+   ],
+   "subject": "ENGLISH",
+   "textbook": "XIANGSHAO",
+   "textbookName": "湘少版",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 12,
+   "units": [
+    {
+     "no": 1,
+     "title": "We're going to read stories",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "We're going to do some research",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "Let's make a kite",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "Don't talk here",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "When's your birthday?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "I'll make a beautiful card",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "There's a post office near my school",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "Can you show me the way to the Xinhua Hotel?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 9,
+     "title": "He's kind to children",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 10,
+     "title": "Where were you yesterday?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 11,
+     "title": "Who was first?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 12,
+     "title": "Where did you go?",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 6,
+   "semesters": [
+    1
+   ],
+   "subject": "ENGLISH",
+   "textbook": "XIANGSHAO",
+   "textbookName": "湘少版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 10,
+   "units": [
+    {
+     "no": 1,
+     "title": "What did you do during the holidays?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "Beibei always gets up early",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "The Mid-Autumn Festival",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "It will be sunny and cool tomorrow",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "I will bring a bottle of orange juice",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "What can I do?",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "We shouldn't waste water",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "This bird is bigger than the first one",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 9,
+     "title": "I don't feel well",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 10,
+     "title": "Festivals bring families together",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 6,
+   "semesters": [
+    2
+   ],
+   "subject": "ENGLISH",
+   "textbook": "XIANGSHAO",
+   "textbookName": "湘少版",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 9,
+   "units": [
+    {
+     "no": 1,
+     "title": "A family outing",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "Some stories are more interesting",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "We should learn to take care of ourselves",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "Planting trees is good for us",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "Our Earth looks like this in space",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "Anne wanted to dance",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "I'm not afraid!",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 8,
+     "title": "International Children's Day",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 9,
+     "title": "Look at these beautiful places in the world",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 1,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "DAXIANG",
+   "textbookName": "大象社版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 4,
+   "units": [
+    {
+     "no": 1,
+     "title": "感官兄弟",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "观察常见的动物",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "我在哪里",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "多变的月亮",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 1,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "DAXIANG",
+   "textbookName": "大象社版",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 4,
+   "units": [
+    {
+     "no": 1,
+     "title": "水",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "空气",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "认识身边的植物",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "神奇的磁铁",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 2,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "DAXIANG",
+   "textbookName": "大象社版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 4,
+   "units": [
+    {
+     "no": 1,
+     "title": "溶解",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "动物的生活",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "变幻的天气",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "力和形变",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 2,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "DAXIANG",
+   "textbookName": "大象社版",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 4,
+   "units": [
+    {
+     "no": 1,
+     "title": "小小工程师",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "季节变化",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "植物的生长",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "共同的家园",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 3,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "DAXIANG",
+   "textbookName": "大象社版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 5,
+   "units": [
+    {
+     "no": 1,
+     "title": "气象观测",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "空气与风",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "动物的分类",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "不一样的物体",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "书籍的发展与演变",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 3,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "DAXIANG",
+   "textbookName": "大象社版",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 5,
+   "units": [
+    {
+     "no": 1,
+     "title": "磁针与南北",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "植物的一生",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "食物与消化",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "空气与呼吸",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "运动",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 4,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "DAXIANG",
+   "textbookName": "大象社版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 5,
+   "units": [
+    {
+     "no": 1,
+     "title": "冷与热",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "太阳、地球和月球",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "动物与环境",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "光和声音",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "设计制作小乐器",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 4,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "DAXIANG",
+   "textbookName": "大象社版",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 5,
+   "units": [
+    {
+     "no": 1,
+     "title": "生命世界",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "自然界的水",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "太阳、地球和月球",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "精确时间的步伐",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "开心游乐场",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 5,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "DAXIANG",
+   "textbookName": "大象社版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 5,
+   "units": [
+    {
+     "no": 1,
+     "title": "简单机械",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "玩转游乐场",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "浩瀚宇宙",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "遗传和变异",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "显微镜下的世界",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 5,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "DAXIANG",
+   "textbookName": "大象社版",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 5,
+   "units": [
+    {
+     "no": 1,
+     "title": "探寻光的路线",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "能量",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "转动的地球",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "食物与能量",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "大自然里的老师",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 6,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "DAXIANG",
+   "textbookName": "大象社版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 5,
+   "units": [
+    {
+     "no": 1,
+     "title": "探寻光的路线",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "水循环与天气",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "转动的地球",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "食物与能量",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "计时工具的发展",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 6,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "DAXIANG",
+   "textbookName": "大象社版",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 5,
+   "units": [
+    {
+     "no": 1,
+     "title": "生物的家园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "自然资源",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "物质的变化",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "人类发展与环境保护",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "科技制作大比拼",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 1,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "JIREN",
+   "textbookName": "冀人版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 3,
+   "units": [
+    {
+     "no": 1,
+     "title": "走近科学",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "我的助手",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "物体与材料",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 1,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "JIREN",
+   "textbookName": "冀人版",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 3,
+   "units": [
+    {
+     "no": 1,
+     "title": "地球家园你我他",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "家园为我",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "我为家园",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 2,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "JIREN",
+   "textbookName": "冀人版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 3,
+   "units": [
+    {
+     "no": 1,
+     "title": "位置与方向",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "力与变化",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "科技改变生活",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 2,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "JIREN",
+   "textbookName": "冀人版",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 3,
+   "units": [
+    {
+     "no": 1,
+     "title": "有趣的现象",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "春风送暖梨花开",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "日月星辰",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 3,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "JIREN",
+   "textbookName": "冀人版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 3,
+   "units": [
+    {
+     "no": 1,
+     "title": "奇妙的身体",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "多样的材料",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "各种各样的能",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 3,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "JIREN",
+   "textbookName": "冀人版",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 3,
+   "units": [
+    {
+     "no": 1,
+     "title": "变与不变",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "生长与变化",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "运动与交通",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 4,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "JIREN",
+   "textbookName": "冀人版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 3,
+   "units": [
+    {
+     "no": 1,
+     "title": "物质的状态与变化",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "多样的天气",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "生物与环境",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 4,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "JIREN",
+   "textbookName": "冀人版",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 6,
+   "units": [
+    {
+     "no": 1,
+     "title": "土壤和水",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "植物的生长与繁殖",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "动物的生长与繁殖",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "爱护身体",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "科技改变生活",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "我家的小菜园",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 5,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "JIREN",
+   "textbookName": "冀人版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 4,
+   "units": [
+    {
+     "no": 1,
+     "title": "力与运动",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "简单机械",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "物质的变化",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "地球结构与变化",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 5,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "JIREN",
+   "textbookName": "冀人版",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 6,
+   "units": [
+    {
+     "no": 1,
+     "title": "水的三态变化",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "水循环",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "地表缓慢变化",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "多样的生物",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "简单机械",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "机器模型",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 6,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "JIREN",
+   "textbookName": "冀人版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 4,
+   "units": [
+    {
+     "no": 1,
+     "title": "热传递",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "无处不在的能",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "资源的利用与保护",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "地球家园",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 6,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "JIREN",
+   "textbookName": "冀人版",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 6,
+   "units": [
+    {
+     "no": 1,
+     "title": "昼夜和四季",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "科技革命的影响",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "大自然的启示与发明",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "宇宙",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "风格各异的建筑",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "仿生建筑模型",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 1,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "QINGDAO",
+   "textbookName": "青岛版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 4,
+   "units": [
+    {
+     "no": 1,
+     "title": "走进科学课",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "我们怎样观察",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "玩中学",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "使用工具",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 1,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "QINGDAO",
+   "textbookName": "青岛版",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 3,
+   "units": [
+    {
+     "no": 1,
+     "title": "常见的材料",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "常见的动物",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "动物的运动和反应",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 2,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "QINGDAO",
+   "textbookName": "青岛版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 3,
+   "units": [
+    {
+     "no": 1,
+     "title": "植物与环境",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "多彩的季节",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "位置与方向",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 2,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "QINGDAO",
+   "textbookName": "青岛版",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 3,
+   "units": [
+    {
+     "no": 1,
+     "title": "水和空气",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "天气与生活",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "大自然的礼物",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 3,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "QINGDAO",
+   "textbookName": "青岛版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 4,
+   "units": [
+    {
+     "no": 1,
+     "title": "动物王国",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "物体的形态",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "冷与热",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "水的三态变化",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 3,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "QINGDAO",
+   "textbookName": "青岛版",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 4,
+   "units": [
+    {
+     "no": 1,
+     "title": "消化器官和呼吸器官",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "混合与分离",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "植物的“身体”",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "地球家园",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 4,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "QINGDAO",
+   "textbookName": "青岛版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 4,
+   "units": [
+    {
+     "no": 1,
+     "title": "物体的运动",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "电的本领",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "声音的秘密",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "观测天气",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 4,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "QINGDAO",
+   "textbookName": "青岛版",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 7,
+   "units": [
+    {
+     "no": 1,
+     "title": "物体的运动",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "声音的秘密",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "太阳·地球·月球",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "植物的生长",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "生物的特征",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "电的本领",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "设计制作小台灯",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 5,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "QINGDAO",
+   "textbookName": "青岛版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 4,
+   "units": [
+    {
+     "no": 1,
+     "title": "生活在空气中",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "走进光的世界",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "热是怎样传递的",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "人体与健康",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 5,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "QINGDAO",
+   "textbookName": "青岛版",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 7,
+   "units": [
+    {
+     "no": 1,
+     "title": "心和脑",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "空气",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "春夏星空",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "电磁铁",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "密切联系的生物界",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "物质的变化",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 7,
+     "title": "创新与设计",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 6,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "QINGDAO",
+   "textbookName": "青岛版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 4,
+   "units": [
+    {
+     "no": 1,
+     "title": "生命的微观世界",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "神秘宇宙",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "能的转化",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "能源的利用",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 6,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "QINGDAO",
+   "textbookName": "青岛版",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 6,
+   "units": [
+    {
+     "no": 1,
+     "title": "人体感知环境",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "生物与环境",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "地球资源",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "能量的转换",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "浩瀚宇宙",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "科技与生活",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 1,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "XIANGKE",
+   "textbookName": "湘科版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 4,
+   "units": [
+    {
+     "no": 1,
+     "title": "走进科学",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "探访大自然",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "常见的材料",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "工具的使用",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 1,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "XIANGKE",
+   "textbookName": "湘科版",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 4,
+   "units": [
+    {
+     "no": 1,
+     "title": "认识天气",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "水和空气",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "溶解",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "常见的金属",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 2,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "XIANGKE",
+   "textbookName": "湘科版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 4,
+   "units": [
+    {
+     "no": 1,
+     "title": "形形色色的动物",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "太阳和月亮",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "物体的位置",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "做尺子",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 2,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "XIANGKE",
+   "textbookName": "湘科版",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 4,
+   "units": [
+    {
+     "no": 1,
+     "title": "四季",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "各种各样的植物",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "力与形变",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "多样的人造物",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 3,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "XIANGKE",
+   "textbookName": "湘科版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 5,
+   "units": [
+    {
+     "no": 1,
+     "title": "气体、液体和固体",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "热胀冷缩",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "各种各样的动物",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "土壤",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "磁铁的奥秘",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 3,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "XIANGKE",
+   "textbookName": "湘科版",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 5,
+   "units": [
+    {
+     "no": 1,
+     "title": "水在变化",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "植物的秘密",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "植物的一生",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "天气观测",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "材料的发展",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 4,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "XIANGKE",
+   "textbookName": "湘科版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 5,
+   "units": [
+    {
+     "no": 1,
+     "title": "变与不变",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "消化与呼吸",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "位置与运动",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "声音",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "“小星星”演奏会",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 4,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "XIANGKE",
+   "textbookName": "湘科版",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 6,
+   "units": [
+    {
+     "no": 1,
+     "title": "变与不变",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "动物的一生",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "生物与环境",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "岩石与矿物",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "电",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "房屋照明电路",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 5,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "XIANGKE",
+   "textbookName": "湘科版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 5,
+   "units": [
+    {
+     "no": 1,
+     "title": "微小世界",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "热的传递",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "地表的变化",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "力与运动",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "信息的传递",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 5,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "XIANGKE",
+   "textbookName": "湘科版",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 6,
+   "units": [
+    {
+     "no": 1,
+     "title": "探秘生物体的基本结构",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "微生物",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "光",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "地球的运动",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "简单机械",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "小小起重机",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 6,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "XIANGKE",
+   "textbookName": "湘科版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 5,
+   "units": [
+    {
+     "no": 1,
+     "title": "延续和进化",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "水在自然界中的变化",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "物质变化",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "浩瀚宇宙",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "我们来造桥",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 6,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "XIANGKE",
+   "textbookName": "湘科版",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 6,
+   "units": [
+    {
+     "no": 1,
+     "title": "遗传与变异",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "化石",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "能源",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "地球——我们的家园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "我学习了科学",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 6,
+     "title": "科学的历程",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 1,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "YUEJIAO_KJ",
+   "textbookName": "粤教科技版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 4,
+   "units": [
+    {
+     "no": 1,
+     "title": "认识常见的物体",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "认识生物",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "了解天气",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "会旋转的纸蜻蜓",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 1,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "YUEJIAO_KJ",
+   "textbookName": "粤教科技版",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 4,
+   "units": [
+    {
+     "no": 1,
+     "title": "位置和方向",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "植物和动物",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "太阳和月亮",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "桥梁与人们的生活",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 2,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "YUEJIAO_KJ",
+   "textbookName": "粤教科技版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 4,
+   "units": [
+    {
+     "no": 1,
+     "title": "空气和水",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "感觉器官",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "不同的季节",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "橡皮筋动力小车",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 2,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "YUEJIAO_KJ",
+   "textbookName": "粤教科技版",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 4,
+   "units": [
+    {
+     "no": 1,
+     "title": "神奇的力",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "生物的生存与生长",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "地球家园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "蜗牛的“家”",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 3,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "YUEJIAO_KJ",
+   "textbookName": "粤教科技版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 5,
+   "units": [
+    {
+     "no": 1,
+     "title": "观察植物",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "认识物体",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "热与温度",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "身边的土地",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "简易冷藏箱",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 3,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "YUEJIAO_KJ",
+   "textbookName": "粤教科技版",
+   "volume": "下册",
+   "editionType": "新教材",
+   "maxUnitNo": 5,
+   "units": [
+    {
+     "no": 1,
+     "title": "认识动物",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "消化与呼吸",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "水和溶解",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "观测天气",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "抗风暴房屋",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 4,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "YUEJIAO_KJ",
+   "textbookName": "粤教科技版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 5,
+   "units": [
+    {
+     "no": 1,
+     "title": "空气",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "生命的延续",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "磁铁与电路",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "声音",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "简单小乐器",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 4,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "YUEJIAO_KJ",
+   "textbookName": "粤教科技版",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 4,
+   "units": [
+    {
+     "no": 1,
+     "title": "植物大观园",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "动物的需求",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "运动与力",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "地球上看到的光和影",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 5,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "YUEJIAO_KJ",
+   "textbookName": "粤教科技版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 5,
+   "units": [
+    {
+     "no": 1,
+     "title": "我们的身体",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "力与运动",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "岩石",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "天气现象的成因",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "时间与效率",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 5,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "YUEJIAO_KJ",
+   "textbookName": "粤教科技版",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 4,
+   "units": [
+    {
+     "no": 1,
+     "title": "身边的桥梁",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "微观生命世界",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "火山与地震",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "地球运动与宇宙",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 6,
+   "semesters": [
+    1
+   ],
+   "subject": "SCIENCE",
+   "textbook": "YUEJIAO_KJ",
+   "textbookName": "粤教科技版",
+   "volume": "上册",
+   "editionType": "新教材",
+   "maxUnitNo": 5,
+   "units": [
+    {
+     "no": 1,
+     "title": "生物的需求与生存环境",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "光",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "简单机械",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "宇宙中的地球",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 5,
+     "title": "月相变化的演示",
+     "kind": "UNIT",
+     "lessons": []
+    }
+   ]
+  },
+  {
+   "grade": 6,
+   "semesters": [
+    2
+   ],
+   "subject": "SCIENCE",
+   "textbook": "YUEJIAO_KJ",
+   "textbookName": "粤教科技版",
+   "volume": "下册",
+   "editionType": "",
+   "maxUnitNo": 4,
+   "units": [
+    {
+     "no": 1,
+     "title": "小小设计师",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 2,
+     "title": "能量及其转换",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 3,
+     "title": "动物与环境",
+     "kind": "UNIT",
+     "lessons": []
+    },
+    {
+     "no": 4,
+     "title": "我们的家园",
+     "kind": "UNIT",
+     "lessons": []
     }
    ]
   }

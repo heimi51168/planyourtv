@@ -37,6 +37,7 @@ class PolicyVideoLibraryTest {
         PolicyVideoLibrary.installMemberScope { null }
         File(context.filesDir, "quiz-intro").deleteRecursively()
         File(context.filesDir, "policy-audio").deleteRecursively()
+        File(context.filesDir, "policy-videos").deleteRecursively()
     }
 
     @Test
@@ -296,9 +297,9 @@ class PolicyVideoLibraryTest {
     }
 
     @Test
-    fun localVideoCanFillBothRolesRegardlessOfDuration() {
-        // V41 unified the local upload path: the TV already checked the film against its
-        // decoders, so a long video may also be the quiz intro. Images stay wallpaper-only.
+    fun localVideoAndPictureCanFillBothRoles() {
+        // Local uploads already passed the TV's own format checks, so a long film and a still
+        // picture may each serve as either the wallpaper or the quiz intro.
         val long = localVideo(durationMs = 600_000, hasAudio = true)
         assertEquals(
             PolicyVideoRole.entries.toSet(),
@@ -309,6 +310,12 @@ class PolicyVideoLibraryTest {
         assertEquals(
             PolicyVideoRole.entries.toSet(),
             PolicyVideoLibrary.capabilityRoles(context, short),
+        )
+
+        val picture = localImage()
+        assertEquals(
+            PolicyVideoRole.entries.toSet(),
+            PolicyVideoLibrary.capabilityRoles(context, picture),
         )
     }
 
@@ -397,7 +404,7 @@ class PolicyVideoLibraryTest {
         assertTrue(selection.items.all { it.source.kind == PolicyMediaKind.IMAGE })
         assertTrue(selection.items.all { it.source.durationMs == 0L })
         assertEquals(45_000L, selection.intervalMs)
-        assertFalse(PolicyVideoLibrary.capabilityRoles(context, first)
+        assertTrue(PolicyVideoLibrary.capabilityRoles(context, first)
             .contains(PolicyVideoRole.QUIZ_INTRO))
     }
 
@@ -673,6 +680,201 @@ fun backgroundMusicIsChosenPerMemberAndDeletedForEveryone() {
     }
 
     @Test
+    fun wallpaperConfigCommitsRotationSoundAndMusicTogether() {
+        val film = localVideo(durationMs = 600_000, hasAudio = true)
+        val picture = localImage()
+        val music = localAudio("theme.mp3")
+        prefs().edit().putInt("media_schema", 1).commit()
+
+        assertEquals(
+            PolicyVideoLibrary.EditResult.Ok,
+            PolicyVideoLibrary.saveLockConfigFor(
+                context,
+                listOf(film, picture),
+                45_000,
+                sound = true,
+                audioId = music,
+                memberId = "usr_a",
+            ),
+        )
+
+        val selection = PolicyVideoLibrary.lockSelectionFor(context, "usr_a")
+        assertEquals(listOf(film, picture), selection.items.map { it.id })
+        assertEquals(45_000L, selection.intervalMs)
+        assertTrue(PolicyVideoLibrary.lockSoundPreference(context, "usr_a"))
+        assertEquals(music, PolicyVideoLibrary.lockAudioFor(context, "usr_a")?.id)
+        assertEquals(
+            film,
+            PolicyVideoLibrary.roleId(context, PolicyVideoRole.LOCK_WALLPAPER, "usr_a"),
+        )
+
+        // A rejected one-save leaves every part of the previous configuration intact.
+        assertEquals(
+            PolicyVideoLibrary.EditResult.RoleInvalid,
+            PolicyVideoLibrary.saveLockConfigFor(
+                context,
+                listOf(picture),
+                30_000,
+                sound = true,
+                audioId = "",
+                memberId = "usr_a",
+            ),
+        )
+        assertEquals(
+            listOf(film, picture),
+            PolicyVideoLibrary.lockSelectionFor(context, "usr_a").items.map { it.id },
+        )
+        assertEquals(45_000L, PolicyVideoLibrary.lockSelectionFor(context, "usr_a").intervalMs)
+        assertTrue(PolicyVideoLibrary.lockSoundPreference(context, "usr_a"))
+        assertEquals(music, PolicyVideoLibrary.lockAudioFor(context, "usr_a")?.id)
+
+        // Choosing the default wallpaper still clears the rotation, sound and track in one step.
+        assertEquals(
+            PolicyVideoLibrary.EditResult.Ok,
+            PolicyVideoLibrary.saveLockConfigFor(
+                context,
+                emptyList(),
+                45_000,
+                sound = false,
+                audioId = "",
+                memberId = "usr_a",
+            ),
+        )
+        assertEquals(emptyList<String>(), PolicyVideoLibrary.lockSelectionFor(context, "usr_a").items.map { it.id })
+        assertFalse(PolicyVideoLibrary.lockSoundPreference(context, "usr_a"))
+        assertNull(PolicyVideoLibrary.lockAudioFor(context, "usr_a"))
+    }
+
+    @Test
+    fun quizIntroAcceptsAPictureAndCustomAudioInOneSave() {
+        val picture = localImage()
+        val music = localAudio("intro.mp3")
+        PolicyVideoLibrary.installMemberScope { "usr_a" }
+        prefs().edit().putInt("media_schema", 1).commit()
+
+        assertEquals(
+            PolicyVideoLibrary.EditResult.Ok,
+            PolicyVideoLibrary.saveQuizIntroFor(
+                context,
+                picture,
+                audioEnabled = true,
+                audioId = music,
+                memberId = "usr_a",
+            ),
+        )
+
+        val intro = PolicyVideoLibrary.quizIntroFor(context, "usr_a")
+        assertTrue(intro.visual?.uri?.path?.contains(picture) == true)
+        assertEquals(PolicyMediaKind.IMAGE, intro.visual?.kind)
+        assertEquals(music, intro.audio?.id)
+        assertTrue(intro.audioEnabled)
+        assertTrue(intro.customAudio)
+
+        val snapshot = PolicyVideoLibrary.snapshot(context, autoRefreshCatalog = false)
+        assertEquals(picture, snapshot.getJSONObject("roles").getString("quiz"))
+        val quizAudio = snapshot.getJSONObject("quizAudio")
+        assertTrue(quizAudio.getBoolean("enabled"))
+        assertEquals(music, quizAudio.getString("selectedId"))
+        val audioItems = snapshot.getJSONObject("audio").getJSONArray("items")
+        assertEquals(1, audioItems.length())
+        assertTrue(audioItems.getJSONObject(0).getBoolean("quizSelected"))
+        val roles = audioItems.getJSONObject(0).getJSONArray("roles")
+        assertTrue((0 until roles.length()).any { roles.getString(it) == "quiz" })
+    }
+
+    @Test
+    fun downloadedCloudPictureCanOpenTheLocalQuizIntro() {
+        // The manifest offers cloud pictures as wallpapers only. Once the bytes are on this
+        // TV, the same downloaded file is a local visual and the quiz intro can show it.
+        val picture = officialImage("official:cloud-picture")
+        PolicyVideoLibrary.installMemberScope { "usr_a" }
+        prefs().edit().putInt("media_schema", 1).commit()
+
+        assertTrue(OfficialMediaStore.read(context, picture) != null)
+        assertTrue(OfficialMediaStore.list(context).any { it.id == picture })
+        assertTrue(
+            PolicyVideoLibrary.capabilityRoles(context, picture)
+                .containsAll(PolicyVideoRole.entries),
+        )
+        assertEquals(
+            PolicyVideoLibrary.EditResult.Ok,
+            PolicyVideoLibrary.saveQuizIntroFor(context, picture, false, "", "usr_a"),
+        )
+        val intro = PolicyVideoLibrary.quizIntroFor(context, "usr_a")
+        assertEquals(PolicyMediaKind.IMAGE, intro.visual?.kind)
+        assertTrue(intro.visual?.uri?.path?.contains("cloud-picture") == true)
+
+        val snapshot = PolicyVideoLibrary.snapshot(context, autoRefreshCatalog = false)
+        val items = snapshot.getJSONArray("items")
+        val serialized = (0 until items.length()).map { items.getJSONObject(it) }
+        val ids = serialized.map { it.getString("id") }
+        assertTrue("downloaded picture missing from snapshot: $ids", ids.contains(picture))
+        val item = serialized.first { it.getString("id") == picture }
+        val capabilities = item.getJSONArray("capabilityRoles")
+        assertTrue((0 until capabilities.length()).any { capabilities.getString(it) == "quiz" })
+    }
+
+    @Test
+    fun quizIntroRejectsAnEnabledSwitchWithoutItsAudio() {
+        val picture = localImage()
+        val music = localAudio("intro.mp3")
+        prefs().edit().putInt("media_schema", 1).commit()
+
+        assertEquals(
+            PolicyVideoLibrary.EditResult.RoleInvalid,
+            PolicyVideoLibrary.saveQuizIntroFor(context, picture, true, "", "usr_a"),
+        )
+        assertEquals(
+            PolicyVideoLibrary.EditResult.RoleInvalid,
+            PolicyVideoLibrary.saveQuizIntroFor(context, "", true, music, "usr_a"),
+        )
+        assertEquals(
+            PolicyVideoLibrary.EditResult.NotFound,
+            PolicyVideoLibrary.saveQuizIntroFor(
+                context,
+                picture,
+                false,
+                "0123456789abcdef0123456789abcdef",
+                "usr_a",
+            ),
+        )
+        assertNull(PolicyVideoLibrary.roleId(context, PolicyVideoRole.QUIZ_INTRO, "usr_a"))
+
+        // A silent picture with a stored-but-disabled track is valid and stays silent.
+        assertEquals(
+            PolicyVideoLibrary.EditResult.Ok,
+            PolicyVideoLibrary.saveQuizIntroFor(context, picture, false, music, "usr_a"),
+        )
+        val intro = PolicyVideoLibrary.quizIntroFor(context, "usr_a")
+        assertTrue(intro.visual?.uri?.path?.contains(picture) == true)
+        assertEquals(music, intro.audio?.id)
+        assertFalse(intro.audioEnabled)
+        assertFalse(intro.customAudio)
+    }
+
+    @Test
+    fun deletingQuizAudioClearsItsSwitchAndKeepsTheVisual() {
+        val picture = localImage()
+        val music = localAudio("intro.mp3")
+        prefs().edit().putInt("media_schema", 1).commit()
+        assertEquals(
+            PolicyVideoLibrary.EditResult.Ok,
+            PolicyVideoLibrary.saveQuizIntroFor(context, picture, true, music, "usr_a"),
+        )
+
+        assertEquals(PolicyVideoLibrary.EditResult.Ok, PolicyVideoLibrary.deleteLockAudio(context, music))
+
+        val intro = PolicyVideoLibrary.quizIntroFor(context, "usr_a")
+        assertTrue(intro.visual?.uri?.path?.contains(picture) == true)
+        assertNull(intro.audio)
+        assertFalse(intro.audioEnabled)
+        assertFalse(intro.customAudio)
+        assertNull(prefs().getString("quiz_audio:usr_a", null))
+        // The switch is removed with the track; a missing switch reads as off.
+        assertFalse(prefs().getBoolean("quiz_audio_enabled:usr_a", false))
+    }
+
+    @Test
     fun musicSelectionIsNotAWallpaperEdit() {
         // A music change refreshes the music player, but reloading the rotation would restart
         // the picture or film the child is watching.
@@ -723,6 +925,22 @@ fun backgroundMusicIsChosenPerMemberAndDeletedForEveryone() {
             """
             {"kind":"image","name":"$id.jpg","durationMs":0,
              "width":1920,"height":1080,"hasAudio":false,"createdAt":1}
+            """.trimIndent(),
+        )
+        return id
+    }
+
+    /** A complete downloaded official picture; the manifest still lists it as lock-only. */
+    private fun officialImage(id: String): String {
+        val dir = File(File(context.filesDir, "policy-videos/official"), id.removePrefix("official:"))
+        check(dir.mkdirs())
+        val bytes = byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte(), 0xD9.toByte())
+        File(dir, "image.jpg").writeBytes(bytes)
+        File(dir, "info.json").writeText(
+            """
+            {"id":"$id","kind":"image","name":"Cloud picture","nameEn":"Cloud picture",
+             "roles":["lock"],"width":1920,"height":1080,"bytes":${bytes.size},
+             "sha256":"${"b".repeat(64)}","downloadedAt":1}
             """.trimIndent(),
         )
         return id

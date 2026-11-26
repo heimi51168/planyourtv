@@ -1,6 +1,8 @@
 package app.orchard.tv.policy
 
 import android.content.Context
+import app.orchard.tv.policy.media.CloudMediaSync
+import app.orchard.tv.policy.media.HostedMediaStore
 import app.orchard.tv.policy.media.PolicyVideoLibrary
 import app.orchard.tv.policy.web.ParentWebCenter
 import app.orchard.tv.quiz.QuizOwnershipMigration
@@ -48,9 +50,16 @@ object PolicyProduct {
         PolicyVoicePlayer.install(context.applicationContext)
         // Read the source-entry display switch before Home builds its first list.
         SourceEntrySettings.install(context.applicationContext)
+        // Read the system-entry/uninstall switch and resolve this brand's maker entries before
+        // Home builds its first list.
+        SystemEntrySettings.install(context.applicationContext)
+        SystemEntryCatalog.install(context.applicationContext)
         // Read the old device-wide switch before the roster exists. Its value is migrated to
         // each member below; until that write succeeds it still guards upgraded devices.
         MemberSwitchAuth.install(context.applicationContext)
+        // The device-wide switch policy is local-only. Install before the roster exists; its
+        // one-time migration runs below once active members are available.
+        SwitchProtectionSettings.install(context.applicationContext)
         // Extra parent-PIN prompts inside the web user-configuration tab default on.
         UserConfigPinSettings.install(context.applicationContext)
         // The family roster must exist before any quiz key is resolved: the QCD, session and
@@ -63,6 +72,9 @@ object PolicyProduct {
         PolicyVideoLibrary.installMemberScope {
             FamilyHub.state.value.activeUserId.takeIf { it.isNotBlank() }
         }
+        // V50 hosted cache. The directory is separate from every local library; installing it
+        // only removes interrupted downloads and over-budget member directories.
+        if (cloudEnabled) HostedMediaStore.install(context.applicationContext)
         // The quiz engine reads only this cache. A failure here is logged by the
         // caller at first use (CACHE_UNAVAILABLE); it is never silently replaced.
         QuizQuestionCache.init(context.applicationContext)
@@ -89,6 +101,16 @@ object PolicyProduct {
             // V48: the old device-wide switch becomes a per-member flag. Run once per boot
             // after the roster is ready so every existing member inherits the old protection.
             MemberSwitchAuth.migrateLegacyToMembers()
+            // V57: collapse the per-member flags into one local device policy. This is
+            // fail-closed: the old device-wide switch or any protected member keeps protection
+            // on, and a waiver is inherited only when every protected member shared it exactly.
+            val protectionMigrated = SwitchProtectionSettings.migrateFromMembers(
+                members = FamilyHub.state.value.activeMembers,
+                legacyFallbackRequired = MemberSwitchAuth.legacyFallbackActive(),
+            )
+            if (!protectionMigrated) {
+                TvLog.w("PolicyProduct", "switch protection migration failed; keeping fallback")
+            }
         }
         if (cloudEnabled) PolicyCloud.install(context)
         // One product-owned bring-home path for installs without a Home Guard.
@@ -99,6 +121,9 @@ object PolicyProduct {
             context,
             debugPin = if (BuildConfig.DEBUG) "123456" else null,
         )
+        // After the coordinator so its restored CLOUD choice is readable at install. The sync
+        // only reads mode/member flows from then on and never drives enforcement.
+        if (cloudEnabled) CloudMediaSync.install(context.applicationContext)
         // Stop media an app left playing once the lock desktop is in front.
         LockAudioGate.install(context.applicationContext)
         PolicyLockWatcher.install(context.applicationContext)

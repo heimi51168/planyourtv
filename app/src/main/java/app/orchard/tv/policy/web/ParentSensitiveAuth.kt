@@ -15,7 +15,7 @@ import java.util.Locale
  *
  * - only the SHA-256 digest of the token is stored, never the token itself;
  * - it is bound to the editor token digest and to one scope;
- * - RULES_EDIT and FAMILY_EDIT live five minutes and allow multiple saves; TAKE_OVER and
+ * - USER_EDIT and FAMILY_EDIT live five minutes and allow multiple saves; TAKE_OVER and
  *   USER_CONFIG are single-use and expire after sixty seconds;
  * - logout, a new editor lease, or a mode change drops the stored proofs.
  *
@@ -24,7 +24,11 @@ import java.util.Locale
  */
 internal object ParentSensitiveAuth {
     enum class Scope(val ttlMs: Long) {
-        RULES_EDIT(5 * 60_000L),
+        /**
+         * Shared proof for the user-configuration area and the V58 fruit ledger. The parent
+         * re-enters one PIN on entry; subsequent saves inside the same visit reuse it.
+         */
+        USER_EDIT(5 * 60_000L),
         /** Managing members can change who may enter child mode, so it has its own proof. */
         FAMILY_EDIT(5 * 60_000L),
         TAKE_OVER(60_000L),

@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import app.orchard.tv.quiz.QuizIntroVideo
 import app.orchard.tv.quiz.QuizIntroVideoEntry
+import com.planyourtv.log.TvLog
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -34,6 +35,22 @@ data class PolicyWallpaperSelection(
 )
 
 /**
+ * The quiz start backdrop: one picture or film, optionally accompanied by the member's own
+ * audio. [audio] is resolved from the local library only; [audioEnabled] is the stored switch,
+ * so a missing file falls back to the visual's original audio instead of silently failing.
+ *
+ * A video is muted while [audioEnabled] has a usable track, and an image is silent otherwise.
+ * Hosted/cloud media stays video-only and never carries custom audio.
+ */
+data class PolicyQuizIntro(
+    val visual: PolicyVideoSource?,
+    val audio: PolicyAudioEntry? = null,
+    val audioEnabled: Boolean = false,
+) {
+    val customAudio: Boolean get() = audioEnabled && audio != null
+}
+
+/**
  * The one read/write surface for policy films: official downloads, local
  * uploads and the two role slots.
  *
@@ -57,6 +74,8 @@ object PolicyVideoLibrary {
     private const val LOCK_SOUND_KEY = "lock_sound"
     private const val LOCK_PLAYLIST_KEY = "lock_playlist"
     private const val LOCK_AUDIO_KEY = "lock_audio"
+    private const val QUIZ_AUDIO_KEY = "quiz_audio"
+    private const val QUIZ_AUDIO_ENABLED_KEY = "quiz_audio_enabled"
 
     /** The page offers these bounds; the API rejects anything outside them. */
     const val WALLPAPER_MAX_ITEMS = 20
@@ -96,6 +115,16 @@ object PolicyVideoLibrary {
 
     private fun isLockAudioKey(key: String): Boolean =
         key == LOCK_AUDIO_KEY || key.startsWith(LOCK_AUDIO_KEY + ":")
+
+    private fun isQuizAudioKey(key: String): Boolean =
+        key == QUIZ_AUDIO_KEY || key.startsWith(QUIZ_AUDIO_KEY + ":")
+
+    private fun isQuizAudioEnabledKey(key: String): Boolean =
+        key == QUIZ_AUDIO_ENABLED_KEY || key.startsWith(QUIZ_AUDIO_ENABLED_KEY + ":")
+
+    /** A music selection in either consumer: the wallpaper rotation or the quiz intro. */
+    private fun isAudioSelectionKey(key: String): Boolean =
+        isLockAudioKey(key) || isQuizAudioKey(key)
 
     /**
      * Child surfaces listen for role/sound/rotation edits, including another member's change.
@@ -215,8 +244,47 @@ object PolicyVideoLibrary {
         return activeMemberId()
     }
 
-    fun quizSource(context: Context): PolicyVideoSource? =
-        sourceFor(context, PolicyVideoRole.QUIZ_INTRO, memberScopeId(context))
+    /**
+     * In CLOUD the execution path reads the hosted snapshot only. Local edits still succeed
+     * (the parent page must not error against a stale tab), but they are not what the child
+     * sees; say so once per write instead of silently pretending the change took effect.
+     */
+    private fun warnLocalWriteInCloud(operation: String) {
+        if (HostedMediaRoute.isCloud()) {
+            TvLog.w("CloudMedia", "local media write in CLOUD op=$operation; execution keeps hosted cache")
+        }
+    }
+
+    /**
+     * The quiz backdrop for the active child. In CLOUD the hosted snapshot is the only source:
+     * it carries the visual plus the optional V56 quiz-intro audio, so the local member's custom
+     * audio is never mixed into a hosted plan.
+     */
+    fun quizIntro(context: Context): PolicyQuizIntro =
+        if (HostedMediaRoute.isCloud()) {
+            val snapshot = HostedMediaRoute.snapshot()
+            val audio = snapshot?.quizAudio
+            val enabled = snapshot?.quizAudioEnabled == true && audio != null
+            PolicyQuizIntro(visual = snapshot?.quizSource, audio = audio, audioEnabled = enabled)
+        } else {
+            quizIntroFor(context, memberScopeId(context))
+        }
+
+    /** The visual alone, kept for callers that only need the URI/kind. */
+    fun quizSource(context: Context): PolicyVideoSource? = quizIntro(context).visual
+
+    internal fun quizIntroFor(context: Context, memberId: String?): PolicyQuizIntro {
+        ensureMigrated(context)
+        val visual = roleId(context, PolicyVideoRole.QUIZ_INTRO, memberId)
+            ?.let { sourceById(context, it) }
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val audio = prefs.getString(memberKey(QUIZ_AUDIO_KEY, memberId), null)
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { PolicyAudioLibrary.entry(context, it) }
+        val enabled = prefs.getBoolean(memberKey(QUIZ_AUDIO_ENABLED_KEY, memberId), false)
+        return PolicyQuizIntro(visual = visual, audio = audio, audioEnabled = enabled && audio != null)
+    }
 
     /** The first item is the film/shape shown until the rotation advances. */
     fun lockSource(context: Context): PolicyVideoSource? =
@@ -228,7 +296,12 @@ object PolicyVideoLibrary {
      * items.
      */
     fun lockSelection(context: Context): PolicyWallpaperSelection =
-        lockSelectionFor(context, memberScopeId(context))
+        if (HostedMediaRoute.isCloud()) {
+            HostedMediaRoute.snapshot()?.selection
+                ?: PolicyWallpaperSelection(emptyList(), HOSTED_WALLPAPER_INTERVAL_MS)
+        } else {
+            lockSelectionFor(context, memberScopeId(context))
+        }
 
     internal fun lockSelectionFor(
         context: Context,
@@ -259,10 +332,22 @@ object PolicyVideoLibrary {
      * default rather than to the owner's Home wallpaper.
      */
     internal fun lockRoleId(context: Context): String? =
-        lockPlaylistIdsFor(context, memberScopeId(context)).firstOrNull()
+        if (HostedMediaRoute.isCloud()) {
+            HostedMediaRoute.snapshot()?.lockRoleId ?: HostedMediaRoute.NONE_ID
+        } else {
+            lockPlaylistIdsFor(context, memberScopeId(context)).firstOrNull()
+        }
 
     fun source(context: Context, role: PolicyVideoRole): PolicyVideoSource? =
-        sourceFor(context, role, memberScopeId(context))
+        if (HostedMediaRoute.isCloud()) {
+            if (role == PolicyVideoRole.LOCK_WALLPAPER) {
+                lockSelection(context).items.firstOrNull()?.source
+            } else {
+                quizSource(context)
+            }
+        } else {
+            sourceFor(context, role, memberScopeId(context))
+        }
 
     private fun sourceFor(
         context: Context,
@@ -324,6 +409,7 @@ object PolicyVideoLibrary {
         memberId: String?,
     ): EditResult {
         if (roles.isEmpty()) return EditResult.RoleInvalid
+        warnLocalWriteInCloud("select")
         ensureMigrated(context)
         val target = id?.trim().orEmpty()
         if (target.isEmpty()) {
@@ -368,6 +454,7 @@ object PolicyVideoLibrary {
         intervalMs: Long,
         memberId: String?,
     ): EditResult {
+        warnLocalWriteInCloud("saveLockPlaylist")
         ensureMigrated(context)
         val normalized = ids.map { it.trim() }
         if (normalized.size > WALLPAPER_MAX_ITEMS) return EditResult.PlaylistTooLong
@@ -394,6 +481,133 @@ object PolicyVideoLibrary {
         } else {
             editor.putString(playlistKey, encodePlaylist(normalized, intervalMs))
             editor.putString(lockKey, normalized.first())
+        }
+        return if (editor.commit()) EditResult.Ok else EditResult.DeleteFailed
+    }
+
+    /**
+     * One-save wallpaper configuration: rotation, interval, master sound switch and background
+     * music. Every field is validated before the single commit, so the child never sees a
+     * rotation updated with an old sound choice or a half-applied audio selection.
+     */
+    fun saveLockConfig(
+        context: Context,
+        ids: List<String>,
+        intervalMs: Long,
+        sound: Boolean,
+        audioId: String?,
+    ): EditResult = saveLockConfigFor(
+        context,
+        ids,
+        intervalMs,
+        sound,
+        audioId,
+        memberScopeId(context),
+    )
+
+    internal fun saveLockConfigFor(
+        context: Context,
+        ids: List<String>,
+        intervalMs: Long,
+        sound: Boolean,
+        audioId: String?,
+        memberId: String?,
+    ): EditResult {
+        warnLocalWriteInCloud("saveLockConfig")
+        ensureMigrated(context)
+        val normalized = ids.map { it.trim() }
+        if (normalized.size > WALLPAPER_MAX_ITEMS) return EditResult.PlaylistTooLong
+        if (normalized.distinct().size != normalized.size) return EditResult.PlaylistInvalid
+        if (normalized.any { !officialIdPattern.matches(it) && !localIdPattern.matches(it) }) {
+            return EditResult.PlaylistInvalid
+        }
+        if (normalized.isNotEmpty() &&
+            intervalMs !in WALLPAPER_MIN_INTERVAL_MS..WALLPAPER_MAX_INTERVAL_MS
+        ) {
+            return EditResult.PlaylistInvalid
+        }
+        val sources = ArrayList<PolicyVideoSource>(normalized.size)
+        normalized.forEach { id ->
+            if (!isPlayable(context, id)) return EditResult.NotFound
+            if (!capabilityRoles(context, id).contains(PolicyVideoRole.LOCK_WALLPAPER)) {
+                return EditResult.RoleInvalid
+            }
+            sources += sourceById(context, id) ?: return EditResult.NotFound
+        }
+        val audioKey = audioId?.trim().orEmpty()
+        val audio = if (audioKey.isEmpty()) {
+            null
+        } else {
+            if (!PolicyAudioLibrary.isAudioId(audioKey)) return EditResult.NotFound
+            PolicyAudioLibrary.entry(context, audioKey) ?: return EditResult.NotFound
+        }
+        if (sound && sources.none { it.hasAudio } && audio == null) {
+            return EditResult.RoleInvalid
+        }
+        val editor = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+        val playlistKey = memberKey(LOCK_PLAYLIST_KEY, memberId)
+        val lockKey = memberKey(PolicyVideoRole.LOCK_WALLPAPER.prefKey, memberId)
+        if (normalized.isEmpty()) {
+            editor.remove(playlistKey).remove(lockKey)
+        } else {
+            editor.putString(playlistKey, encodePlaylist(normalized, intervalMs))
+            editor.putString(lockKey, normalized.first())
+        }
+        editor.putBoolean(memberKey(LOCK_SOUND_KEY, memberId), sound)
+        if (audio == null) {
+            editor.remove(memberKey(LOCK_AUDIO_KEY, memberId))
+        } else {
+            editor.putString(memberKey(LOCK_AUDIO_KEY, memberId), audio.id)
+        }
+        return if (editor.commit()) EditResult.Ok else EditResult.DeleteFailed
+    }
+
+    /**
+     * One-save quiz-intro configuration. The visual may be a video or a local picture; the
+     * optional audio is a complete local/downloaded track. Enabling audio without a track (or
+     * without a visual) is rejected instead of producing a silently broken intro.
+     */
+    fun saveQuizIntro(
+        context: Context,
+        id: String?,
+        audioEnabled: Boolean,
+        audioId: String?,
+    ): EditResult = saveQuizIntroFor(context, id, audioEnabled, audioId, memberScopeId(context))
+
+    internal fun saveQuizIntroFor(
+        context: Context,
+        id: String?,
+        audioEnabled: Boolean,
+        audioId: String?,
+        memberId: String?,
+    ): EditResult {
+        warnLocalWriteInCloud("saveQuizIntro")
+        ensureMigrated(context)
+        val visualId = id?.trim().orEmpty()
+        if (visualId.isNotEmpty()) {
+            if (!isPlayable(context, visualId)) return EditResult.NotFound
+            if (!capabilityRoles(context, visualId).contains(PolicyVideoRole.QUIZ_INTRO)) {
+                return EditResult.RoleInvalid
+            }
+        }
+        val audioKey = audioId?.trim().orEmpty()
+        val audio = if (audioKey.isEmpty()) {
+            null
+        } else {
+            if (!PolicyAudioLibrary.isAudioId(audioKey)) return EditResult.NotFound
+            PolicyAudioLibrary.entry(context, audioKey) ?: return EditResult.NotFound
+        }
+        if (audioEnabled && (visualId.isEmpty() || audio == null)) {
+            return EditResult.RoleInvalid
+        }
+        val editor = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+        val roleKey = memberKey(PolicyVideoRole.QUIZ_INTRO.prefKey, memberId)
+        if (visualId.isEmpty()) editor.remove(roleKey) else editor.putString(roleKey, visualId)
+        editor.putBoolean(memberKey(QUIZ_AUDIO_ENABLED_KEY, memberId), audioEnabled)
+        if (audio == null) {
+            editor.remove(memberKey(QUIZ_AUDIO_KEY, memberId))
+        } else {
+            editor.putString(memberKey(QUIZ_AUDIO_KEY, memberId), audio.id)
         }
         return if (editor.commit()) EditResult.Ok else EditResult.DeleteFailed
     }
@@ -445,6 +659,7 @@ object PolicyVideoLibrary {
 
     /** Deletes a local copy/upload and clears every role that pointed at it, for every member. */
     fun delete(context: Context, id: String): EditResult {
+        warnLocalWriteInCloud("deleteLocal")
         if (!officialIdPattern.matches(id) && !localIdPattern.matches(id)) {
             return EditResult.NotFound
         }
@@ -523,16 +738,26 @@ object PolicyVideoLibrary {
         return EditResult.Ok
     }
 
+    /**
+     * A downloaded official picture is a complete local file, so local mode can use it in
+     * either role: the manifest offers cloud pictures as wallpapers only, but the quiz intro
+     * renders a still locally. Hosted plans remain video-only and never read this capability.
+     */
+    private fun downloadedCapabilityRoles(local: OfficialMediaLocal): Set<PolicyVideoRole> =
+        when {
+            local.item.kind == PolicyMediaKind.IMAGE -> PolicyVideoRole.entries.toSet()
+            local.item.roles.isNotEmpty() -> local.item.roles
+            else -> PolicyVideoRole.entries.toSet()
+        }
+
     fun capabilityRoles(context: Context, id: String): Set<PolicyVideoRole> = when {
         localIdPattern.matches(id) -> {
             val upload = QuizIntroVideo.all(context).firstOrNull { it.id == id }
-            // Every locally stored video can fill either role: the upload path already checked
-            // it against this TV's decoders, and the quiz player streams from disk, so a long
-            // film is no different from a short one. Images stay wallpaper-only because the
-            // intro is played by ExoPlayer.
+            // Every locally stored item can fill either role: the upload path already checked
+            // it against this TV's decoders, and the quiz player renders both films and the
+            // still picture. Hosted/cloud media keeps its own video-only contract.
             when (upload?.kind) {
-                PolicyMediaKind.IMAGE -> setOf(PolicyVideoRole.LOCK_WALLPAPER)
-                PolicyMediaKind.VIDEO -> PolicyVideoRole.entries.toSet()
+                PolicyMediaKind.IMAGE, PolicyMediaKind.VIDEO -> PolicyVideoRole.entries.toSet()
                 null -> emptySet()
             }
         }
@@ -540,9 +765,11 @@ object PolicyVideoLibrary {
             val catalog = OfficialMediaCatalog.find(context, id)
             val installed = OfficialMediaStore.read(context, id)
             when {
+                // Check the downloaded file first: the manifest's image roles are lock-only.
+                installed?.item?.kind == PolicyMediaKind.IMAGE ->
+                    downloadedCapabilityRoles(installed)
                 catalog != null -> catalog.roles
-                installed != null && installed.item.roles.isNotEmpty() -> installed.item.roles
-                installed != null -> PolicyVideoRole.entries.toSet()
+                installed != null -> downloadedCapabilityRoles(installed)
                 else -> emptySet()
             }
         }
@@ -603,13 +830,22 @@ object PolicyVideoLibrary {
                 catalog = item,
                 local = local,
                 upload = null,
-                capabilityRoles = item.roles,
+                // The catalogue's still pictures are cloud wallpapers only. Once downloaded,
+                // the local file can also open the quiz, so tell the parent page that.
+                capabilityRoles = if (local != null && local.item.kind == PolicyMediaKind.IMAGE) {
+                    downloadedCapabilityRoles(local)
+                } else {
+                    item.roles
+                },
                 hasAudio = item.hasAudio,
             )
         }
 
-        // A film removed from the manifest stays playable if it is already on disk.
-        downloaded.values.filter { local -> catalog?.items?.none { it.id == local.id } == true }
+        // A film removed from the manifest stays playable if it is already on disk. This
+        // also keeps downloaded media visible before the catalogue has ever loaded.
+        downloaded.values.filter { local ->
+            catalog?.items?.any { it.id == local.id } != true
+        }
             .forEach { local ->
                 items += LibraryItem(
                     id = local.id,
@@ -630,7 +866,7 @@ object PolicyVideoLibrary {
                     catalog = null,
                     local = local,
                     upload = null,
-                    capabilityRoles = local.item.roles.ifEmpty { PolicyVideoRole.entries.toSet() },
+                    capabilityRoles = downloadedCapabilityRoles(local),
                     hasAudio = local.item.hasAudio,
                 )
             }
@@ -677,6 +913,9 @@ object PolicyVideoLibrary {
                     .put("sizeBytes", item.sizeBytes)
                     .put("sha256", item.sha256)
                     .put("posterUrl", item.posterUrl ?: JSONObject.NULL)
+                    // Preview-only cloud URL for the parent page's <video>. The TV execution
+                    // paths never read this field and keep playing only the local copy.
+                    .put("playUrl", previewPlayUrl(item) ?: JSONObject.NULL)
                     .put("state", item.state)
                     .put("roles", JSONArray(item.roles.map { it.wire }))
                     .put("capabilityRoles", JSONArray(item.capabilityRoles.map { it.wire }))
@@ -712,6 +951,16 @@ object PolicyVideoLibrary {
         val selectedAudio = audioEntries.firstOrNull { it.id == selectedAudioId }
             ?: audioDownloads.firstOrNull { it.id == selectedAudioId }
                 ?.let { PolicyAudioLibrary.entry(context, it.id) }
+        val quizAudioId = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getString(memberKey(QUIZ_AUDIO_KEY, memberId), null)
+            ?.trim()
+            .orEmpty()
+        val quizAudio = audioEntries.firstOrNull { it.id == quizAudioId }
+            ?: audioDownloads.firstOrNull { it.id == quizAudioId }
+                ?.let { PolicyAudioLibrary.entry(context, it.id) }
+        val quizAudioEnabled = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getBoolean(memberKey(QUIZ_AUDIO_ENABLED_KEY, memberId), false) &&
+            quizAudio != null
         val downloadedAudio = audioDownloads.associateBy { it.id }
         val audioArray = JSONArray()
         audioEntries.forEach { entry ->
@@ -724,7 +973,9 @@ object PolicyVideoLibrary {
                     .put("sizeBytes", entry.sizeBytes)
                     .put("durationMs", entry.durationMs)
                     .put("createdAt", entry.createdAt)
-                    .put("selected", entry.id == selectedAudio?.id),
+                    .put("selected", entry.id == selectedAudio?.id)
+                    .put("quizSelected", entry.id == quizAudio?.id)
+                    .put("roles", audioRolesJson(entry.id, selectedAudio, quizAudio)),
             )
         }
 
@@ -734,12 +985,12 @@ object PolicyVideoLibrary {
         audioCatalog?.tracks?.forEach { track ->
             cloudSeen += track.id
             cloudAudioArray.put(
-                audioCloudJson(track, downloadedAudio[track.id], selectedAudio),
+                audioCloudJson(track, downloadedAudio[track.id], selectedAudio, quizAudio),
             )
         }
         // A downloaded track removed from the catalogue stays visible and playable offline.
         audioDownloads.filter { it.id !in cloudSeen }.forEach { local ->
-            cloudAudioArray.put(audioCloudJson(local.track, local, selectedAudio))
+            cloudAudioArray.put(audioCloudJson(local.track, local, selectedAudio, quizAudio))
         }
         return JSONObject()
             .put("catalog", OfficialMediaCatalog.snapshot(context, autoRefreshCatalog))
@@ -759,6 +1010,17 @@ object PolicyVideoLibrary {
             .put(
                 "lockSound",
                 lockSoundPreference(context, memberId) && (lockHasAudio || selectedAudio != null),
+            )
+            .put(
+                "quizAudio",
+                JSONObject()
+                    .put("enabled", quizAudioEnabled)
+                    .put("selectedId", quizAudio?.id ?: JSONObject.NULL)
+                    .put(
+                        "selectedName",
+                        quizAudio?.let { PolicyAudioLibrary.displayName(it.name) }
+                            ?: JSONObject.NULL,
+                    ),
             )
             .put(
                 "audio",
@@ -807,6 +1069,10 @@ object PolicyVideoLibrary {
 
     /** Whether video sound is enabled and some item in the active member's rotation can supply it. */
     fun lockSound(context: Context): Boolean {
+        if (HostedMediaRoute.isCloud()) {
+            val snapshot = HostedMediaRoute.snapshot() ?: return false
+            return snapshot.sound && snapshot.selection.items.any { it.source.hasAudio }
+        }
         val memberId = memberScopeId(context)
         return lockSoundPreference(context, memberId) &&
             lockSelectionFor(context, memberId).items.any { it.source.hasAudio }
@@ -814,7 +1080,11 @@ object PolicyVideoLibrary {
 
     /** The member's stored switch, independent of whether the current item has audio. */
     fun lockSoundPreference(context: Context): Boolean =
-        lockSoundPreference(context, memberScopeId(context))
+        if (HostedMediaRoute.isCloud()) {
+            HostedMediaRoute.snapshot()?.sound ?: false
+        } else {
+            lockSoundPreference(context, memberScopeId(context))
+        }
 
     internal fun lockSoundPreference(context: Context, memberId: String?): Boolean =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -830,6 +1100,7 @@ object PolicyVideoLibrary {
         setLockSound(context, enabled, memberScopeId(context))
 
     internal fun setLockSound(context: Context, enabled: Boolean, memberId: String?): Boolean {
+        warnLocalWriteInCloud("setLockSound")
         if (enabled &&
             lockSelectionFor(context, memberId).items.none { it.source.hasAudio } &&
             lockAudioFor(context, memberId) == null
@@ -847,8 +1118,21 @@ object PolicyVideoLibrary {
      * while the master wallpaper-sound preference is on; [lockSound] only reports the video
      * soundtrack's own availability.
      */
-    fun lockAudio(context: Context): PolicyAudioEntry? =
-        lockAudioFor(context, memberScopeId(context))
+    fun lockAudio(context: Context): PolicyAudioEntry? {
+        if (!HostedMediaRoute.isCloud()) return lockAudioFor(context, memberScopeId(context))
+        // V54: the cloud selection is part of the hosted manifest. A missing or truncated
+        // file is reported and produces no music; it is never replaced by a local track.
+        val audio = HostedMediaRoute.snapshot()?.audio ?: return null
+        if (!audio.file.isFile || audio.file.length() <= 0L) {
+            TvLog.e("CloudMedia", "background music file missing id=${audio.id}")
+            return null
+        }
+        if (audio.sizeBytes > 0L && audio.file.length() != audio.sizeBytes) {
+            TvLog.e("CloudMedia", "background music size mismatch id=${audio.id}")
+            return null
+        }
+        return audio
+    }
 
     internal fun lockAudioFor(context: Context, memberId: String?): PolicyAudioEntry? {
         val id = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -868,6 +1152,7 @@ object PolicyVideoLibrary {
         id: String?,
         memberId: String?,
     ): EditResult {
+        warnLocalWriteInCloud("selectLockAudio")
         val target = id?.trim().orEmpty()
         val editor = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
         val key = memberKey(LOCK_AUDIO_KEY, memberId)
@@ -891,11 +1176,22 @@ object PolicyVideoLibrary {
         if (!PolicyAudioLibrary.isAudioId(target)) return EditResult.NotFound
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val selected = mutableMapOf<String, String>()
+        val quizAudioEnabled = mutableMapOf<String, Boolean>()
         val editor = prefs.edit()
         prefs.all.forEach { (key, value) ->
-            if (isLockAudioKey(key) && value == target) {
+            if (isAudioSelectionKey(key) && value == target) {
                 selected[key] = target
                 editor.remove(key)
+                // A quiz intro whose custom audio was deleted must come back with the switch
+                // off; the visual then falls back to its own soundtrack or silence.
+                if (isQuizAudioKey(key)) {
+                    val suffix = key.removePrefix(QUIZ_AUDIO_KEY)
+                    val enabledKey = QUIZ_AUDIO_ENABLED_KEY + suffix
+                    if (prefs.contains(enabledKey)) {
+                        quizAudioEnabled[enabledKey] = prefs.getBoolean(enabledKey, false)
+                    }
+                    editor.remove(enabledKey)
+                }
             }
         }
         val exists = PolicyAudioLibrary.entry(context, target) != null
@@ -914,6 +1210,7 @@ object PolicyVideoLibrary {
         if (!deleted) {
             val restore = prefs.edit()
             selected.keys.forEach { restore.putString(it, target) }
+            quizAudioEnabled.forEach { (key, value) -> restore.putBoolean(key, value) }
             restore.commit()
             return EditResult.DeleteFailed
         }
@@ -921,10 +1218,20 @@ object PolicyVideoLibrary {
     }
 
     /** The picker's cloud rows, with the same download/verification state as a wallpaper. */
+    private fun audioRolesJson(
+        id: String,
+        background: PolicyAudioEntry?,
+        quiz: PolicyAudioEntry?,
+    ): JSONArray = JSONArray().apply {
+        if (id == background?.id) put("lock")
+        if (id == quiz?.id) put("quiz")
+    }
+
     private fun audioCloudJson(
         track: OfficialAudioTrack,
         local: OfficialAudioLocal?,
         selected: PolicyAudioEntry?,
+        quizSelected: PolicyAudioEntry?,
     ): JSONObject {
         val progress = OfficialAudioDownloader.progress(track.id)
         val state = when {
@@ -951,6 +1258,8 @@ object PolicyVideoLibrary {
             .put("downloadedAt", (local?.downloadedAtMs ?: 0L) / 1000L)
             .put("state", state)
             .put("selected", track.id == selected?.id)
+            .put("quizSelected", track.id == quizSelected?.id)
+            .put("roles", audioRolesJson(track.id, selected, quizSelected))
             .put(
                 "download",
                 progress?.toJson() ?: JSONObject()
@@ -961,6 +1270,37 @@ object PolicyVideoLibrary {
                     .put("error", JSONObject.NULL),
             )
     }
+
+    /**
+     * The cloud address of an official film, exposed only so the parent page can preview it
+     * before downloading. The TV's players never consume this; they resolve [PolicyVideoSource]
+     * from the local library instead.
+     */
+    private fun previewPlayUrl(item: LibraryItem): String? {
+        if (item.kind != PolicyMediaKind.VIDEO) return null
+        return item.catalog?.url ?: item.local?.item?.url
+    }
+
+    /** A complete local file the parent page may stream, with the type its bytes have. */
+    data class PlaybackFile(val file: File, val mime: String)
+
+    /**
+     * Resolves a parent-page media id to a published file on this TV. Download directories are
+     * only handed out by [OfficialMediaStore] once complete, and a local upload goes through the
+     * same info.json check, so a half-written file is never served.
+     */
+    fun playbackFile(context: Context, id: String): PlaybackFile? = when {
+        officialIdPattern.matches(id) -> OfficialMediaStore.read(context, id)?.let { local ->
+            PlaybackFile(local.file, mimeOf(local.item.kind))
+        }
+        localIdPattern.matches(id) -> QuizIntroVideo.find(context, id)?.let { entry ->
+            PlaybackFile(entry.file, mimeOf(entry.kind))
+        }
+        else -> null
+    }?.takeIf { it.file.isFile && it.file.length() > 0L }
+
+    private fun mimeOf(kind: PolicyMediaKind): String =
+        if (kind == PolicyMediaKind.IMAGE) "image/jpeg" else "video/mp4"
 
     /** The cached cover of a local upload or downloaded official film, for the poster route. */
     fun poster(context: Context, id: String): ByteArray? {

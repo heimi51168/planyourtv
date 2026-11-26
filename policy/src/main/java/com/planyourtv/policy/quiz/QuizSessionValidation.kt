@@ -167,6 +167,9 @@ object QuizSessionValidation {
             if (item.timeLimitSec !in QUIZ_MIN_TIME_LIMIT_SEC..QUIZ_MAX_TIME_LIMIT_SEC) errors += "$prefix.timeLimitSec: out of range"
             if (item.recommendedTimeSec !in QUIZ_MIN_TIME_LIMIT_SEC..QUIZ_MAX_TIME_LIMIT_SEC) errors += "$prefix.recommendedTimeSec: out of range"
             if (item.cacheId.length > 64) errors += "$prefix.cacheId: too long"
+            item.visual?.let { visual ->
+                QuizVisualCodec.issues(visual, "$prefix.visual").forEach { errors += it }
+            }
             if (item.sourceKind.length > 32) errors += "$prefix.sourceKind: too long"
             if (item.sourceRef.length > 128) errors += "$prefix.sourceRef: too long"
         }

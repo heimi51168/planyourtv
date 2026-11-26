@@ -103,6 +103,12 @@ data class PolicyUiState(
      */
     val sourceEntryVisible: Boolean = true,
     val quizEntryVisible: Boolean = true,
+    /**
+     * Device-level switch protection from the cloud policy (2026-11-25). Null outside CLOUD
+     * mode, or when the backend does not project it yet. LOCAL mode keeps the TV's own V57
+     * policy, so this field must not fake a cloud decision there.
+     */
+    val switchProtection: SwitchProtection? = null,
     /** The parent allows the quiz route. V44 routes are independent and never pause each other. */
     val quizGateEnabled: Boolean = true,
     /** The parent allows study mode/study-to-earn. Independent from the other two routes. */
@@ -110,8 +116,15 @@ data class PolicyUiState(
     /** Tapping an entertainment app starts immediately for [sessionLimitSeconds]. */
     val directStartEnabled: Boolean = false,
     /**
-     * The single V44 projection of the three child routes, counts, cap and leftover quota.
-     * TV widgets must render this instead of recomputing route availability.
+     * The LOCAL fruit account behind the V58 exchange route. The admin ledger uses the same
+     * account through the Web API; the TV only needs the balance and the rate to draw the wheel.
+     * Both stay at zero in hosted mode and when no account exists yet.
+     */
+    val fruitAvailableFruitHundredths: Long = 0L,
+    val fruitExchangeRateMinutesPerFruit: Int = 0,
+    /**
+     * The single V44 projection of the child routes, counts, cap and leftover quota. TV widgets
+     * must render this instead of recomputing route availability.
      */
     val unlockRoutePlan: UnlockRoutePlan? = null,
     /** Non-null while the focus desktop should show; the round is not an entertainment session. */

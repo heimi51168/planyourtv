@@ -495,6 +495,9 @@ details summary:focus-visible {
 .section-head > div:first-child { flex: 1; min-width: 0; }
 .section-head p { margin: 3px 0 0; font-size: 13px; }
 .section-head p:empty { display: none; }
+/* V41: the bank header is a row of actions only; keep it left-aligned when
+   there is no count block above it. */
+.bank-head-actions { justify-content: flex-start; }
 
 .section-label {
   margin: 16px 0 8px;
@@ -1501,6 +1504,7 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
   margin: 0 0 16px;
 }
 .level-add-row.single { grid-template-columns: 1fr; }
+.level-add-row.single .level-add-card { min-height: 58px; }
 .level-add-card.wrong {
   grid-column: 1 / -1;
   min-height: 64px;
@@ -1941,6 +1945,10 @@ body.subpage-open main { padding-top: max(10px, env(safe-area-inset-top)); }
 .sticky-bar.split > span { color: var(--muted); font-size: 12.5px; white-space: nowrap; }
 .sticky-bar.split > span b { color: var(--ink); font-weight: 620; }
 .sticky-bar.split .btn { flex: 0 0 168px; }
+/* The rules save button is part of the form, not a fixed bar, because the
+   answer page is now the home tab and shares its bottom edge with the nav. */
+.answer-save-inline { margin: 18px 0 4px; }
+.answer-save-inline .btn { width: 100%; min-height: 50px; }
 
 .gen-prompt-head { margin: 0 0 6px; }
 .gen-prompt-head label { margin: 0; color: var(--ink); font-size: 13.5px; font-weight: 620; }

@@ -30,6 +30,7 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -73,6 +74,7 @@ import app.orchard.tv.policy.PolicyAvatarStore
 import app.orchard.tv.policy.PolicyCloud
 import app.orchard.tv.policy.PolicyModeCoordinator
 import app.orchard.tv.policy.SubjectSwitcher
+import app.orchard.tv.policy.SwitchProtectionSettings
 import app.orchard.tv.ui.components.Pressable
 import app.orchard.tv.ui.components.consumeTaps
 import app.orchard.tv.ui.components.liquidGlass
@@ -86,8 +88,8 @@ import com.planyourtv.policy.FamilyMember
 import com.planyourtv.policy.MemberPin
 import com.planyourtv.policy.MemberSource
 import com.planyourtv.policy.PolicyRuntime
+import com.planyourtv.policy.SwitchProtection
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDateTime
@@ -327,11 +329,11 @@ internal fun SubjectProfileOverlay(
 private enum class SubjectSwitchPhase { LIST, PIN }
 
 /**
- * The child-facing member switch. When the device setting is on, picking a name asks for that
- * member's 6-digit password; when it is off the switch is direct. Either way [SubjectSwitcher]
- * refuses the move while a session, quiz or study round belongs to the current child, and it is
- * never offered on a cloud-bound TV (that build is single-member until the backend carries
- * per-member policy).
+ * The child-facing member switch. One device-wide policy decides whether picking a name asks for
+ * that member's 6-digit user password; an optional device-wide window waives the prompt for every
+ * member. Member credentials stay individual. Either way [SubjectSwitcher] refuses the move while
+ * a session, quiz or study round belongs to the current child, and it is never offered on a
+ * cloud-bound TV (that build is single-member until the backend carries per-member policy).
  *
  * The profile editor stays on the phone: this sheet only picks the child. The TV draws the same
  * avatars as the Web so a member looks identical on both terminals.
@@ -357,13 +359,21 @@ internal fun SubjectSwitchOverlay(
         else -> null
     }
     val firstSwitchTarget = members.indexOfFirst { it.userId != currentId }
-    // The waiver label must disappear when its window ends while the sheet stays open. A
-    // half-minute tick is enough for a minute-resolution rule and stays idle otherwise.
-    val now by produceState(LocalDateTime.now()) {
-        while (true) {
-            delay(30_000)
-            value = LocalDateTime.now()
-        }
+    val protectionMigrated = SwitchProtectionSettings.isMigrated()
+    val protection by SwitchProtectionSettings.state.collectAsState()
+    val protectionEnabled = if (protectionMigrated) {
+        protection.required
+    } else {
+        members.any { MemberSwitchAuth.protectionEnabled(it) }
+    }
+    val protectionHint = when {
+        !protectionEnabled -> stringResource(R.string.policy_subject_switch_global_off)
+        protectionMigrated && protection.hasExemption -> stringResource(
+            R.string.policy_subject_switch_global_exempt,
+            formatMinute(protection.exemptStartMinute),
+            formatMinute(protection.exemptEndMinute),
+        )
+        else -> stringResource(R.string.policy_subject_switch_global_on)
     }
 
     // The keypad leaves the composition while a code is checked, so a wrong code would come
@@ -381,23 +391,30 @@ internal fun SubjectSwitchOverlay(
      * [promptShown] is the decision made when the row was picked, not a fresh clock reading.
      * Re-evaluating at submit time would make a window ending during PIN entry reject an empty
      * code, and would let a window starting during a direct switch change the flow mid-tap.
-     * When no prompt was shown, only a concurrent change that turns protection on aborts.
+     * When no prompt was shown, a concurrent change that turns protection on or edits the global
+     * policy aborts; the clock alone does not.
      */
     fun submit(
         chosen: FamilyMember,
         candidate: String?,
         promptShown: Boolean,
         protectedAtPick: Boolean,
+        policyAtPick: SwitchProtection?,
     ) {
         busy = true
         error = null
         scope.launch {
-            val protectedNow = FamilyHub.member(chosen.userId)
-                ?.switchPinRequired
-                ?: chosen.switchPinRequired
-            // Protection turned on remotely between the tap and this switch: do not use an
-            // exemption decision made against the old, open member.
-            if (!promptShown && !protectedAtPick && protectedNow) {
+            val latest = FamilyHub.member(chosen.userId) ?: chosen
+            val protectedNow = MemberSwitchAuth.protectionEnabled(latest)
+            val policyNow = if (SwitchProtectionSettings.isMigrated()) {
+                SwitchProtectionSettings.current()
+            } else {
+                null
+            }
+            // Protection turned on, or the global switch/window was edited, between the tap and
+            // this switch: do not use an exemption decision made against the old policy.
+            val policyChanged = policyAtPick != null && policyNow != policyAtPick
+            if (!promptShown && (policyChanged || (!protectedAtPick && protectedNow))) {
                 busy = false
                 entered = ""
                 phase = SubjectSwitchPhase.LIST
@@ -449,7 +466,18 @@ internal fun SubjectSwitchOverlay(
         if (prompt) {
             phase = SubjectSwitchPhase.PIN
         } else {
-            submit(chosen, null, promptShown = false, protectedAtPick = latest.switchPinRequired)
+            val policyAtPick = if (SwitchProtectionSettings.isMigrated()) {
+                SwitchProtectionSettings.current()
+            } else {
+                null
+            }
+            submit(
+                chosen = chosen,
+                candidate = null,
+                promptShown = false,
+                protectedAtPick = MemberSwitchAuth.protectionEnabled(latest),
+                policyAtPick = policyAtPick,
+            )
         }
     }
 
@@ -463,7 +491,13 @@ internal fun SubjectSwitchOverlay(
         error = null
         if (entered.length == MemberPin.LENGTH) {
             target?.let {
-                submit(it, entered, promptShown = true, protectedAtPick = true)
+                submit(
+                    chosen = it,
+                    candidate = entered,
+                    promptShown = true,
+                    protectedAtPick = true,
+                    policyAtPick = null,
+                )
             }
         }
     }
@@ -535,6 +569,14 @@ internal fun SubjectSwitchOverlay(
                         stringResource(R.string.policy_subject_switch_title),
                         style = Type.LargeTitle.copy(fontSize = 22.sp),
                     )
+                    BasicText(
+                        protectionHint,
+                        style = Type.Caption.copy(
+                            fontSize = 13.sp,
+                            color = Palette.SecondaryLabel,
+                            textAlign = TextAlign.Center,
+                        ),
+                    )
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -546,7 +588,6 @@ internal fun SubjectSwitchOverlay(
                             MemberRow(
                                 member = member,
                                 current = member.userId == currentId,
-                                now = now,
                                 // Every row stays focusable, the active member included;
                                 // choosing the current member just closes the sheet.
                                 enabled = unavailable == null && !busy,
@@ -727,16 +768,25 @@ internal fun CloudSubjectProfileOverlay(
  * on who is using the TV. The backend re-projects that member's apps onto the next config poll;
  * [PolicyRuntime.requestSync] pulls it immediately on success.
  *
- * There is no local PIN here: the identity is a garden account, and a refused switch is shown
- * with the backend's human-readable reason instead of a generic error.
+ * V57 adds the device-level `switchProtection` policy (2026-11-25): when the garden switch is on
+ * and the current time is outside its waiver window, picking a member asks for that member's
+ * garden login password and the backend verifies it before `PUT /devices/current/active-member`.
+ * This mirrors the local sheet, but the credential belongs to the garden account instead of the
+ * TV's 6-digit PIN, so the password never leaves the request and is never stored. A null policy
+ * (older backend) keeps the historical direct switch; a refused switch is shown with the
+ * backend's human-readable reason instead of a generic error.
  */
 @Composable
 internal fun CloudSubjectSwitchOverlay(
     deviceNo: String,
     members: List<CloudMember>,
     activeMemberId: Long?,
+    protection: SwitchProtection?,
     onDismiss: () -> Unit,
 ) {
+    var phase by remember { mutableStateOf(SubjectSwitchPhase.LIST) }
+    var target by remember { mutableStateOf<CloudMember?>(null) }
+    var entered by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var busyId by remember { mutableStateOf<Long?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -745,21 +795,65 @@ internal fun CloudSubjectSwitchOverlay(
     val closeFocus = remember { FocusRequester() }
     val failureText = stringResource(R.string.policy_subject_switch_failed)
     val firstSwitchTarget = members.indexOfFirst { it.memberId != activeMemberId }
-
-    LaunchedEffect(busy, error) {
-        if (busy) return@LaunchedEffect
-        withFrameNanos { }
-        runCatching {
-            if (firstSwitchTarget >= 0) firstFocus.requestFocus() else closeFocus.requestFocus()
-        }
+    val exemptHint = protection?.takeIf { it.hasExemption }
+    val protectionHint = when {
+        protection?.required != true -> stringResource(R.string.policy_subject_switch_global_off)
+        exemptHint != null -> stringResource(
+            R.string.policy_subject_switch_global_exempt,
+            formatMinute(exemptHint.exemptStartMinute),
+            formatMinute(exemptHint.exemptEndMinute),
+        )
+        else -> stringResource(R.string.policy_subject_switch_global_on)
     }
 
-    fun switchTo(member: CloudMember) {
-        if (busy || member.memberId == activeMemberId) return
+    /**
+     * The prompt is decided when the row is tapped, exactly like the local V57 sheet: a window
+     * starting while the PIN is being typed must not change the flow, and the no-prompt path
+     * re-checks the policy before switching so a concurrent enable cannot slip through.
+     */
+    fun requiresPassword(policy: SwitchProtection?): Boolean {
+        if (policy?.required != true) return false
+        val now = LocalDateTime.now()
+        return !policy.isExemptAt(now.dayOfWeek.value, now.hour * 60 + now.minute)
+    }
+
+    fun submit(
+        member: CloudMember,
+        password: String?,
+        promptShown: Boolean,
+        policyAtPick: SwitchProtection?,
+    ) {
+        if (busy) return
         busy = true
         busyId = member.memberId
         error = null
         scope.launch {
+            if (promptShown) {
+                val checked = PolicyCloud.verifySwitchPassword(
+                    deviceNo,
+                    member.memberId,
+                    password.orEmpty(),
+                )
+                if (checked.isFailure) {
+                    busy = false
+                    busyId = null
+                    entered = ""
+                    // Never log the entered value: only the target and the failure are safe.
+                    Log.w(TAG, "switch password rejected: ${member.memberId}")
+                    error = checked.exceptionOrNull()
+                        ?.let { PolicyCloud.businessMessage(it) } ?: failureText
+                    return@launch
+                }
+            } else {
+                val policyNow = PolicyRuntime.remotePolicy.value?.switchProtection
+                if (policyNow != policyAtPick || requiresPassword(policyNow)) {
+                    busy = false
+                    busyId = null
+                    phase = SubjectSwitchPhase.LIST
+                    error = failureText
+                    return@launch
+                }
+            }
             val result = PolicyCloud.switchActiveMember(deviceNo, member.memberId)
             busy = false
             busyId = null
@@ -770,20 +864,102 @@ internal fun CloudSubjectSwitchOverlay(
                 },
                 onFailure = { failure ->
                     Log.w(TAG, "switch active member failed: ${member.memberId}", failure)
+                    if (promptShown) {
+                        entered = ""
+                        phase = SubjectSwitchPhase.LIST
+                    }
                     error = PolicyCloud.businessMessage(failure) ?: failureText
                 },
             )
         }
     }
 
+    fun start(member: CloudMember) {
+        val policyAtPick = PolicyRuntime.remotePolicy.value?.switchProtection
+        target = member
+        entered = ""
+        error = null
+        if (requiresPassword(policyAtPick)) {
+            phase = SubjectSwitchPhase.PIN
+        } else {
+            submit(member, null, promptShown = false, policyAtPick = policyAtPick)
+        }
+    }
+
+    fun type(digit: Char) {
+        if (busy || phase != SubjectSwitchPhase.PIN || entered.length >= MemberPin.LENGTH) {
+            return
+        }
+        entered += digit
+        error = null
+        if (entered.length == MemberPin.LENGTH) {
+            target?.let { submit(it, entered, promptShown = true, policyAtPick = null) }
+        }
+    }
+
+    fun erase() {
+        if (!busy && phase == SubjectSwitchPhase.PIN && entered.isNotEmpty()) {
+            entered = entered.dropLast(1)
+            error = null
+        }
+    }
+
+    fun backToList() {
+        if (busy) return
+        phase = SubjectSwitchPhase.LIST
+        entered = ""
+        error = null
+    }
+
+    // The keypad leaves the composition while a password is checked; ask for focus again when
+    // the sheet settles so the remote's number keys do not go nowhere (same as the local PIN).
+    LaunchedEffect(phase, busy, error) {
+        if (busy) return@LaunchedEffect
+        withFrameNanos { }
+        runCatching {
+            if (phase == SubjectSwitchPhase.LIST && firstSwitchTarget < 0) {
+                closeFocus.requestFocus()
+            } else {
+                firstFocus.requestFocus()
+            }
+        }
+    }
+
     // Inline, like the local sheet: a Dialog window takes too long to appear on TV hardware.
-    BackHandler { if (!busy) onDismiss() }
+    BackHandler {
+        if (!busy) {
+            if (phase == SubjectSwitchPhase.PIN) backToList() else onDismiss()
+        }
+    }
     Box(Modifier.fillMaxSize()) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Palette.OnFocus.copy(alpha = 0.72f))
-                .consumeTaps(),
+                .consumeTaps()
+                .onPreviewKeyEvent { event ->
+                    if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                    val native = event.nativeKeyEvent
+                    when {
+                        busy -> native.keyCode == NativeKeyEvent.KEYCODE_BACK
+                        phase == SubjectSwitchPhase.PIN &&
+                            native.keyCode == NativeKeyEvent.KEYCODE_BACK -> {
+                            backToList()
+                            true
+                        }
+                        phase == SubjectSwitchPhase.PIN &&
+                            native.keyCode in NativeKeyEvent.KEYCODE_0..NativeKeyEvent.KEYCODE_9 -> {
+                            type('0' + (native.keyCode - NativeKeyEvent.KEYCODE_0))
+                            true
+                        }
+                        phase == SubjectSwitchPhase.PIN &&
+                            native.keyCode == NativeKeyEvent.KEYCODE_DEL -> {
+                            erase()
+                            true
+                        }
+                        else -> false
+                    }
+                },
             contentAlignment = Alignment.Center,
         ) {
             Column(
@@ -794,64 +970,129 @@ internal fun CloudSubjectSwitchOverlay(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                BasicText(
-                    stringResource(R.string.policy_subject_switch_title),
-                    style = Type.LargeTitle.copy(fontSize = 22.sp),
-                )
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 250.dp)
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    members.forEachIndexed { index, member ->
-                        CloudMemberRow(
-                            member = member,
-                            current = member.memberId == activeMemberId,
-                            // Every row stays focusable, the active member included;
-                            // choosing the current member just closes the sheet.
-                            enabled = !busy,
-                            focusRequester = if (index == firstSwitchTarget) firstFocus else null,
-                            onClick = {
-                                if (member.memberId == activeMemberId) {
-                                    onDismiss()
-                                } else {
-                                    switchTo(member)
-                                }
-                            },
-                        )
-                    }
-                }
-                when {
-                    busy -> BasicText(
-                        stringResource(R.string.policy_subject_switching),
+                if (phase == SubjectSwitchPhase.LIST) {
+                    BasicText(
+                        stringResource(R.string.policy_subject_switch_title),
+                        style = Type.LargeTitle.copy(fontSize = 22.sp),
+                    )
+                    BasicText(
+                        protectionHint,
                         style = Type.Caption.copy(
                             fontSize = 13.sp,
                             color = Palette.SecondaryLabel,
                             textAlign = TextAlign.Center,
                         ),
                     )
-                    else -> Unit
-                }
-                error?.let { message ->
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 250.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        members.forEachIndexed { index, member ->
+                            CloudMemberRow(
+                                member = member,
+                                current = member.memberId == activeMemberId,
+                                // Every row stays focusable, the active member included;
+                                // choosing the current member just closes the sheet.
+                                enabled = !busy,
+                                focusRequester = if (index == firstSwitchTarget) firstFocus else null,
+                                onClick = {
+                                    if (member.memberId == activeMemberId) {
+                                        onDismiss()
+                                    } else {
+                                        start(member)
+                                    }
+                                },
+                            )
+                        }
+                    }
+                    when {
+                        busy -> BasicText(
+                            stringResource(R.string.policy_subject_switching),
+                            style = Type.Caption.copy(
+                                fontSize = 13.sp,
+                                color = Palette.SecondaryLabel,
+                                textAlign = TextAlign.Center,
+                            ),
+                        )
+                        else -> Unit
+                    }
+                    error?.let { message ->
+                        BasicText(
+                            message,
+                            style = Type.Caption.copy(
+                                fontSize = 13.sp,
+                                color = Palette.Red,
+                                textAlign = TextAlign.Center,
+                            ),
+                        )
+                    }
+                    LockButton(
+                        label = stringResource(R.string.policy_parent_close),
+                        onClick = onDismiss,
+                        width = 200.dp,
+                        focusRequester = if (firstSwitchTarget < 0) closeFocus else null,
+                        primary = firstSwitchTarget < 0,
+                        enabled = !busy,
+                    )
+                } else {
+                    target?.let {
+                        CloudMemberAvatar(
+                            name = it.name,
+                            avatarUrl = it.avatarUrl,
+                            modifier = Modifier.size(64.dp),
+                        )
+                    }
                     BasicText(
-                        message,
-                        style = Type.Caption.copy(
-                            fontSize = 13.sp,
-                            color = Palette.Red,
+                        target?.let {
+                            stringResource(
+                                R.string.policy_subject_switch_pin_title,
+                                it.name,
+                            )
+                        } ?: stringResource(R.string.policy_subject_switch_title),
+                        style = Type.LargeTitle.copy(
+                            fontSize = 20.sp,
                             textAlign = TextAlign.Center,
                         ),
                     )
+                    Row(horizontalArrangement = Arrangement.spacedBy(13.dp)) {
+                        repeat(MemberPin.LENGTH) { index ->
+                            Box(
+                                modifier = Modifier
+                                    .size(12.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (index < entered.length) {
+                                            Palette.Label
+                                        } else {
+                                            Color.Transparent
+                                        },
+                                    )
+                                    .border(1.5.dp, Palette.Label, CircleShape),
+                            )
+                        }
+                    }
+                    BasicText(
+                        error
+                            ?: if (busy) stringResource(R.string.policy_subject_switching) else " ",
+                        style = Type.Caption.copy(
+                            fontSize = 13.sp,
+                            color = if (busy) Palette.SecondaryLabel else Palette.Red,
+                            textAlign = TextAlign.Center,
+                        ),
+                    )
+                    if (!busy) {
+                        PinKeypad(
+                            onDigit = ::type,
+                            onErase = ::erase,
+                            firstKeyFocus = firstFocus,
+                            leftKeyLabel = stringResource(R.string.policy_back),
+                            onLeftKey = ::backToList,
+                        )
+                    }
                 }
-                LockButton(
-                    label = stringResource(R.string.policy_parent_close),
-                    onClick = onDismiss,
-                    width = 200.dp,
-                    focusRequester = if (firstSwitchTarget < 0) closeFocus else null,
-                    primary = firstSwitchTarget < 0,
-                    enabled = !busy,
-                )
             }
         }
     }
@@ -981,7 +1222,6 @@ private val CloudAvatarColors = listOf(
 private fun MemberRow(
     member: FamilyMember,
     current: Boolean,
-    now: LocalDateTime,
     enabled: Boolean,
     focusRequester: FocusRequester?,
     onClick: () -> Unit,
@@ -1030,28 +1270,9 @@ private fun MemberRow(
                 modifier = Modifier.weight(1f),
                 style = Type.Body.copy(fontSize = 16.sp, color = fg),
             )
-            if (!current && MemberSwitchAuth.isExemptNow(member, now)) {
-                ExemptBadge(member, focused = state.focused)
-            }
             if (current) CurrentMemberBadge(focused = state.focused)
         }
     }
-}
-
-/** The interval currently waiving this member's switch password, shown on its row. */
-@Composable
-private fun ExemptBadge(member: FamilyMember, focused: Boolean) {
-    BasicText(
-        stringResource(
-            R.string.policy_subject_switch_exempt,
-            formatMinute(member.switchPinExemptStartMinute),
-            formatMinute(member.switchPinExemptEndMinute),
-        ),
-        style = Type.Caption.copy(
-            fontSize = 12.sp,
-            color = if (focused) Palette.OnFocus.copy(alpha = 0.62f) else Palette.Green,
-        ),
-    )
 }
 
 /** Marks the member the TV is actually running; the row focus plate is a separate state. */

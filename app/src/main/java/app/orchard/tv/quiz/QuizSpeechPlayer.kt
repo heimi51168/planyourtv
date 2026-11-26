@@ -6,6 +6,7 @@ import android.media.AudioFocusRequest
 import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioTrack
+import android.media.MediaPlayer
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -14,25 +15,36 @@ import android.util.Log
 import app.orchard.tv.policy.PolicyVoicePlayer
 import app.orchard.tv.policy.QuizAudioGate
 import com.planyourtv.policy.quiz.QuizItem
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.coroutines.resume
 
 /**
- * Reads a quiz question or a wrong-answer result through DeepSeek TTS.
+ * Reads a quiz question or a wrong-answer result.
  *
- * The speech endpoint is asked for raw PCM and played through [AudioTrack]
- * instead of a WAV file through MediaPlayer: some TV firmware hands streamed
- * WAV files to a vendor player that reports an empty stream. Raw PCM has no
- * container for those players to misread.
+ * Local rounds keep the existing DeepSeek path: raw PCM through [AudioTrack]
+ * instead of a WAV file through MediaPlayer, because some TV firmware hands
+ * streamed WAV files to a vendor player that reports an empty stream.
+ *
+ * Cloud rounds download QB-generated MP3 clips into [QuizTtsCache] and play the
+ * local files. Playback therefore does not touch the network, and a clip cached
+ * on the first hearing replays offline. The first clip starts as soon as it is
+ * ready while the producer downloads the next part.
  *
  * Only one utterance is allowed at a time. A new question, an answer press, or
- * leaving the quiz bumps [generation], so an in-flight network request cannot
- * start speaking after the child has moved on. Failures are intentionally quiet:
+ * leaving the quiz bumps [generation], so an in-flight request cannot start
+ * speaking after the child has moved on. Failures are intentionally quiet:
  * voice is an aid, never a gate on answering.
  */
 object QuizSpeechPlayer {
@@ -44,8 +56,11 @@ object QuizSpeechPlayer {
     private val main = Handler(Looper.getMainLooper())
     private val generation = AtomicLong(0)
     private var track: AudioTrack? = null
+    private var mediaPlayer: MediaPlayer? = null
+    private var cloudJob: Job? = null
     private var appContext: Context? = null
     private var focusRequest: AudioFocusRequest? = null
+    private var focusHeld = false
 
     private val attributes: AudioAttributes
         get() = AudioAttributes.Builder()
@@ -59,6 +74,20 @@ object QuizSpeechPlayer {
             return
         }
         val settings = QuizSessionStore.loadSpeechSettings()
+        if (isCloudItem(item)) {
+            val attemptUid = cloudAttempt(item)
+            val parts = if (attemptUid == null) {
+                emptyList()
+            } else {
+                QuizCloudSpeechParts.question(item, settings)
+            }
+            if (attemptUid == null || parts.isEmpty()) {
+                stop()
+            } else {
+                startCloud(context.applicationContext, attemptUid, item.questionId, parts)
+            }
+            return
+        }
         val text = if (settings.active) QuizSpeechText.question(item, settings) else null
         if (text == null || !deepSeekConfigured()) {
             stop()
@@ -74,6 +103,20 @@ object QuizSpeechPlayer {
             return
         }
         val settings = QuizSessionStore.loadSpeechSettings()
+        if (isCloudItem(item)) {
+            val attemptUid = cloudAttempt(item)
+            val parts = if (attemptUid == null) {
+                emptyList()
+            } else {
+                QuizCloudSpeechParts.answer(item, settings)
+            }
+            if (attemptUid == null || parts.isEmpty()) {
+                stop()
+            } else {
+                startCloud(context.applicationContext, attemptUid, item.questionId, parts)
+            }
+            return
+        }
         val text = if (settings.active) QuizSpeechText.answer(item, settings) else null
         if (text == null || !deepSeekConfigured()) {
             stop()
@@ -86,6 +129,26 @@ object QuizSpeechPlayer {
     fun stop() {
         generation.incrementAndGet()
         if (Looper.myLooper() == main.looper) stopAudio() else main.post { stopAudio() }
+    }
+
+    /**
+     * `qb_` is assigned only to QB questions, so it also selects the cloud
+     * branch. A cloud item with no matching cloud session must stay silent:
+     * falling through to DeepSeek would upload QB question text to a third
+     * party.
+     */
+    private fun isCloudItem(item: QuizItem): Boolean =
+        item.questionId.startsWith(QbClient.QUESTION_ID_PREFIX)
+
+    /**
+     * The attempt UID for a cloud question, or null when the current session
+     * cannot prove which attempt it belongs to.
+     */
+    private fun cloudAttempt(item: QuizItem): String? {
+        if (!isCloudItem(item)) return null
+        val session = QuizSessionStore.loadSession() ?: return null
+        if (session.source != QbClient.CLOUD_SESSION_SOURCE) return null
+        return QuizCloudOutbox.attemptUidOf(session.id)
     }
 
     private fun deepSeekConfigured(): Boolean =
@@ -116,6 +179,67 @@ object QuizSpeechPlayer {
         }
     }
 
+    private fun startCloud(
+        context: Context,
+        attemptUid: String,
+        questionId: String,
+        parts: List<QuizTtsCache.Part>,
+    ) {
+        stopAudio()
+        val request = generation.incrementAndGet()
+        appContext = context
+        QuizTtsCache.install(context)
+        val protectedKeys = parts.map { QuizTtsCache.keyFor(it) }.toSet()
+        val job = scope.launch {
+            val channel = Channel<File>(capacity = 1)
+            val producer = launch(Dispatchers.IO) {
+                try {
+                    for (part in parts) {
+                        if (request != generation.get()) break
+                        val file = QuizTtsCache.ensure(
+                            attemptUid,
+                            questionId,
+                            part,
+                            protectedKeys,
+                        )
+                        if (request != generation.get()) break
+                        if (file == null) break
+                        channel.send(file)
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.w(TAG, "tts fetch failed: ${e.javaClass.simpleName}")
+                } finally {
+                    channel.close()
+                }
+            }
+            var hasFocus = false
+            try {
+                for (file in channel) {
+                    if (request != generation.get()) break
+                    if (!waitForCue(request)) break
+                    if (!hasFocus) {
+                        hasFocus = requestFocus(context)
+                    }
+                    playMp3(file, request)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "tts playback failed: ${e.javaClass.simpleName}")
+            } finally {
+                producer.cancel()
+                channel.cancel()
+                if (hasFocus && request == generation.get()) abandonFocus(context)
+            }
+        }
+        cloudJob = job
+        job.invokeOnCompletion {
+            main.post { if (cloudJob === job) cloudJob = null }
+        }
+    }
+
     /** Waits for a generated cue, but never past the cap; false means a newer request won. */
     private suspend fun waitForCue(request: Long): Boolean {
         val deadline = SystemClock.elapsedRealtime() + CUE_WAIT_MS
@@ -123,6 +247,56 @@ object QuizSpeechPlayer {
             delay(40)
         }
         return request == generation.get()
+    }
+
+    private suspend fun playMp3(file: File, request: Long) {
+        val player = MediaPlayer()
+        val released = AtomicBoolean(false)
+        fun release() {
+            if (!released.compareAndSet(false, true)) return
+            if (mediaPlayer === player) mediaPlayer = null
+            runCatching { player.stop() }
+            runCatching { player.reset() }
+            runCatching { player.release() }
+        }
+        mediaPlayer = player
+        try {
+            player.setAudioAttributes(attributes)
+            player.setDataSource(file.absolutePath)
+            suspendCancellableCoroutine<Unit> { continuation ->
+                player.setOnPreparedListener { prepared ->
+                    if (request != generation.get()) {
+                        continuation.cancel()
+                    } else {
+                        try {
+                            prepared.start()
+                        } catch (e: Exception) {
+                            Log.w(TAG, "mp3 start failed: ${e.javaClass.simpleName}")
+                            if (continuation.isActive) continuation.resume(Unit)
+                        }
+                    }
+                }
+                player.setOnCompletionListener {
+                    if (continuation.isActive) continuation.resume(Unit)
+                }
+                player.setOnErrorListener { _, what, extra ->
+                    Log.w(TAG, "mp3 error: $what/$extra")
+                    if (continuation.isActive) continuation.resume(Unit)
+                    true
+                }
+                continuation.invokeOnCancellation {
+                    // MediaPlayer calls must run on the main thread.
+                    main.post { release() }
+                }
+                player.prepareAsync()
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w(TAG, "mp3 play failed: ${e.javaClass.simpleName}")
+        } finally {
+            release()
+        }
     }
 
     private fun playPcm(context: Context, pcm: ByteArray, request: Long) {
@@ -223,6 +397,11 @@ object QuizSpeechPlayer {
     }
 
     private fun stopAudio() {
+        cloudJob?.cancel()
+        cloudJob = null
+        // The playback coroutine owns the final release. Stopping here makes
+        // cancellation immediate even before that coroutine resumes.
+        runCatching { mediaPlayer?.stop() }
         val audio = track
         track = null
         audio?.let {
@@ -234,29 +413,38 @@ object QuizSpeechPlayer {
         appContext?.let { abandonFocus(it) }
     }
 
-    private fun requestFocus(context: Context) {
+    private fun requestFocus(context: Context): Boolean {
         // The round gate already holds a stronger focus. A second request would replace it
         // (and abandoning it at the end of the utterance would leave the round unprotected).
-        if (QuizAudioGate.isActive()) return
-        val manager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return
+        if (QuizAudioGate.isActive() || focusHeld) return false
+        val manager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return false
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
                 .setAudioAttributes(attributes)
                 .setOnAudioFocusChangeListener { }
                 .build()
+            val granted = manager.requestAudioFocus(request) ==
+                AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+            if (!granted) return false
             focusRequest = request
-            manager.requestAudioFocus(request)
+            focusHeld = true
         } else {
             @Suppress("DEPRECATION")
-            manager.requestAudioFocus(
+            val granted = manager.requestAudioFocus(
                 null,
                 AudioManager.STREAM_MUSIC,
                 AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK,
-            )
+            ) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+            if (!granted) return false
+            focusHeld = true
         }
+        return true
     }
 
+    /** Only release focus this player actually obtained; the round gate owns its own. */
     private fun abandonFocus(context: Context) {
+        if (!focusHeld) return
+        focusHeld = false
         val manager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             focusRequest?.let { manager.abandonAudioFocusRequest(it) }

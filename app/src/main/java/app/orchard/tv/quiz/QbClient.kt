@@ -16,6 +16,7 @@ import org.json.JSONException
 import org.json.JSONObject
 import java.io.IOException
 import java.net.HttpURLConnection
+import java.net.URLEncoder
 import java.net.URI
 import java.net.URL
 import java.util.Locale
@@ -61,6 +62,10 @@ object QbClient {
     private val DIFFICULTIES = setOf("easy", "medium", "hard")
     private const val MAX_CLOUD_LEVELS = 20
     private const val MAX_CLOUD_LEVEL_QUESTIONS = 20
+    private const val MAX_IMAGE_URL_CHARS = 2048
+    private const val MAX_TTS_URL_CHARS = 2048
+    private const val TTS_TIMEOUT_MS = 20_000
+    private val TTS_PART = Regex("(?:stem|answer|explanation|option[0-5])")
 
     /** QB/主后端的业务拒绝：HTTP 200 + 非 200 code，message 是可直接展示的人话。 */
     class QbException(
@@ -85,11 +90,23 @@ object QbClient {
         val requested: Int,
         val available: Int,
         val insufficient: Boolean,
+        /**
+         * Internal question id -> public QB figure URL. The URL is transient:
+         * [CloudQuizPreparer] downloads and verifies it, and only the local
+         * content-addressed reference is written to the cache.
+         */
+        val imageUrls: Map<String, String> = emptyMap(),
     )
 
     data class DeviceLearnerSelection(
         val selectedLearnerId: Long?,
         val learners: List<CloudLearner>,
+    )
+
+    /** A ready-to-download MP3 for one question part. */
+    data class CloudTtsClip(
+        val url: String,
+        val generated: Boolean,
     )
 
     @Volatile private var sessionToken: String? = null
@@ -121,10 +138,13 @@ object QbClient {
         val array = result.optJSONArray("items")
             ?: throw IOException("QB next response missing items")
         if (array.length() == 0) throw IOException("QB next returned no questions")
+        val imageUrls = linkedMapOf<String, String>()
         val items = (0 until array.length()).map { index ->
             val raw = array.optJSONObject(index)
                 ?: throw IOException("QB next item is not an object")
-            parseItem(raw)
+            val item = parseItem(raw)
+            parseImageUrl(raw)?.let { imageUrls[item.questionId] = it }
+            item
         }
         if (items.map { it.questionId }.toSet().size != items.size) {
             throw IOException("QB next returned duplicate question ids")
@@ -136,7 +156,56 @@ object QbClient {
             requested = result.optInt("requested", count),
             available = result.optInt("available", items.size),
             insufficient = result.optBoolean("insufficient", false),
+            imageUrls = imageUrls,
         )
+    }
+
+    /**
+     * 取本轮某道题的一段读题语音。QB 按文本缓存 TTS，重复调用只返回同一个
+     * OSS URL；电视只在本地缓存未命中时调用，下载后离线播放。
+     *
+     * 只允许 stem / option0..5 / answer / explanation，文本由 QB 从本轮题集
+     * 快照中取，电视不能传任意文本。
+     */
+    fun fetchTts(attemptUid: String, questionId: String, part: String): CloudTtsClip {
+        if (!ATTEMPT_UID.matches(attemptUid)) {
+            throw QbContractException("QB attemptUid is invalid")
+        }
+        if (!TTS_PART.matches(part)) throw QbContractException("QB TTS part is invalid")
+        val qid = qbQuestionId(questionId)
+        val query = "/api/v1/quiz/attempts/" + attemptUid + "/tts?questionId=" +
+            URLEncoder.encode(qid, Charsets.UTF_8.name()) + "&part=" +
+            URLEncoder.encode(part, Charsets.UTF_8.name())
+        val json = authorized("GET", query, null, TTS_TIMEOUT_MS)
+        val result = json.optJSONObject("result")
+            ?: throw QbContractException("QB TTS response missing result")
+        return parseTtsResult(result, part)
+    }
+
+    internal fun parseTtsResult(result: JSONObject, expectedPart: String): CloudTtsClip {
+        val part = result.optString("part", "").trim()
+        if (part != expectedPart) {
+            throw QbContractException("QB TTS part does not match the request")
+        }
+        val raw = result.opt("url")
+        if (raw !is String) throw QbContractException("QB TTS url is invalid")
+        val url = raw.trim()
+        if (url.isEmpty() || url.length > MAX_TTS_URL_CHARS) {
+            throw QbContractException("QB TTS url is invalid")
+        }
+        val uri = try {
+            URI(url)
+        } catch (_: Exception) {
+            throw QbContractException("QB TTS url is invalid")
+        }
+        if (!uri.scheme.equals("https", ignoreCase = true) ||
+            uri.host.isNullOrBlank() ||
+            uri.userInfo != null ||
+            !uri.path.orEmpty().lowercase(Locale.ROOT).endsWith(".mp3")
+        ) {
+            throw QbContractException("QB TTS url is not a safe MP3 URL")
+        }
+        return CloudTtsClip(url, result.optBoolean("generated", false))
     }
 
     /** 家庭孩子列表；`selected` 是 QB 的 qb_device_learner 当前选择。 */
@@ -435,6 +504,34 @@ object QbClient {
             timeLimitSec = timeLimit,
             recommendedTimeSec = timeLimit,
         )
+    }
+
+    /**
+     * QB publishes an already-rendered figure for geometry questions. Any
+     * present-but-broken value is a contract failure: silently dropping the
+     * figure would show a "如图" question without its picture.
+     */
+    internal fun parseImageUrl(raw: JSONObject): String? {
+        if (!raw.has("imageUrl") || raw.isNull("imageUrl")) return null
+        val value = raw.opt("imageUrl")
+        if (value !is String) throw QbContractException("QB question imageUrl is invalid")
+        val url = value.trim()
+        if (url.isEmpty() || url.length > MAX_IMAGE_URL_CHARS) {
+            throw QbContractException("QB question imageUrl is invalid")
+        }
+        val uri = try {
+            URI(url)
+        } catch (_: Exception) {
+            throw QbContractException("QB question imageUrl is invalid")
+        }
+        if (!uri.scheme.equals("https", ignoreCase = true) ||
+            uri.host.isNullOrBlank() ||
+            uri.userInfo != null ||
+            !uri.path.orEmpty().lowercase(Locale.ROOT).endsWith(".png")
+        ) {
+            throw QbContractException("QB question imageUrl is not a safe PNG URL")
+        }
+        return url
     }
 
     private fun authorized(

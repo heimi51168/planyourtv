@@ -14,6 +14,8 @@ import com.planyourtv.policy.quiz.QuizSession
 import com.planyourtv.policy.quiz.QuizSessionCodec
 import com.planyourtv.policy.quiz.QuizSessionStatus
 import com.planyourtv.policy.quiz.QuizTypeFilter
+import com.planyourtv.policy.quiz.QuizVisual
+import com.planyourtv.policy.quiz.QuizRichVisual
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -49,6 +51,15 @@ class QuizQuestionCacheTest {
     private fun bulkItem(index: Int) = item(index).copy(
         questionId = "q_bulk_%04d".format(index),
         prompt = "Bulk question $index",
+    )
+
+    private fun visual(seed: Char) = QuizVisual(
+        rich = QuizRichVisual(
+            assetId = "qb/figure",
+            sha256 = "sha256:" + seed.toString().repeat(64),
+            width = 960,
+            height = 640,
+        ),
     )
 
     private fun scopedItem(index: Int, grade: Int = 4) = item(index).copy(
@@ -122,6 +133,38 @@ class QuizQuestionCacheTest {
     fun replacePublishesEveryItemAsAvailable() {
         assertTrue(QuizQuestionCache.replaceLocalSession(session("sess_a", 3), now))
         assertEquals(3, QuizQuestionCache.availableCount(nowMs = now))
+    }
+
+    @Test
+    fun visualReferenceRoundTripsThroughTheCloudCache() {
+        val item = item(7).copy(visual = visual('a'))
+        val scope = "cloud:visual-test"
+        assertTrue(
+            QuizQuestionCache.replaceCloudSet(
+                attemptUid = "attempt_visual_1",
+                items = listOf(item),
+                expiresAt = now + 60_000L,
+                scopeKey = scope,
+                nowMs = now,
+            ),
+        )
+        val reserved = QuizQuestionCache.reserve(1, "sess_visual", scope, now)
+        assertEquals(1, reserved.size)
+        assertEquals(item.visual, reserved.single().question.visual)
+    }
+
+    @Test
+    fun visualReferenceParticipatesInTheDuplicateFingerprint() {
+        val first = item(8).copy(visual = visual('a'))
+        val second = item(8).copy(visual = visual('b'))
+        assertEquals(1, QuizQuestionCache.appendLocalQuestions("batch_visual_a", listOf(first), now).appended)
+        assertEquals(1, QuizQuestionCache.appendLocalQuestions("batch_visual_b", listOf(second), now).appended)
+        // Same text and answer as `second`; only a new import batch must not
+        // make it fresh again.
+        assertEquals(
+            1,
+            QuizQuestionCache.appendLocalQuestions("batch_visual_c", listOf(second), now).duplicates,
+        )
     }
 
     @Test
@@ -682,6 +725,44 @@ class QuizQuestionCacheTest {
         )
         assertEquals(2, course.size)
         assertTrue(course.all { it.collectionId == null })
+    }
+
+    @Test
+    fun importDuringAReservedRoundOnlyFeedsTheNextRound() {
+        QuizQuestionCache.appendLocalQuestions("batch_active_round", (1..2).map(::item), now)
+        val active = QuizQuestionCache.reserveForRound(
+            count = 2,
+            sessionId = "sess_active_round",
+            scopeKey = QuizQuestionCache.LOCAL_SCOPE,
+            minRequired = 2,
+            nowMs = now,
+        )
+        assertEquals(2, active.size)
+
+        // The parent web page allows a manual import while the TV is answering;
+        // an import only appends, so the reserved rows stay with their round.
+        val imported = QuizQuestionCache.importLocalQuestions(
+            "col-active-round",
+            "import-active-round",
+            listOf(item(3)),
+            now + 1,
+        )
+        assertEquals(1, imported.appended)
+
+        val counts = QuizQuestionCache.bankCounts(QuizQuestionCache.LOCAL_SCOPE, now + 2)
+        assertEquals(3, counts.total)
+        assertEquals(2, counts.inRound)
+        assertEquals(1, counts.unused)
+
+        val next = QuizQuestionCache.reserveForRound(
+            count = 2,
+            sessionId = "sess_next_round",
+            scopeKey = QuizQuestionCache.LOCAL_SCOPE,
+            minRequired = 1,
+            nowMs = now + 3,
+        )
+        assertEquals(1, next.size)
+        assertEquals(item(3).questionId, next.single().question.questionId)
     }
 
     @Test

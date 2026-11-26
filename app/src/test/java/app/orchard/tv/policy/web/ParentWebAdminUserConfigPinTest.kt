@@ -4,6 +4,8 @@ import android.app.Application
 import android.os.PowerManager
 import app.orchard.tv.policy.LocalPolicyRuntime
 import app.orchard.tv.policy.PolicyModeCoordinator
+import app.orchard.tv.policy.SourceEntrySettings
+import app.orchard.tv.policy.SystemEntrySettings
 import app.orchard.tv.policy.UserConfigPinSettings
 import app.orchard.tv.quiz.QuizAccess
 import com.planyourtv.policy.LocalRules
@@ -28,9 +30,11 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 
 /**
- * V47 HTTP contract: the user-configuration switch changes only the rules route and the
- * single timer. Turning it off needs a single-use USER_CONFIG proof; turning it back on and
- * every system-configuration route keep their old behavior.
+ * V47 HTTP contract, unified in V59: the user-configuration switch covers the time rules, the
+ * one-time timer, the source/quiz display toggles and the V58 fruit ledger. With it on, those
+ * routes need one shared USER_EDIT proof per visit; with it off they need none. Turning the
+ * protection off needs a single-use USER_CONFIG proof; every system-configuration route keeps
+ * its own fixed scope either way.
  */
 @RunWith(RobolectricTestRunner::class)
 class ParentWebAdminUserConfigPinTest {
@@ -74,6 +78,10 @@ class ParentWebAdminUserConfigPinTest {
         QuizAccess.onPinReset()
         UserConfigPinSettings.debugResetForTest()
         UserConfigPinSettings.install(app)
+        SourceEntrySettings.install(app)
+        SystemEntrySettings.install(app)
+        SystemEntrySettings.debugResetForTest()
+        SystemEntrySettings.install(app)
         // Route-contract cases below assume protection is on; default-off is covered by
         // UserConfigPinSettingsTest.
         assertTrue(UserConfigPinSettings.setRequired(true))
@@ -104,6 +112,7 @@ class ParentWebAdminUserConfigPinTest {
         ParentWebAccess.invalidate("test_teardown")
         QuizAccess.invalidateWebSession("test_teardown")
         UserConfigPinSettings.debugResetForTest()
+        SystemEntrySettings.debugResetForTest()
         PolicyModeCoordinator.debugForceMode(PolicyMode.NONE)
         LocalPolicyRuntime.debugResetForTest()
         ParentSensitiveAuth.resetForTest()
@@ -189,10 +198,72 @@ class ParentWebAdminUserConfigPinTest {
     }
 
     @Test
-    fun systemEntryRoutesKeepTheirProofWhileUserConfigIsPinless() {
+    fun displayTogglesFollowTheSameUserConfigSwitch() {
         assertTrue(UserConfigPinSettings.setRequired(false))
-        val entries = post("/api/parent/source-entries", """{"enabled":true}""")
-        assertEquals(403, entries.status)
-        assertEquals("SENSITIVE_REQUIRED", entries.json.getString("error"))
+        val pinless = post("/api/parent/source-entries", """{"enabled":true}""")
+        assertEquals(200, pinless.status)
+        assertEquals("SOURCE_SAVED", pinless.json.getString("messageKey"))
+
+        assertTrue(UserConfigPinSettings.setRequired(true))
+        val locked = post("/api/parent/quiz-entry", """{"visible":true}""")
+        assertEquals(403, locked.status)
+        assertEquals("SENSITIVE_REQUIRED", locked.json.getString("error"))
+
+        val token = ParentSensitiveAuth.verify(
+            scopeValue = "USER_EDIT",
+            pin = pin,
+            editorToken = editorToken,
+        )
+        assertTrue(token is ParentSensitiveAuth.VerifyResult.Ok)
+        val allowed = post(
+            "/api/parent/quiz-entry",
+            """{"visible":true}""",
+            sensitiveToken = (token as ParentSensitiveAuth.VerifyResult.Ok).token,
+        )
+        assertEquals(200, allowed.status)
+        assertEquals("QUIZ_ENTRY_SAVED", allowed.json.getString("messageKey"))
+    }
+
+    @Test
+    fun systemEntrySwitchIsUserConfigAndDefaultsOff() {
+        // The snapshot exposes the LOCAL-only release switch as off and editable in LOCAL mode.
+        assertFalse(SystemEntrySettings.isVisible())
+        // Exercise the off path first; setUp leaves the V59 user-config PIN on for the other
+        // route-contract cases.
+        assertTrue(UserConfigPinSettings.setRequired(false))
+        val enabled = post("/api/parent/system-entries", """{"visible":true}""")
+        assertEquals(200, enabled.status)
+        assertEquals("SYSTEM_ENTRY_SAVED", enabled.json.getString("messageKey"))
+        assertTrue(SystemEntrySettings.isVisible())
+        val snapshot = enabled.json.getJSONObject("snapshot")
+        assertTrue(snapshot.getBoolean("showUninstallEntry"))
+        assertTrue(
+            snapshot.getJSONObject("capabilities").getBoolean("canToggleSystemEntries"),
+        )
+
+        val hidden = post("/api/parent/system-entries", """{"visible":false}""")
+        assertEquals(200, hidden.status)
+        assertFalse(SystemEntrySettings.isVisible())
+        assertFalse(hidden.json.getJSONObject("snapshot").getBoolean("showUninstallEntry"))
+
+        // The V47 switch still gates the release route once it is turned back on.
+        assertTrue(UserConfigPinSettings.setRequired(true))
+        val locked = post("/api/parent/system-entries", """{"visible":true}""")
+        assertEquals(403, locked.status)
+        assertEquals("SENSITIVE_REQUIRED", locked.json.getString("error"))
+
+        val token = ParentSensitiveAuth.verify(
+            scopeValue = "USER_EDIT",
+            pin = pin,
+            editorToken = editorToken,
+        )
+        assertTrue(token is ParentSensitiveAuth.VerifyResult.Ok)
+        val allowed = post(
+            "/api/parent/system-entries",
+            """{"visible":true}""",
+            sensitiveToken = (token as ParentSensitiveAuth.VerifyResult.Ok).token,
+        )
+        assertEquals(200, allowed.status)
+        assertTrue(SystemEntrySettings.isVisible())
     }
 }

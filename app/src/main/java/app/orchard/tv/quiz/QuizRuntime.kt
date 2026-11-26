@@ -379,6 +379,19 @@ object QuizRuntime {
     }
 
     /**
+     * Cached counterpart for the MQTT hot path. [isRoundActive] re-reads the session store and
+     * the cloud plan; a start command must answer in milliseconds, so it only inspects the
+     * last published snapshot instead.
+     */
+    fun isRoundActiveCached(): Boolean {
+        val status = _state.value.session?.status ?: return false
+        return status in ACTIVE_ROUND_STATUSES
+    }
+
+    /** False until the first [refresh] has populated the snapshot; callers fail closed. */
+    fun isStateLoaded(): Boolean = _state.value.loaded
+
+    /**
      * 云端「入口展示 → 答题闯关」（2026-11-21）。null（旧后端未投影该字段）保持历史行为：
      * 是否显示由云文档 enabled 决定；只有显式 false 才隐藏入口。
      */

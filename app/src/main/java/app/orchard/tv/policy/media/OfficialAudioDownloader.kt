@@ -49,14 +49,14 @@ object OfficialAudioDownloader {
         val totalBytes: Long,
         val error: String?,
     ) {
+        fun percent(): Int =
+            if (totalBytes > 0) ((bytes * 100) / totalBytes).toInt().coerceIn(0, 100) else 0
+
         fun toJson(): JSONObject = JSONObject()
             .put("state", state)
             .put("bytes", bytes)
             .put("totalBytes", totalBytes)
-            .put(
-                "percent",
-                if (totalBytes > 0) ((bytes * 100) / totalBytes).toInt().coerceIn(0, 100) else 0,
-            )
+            .put("percent", percent())
             .put("error", error ?: JSONObject.NULL)
     }
 
@@ -70,6 +70,12 @@ object OfficialAudioDownloader {
     }
 
     fun progress(id: String): Progress? = states[id]
+
+    /** True while a track is downloading or being verified; used to pace state reports. */
+    fun hasActiveDownloads(): Boolean =
+        activeId != null || states.values.any {
+            it.state == STATE_DOWNLOADING || it.state == STATE_VERIFYING
+        }
 
     /** Every in-memory download state, keyed by official id. */
     fun snapshot(): JSONObject = JSONObject().apply {

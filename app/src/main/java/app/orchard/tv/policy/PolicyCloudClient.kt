@@ -47,6 +47,8 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.IOException
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
@@ -93,6 +95,50 @@ data class QuizSettlement(
     val earnedMinutes: Int,
     val alreadyGranted: Boolean,
     val earnedSeconds: Int,
+)
+
+/**
+ * The orchard's device-side fruit context. Every field is server-owned: the TV must not invent
+ * a rate, a ceiling or a daily count of its own. [maxFruitHundredths] is the backend's verdict
+ * for this exchange, so the wheel upper bound is `maxFruitHundredths / 100` whole fruits.
+ * [canUnlock] folds config switches, check-in, threshold, quota, window and rest, so a false
+ * value hides the route instead of offering an exchange the backend would reject.
+ */
+data class HostedFruitContext(
+    val learnerId: Long,
+    val memberEnabled: Boolean,
+    val deviceEnabled: Boolean,
+    val exchangeRate: Int,
+    val availableFruitHundredths: Long,
+    val maxFruitHundredths: Long,
+    val maxMinutes: Int,
+    val dailyRemaining: Int,
+    val blockers: List<String>,
+    val canUnlock: Boolean,
+) {
+    val maxWholeFruits: Int
+        get() = (maxFruitHundredths / 100L).coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
+
+    val routeEnabled: Boolean
+        get() = memberEnabled && deviceEnabled && canUnlock &&
+            exchangeRate in FruitFactsRange.MIN_RATE..FruitFactsRange.MAX_RATE &&
+            // The TV only spends whole fruits. A positive but sub-fruit ceiling (rate > 1 and
+            // less than one fruit available) is a valid parent-side exchange on the phone, but
+            // it would render a wheel with no selectable value here.
+            maxFruitHundredths >= 100L
+}
+
+/** The small amount of planner vocabulary the adapter needs without importing execution state. */
+internal object FruitFactsRange {
+    const val MIN_RATE = 1
+    const val MAX_RATE = 60
+    const val MAX_HUNDREDTHS = 1_000_000L
+}
+
+/** What the TV shows after a device-initiated fruit unlock. [message] is the server's text. */
+data class HostedFruitOutcome(
+    val minutes: Int,
+    val message: String?,
 )
 
 /**
@@ -485,6 +531,16 @@ object PolicyCloud : PolicySyncHost {
         policyEpoch: Long? = null,
         quizCapabilities: JSONObject? = null,
         appliedQuizVersion: Long? = null,
+        /** V52: this build downloads the wallpaper library before the page allows a save. */
+        supportsWallpaperPreload: Boolean? = null,
+        /** V53: this build executes a mixed playlist, image hold and built-in quiz intro. */
+        supportsWallpaperPlaylist: Boolean? = null,
+        /** V54: this build executes cloud background music from the hosted manifest. */
+        supportsWallpaperBgm: Boolean? = null,
+        /** V56: this build reports media-center state and accepts its download commands. */
+        supportsWallpaperMediaCenter: Boolean? = null,
+        /** V57: this build verifies switch passwords and honors the remote exemption window. */
+        supportsSwitchProtection: Boolean? = null,
     ): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             val body = JSONObject()
@@ -511,10 +567,89 @@ object PolicyCloud : PolicySyncHost {
             if (quizCapabilities != null) {
                 body.put("capabilities", quizCapabilities)
             }
+            if (supportsWallpaperPreload != null) {
+                body.put("supportsWallpaperPreload", supportsWallpaperPreload)
+            }
+            if (supportsWallpaperPlaylist != null) {
+                body.put("supportsWallpaperPlaylist", supportsWallpaperPlaylist)
+            }
+            if (supportsWallpaperBgm != null) {
+                body.put("supportsWallpaperBgm", supportsWallpaperBgm)
+            }
+            if (supportsWallpaperMediaCenter != null) {
+                body.put("supportsWallpaperMediaCenter", supportsWallpaperMediaCenter)
+            }
+            if (supportsSwitchProtection != null) {
+                body.put("supportsSwitchProtection", supportsSwitchProtection)
+            }
             request("POST", "/devices/report/policy-mode", authToken(), body)
             Unit
         }
     }
+
+    /**
+     * V52 assets-first progress report. Full item snapshot per call; the backend merges only
+     * keys it is waiting for and ignores stale requestIds. Transient failures are retried with
+     * 1s/2s/4s backoff so a flaky Wi-Fi does not leave the page polling a preparing state.
+     */
+    suspend fun reportWallpaperPreload(
+        requestId: String,
+        memberId: Long,
+        libraryVersion: String,
+        items: JSONArray,
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        val body = JSONObject()
+            .put("requestId", requestId)
+            .put("memberId", memberId)
+            .put("libraryVersion", libraryVersion)
+            .put("items", items)
+        val retryDelaysMs = longArrayOf(1_000L, 2_000L, 4_000L)
+        var lastError: Throwable? = null
+        for (attempt in 0..retryDelaysMs.size) {
+            val result = runCatching {
+                request("POST", "/devices/current/wallpaper-preload/report", authToken(), body)
+            }
+            if (result.isSuccess) return@withContext Result.success(Unit)
+            lastError = result.exceptionOrNull()
+            if (attempt < retryDelaysMs.size) delay(retryDelaysMs[attempt])
+        }
+        Result.failure(lastError ?: IOException("wallpaper preload report failed"))
+    }
+
+    /**
+     * V56 full media-center snapshot. Only a schema-5 backend sends this endpoint; the body is
+     * built by [app.orchard.tv.policy.media.CloudMediaStateReporter] and carries no URLs.
+     * A failure is retried by the next reporter tick, never hidden.
+     */
+    suspend fun reportWallpaperMediaState(snapshot: JSONObject): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                request(
+                    "POST",
+                    "/devices/current/wallpaper-media/report",
+                    authToken(),
+                    snapshot,
+                )
+                Unit
+            }
+        }
+
+    /**
+     * V56 device-level custom upload library. A missing `result` is a hard failure so the caller
+     * keeps its cache instead of treating a malformed response as an empty library.
+     */
+    suspend fun fetchWallpaperCustomLibrary(): Result<JSONObject> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val json = request(
+                    "GET",
+                    "/devices/current/wallpaper-media/custom-library",
+                    authToken(),
+                )
+                json.optJSONObject("result")
+                    ?: throw IOException("wallpaper custom library result missing")
+            }
+        }
 
     /**
      * Legacy local-rules upload. 2026-11-19 binding no longer calls this: the cloud config and
@@ -601,6 +736,133 @@ object PolicyCloud : PolicySyncHost {
             val json = request("GET", "/devices/current/config", authToken())
             json.optJSONObject("result") ?: JSONObject()
         }
+    }
+
+    /**
+     * V50 hosted child media. The URL-bearing payload is returned to the hosted media sync and
+     * is never persisted; a missing `result` is a hard failure so the caller keeps its old cache
+     * instead of planning an empty wallpaper from a malformed response.
+     */
+    suspend fun fetchConfiguredApps(learnerId: Long): Result<JSONObject> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val json = request(
+                    "GET",
+                    "/devices/current/configured-apps?learnerId=$learnerId",
+                    authToken(),
+                )
+                json.optJSONObject("result")
+                    ?: throw IOException("configured-apps result missing")
+            }
+        }
+
+    /**
+     * V58 hosted fruit: the orchard's live device context for the active child. A missing
+     * `result` or a member mismatch is a hard failure so the caller keeps the previous cache
+     * instead of planning against a half-read account.
+     */
+    suspend fun fetchFruitUnlockContext(
+        deviceNo: String,
+        learnerId: Long,
+    ): Result<HostedFruitContext> = withContext(Dispatchers.IO) {
+        runCatching {
+            if (deviceNo.isBlank()) throw IOException("deviceNo is empty")
+            if (learnerId <= 0L) throw IOException("learnerId is empty")
+            val json = request(
+                "GET",
+                "/devices/$deviceNo/fruit-unlock/context?learnerId=$learnerId",
+                authToken(),
+            )
+            val result = json.optJSONObject("result")
+                ?: throw IOException("fruit context result missing")
+            parseFruitContext(result, learnerId)
+        }
+    }
+
+    /**
+     * V58 hosted fruit: submit one whole-fruit exchange for this TV.
+     *
+     * The backend debits the fruit, dispatches `start_session` over MQTT and waits for the TV
+     * ACK inside one transaction, so the read timeout must outlast its 12 s ACK wait. The
+     * [batchUid] is the idempotency key: retrying the same submission is safe, but the caller
+     * must issue a new one after the amount changes.
+     */
+    suspend fun executeFruitUnlock(
+        deviceNo: String,
+        learnerId: Long,
+        batchUid: String,
+        fruits: Int,
+    ): Result<HostedFruitOutcome> = withContext(Dispatchers.IO) {
+        runCatching {
+            if (deviceNo.isBlank()) throw IOException("deviceNo is empty")
+            if (learnerId <= 0L) throw IOException("learnerId is empty")
+            if (batchUid.isBlank()) throw IOException("batchUid is empty")
+            if (fruits <= 0) throw IOException("fruit amount is invalid")
+            val body = JSONObject()
+                .put("learnerId", learnerId)
+                .put("batchUid", batchUid)
+                .put("fruit", fruits)
+            val result = request(
+                "POST",
+                "/devices/$deviceNo/fruit-unlock",
+                authToken(),
+                body,
+                readTimeoutMs = SETTLE_TIMEOUT_MS,
+            ).optJSONObject("result")
+                ?: throw IOException("fruit unlock returned no result")
+            HostedFruitOutcome(
+                minutes = result.optInt("minutes", result.optInt("grantedMinutes", 0)),
+                message = result.optString("message", "").trim().ifEmpty { null },
+            )
+        }
+    }
+
+    private fun parseFruitContext(result: JSONObject, learnerId: Long): HostedFruitContext {
+        val returnedLearner = result.optLong("learnerId", 0L)
+        if (returnedLearner != learnerId) {
+            throw IOException("fruit context returned a different learner")
+        }
+        val rate = result.optInt("exchangeRate", 0)
+        if (rate !in FruitFactsRange.MIN_RATE..FruitFactsRange.MAX_RATE) {
+            throw IOException("fruit context returned an invalid exchange rate")
+        }
+        val available = decimalHundredths(result.opt("availableFruit"))
+            ?: throw IOException("fruit context missing availableFruit")
+        val maxFruit = decimalHundredths(result.opt("maxFruit"))
+            ?: throw IOException("fruit context missing maxFruit")
+        val dailyRemaining = result.optInt("dailyFruitRemaining", -2)
+        if (dailyRemaining < -1 || dailyRemaining > 10_000) {
+            throw IOException("fruit context returned an invalid daily count")
+        }
+        val blockers = ArrayList<String>()
+        val rawBlockers = result.optJSONArray("blockers")
+        if (rawBlockers != null) {
+            for (i in 0 until rawBlockers.length()) {
+                rawBlockers.optString(i, "").trim()
+                    .takeIf { it.isNotEmpty() }
+                    ?.let { blockers += it.take(120) }
+            }
+        }
+        return HostedFruitContext(
+            learnerId = learnerId,
+            memberEnabled = result.optBoolean("memberEnabled", false),
+            deviceEnabled = result.optBoolean("deviceEnabled", false),
+            exchangeRate = rate,
+            availableFruitHundredths = available.coerceIn(0L, FruitFactsRange.MAX_HUNDREDTHS),
+            maxFruitHundredths = maxFruit.coerceIn(0L, FruitFactsRange.MAX_HUNDREDTHS),
+            maxMinutes = result.optInt("maxMinutes", 0).coerceAtLeast(0),
+            dailyRemaining = dailyRemaining,
+            blockers = blockers,
+            canUnlock = result.optBoolean("canUnlock", false),
+        )
+    }
+
+    /** Orchard decimals are JSON numbers; truncate to hundredths like the Web balance. */
+    private fun decimalHundredths(raw: Any?): Long? {
+        if (raw == null || raw == JSONObject.NULL) return null
+        val decimal = runCatching { BigDecimal(raw.toString()) }.getOrNull() ?: return null
+        if (decimal.signum() < 0) return null
+        return (decimal.setScale(2, RoundingMode.DOWN).movePointRight(2)).toLong()
     }
 
     /**
@@ -906,6 +1168,38 @@ object PolicyCloud : PolicySyncHost {
                 Unit
             }
         }
+
+    /**
+     * Verifies the target garden member's login password before a protected cloud switch
+     * (2026-11-25). The backend owns the credential, rate limit and human-readable refusal;
+     * the TV never stores the password and never logs it. [deviceNo] is accepted for parity with
+     * the other calls — the credential in the header decides the device.
+     */
+    suspend fun verifySwitchPassword(
+        deviceNo: String,
+        memberId: Long,
+        password: String,
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            require(deviceNo.isNotBlank()) { "missing deviceNo" }
+            require(memberId > 0L) { "missing memberId" }
+            require(password.isNotEmpty()) { "missing password" }
+            val body = JSONObject()
+                .put("learnerId", memberId)
+                .put("password", password)
+            val json = request(
+                "POST",
+                "/devices/current/verify-switch-password",
+                authToken(),
+                body,
+            )
+            val result = json.optJSONObject("result")
+            if (result == null || !result.optBoolean("verified", false)) {
+                throw IOException("verify-switch-password result missing")
+            }
+            Unit
+        }
+    }
 
     override suspend fun reportUsage(
         deviceNo: String,

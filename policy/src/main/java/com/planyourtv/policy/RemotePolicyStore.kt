@@ -80,7 +80,49 @@ object RemotePolicyCodec {
                 "quizEntryVisible",
                 "remote.invalidQuizEntryVisible",
             ),
+            switchProtection = parseSwitchProtection(json),
         )
+    }
+
+    /**
+     * Reads the device-level switch protection node (2026-11-25).
+     *
+     * Absent / explicit null = a backend that does not project it; CLOUD mode keeps its
+     * historical direct switch. A present but malformed node fails closed (protection on, no
+     * waiver) instead of silently removing protection. `required=false` is the real off value
+     * and ignores the window.
+     */
+    private fun parseSwitchProtection(json: JSONObject): SwitchProtection? {
+        if (!json.has("switchProtection") || json.isNull("switchProtection")) return null
+        val node = json.optJSONObject("switchProtection")
+            ?: return failClosedSwitchProtection("not_object")
+        val required = node.opt("required")
+        if (required !is Boolean) return failClosedSwitchProtection("required_not_boolean")
+        if (!required) return SwitchProtection()
+        val daysArray = node.optJSONArray("exemptDays")
+            ?: return failClosedSwitchProtection("days_missing")
+        val days = ArrayList<Int>(daysArray.length())
+        for (index in 0 until daysArray.length()) {
+            val day = daysArray.opt(index) as? Int
+                ?: return failClosedSwitchProtection("day_not_integer")
+            if (day !in 1..7) return failClosedSwitchProtection("day_out_of_range")
+            days.add(day)
+        }
+        val start = node.opt("exemptStartMinute") as? Int
+            ?: return failClosedSwitchProtection("start_invalid")
+        val end = node.opt("exemptEndMinute") as? Int
+            ?: return failClosedSwitchProtection("end_invalid")
+        return SwitchProtection(
+            required = true,
+            exemptDays = days,
+            exemptStartMinute = start,
+            exemptEndMinute = end,
+        ).normalized() ?: failClosedSwitchProtection("window_invalid")
+    }
+
+    private fun failClosedSwitchProtection(reason: String): SwitchProtection {
+        PolicyFlowTrace.event("remote.invalidSwitchProtection", "reason" to reason)
+        return SwitchProtection(required = true)
     }
 
     /**
@@ -110,23 +152,23 @@ object RemotePolicyCodec {
 
     /**
      * Reads the backend `memberScopedFields` mask. [MemberScopedFields.present] is false when
-     * the key is absent everywhere, i.e. a backend that predates member projection; the caller
-     * must then keep every local field. A present key must be a clean string array: a malformed
-     * mask returns null and invalidates the snapshot instead of being read as "no field is
-     * member-scoped" (that would widen the child's scope).
+     * the key is absent or explicitly null, i.e. the snapshot was not projected for a member;
+     * the caller must then keep every local field. A non-null value must be a clean string
+     * array: a malformed mask returns null and invalidates the snapshot instead of being read
+     * as "no field is member-scoped" (that would widen the child's scope).
      */
     private fun parseMemberScopedFields(
         root: JSONObject,
         rules: JSONObject,
         manual: JSONObject?,
     ): MemberScopedFields? {
-        val source = when {
-            root.has("memberScopedFields") -> root
-            manual != null && manual.has("memberScopedFields") -> manual
-            rules.has("memberScopedFields") -> rules
-            else -> return MemberScopedFields(present = false, fields = emptySet())
-        }
-        if (source.isNull("memberScopedFields")) return null
+        // 2026-11-22: the backend writes an explicit JSON null when this snapshot was not
+        // projected for a member. Treat that as "no mask" (keep every local field) instead of
+        // invalidating the whole snapshot; a real mask in another location still wins.
+        val source = sequenceOf(root, manual, rules)
+            .filterNotNull()
+            .firstOrNull { it.has("memberScopedFields") && !it.isNull("memberScopedFields") }
+            ?: return MemberScopedFields(present = false, fields = emptySet())
         val array = source.optJSONArray("memberScopedFields") ?: return null
         val fields = LinkedHashSet<String>()
         for (index in 0 until array.length()) {
@@ -154,6 +196,15 @@ object RemotePolicyCodec {
         )
     }
 
+    /**
+     * Optional package lists: absent and explicit JSON null both mean the backend did not
+     * project this list; a present value still has to be a clean string array.
+     */
+    private fun parseOptionalPackages(json: JSONObject, key: String): Set<String>? {
+        if (!json.has(key) || json.isNull(key)) return emptySet()
+        return AllowedPackagesCodec.parse(json.optJSONArray(key))
+    }
+
     fun parseRules(json: JSONObject): LocalRules? {
         val weekday = json.optJSONArray("weekdayWindows").toWindowsOrNull() ?: return null
         val weekend = json.optJSONArray("weekendWindows").toWindowsOrNull() ?: return null
@@ -162,21 +213,12 @@ object RemotePolicyCodec {
         // as truncated data, not as permission to widen the scope to every app.
         val allowedPackages = AllowedPackagesCodec.parse(json.optJSONArray("allowedPackages"))
             ?: return null
-        val studyPackages = if (json.has("studyPackages")) {
-            AllowedPackagesCodec.parse(json.optJSONArray("studyPackages")) ?: return null
-        } else {
-            emptySet()
-        }
-        val unlimitedPackages = if (json.has("unlimitedPackages")) {
-            AllowedPackagesCodec.parse(json.optJSONArray("unlimitedPackages")) ?: return null
-        } else {
-            emptySet()
-        }
-        val studyEarnPackages = if (json.has("studyEarnPackages")) {
-            AllowedPackagesCodec.parse(json.optJSONArray("studyEarnPackages")) ?: return null
-        } else {
-            emptySet()
-        }
+        // 2026-11-22: the backend serializes an unprojected optional list as an explicit
+        // JSON null (Jackson includes nulls). That means "not projected", not truncated data:
+        // the member scope mask decides whether the local list survives, so accept it as empty.
+        val studyPackages = parseOptionalPackages(json, "studyPackages") ?: return null
+        val unlimitedPackages = parseOptionalPackages(json, "unlimitedPackages") ?: return null
+        val studyEarnPackages = parseOptionalPackages(json, "studyEarnPackages") ?: return null
         // 2026-11-21: the member projection sends an explicit `null` for "unlimited"
         // (果园 0 / 1440). A missing key is still truncated data and rejects the snapshot.
         val autoRead = json.cloudMinutes("autoDailyLimitMinutes")
@@ -204,7 +246,9 @@ object RemotePolicyCodec {
         val sessionCapRead = json.cloudMinutes("sessionCapMinutes", LocalRules.MAX_SESSION_CAP_MINUTES)
         if (!sessionCapRead.valid) return null
         val sessionCapMinutes = when (val value = sessionCapRead.value) {
-            null -> if (sessionCapRead.present) return null else defaults.sessionCapMinutes
+            // Explicit null = the snapshot did not project a cap (device-level policy);
+            // the member mask decides whether the local value is replaced.
+            null -> defaults.sessionCapMinutes
             else -> value.takeIf {
                 it in LocalRules.MIN_SESSION_CAP_MINUTES..LocalRules.MAX_SESSION_CAP_MINUTES
             } ?: return null
@@ -246,12 +290,20 @@ object RemotePolicyCodec {
                 "directDailyFreeCount",
                 defaults.directDailyFreeCount,
             ) ?: return null,
+            fruitExchangeDailyLimitCount = json.cloudCount(
+                "fruitExchangeDailyLimitCount",
+                defaults.fruitExchangeDailyLimitCount,
+            ) ?: return null,
             // The current backend DTO does not carry V43 route switches. An absent field keeps
             // the historical behaviour here; a locally stored set is preserved separately by
             // LocalRuleSets.preservingDeviceFieldsFrom.
             quizGateEnabled = json.optBoolean("quizGateEnabled", defaults.quizGateEnabled),
             studyEarnEnabled = json.optBoolean("studyEarnEnabled", defaults.studyEarnEnabled),
             directStartEnabled = json.optBoolean("directStartEnabled", defaults.directStartEnabled),
+            fruitExchangeEnabled = json.optBoolean(
+                "fruitExchangeEnabled",
+                defaults.fruitExchangeEnabled,
+            ),
             allowedPackages = allowedPackages,
             studyPackages = studyPackages,
             unlimitedPackages = unlimitedPackages,
@@ -293,6 +345,21 @@ object RemotePolicyCodec {
         // explicit value after the first restart.
         policy.sourceEntryVisible?.let { json.put("sourceEntryVisible", it) }
         policy.quizEntryVisible?.let { json.put("quizEntryVisible", it) }
+        // Same absent-means-unknown rule as the entry flags: writing null would turn "old
+        // backend does not project it" into an explicit off after the first restart.
+        policy.switchProtection?.let { protection ->
+            json.put(
+                "switchProtection",
+                JSONObject()
+                    .put("required", protection.required)
+                    .put(
+                        "exemptDays",
+                        JSONArray().also { array -> protection.exemptDays.forEach(array::put) },
+                    )
+                    .put("exemptStartMinute", protection.exemptStartMinute)
+                    .put("exemptEndMinute", protection.exemptEndMinute),
+            )
+        }
         return json
     }
 
@@ -306,6 +373,7 @@ object RemotePolicyCodec {
         put("quizDailyLimitCount", rules.quizDailyLimitCount)
         put("studyRewardDailyLimitCount", rules.studyRewardDailyLimitCount)
         put("directDailyFreeCount", rules.directDailyFreeCount)
+        put("fruitExchangeDailyLimitCount", rules.fruitExchangeDailyLimitCount)
         put("dayGroups", dayGroupsToJson(rules.dayGroups))
     }
 
@@ -314,6 +382,7 @@ object RemotePolicyCodec {
         put("quizDailyLimitCount", set.quizDailyLimitCount)
         put("studyRewardDailyLimitCount", set.studyRewardDailyLimitCount)
         put("directDailyFreeCount", set.directDailyFreeCount)
+        put("fruitExchangeDailyLimitCount", set.fruitExchangeDailyLimitCount)
         put("dayGroups", dayGroupsToJson(set.dayGroups))
     }
 
@@ -335,6 +404,7 @@ object RemotePolicyCodec {
         .put("quizGateEnabled", set.quizGateEnabled)
         .put("studyEarnEnabled", set.studyEarnEnabled)
         .put("directStartEnabled", set.directStartEnabled)
+        .put("fruitExchangeEnabled", set.fruitExchangeEnabled)
 
     private fun parseRuleSet(json: JSONObject?, fallbackBuffer: Int): LocalRuleSet? {
         if (json == null) return null
@@ -392,6 +462,10 @@ object RemotePolicyCodec {
             "directDailyFreeCount",
             LocalRules.DEFAULTS.directDailyFreeCount,
         ) ?: return null
+        val fruitCount = json.cloudCount(
+            "fruitExchangeDailyLimitCount",
+            LocalRules.DEFAULTS.fruitExchangeDailyLimitCount,
+        ) ?: return null
         val dayGroupsRead = parseOptionalDayGroups(json) ?: return null
         val dayGroups = dayGroupsRead.groups.takeIf { dayGroupsRead.present }
             ?: LocalRules.fromLegacyWeekdayWeekend(
@@ -420,9 +494,14 @@ object RemotePolicyCodec {
                 "directStartEnabled",
                 LocalRules.DEFAULTS.directStartEnabled,
             ),
+            fruitExchangeEnabled = json.optBoolean(
+                "fruitExchangeEnabled",
+                LocalRules.DEFAULTS.fruitExchangeEnabled,
+            ),
             quizDailyLimitCount = quizCount,
             studyRewardDailyLimitCount = studyRewardCount,
             directDailyFreeCount = directCount,
+            fruitExchangeDailyLimitCount = fruitCount,
         )
     }
 
@@ -442,6 +521,7 @@ object RemotePolicyCodec {
         .put("quizGateEnabled", rules.quizGateEnabled)
         .put("studyEarnEnabled", rules.studyEarnEnabled)
         .put("directStartEnabled", rules.directStartEnabled)
+        .put("fruitExchangeEnabled", rules.fruitExchangeEnabled)
         .put(
             "weekendSessionScreenOffBufferMinutes",
             rules.weekendSessionScreenOffBufferMinutes,

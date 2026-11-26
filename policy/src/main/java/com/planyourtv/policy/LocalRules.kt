@@ -102,6 +102,14 @@ data class LocalRules(
     val studyRewardDailyLimitCount: Int = DEFAULT_ROUTE_DAILY_COUNT,
     /** Successful direct-start sessions today: -1 unlimited, 0 never, positive count = cap. */
     val directDailyFreeCount: Int = DEFAULT_ROUTE_DAILY_COUNT,
+    /**
+     * V58 master switch for the fruit-exchange route. The balance, rate and ledger live in the
+     * member's fruit account, never in the device rules. Off by default so an upgrade cannot
+     * surface an empty dead entry.
+     */
+    val fruitExchangeEnabled: Boolean = false,
+    /** Successful fruit exchanges today: -1 unlimited, 0 never, positive count = cap. */
+    val fruitExchangeDailyLimitCount: Int = DEFAULT_ROUTE_DAILY_COUNT,
     val schemaVersion: Int = CURRENT_SCHEMA_VERSION,
     /** Entertainment scope. [ALL_VALID_APP] expands to every launchable app except study/unlimited. */
     val allowedPackages: Set<String> = setOf(ALL_VALID_APP),
@@ -316,11 +324,16 @@ data class LocalRules(
     val directRouteActive: Boolean
         get() = directStartEnabled
 
+    /** The child may open the fruit wheel; account balance is checked by the planner. */
+    val fruitRouteActive: Boolean
+        get() = fruitExchangeEnabled
+
     /** Daily successful-session allowance for [route]. */
     fun dailyLimitFor(route: UnlockRoute): Int = when (route) {
         UnlockRoute.QUIZ -> quizDailyLimitCount
         UnlockRoute.STUDY_REWARD -> studyRewardDailyLimitCount
         UnlockRoute.DIRECT -> directDailyFreeCount
+        UnlockRoute.FRUIT -> fruitExchangeDailyLimitCount
     }
 
     /**
@@ -328,7 +341,8 @@ data class LocalRules(
      * example an old cloud snapshot); the runtime then fails closed and opens nothing.
      */
     val hasUnlockRoute: Boolean
-        get() = quizRouteActive || studyUnlockRouteActive || directRouteActive
+        get() = quizRouteActive || studyUnlockRouteActive || directRouteActive ||
+            fruitRouteActive
 
     /**
      * Canonicalizes the schedule and the three app categories. Invalid schedules are preserved
@@ -411,6 +425,7 @@ data class LocalRules(
             quizDailyLimitCount !in -1..MAX_ROUTE_DAILY_COUNT ||
             studyRewardDailyLimitCount !in -1..MAX_ROUTE_DAILY_COUNT ||
             directDailyFreeCount !in -1..MAX_ROUTE_DAILY_COUNT ||
+            fruitExchangeDailyLimitCount !in -1..MAX_ROUTE_DAILY_COUNT ||
             restMinutes !in 0..MAX_REST_MINUTES ||
             sessionScreenOffBufferMinutes !in
             MIN_SESSION_BUFFER_MINUTES..MAX_SESSION_BUFFER_MINUTES
@@ -491,8 +506,11 @@ data class LocalRules(
         const val MIN_SESSION_CAP_MINUTES = 1
         /** Storage bound only, not a product limit; the Web accepts a free-form minute count. */
         const val MAX_SESSION_CAP_MINUTES = Int.MAX_VALUE
-        /** A generous first-run allowance; each route stays switchable and parent-editable. */
-        const val DEFAULT_ROUTE_DAILY_COUNT = 1000
+        /**
+         * 默认不限制（2026-11-26 起与果园统一：果园 0 = 不限制，云端投影为 -1）。
+         * 旧版默认 1000 的本地存档在 [LocalPolicyStore] 读取时归一化为 -1。
+         */
+        const val DEFAULT_ROUTE_DAILY_COUNT = -1
         /**
          * Storage bound only, not a product limit. The parent page accepts any non-negative
          * whole number; limiting it to [Int.MAX_VALUE] keeps the JSON, ledger and UI counters

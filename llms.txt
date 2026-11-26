@@ -1,6 +1,6 @@
 # PlanYourTV
 
-> PlanYourTV（计划电视）是一个开源的 Android TV 儿童时间管理桌面。它替换电视自带桌面，用家长设置的时段、每日额度、单次上限、休息、App 白名单、学习模式和答题奖励来管理孩子的电视使用。基于 Aerial 2.0（MIT），需要 Android TV 5.0+，不需要 root。
+> PlanYourTV（计划电视）是一个开源的 Android TV 儿童时间管理桌面。它替换电视自带桌面，用家长设置的时段、每日额度、单次上限、休息、App 白名单、学习模式和答题奖励来管理孩子的电视使用。基于 Aerial 2.19（MIT），需要 Android TV 5.0+，不需要 root。
 
 ## 关键信息
 

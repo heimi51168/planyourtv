@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "curriculumVersion": "2026.5",
+  "curriculumVersion": "2026.6",
   "stages": [
     {
       "id": "primary",
@@ -166,7 +166,7 @@
         {
           "grades": [1, 6],
           "defaultTextbook": "RENJIAO",
-          "textbooks": ["RENJIAO", "BEISHIDA", "SUJIAO", "QINGDAO", "XINANDA"]
+          "textbooks": ["RENJIAO", "BEISHIDA", "SUJIAO", "QINGDAO", "XINANDA", "BEIJING", "JIJIAO"]
         },
         {
           "grades": [7, 9],
@@ -194,7 +194,7 @@
         {
           "grades": [3, 6],
           "defaultTextbook": "PEP",
-          "textbooks": ["PEP", "WAIYAN", "YILIN"]
+          "textbooks": ["PEP", "WAIYAN", "YILIN", "NIUJIN", "KEJIAO_GZ", "XIANGSHAO"]
         },
         {
           "grades": [7, 9],
@@ -217,7 +217,7 @@
         {
           "grades": [1, 6],
           "defaultTextbook": "KEJIAO",
-          "textbooks": ["KEJIAO", "SUJIAO", "RENJIAO_EJ"]
+          "textbooks": ["KEJIAO", "SUJIAO", "RENJIAO_EJ", "DAXIANG", "JIREN", "QINGDAO", "XIANGKE", "YUEJIAO_KJ"]
         },
         {
           "grades": [7, 9],
@@ -587,6 +587,86 @@
         "ru": "Цзинань",
         "uk": "Цзінань",
         "kk": "Цзинань"
+      }
+    },
+    {
+      "id": "BEIJING",
+      "labels": {
+        "zh": "北京版",
+        "en": "Beijing edition",
+        "ru": "Пекин",
+        "uk": "Пекін",
+        "kk": "Бейжің"
+      }
+    },
+    {
+      "id": "JIJIAO",
+      "labels": {
+        "zh": "冀教版",
+        "en": "Jijiao edition",
+        "ru": "Цзицзяо",
+        "uk": "Цзіцзяо",
+        "kk": "Цзицзяо"
+      }
+    },
+    {
+      "id": "KEJIAO_GZ",
+      "labels": {
+        "zh": "教科版（广州）",
+        "en": "Guangzhou Science edition",
+        "ru": "Кэцзяо (Гуанчжоу)",
+        "uk": "Кецзяо (Гуанчжоу)",
+        "kk": "Кэцзяо (Гуанчжоу)"
+      }
+    },
+    {
+      "id": "XIANGSHAO",
+      "labels": {
+        "zh": "湘少版",
+        "en": "Xiangshao edition",
+        "ru": "Сяншао",
+        "uk": "Сяншао",
+        "kk": "Сяншао"
+      }
+    },
+    {
+      "id": "DAXIANG",
+      "labels": {
+        "zh": "大象社版",
+        "en": "Daxiang edition",
+        "ru": "Дасян",
+        "uk": "Дасян",
+        "kk": "Дасян"
+      }
+    },
+    {
+      "id": "JIREN",
+      "labels": {
+        "zh": "冀人版",
+        "en": "Jiren edition",
+        "ru": "Цзижэнь",
+        "uk": "Цзіжень",
+        "kk": "Цзижэнь"
+      }
+    },
+    {
+      "id": "XIANGKE",
+      "labels": {
+        "zh": "湘科版",
+        "en": "Xiangke edition",
+        "ru": "Сянкэ",
+        "uk": "Сянке",
+        "kk": "Сянкэ"
+      }
+    },
+    {
+      "id": "YUEJIAO_KJ",
+      "labels": {
+        "zh": "粤教科技版",
+        "en": "Yuejiao Sci-Tech edition",
+        "ru": "Юэцзяо (наука и техника)",
+        "uk": "Юецзяо (наука і техніка)",
+        "kk": "Юэцзяо (ғылым және техника)"
       }
     },
     {

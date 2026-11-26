@@ -84,8 +84,10 @@ private const val REMOVE_TIMEOUT_MS = 3_000L
 // 2026-11-15: 远程功能尚未就绪，临时隐藏「远程管理」入口。
 // 2026-11-19: 恢复入口，继续扫码绑定对接；绑定、迁移和摘要页代码保持完整。
 // 2026-11-21: 家长中心保留，仅隐藏其中的「远程管理」入口；绑定、迁移和摘要页代码保持完整。
-// 测试通过后把这里改回 true 即可放出。
-private const val REMOTE_MANAGEMENT_ENABLED = false
+// 2026-11-22: 远程管理联调，放出入口。
+private const val REMOTE_MANAGEMENT_ENABLED = true
+// 2026-11-26: 发布 GitHub 前只隐藏「远程管理」入口，远程绑定/同步逻辑保持完整；测试通过后改回 true。
+private const val REMOTE_MANAGEMENT_ENTRY_VISIBLE = false
 
 // The sheet's inner width is 864 dp: the rail, its gap and the pane must add up to it.
 private val ParentRailWidth = 280.dp
@@ -216,7 +218,7 @@ fun PolicyParentCenter(onClose: () -> Unit) {
     val handoffPending = bound && handoff == RemoteHandoffState.PENDING
     // V29: remote management is a core row whenever the service is available. It leads to the
     // bind flow when unbound and to the read-only remote summary when bound.
-    val remoteEntryVisible = REMOTE_MANAGEMENT_ENABLED && PolicyProduct.cloudEnabled
+    val remoteEntryVisible = REMOTE_MANAGEMENT_ENTRY_VISIBLE && REMOTE_MANAGEMENT_ENABLED && PolicyProduct.cloudEnabled
     val unboundCloud = PolicyProduct.cloudEnabled && !bound && state.mode == PolicyMode.CLOUD
     val localSessionActive = state.mode == PolicyMode.LOCAL && state.sessionState == SessionState.ACTIVE
     // Once the TV is bound, the local pane stays the familiar rule view but becomes read-only;

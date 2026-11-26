@@ -14,6 +14,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -100,6 +101,8 @@ fun MenuRow(
     focusRequester: FocusRequester? = null,
     destructive: Boolean = false,
     trailing: String? = null,
+    /** A small dot before [trailing]: something new here (a new version). */
+    dot: Color? = null,
 ) {
     Pressable(onClick = onClick, focusRequester = focusRequester, focusedScale = 1.03f, modifier = modifier.fillMaxWidth()) { state ->
         val bg by animateColorAsState(
@@ -121,6 +124,7 @@ fun MenuRow(
         ) {
             GlyphIcon(glyph, fg, 18.dp)
             BasicText(text, style = Type.Body.copy(color = fg), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+            if (dot != null) Box(Modifier.size(8.dp).clip(CircleShape).background(dot))
             if (trailing != null) {
                 BasicText(
                     trailing,
@@ -257,7 +261,9 @@ fun AppMenu(
                                 if (customIcon) {
                                     MenuRow(Glyph.Photo, stringResource(R.string.menu_reset_icon), { onResetIcon(shownApp.key) })
                                 }
-                                if (shownApp.shortcut == null) MenuRow(Glyph.Info, stringResource(R.string.menu_info), { onInfo(shownApp.key) })
+                                if (shownApp.manageable && shownApp.shortcut == null) {
+                                    MenuRow(Glyph.Info, stringResource(R.string.menu_info), { onInfo(shownApp.key) })
+                                }
                             }
                             // What the TV starts on, for homes that switch it on to watch television.
                             val boots = shownApp.source?.let { it.id == AerialSettings.bootSource } ?: (shownApp.key == AerialSettings.bootApp)
@@ -266,7 +272,7 @@ fun AppMenu(
                                 stringResource(if (boots) R.string.menu_boot_off else R.string.menu_boot_on),
                                 { onBootTarget(shownApp.key) },
                             )
-                            if (shownApp.removable) {
+                            if (shownApp.manageable && shownApp.removable) {
                                 MenuRow(Glyph.Trash, stringResource(R.string.menu_uninstall), { onUninstall(shownApp.key) }, destructive = true)
                             }
                         }

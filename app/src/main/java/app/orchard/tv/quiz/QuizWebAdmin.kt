@@ -5,6 +5,7 @@ import app.orchard.tv.policy.FamilyAvatarStore
 import app.orchard.tv.policy.FamilyHub
 import app.orchard.tv.policy.ManualSessionLimits
 import app.orchard.tv.policy.PolicyModeCoordinator
+import app.orchard.tv.policy.web.ParentWebAccess
 import app.orchard.tv.policy.web.ParentWebCenter
 import fi.iki.elonen.NanoHTTPD
 import fi.iki.elonen.NanoHTTPD.IHTTPSession
@@ -79,6 +80,16 @@ object QuizWebAdmin {
     private val requestBody = ThreadLocal<JSONObject?>()
 
     fun handle(context: Context, session: IHTTPSession, path: String): Response? {
+        // A remote-bound TV has no local parent center: child mode is owned by the cloud
+        // app. The local web's only configuration surface there is Aerial's page at the
+        // token root, so the QR/bookmark entry (/quiz) lands there instead of a dead
+        // disabled card. Redirect only the HTML shell; /quiz.js, /quiz.css and the APIs
+        // keep their paths so an already-loaded page is not affected.
+        if (ParentWebCenter.ENABLED &&
+            isBoundQuizShellRedirect(session.method, path, ParentWebAccess.gate().reason)
+        ) {
+            return redirectToAerialPage(session)
+        }
         // PhoneServer still serves wallpaper/setup pages in cloud mode. The quiz API is a
         // local-mode feature. With V27 enabled the page shell is also the parent-center host,
         // so it stays available in NONE/CLOUD; its parent API has its own gate.
@@ -1156,12 +1167,11 @@ object QuizWebAdmin {
      */
     private fun importBank(session: IHTTPSession): Response {
         adminError(session)?.let { return it }
-        // Read the stored session instead of running a full QuizRuntime.refresh():
-        // a 50-batch import would otherwise recompute bank and level counts
-        // before every batch just to answer "is a round running?".
-        if (QuizSessionStore.loadSession()?.status in ACTIVE_STATUSES) {
-            return error(Response.Status.CONFLICT, "SESSION_RUNNING")
-        }
+        // Import only appends AVAILABLE rows under a new batch/tag. A running
+        // round has already reserved its rows and copied them into the session,
+        // so adding questions here cannot change the round on screen; the new
+        // rows become candidates for the next round. Destructive maintenance
+        // (clear/delete) keeps the SESSION_RUNNING gate.
         val body = jsonBody(session) ?: return error(Response.Status.BAD_REQUEST, "INVALID_JSON")
         val context = subjectContext(session, body) ?: return invalidSubject()
         val batchMode = body.optBoolean("batchMode", false)
@@ -3179,6 +3189,39 @@ object QuizWebAdmin {
     private fun asset(context: Context, name: String, type: String): Response {
         val body = context.assets.open(name).bufferedReader().use { it.readText() }
         return newResponse(Response.Status.OK, type, body)
+    }
+
+    /** The Aerial page is served at the token root; `/quiz` is the only entry to redirect. */
+    private fun redirectToAerialPage(session: IHTTPSession): Response {
+        val root = aerialRootForQuizUri(session.uri)
+        if (root == null || root.isEmpty() || !root.endsWith("/")) {
+            return error(Response.Status.NOT_FOUND, "NOT_FOUND")
+        }
+        return newResponse(Response.Status.REDIRECT, "text/html; charset=utf-8", "").apply {
+            addHeader("Location", root)
+        }
+    }
+
+    /**
+     * Only the HTML shell moves; assets, APIs and a local/ready gate keep their normal page.
+     * Kept pure so the bound-mode condition is testable without a bound TV.
+     */
+    internal fun isBoundQuizShellRedirect(method: Method, path: String, gateReason: String): Boolean =
+        method == Method.GET &&
+            (path == "/quiz" || path == "/quiz/") &&
+            gateReason == "REMOTE_BOUND"
+
+    /**
+     * Maps `/token/quiz` and `/token/quiz/` to `/token/`, leaving query/fragment behind.
+     * Pure so the shell/asset boundary is testable without starting the HTTP server.
+     */
+    internal fun aerialRootForQuizUri(uri: String): String? {
+        val path = uri.substringBefore('?').substringBefore('#')
+        return when {
+            path.endsWith("/quiz/") -> path.dropLast("/quiz/".length) + "/"
+            path.endsWith("/quiz") -> path.dropLast("/quiz".length) + "/"
+            else -> null
+        }
     }
 
     private fun lockJson(status: PolicyModeCoordinator.WebUnlockStatus): JSONObject =

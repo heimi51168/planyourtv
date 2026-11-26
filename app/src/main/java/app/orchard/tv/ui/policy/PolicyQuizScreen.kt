@@ -174,7 +174,6 @@ fun PolicyQuizScreen(
     // A bound TV always goes through the cloud preparer first; the local QR
     // setup belongs exclusively to unbound TVs.
     val hosted = QuizChallenge.isHosted()
-    var cloudReady by remember(hosted) { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -248,7 +247,7 @@ fun PolicyQuizScreen(
     ) {
         when {
             !loaded -> QuizLoading()
-            state.sessionState == "ready" && (!hosted || cloudReady) -> QuizReadyScreen(
+            state.sessionState == "ready" && !hosted -> QuizReadyScreen(
                 session = state.session ?: return@Box,
                 questionCount = state.readyQuestionCount,
                 answerScope = state.answerScope,
@@ -277,7 +276,6 @@ fun PolicyQuizScreen(
             hosted -> QuizCloudSetupScreen(
                 state = state,
                 onClose = ::closeCleanly,
-                onReady = { cloudReady = true },
             )
             // A leftover or unreadable record can only be reset through the
             // parent page, so keep the setup QR available in that case.
@@ -558,7 +556,7 @@ private fun QuizStartShell(
     // intro. Null means Aerial's default wallpaper, which is also the out-of-the-box state.
     val activeChild by FamilyHub.state.collectAsState()
     val introSource = remember(context, activeChild.activeUserId) {
-        PolicyVideoLibrary.quizSource(context)
+        PolicyVideoLibrary.quizIntro(context)
     }
 
     fun reveal(byKey: Int?) {
@@ -616,7 +614,7 @@ private fun QuizStartShell(
 
     Box(Modifier.fillMaxSize()) {
         QuizStartBackdrop(
-            source = introSource,
+            intro = introSource,
             fadeOut = busy || leaving,
             onIntroFinished = {
                 scope.launch {
@@ -1106,7 +1104,6 @@ private fun QuizBankEmptyScreen(
 private fun QuizCloudSetupScreen(
     state: QuizRuntime.UiState,
     onClose: () -> Unit,
-    onReady: () -> Unit,
 ) {
     val config = state.defaultChallengeConfig
     val levels = state.answerLevels
@@ -1138,6 +1135,7 @@ private fun QuizCloudSetupScreen(
     var busy by remember { mutableStateOf(false) }
     var leaving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var rejectCode by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
     // The document sync is event-driven; this only reads the stored copy so a
@@ -1156,6 +1154,7 @@ private fun QuizCloudSetupScreen(
         if (next !in levels.indices) return
         selectedLevelId = levels[next].id
         error = null
+        rejectCode = null
     }
 
     fun begin() {
@@ -1163,16 +1162,30 @@ private fun QuizCloudSetupScreen(
         val target = selected ?: return
         busy = true
         error = null
+        rejectCode = null
         scope.launch {
             val outcome = CloudQuizPreparer.prepare(target.id)
-            busy = false
             when (outcome) {
-                CloudQuizPreparer.Outcome.Ready -> onReady()
+                CloudQuizPreparer.Outcome.Ready -> {
+                    // This face already shows the level, payout and question
+                    // source, so start the round in one press. Waiting for the
+                    // child to confirm a second start face made cloud feel like
+                    // it had asked for the level twice. Local mode keeps its
+                    // own ready face and never reaches this branch.
+                    val result = withContext(Dispatchers.Default) {
+                        QuizChallenge.start()
+                    }
+                    if (result is QuizChallenge.BeginResult.Rejected) {
+                        rejectCode = result.code
+                        withContext(Dispatchers.IO) { QuizRuntime.refresh() }
+                    }
+                }
                 is CloudQuizPreparer.Outcome.Unavailable -> {
                     error = outcome.message
                     withContext(Dispatchers.IO) { QuizRuntime.refresh() }
                 }
             }
+            busy = false
         }
     }
 
@@ -1235,7 +1248,8 @@ private fun QuizCloudSetupScreen(
                     modifier = Modifier.widthIn(max = 404.dp),
                 )
             }
-            error?.let {
+            val rejection = error ?: rejectCode?.let { rejectText(it) }
+            rejection?.let {
                 Spacer(Modifier.height(8.dp))
                 BasicText(
                     stringResource(R.string.policy_quiz_start_rejected, it),
@@ -1720,16 +1734,9 @@ private fun QuizRoundScreen(
             session.items.firstOrNull { it.questionId == sub.questionId }
         }
         if (submission != null && answeredItem != null) {
-            val rewardMinutes = if (difficultyScoring) {
-                QuizScoring.rewardMinutes(answeredItem.difficulty, session.config)
-            } else {
-                session.config.minutesPerQuestion
-            }
-            val penaltyMinutes = if (difficultyScoring) {
-                QuizScoring.penaltyMinutes(answeredItem.difficulty, session.config)
-            } else {
-                null
-            }
+            val rewardSeconds = session.rewardSecondsFor(answeredItem.difficulty, difficultyScoring)
+            val penaltySeconds =
+                session.penaltySecondsFor(answeredItem.difficulty, difficultyScoring)
             var resumeFailed by remember(submission.answeredAt) { mutableStateOf(false) }
             if (submission.correct) {
                 // A correct answer never opens the answer page: flash the earned
@@ -1739,7 +1746,7 @@ private fun QuizRoundScreen(
                     onReward(
                         QuizReward(
                             answeredAt = submission.answeredAt,
-                            minutes = rewardMinutes,
+                            seconds = rewardSeconds,
                         ),
                     )
                     val outcome = withContext(Dispatchers.Default) {
@@ -1764,8 +1771,8 @@ private fun QuizRoundScreen(
                 questionNumber = run.index.coerceIn(1, session.items.size),
                 total = session.items.size,
                 isLast = run.index >= session.items.size,
-                rewardMinutes = rewardMinutes,
-                penaltyMinutes = penaltyMinutes,
+                rewardSeconds = rewardSeconds,
+                penaltySeconds = penaltySeconds,
                 holdMs = feedbackHoldMs,
             )
             return
@@ -1785,18 +1792,40 @@ private fun QuizRoundScreen(
         questionNumber = run.index + 1,
         total = session.items.size,
         deadlineAt = run.deadlineAt,
-        rewardMinutes = if (difficultyScoring) {
-            QuizScoring.rewardMinutes(item.difficulty, session.config)
-        } else {
-            session.config.minutesPerQuestion
-        },
-        penaltyMinutes = if (difficultyScoring) {
-            QuizScoring.penaltyMinutes(item.difficulty, session.config)
-        } else {
-            null
-        },
+        rewardSeconds = session.rewardSecondsFor(item.difficulty, difficultyScoring),
+        penaltySeconds = session.penaltySecondsFor(item.difficulty, difficultyScoring),
         onExit = onExit,
     )
+}
+
+/**
+ * The amount one question actually settles, in canonical seconds. A v6 session
+ * freezes the exact per-difficulty profile; the minute mirrors below truncate a
+ * sub-minute reward to zero, so they only describe pre-v6 records.
+ */
+private fun QuizSession.rewardSecondsFor(difficulty: String, difficultyScoring: Boolean): Int {
+    val profile = rewardProfile
+    if (originSchemaVersion >= 6 && profile != null) {
+        return QuizScoringV6.correctSeconds(difficulty, profile)
+    }
+    return if (difficultyScoring) {
+        QuizScoring.rewardMinutes(difficulty, config) * 60
+    } else {
+        config.minutesPerQuestion * 60
+    }
+}
+
+/**
+ * Null means the round shows no per-question deduction on screen. Hosted rounds
+ * keep that historic presentation even though v6 still settles their penalties.
+ */
+private fun QuizSession.penaltySecondsFor(difficulty: String, difficultyScoring: Boolean): Int? {
+    if (!difficultyScoring) return null
+    val profile = rewardProfile
+    if (originSchemaVersion >= 6 && profile != null) {
+        return QuizScoringV6.penaltySeconds(difficulty, profile)
+    }
+    return QuizScoring.penaltyMinutes(difficulty, config) * 60
 }
 
 /** Last-resort face for a session that cannot render a question or feedback. */
@@ -1836,8 +1865,8 @@ private fun QuizQuestionPage(
     questionNumber: Int,
     total: Int,
     deadlineAt: Long,
-    rewardMinutes: Int,
-    penaltyMinutes: Int?,
+    rewardSeconds: Int,
+    penaltySeconds: Int?,
     onExit: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
@@ -1942,18 +1971,18 @@ private fun QuizQuestionPage(
                 )
                 BasicText(
                     when {
-                        penaltyMinutes == null -> stringResource(
-                            R.string.policy_quiz_points_hint,
-                            rewardMinutes,
+                        penaltySeconds == null -> stringResource(
+                            R.string.policy_quiz_points_hint_duration,
+                            durationText(rewardSeconds),
                         )
-                        penaltyMinutes > 0 -> stringResource(
-                            R.string.policy_quiz_scored_hint,
-                            rewardMinutes,
-                            penaltyMinutes,
+                        penaltySeconds > 0 -> stringResource(
+                            R.string.policy_quiz_scored_hint_duration,
+                            durationText(rewardSeconds),
+                            durationText(penaltySeconds),
                         )
                         else -> stringResource(
-                            R.string.policy_quiz_scored_hint_no_penalty,
-                            rewardMinutes,
+                            R.string.policy_quiz_scored_hint_no_penalty_duration,
+                            durationText(rewardSeconds),
                         )
                     },
                     style = Type.Caption.copy(
@@ -2694,8 +2723,8 @@ private fun QuizFeedbackPage(
     questionNumber: Int,
     total: Int,
     isLast: Boolean,
-    rewardMinutes: Int,
-    penaltyMinutes: Int?,
+    rewardSeconds: Int,
+    penaltySeconds: Int?,
     holdMs: Long,
 ) {
     val scope = rememberCoroutineScope()
@@ -2811,18 +2840,24 @@ private fun QuizFeedbackPage(
             }
             if (correct) {
                 BasicText(
-                    stringResource(R.string.policy_quiz_feedback_points, rewardMinutes),
+                    stringResource(
+                        R.string.policy_quiz_feedback_points_duration,
+                        durationText(rewardSeconds),
+                    ),
                     style = Type.Title.copy(color = QuizGold),
                 )
-            } else if (penaltyMinutes != null) {
+            } else if (penaltySeconds != null) {
                 BasicText(
-                    if (penaltyMinutes > 0) {
-                        stringResource(R.string.policy_quiz_feedback_penalty, penaltyMinutes)
+                    if (penaltySeconds > 0) {
+                        stringResource(
+                            R.string.policy_quiz_feedback_penalty_duration,
+                            durationText(penaltySeconds),
+                        )
                     } else {
                         stringResource(R.string.policy_quiz_feedback_no_penalty)
                     },
                     style = Type.Title.copy(
-                        color = if (penaltyMinutes > 0) QuizLoss else Palette.SecondaryLabel,
+                        color = if (penaltySeconds > 0) QuizLoss else Palette.SecondaryLabel,
                     ),
                 )
             }
@@ -2893,22 +2928,45 @@ private fun QuizFeedbackPage(
             FeedbackSection(stringResource(R.string.policy_quiz_review_question)) {
                 BasicText(item.prompt, style = Type.Headline)
             }
-            FeedbackSection(stringResource(R.string.policy_quiz_review_your_answer)) {
-                BasicText(
-                    selectedText ?: stringResource(R.string.policy_quiz_review_unanswered),
-                    style = Type.Body.copy(
-                        color = if (correct) QuizGold else QuizLoss,
-                    ),
-                )
-            }
-            FeedbackSection(stringResource(R.string.policy_quiz_review_correct_answer)) {
-                BasicText(
-                    correctText,
-                    // The correct option is information, not a score: keeping
-                    // it neutral stops a failed question from reading as a
-                    // green loss or a gold payout.
-                    style = Type.Body.copy(color = Palette.Label),
-                )
+            // Mirror the question page: the answer lines keep the left of the
+            // body and the figure sits to their right, so a short prompt no
+            // longer walls off an empty area beside the image. The review body
+            // scrolls, so the card keeps a readable fixed height.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    FeedbackSection(stringResource(R.string.policy_quiz_review_your_answer)) {
+                        BasicText(
+                            selectedText ?: stringResource(R.string.policy_quiz_review_unanswered),
+                            style = Type.Body.copy(
+                                color = if (correct) QuizGold else QuizLoss,
+                            ),
+                        )
+                    }
+                    FeedbackSection(stringResource(R.string.policy_quiz_review_correct_answer)) {
+                        BasicText(
+                            correctText,
+                            // The correct option is information, not a score:
+                            // keeping it neutral stops a failed question from
+                            // reading as a green loss or a gold payout.
+                            style = Type.Body.copy(color = Palette.Label),
+                        )
+                    }
+                }
+                if (item.visual?.rich != null) {
+                    val visualHeight = 200.dp
+                    QuizQuestionVisual(
+                        item = item,
+                        modifier = Modifier
+                            .height(visualHeight)
+                            .width(quizVisualWidth(item, visualHeight)),
+                    )
+                }
             }
             if (item.explanation.isNotBlank()) {
                 FeedbackSection(stringResource(R.string.policy_quiz_review_solution)) {
@@ -2988,7 +3046,7 @@ private fun FeedbackSection(label: String, content: @Composable () -> Unit) {
 }
 
 /** One correct answer's reward flash, keyed by the time it was answered. */
-private data class QuizReward(val answeredAt: Long, val minutes: Int)
+private data class QuizReward(val answeredAt: Long, val seconds: Int)
 
 /**
  * The reward mark of the published phone app: its launcher icon with the white
@@ -3039,7 +3097,10 @@ private fun QuizRewardBurst(reward: QuizReward, onDone: () -> Unit) {
     }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         BasicText(
-            stringResource(R.string.policy_quiz_feedback_points, reward.minutes),
+            stringResource(
+                R.string.policy_quiz_feedback_points_duration,
+                durationText(reward.seconds),
+            ),
             style = QuizRewardTextStyle,
             modifier = Modifier.graphicsLayer {
                 alpha = fade.value * pop.value.coerceIn(0f, 1f)

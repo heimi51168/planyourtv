@@ -1,5 +1,6 @@
 package app.orchard.tv.ui.policy
 
+import android.view.KeyEvent as NativeKeyEvent
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -7,6 +8,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,6 +42,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -51,9 +55,18 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
@@ -119,26 +132,32 @@ internal fun PolicyUnlockChoiceOverlay(
     studyApps: List<AppEntry>,
     quizFeatureAvailable: Boolean,
     studyMinutes: Int,
+    fruitBalanceHundredths: Long,
+    fruitRateMinutes: Int,
     messageRes: Int?,
     onQuiz: () -> Unit,
     onStudy: (AppEntry) -> Unit,
     onDirect: () -> Unit,
+    onFruit: () -> Unit,
     onBack: () -> Unit,
 ) {
     val quiz = plan.quiz
     val study = plan.studyReward
     val direct = plan.direct
+    val fruit = plan.fruit
     // A TV input is not a study target: the route stays visible so the child sees why, but it
     // can never start from here.
     val studyApplicable = target != null
     val quizEnabled = quiz.available && quizFeatureAvailable
     val studyEnabled = study.available && studyApplicable && studyApps.isNotEmpty()
     val directEnabled = direct.available
+    val fruitEnabled = fruit.available
     val visibleRoutes = plan.decisions.filter { it.visible }
     val inlineStudyApps = studyApps.size > 1
     val quizFocus = remember { FocusRequester() }
     val studyFocus = remember { FocusRequester() }
     val directFocus = remember { FocusRequester() }
+    val fruitFocus = remember { FocusRequester() }
     val studyAppFocuses = remember(studyApps.size) {
         List(studyApps.size) { FocusRequester() }
     }
@@ -151,6 +170,7 @@ internal fun PolicyUnlockChoiceOverlay(
             if (inlineStudyApps) addAll(studyAppFocuses) else add(studyFocus)
         }
         if (directEnabled) add(directFocus)
+        if (fruitEnabled) add(fruitFocus)
     }
     fun focusKeys(focus: FocusRequester): ((KeyEvent) -> Boolean)? {
         val index = enabledFocuses.indexOf(focus)
@@ -165,16 +185,18 @@ internal fun PolicyUnlockChoiceOverlay(
         next = enabledFocuses.lastOrNull(),
     )
     val quizMeta = unlockCountText(quiz)
-    val quizHint = hint(
-        if (!quizEnabled) {
-            if (quiz.available) {
-                stringResource(R.string.policy_route_quiz_unavailable)
-            } else {
-                unlockRouteReasonText(quiz.reason)
-            }
+    // A disabled row keeps only its explaining facts in the grey hint; the blocking reason
+    // itself is lifted into an orange notice so it cannot be mistaken for a description.
+    val quizNotice = if (!quizEnabled) {
+        if (quiz.available) {
+            stringResource(R.string.policy_route_quiz_unavailable)
         } else {
-            null
-        },
+            unlockRouteReasonText(quiz.reason)
+        }
+    } else {
+        null
+    }
+    val quizHint = hint(
         unlockGrantText(quiz),
         stringResource(R.string.policy_route_quiz_hint),
     )
@@ -190,23 +212,37 @@ internal fun PolicyUnlockChoiceOverlay(
         else -> null
     }
     val studyMeta = unlockCountText(study)
+    val studyNotice = studyReason
     val studyHint = hint(
-        studyReason,
         unlockGrantText(study),
         studyMeta,
         studyBase,
         if (studyApps.size > 1) stringResource(R.string.policy_route_study_pick) else null,
     )
-    val studyRowHint = hint(studyReason, unlockGrantText(study), studyBase)
+    val studyRowHint = hint(unlockGrantText(study), studyBase)
     val directMeta = unlockCountText(direct)
+    val directNotice = if (!directEnabled) unlockRouteReasonText(direct.reason) else null
     val directHint = hint(
-        if (!directEnabled) unlockRouteReasonText(direct.reason) else null,
         unlockGrantText(direct),
         stringResource(
             R.string.policy_route_direct_hint,
             (direct.requestedSeconds / 60L).toInt(),
         ),
     )
+    // The TV only ever offers whole fruits; the fractional tail stays in the Web ledger.
+    val fruitNotice = if (!fruitEnabled) unlockRouteReasonText(fruit.reason) else null
+    val fruitHint = hint(
+        if (fruitRateMinutes > 0) {
+            stringResource(
+                R.string.policy_fruit_available,
+                (fruitBalanceHundredths / 100L).coerceAtLeast(0L).toInt(),
+                fruitRateMinutes,
+            )
+        } else {
+            null
+        },
+    )
+    val fruitMeta = unlockCountText(fruit)
     // Only the card enters; the desktop and its film keep running behind the static shade.
     val reducedMotion = LocalReducedMotion.current
     var appeared by remember { mutableStateOf(false) }
@@ -222,6 +258,7 @@ internal fun PolicyUnlockChoiceOverlay(
         quizEnabled,
         studyEnabled,
         directEnabled,
+        fruitEnabled,
         visibleRoutes.size,
         studyApps.size,
     ) {
@@ -309,6 +346,7 @@ internal fun PolicyUnlockChoiceOverlay(
                                 UnlockChoiceRow(
                                     title = stringResource(R.string.policy_unlock_choice_quiz),
                                     hint = quizHint,
+                                    notice = quizNotice,
                                     meta = quizMeta,
                                     enabled = quizEnabled,
                                     focusRequester = quizFocus,
@@ -321,6 +359,7 @@ internal fun PolicyUnlockChoiceOverlay(
                                     StudyRouteHeader(
                                         title = stringResource(R.string.policy_route_study_title),
                                         hint = studyHint,
+                                        notice = studyNotice,
                                         enabled = studyEnabled,
                                     )
                                     studyApps.forEachIndexed { index, app ->
@@ -336,6 +375,7 @@ internal fun PolicyUnlockChoiceOverlay(
                                     UnlockChoiceRow(
                                         title = stringResource(R.string.policy_route_study_title),
                                         hint = studyRowHint,
+                                        notice = studyNotice,
                                         meta = studyMeta,
                                         enabled = studyEnabled,
                                         focusRequester = studyFocus,
@@ -357,11 +397,24 @@ internal fun PolicyUnlockChoiceOverlay(
                                 UnlockChoiceRow(
                                     title = stringResource(R.string.policy_route_direct_title),
                                     hint = directHint,
+                                    notice = directNotice,
                                     meta = directMeta,
                                     enabled = directEnabled,
                                     focusRequester = directFocus,
                                     onKey = focusKeys(directFocus),
                                     onClick = onDirect,
+                                )
+                            }
+                            if (fruit.visible) {
+                                UnlockChoiceRow(
+                                    title = stringResource(R.string.policy_fruit_title),
+                                    hint = fruitHint,
+                                    notice = fruitNotice,
+                                    meta = fruitMeta,
+                                    enabled = fruitEnabled,
+                                    focusRequester = fruitFocus,
+                                    onKey = focusKeys(fruitFocus),
+                                    onClick = onFruit,
                                 )
                             }
                         }
@@ -421,10 +474,329 @@ private fun unlockRouteReasonText(reason: UnlockRouteReason): String? = when (re
     UnlockRouteReason.COUNT_EXHAUSTED -> stringResource(R.string.policy_route_count_exhausted)
     UnlockRouteReason.QUOTA_EXHAUSTED -> stringResource(R.string.policy_route_quota_exhausted)
     UnlockRouteReason.NOT_EARNED -> stringResource(R.string.policy_route_not_earned)
+    UnlockRouteReason.ACCOUNT_DISABLED ->
+        stringResource(R.string.policy_fruit_account_disabled)
+    UnlockRouteReason.BALANCE_EMPTY -> stringResource(R.string.policy_fruit_balance_empty)
+    UnlockRouteReason.BALANCE_BELOW_ONE ->
+        stringResource(R.string.policy_fruit_balance_below_one)
+    UnlockRouteReason.CAP_TOO_SMALL -> stringResource(R.string.policy_fruit_cap_too_small)
+    UnlockRouteReason.WINDOW_TOO_SHORT ->
+        stringResource(R.string.policy_fruit_window_too_short)
+    UnlockRouteReason.EXCHANGE_TOO_LARGE ->
+        stringResource(R.string.policy_fruit_exchange_too_large)
 }
 
 private fun hint(vararg parts: String?): String =
     parts.filterNotNull().filter { it.isNotEmpty() }.joinToString(" · ")
+
+/**
+ * V58 whole-fruit wheel. [maxFruits] already carries every ceiling (balance, session cap, daily
+ * count, remaining window), so this panel never recomputes policy. OK exchanges and starts in
+ * one step; the warning says explicitly that ending early does not refund the fruits.
+ */
+@Composable
+internal fun PolicyFruitExchangeOverlay(
+    targetLabel: String?,
+    maxFruits: Int,
+    remainingTries: Int,
+    balanceFruitHundredths: Long,
+    rateMinutesPerFruit: Int,
+    messageRes: Int?,
+    /** Hosted-only state: the orchard is processing the exchange; OK is ignored meanwhile. */
+    submitting: Boolean = false,
+    /** The orchard's own rejection text, shown instead of the generic [messageRes]. */
+    messageText: String? = null,
+    onExchange: (Int) -> Unit,
+    onBack: () -> Unit,
+) {
+    val limit = maxFruits.coerceAtLeast(1)
+    var selected by remember { mutableStateOf(1) }
+    LaunchedEffect(maxFruits) {
+        selected = selected.coerceIn(1, limit)
+    }
+    val focus = remember { FocusRequester() }
+    var wheelFocused by remember { mutableStateOf(false) }
+    val canExchange = maxFruits >= 1
+    val selectedLabel = stringResource(R.string.policy_fruit_count, selected)
+    val selectedMinutes = (selected.toLong() * rateMinutesPerFruit.toLong())
+        .coerceAtLeast(0L)
+        .toInt()
+    val wholeBalance = (balanceFruitHundredths / 100L).coerceAtLeast(0L).toInt()
+    val maxMinutes = (maxFruits.toLong() * rateMinutesPerFruit.toLong())
+        .coerceAtLeast(0L)
+        .toInt()
+    val remainingText = if (remainingTries < 0) {
+        stringResource(R.string.policy_route_remaining_unlimited)
+    } else {
+        stringResource(R.string.policy_route_remaining_count, remainingTries)
+    }
+    val reducedMotion = LocalReducedMotion.current
+    var appeared by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { appeared = true }
+    val enter by animateFloatAsState(
+        targetValue = if (appeared) 1f else 0f,
+        animationSpec = tween(if (reducedMotion) 0 else 240, easing = Motion.EaseOut),
+        label = "fruit-exchange-enter",
+    )
+    val cardEnter = if (reducedMotion) 1f else enter
+    BackHandler { onBack() }
+    LaunchedEffect(Unit) {
+        withFrameNanos { }
+        runCatching { focus.requestFocus() }
+    }
+    Box(
+        Modifier
+            .fillMaxSize()
+            .dismissOnTap { onBack() }
+            .background(Palette.OnFocus.copy(alpha = 0.72f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            Modifier
+                .widthIn(max = 460.dp)
+                .consumeTaps()
+                .graphicsLayer {
+                    alpha = cardEnter
+                    scaleX = 0.94f + 0.06f * cardEnter
+                    scaleY = 0.94f + 0.06f * cardEnter
+                    transformOrigin = TransformOrigin(0.5f, 0.5f)
+                }
+                .choiceShellGlass(StudyEarnCorner),
+        ) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 22.dp, vertical = 18.dp)
+                    .focusRequester(focus)
+                    .onFocusChanged { wheelFocused = it.isFocused }
+                    .onPreviewKeyEvent { event ->
+                        // Consume both key-down and key-up for every D-pad direction: Compose's
+                        // default focus search otherwise runs on the key-up and hands focus to
+                        // the desktop behind this modal.
+                        when (event.nativeKeyEvent.keyCode) {
+                            NativeKeyEvent.KEYCODE_DPAD_UP,
+                            NativeKeyEvent.KEYCODE_DPAD_RIGHT,
+                            -> {
+                                if (event.type == KeyEventType.KeyDown) {
+                                    val step = when {
+                                        event.nativeKeyEvent.repeatCount >= 16 -> 10
+                                        event.nativeKeyEvent.repeatCount >= 8 -> 5
+                                        event.nativeKeyEvent.repeatCount >= 3 -> 2
+                                        else -> 1
+                                    }
+                                    selected = (selected + step).coerceAtMost(limit)
+                                }
+                                true
+                            }
+                            NativeKeyEvent.KEYCODE_DPAD_DOWN,
+                            NativeKeyEvent.KEYCODE_DPAD_LEFT,
+                            -> {
+                                if (event.type == KeyEventType.KeyDown) {
+                                    val step = when {
+                                        event.nativeKeyEvent.repeatCount >= 16 -> 10
+                                        event.nativeKeyEvent.repeatCount >= 8 -> 5
+                                        event.nativeKeyEvent.repeatCount >= 3 -> 2
+                                        else -> 1
+                                    }
+                                    selected = (selected - step).coerceAtLeast(1)
+                                }
+                                true
+                            }
+                            NativeKeyEvent.KEYCODE_DPAD_CENTER,
+                            NativeKeyEvent.KEYCODE_ENTER,
+                            NativeKeyEvent.KEYCODE_NUMPAD_ENTER,
+                            -> {
+                                if (event.type == KeyEventType.KeyDown &&
+                                    event.nativeKeyEvent.repeatCount == 0 &&
+                                    canExchange && !submitting
+                                ) {
+                                    onExchange(selected)
+                                }
+                                true
+                            }
+                            else -> false
+                        }
+                    }
+                    .semantics { contentDescription = selectedLabel }
+                    .focusable(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                BasicText(
+                    stringResource(R.string.policy_fruit_title),
+                    style = Type.LargeTitle.copy(fontSize = 20.sp, textAlign = TextAlign.Center),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(2.dp))
+                BasicText(
+                    targetLabel?.let {
+                        stringResource(R.string.policy_unlock_choice_for, it)
+                    } ?: stringResource(R.string.cc_inputs),
+                    style = Type.Caption.copy(
+                        textAlign = TextAlign.Center,
+                        color = Palette.Label.copy(alpha = 0.82f),
+                    ),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(10.dp))
+                BasicText(
+                    stringResource(
+                        R.string.policy_fruit_available,
+                        wholeBalance,
+                        rateMinutesPerFruit,
+                    ),
+                    style = Type.Caption.copy(color = Palette.Label.copy(alpha = 0.86f)),
+                )
+                Spacer(Modifier.height(4.dp))
+                BasicText(
+                    "▲",
+                    style = Type.Caption.copy(color = Palette.Label.copy(alpha = 0.35f)),
+                )
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(220.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        for (offset in -2..2) {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().height(44.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                if (offset == 0) {
+                                    Box(
+                                        Modifier
+                                            .width(230.dp)
+                                            .height(40.dp)
+                                            .clip(RoundedCornerShape(20.dp))
+                                            // The plate is the wheel's focus feedback too: a
+                                            // lost focus dims it instead of looking active.
+                                            .background(
+                                                if (wheelFocused) Palette.Focus else Palette.FillStrong
+                                            ),
+                                    )
+                                }
+                                val item = selected + offset
+                                if (item in 1..limit) {
+                                    BasicText(
+                                        stringResource(R.string.policy_fruit_count, item),
+                                        style = when (offset) {
+                                            0 -> Type.LargeTitle.copy(
+                                                fontSize = 26.sp,
+                                                color = if (wheelFocused) {
+                                                    Palette.OnFocus
+                                                } else {
+                                                    Palette.Label
+                                                },
+                                            )
+                                            -1, 1 -> Type.Title.copy(
+                                                fontSize = 17.sp,
+                                                color = Palette.Label.copy(alpha = 0.55f),
+                                            )
+                                            else -> Type.Title.copy(
+                                                fontSize = 15.sp,
+                                                color = Palette.Label.copy(alpha = 0.28f),
+                                            )
+                                        },
+                                        maxLines = 1,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                BasicText(
+                    "▼",
+                    style = Type.Caption.copy(color = Palette.Label.copy(alpha = 0.35f)),
+                )
+                Spacer(Modifier.height(4.dp))
+                BasicText(
+                    stringResource(R.string.policy_fruit_minutes, selectedMinutes),
+                    style = Type.Title.copy(
+                        color = Palette.Label,
+                        textAlign = TextAlign.Center,
+                    ),
+                )
+                Spacer(Modifier.height(8.dp))
+                BasicText(
+                    hint(
+                        if (canExchange) {
+                            stringResource(R.string.policy_fruit_max, maxFruits, maxMinutes)
+                        } else {
+                            stringResource(R.string.policy_fruit_changed)
+                        },
+                        remainingText,
+                    ),
+                    style = Type.Caption.copy(
+                        color = Palette.SecondaryLabel,
+                        textAlign = TextAlign.Center,
+                    ),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                val messageLine = when {
+                    submitting -> stringResource(R.string.policy_fruit_submitting)
+                    messageText != null -> messageText
+                    messageRes != null -> stringResource(messageRes)
+                    !canExchange -> stringResource(R.string.policy_fruit_changed)
+                    else -> null
+                }
+                messageLine?.let {
+                    Spacer(Modifier.height(6.dp))
+                    BasicText(
+                        it,
+                        style = Type.Caption.copy(
+                            color = if (submitting) Palette.SecondaryLabel else Palette.Orange,
+                            textAlign = TextAlign.Center,
+                        ),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Spacer(Modifier.height(6.dp))
+                BasicText(
+                    stringResource(R.string.policy_fruit_no_refund),
+                    style = Type.Caption.copy(
+                        color = Palette.SecondaryLabel,
+                        textAlign = TextAlign.Center,
+                    ),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.widthIn(max = 360.dp).fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    BasicText(
+                        stringResource(
+                            if (submitting) {
+                                R.string.policy_fruit_submitting_hint
+                            } else {
+                                R.string.policy_fruit_ok
+                            },
+                        ),
+                        style = Type.Caption.copy(
+                            color = if (submitting) {
+                                Palette.SecondaryLabel
+                            } else {
+                                Palette.Label
+                            },
+                        ),
+                        maxLines = 1,
+                    )
+                    BasicText(
+                        stringResource(R.string.policy_fruit_cancel),
+                        style = Type.Caption.copy(color = Palette.SecondaryLabel),
+                        maxLines = 1,
+                    )
+                }
+            }
+        }
+    }
+}
+
 
 /**
  * The same smoked pane as the member sheet, kept self-contained: the child wallpaper can be a
@@ -453,6 +825,11 @@ private fun Modifier.choiceShellGlass(corner: Dp): Modifier = this
 private fun UnlockChoiceRow(
     title: String,
     hint: String,
+    /**
+     * The blocking reason of a disabled route. It is rendered in the palette's orange ahead of
+     * the grey explanation: grey is a description, orange is the part the child must notice.
+     */
+    notice: String? = null,
     meta: String? = null,
     enabled: Boolean,
     focusRequester: FocusRequester?,
@@ -534,8 +911,28 @@ private fun UnlockChoiceRow(
                     }
                 }
                 Spacer(Modifier.height(3.dp))
+                val hintText = if (notice.isNullOrEmpty()) {
+                    AnnotatedString(hint)
+                } else {
+                    buildAnnotatedString {
+                        withStyle(
+                            SpanStyle(
+                                color = Palette.Orange,
+                                fontWeight = FontWeight.SemiBold,
+                            ),
+                        ) {
+                            append(notice)
+                        }
+                        if (hint.isNotEmpty()) {
+                            withStyle(SpanStyle(color = hintColor)) {
+                                append(" · ")
+                                append(hint)
+                            }
+                        }
+                    }
+                }
                 BasicText(
-                    hint,
+                    hintText,
                     style = Type.Caption.copy(
                         lineHeight = 15.sp,
                         color = hintColor,
@@ -556,8 +953,14 @@ private fun UnlockChoiceRow(
 private fun StudyRouteHeader(
     title: String,
     hint: String,
+    notice: String? = null,
     enabled: Boolean,
 ) {
+    val hintColor = if (enabled) {
+        Palette.Label.copy(alpha = 0.82f)
+    } else {
+        Palette.SecondaryLabel.copy(alpha = 0.58f)
+    }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -574,15 +977,31 @@ private fun StudyRouteHeader(
             overflow = TextOverflow.Ellipsis,
         )
         Spacer(Modifier.height(3.dp))
+        val hintText = if (notice.isNullOrEmpty()) {
+            AnnotatedString(hint)
+        } else {
+            buildAnnotatedString {
+                withStyle(
+                    SpanStyle(
+                        color = Palette.Orange,
+                        fontWeight = FontWeight.SemiBold,
+                    ),
+                ) {
+                    append(notice)
+                }
+                if (hint.isNotEmpty()) {
+                    withStyle(SpanStyle(color = hintColor)) {
+                        append(" · ")
+                        append(hint)
+                    }
+                }
+            }
+        }
         BasicText(
-            hint,
+            hintText,
             style = Type.Caption.copy(
                 lineHeight = 15.sp,
-                color = if (enabled) {
-                    Palette.Label.copy(alpha = 0.82f)
-                } else {
-                    Palette.SecondaryLabel.copy(alpha = 0.58f)
-                },
+                color = hintColor,
             ),
             maxLines = 3,
             overflow = TextOverflow.Ellipsis,

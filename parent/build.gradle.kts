@@ -23,8 +23,8 @@ android {
         targetSdk = 34
         // The shell is versioned independently from the TV app: the web page and
         // the TV server define the contract, not the APK version.
-        versionCode = 10
-        versionName = "1.2.4"
+        versionCode = 11
+        versionName = "1.2.5"
     }
 
     buildFeatures {

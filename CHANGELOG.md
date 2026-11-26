@@ -3,6 +3,43 @@
 This changelog covers the community source snapshot. Official hosted builds may ship different
 artifacts with the same upstream Aerial base.
 
+## [2.19.002] - 2026-11-26
+
+Aerial 2.19 base, fruit exchange, and parent personalization from the phone parent page.
+Version code `165002`. The optional parent app is updated to `1.2.5` / `11`.
+
+### Added
+
+- **Fruit exchange** is the fourth local unlock route. The child picks whole fruits with a
+  scroll wheel on the lock screen, sees the minutes converted at the account's exchange rate,
+  and starts the session immediately; ending early does not refund fruit. The phone parent page
+  adds a per-child fruit account with balance, income/expense ledger, exchange rate and common
+  entries, plus manual expense and void. The local version works fully offline; local and hosted
+  accounts stay separate.
+- **Parent personalization from the phone** appears after a successful temporary unlock. It opens
+  the TV's own home, wallpaper, video and app settings in a full-screen view; Back to child mode
+  returns to the parent page without a second password.
+- **Question-bank unit catalog** adds the unit trees of 10 elementary-school textbook editions
+  from the national smart-education platform, growing the runtime catalog to 410 volumes and
+  2870 top-level nodes so AI questions can target a textbook and unit.
+
+### Changed
+
+- **Aerial 2.19 base.** Upstream device support, wallpaper and input fixes are included; the
+  product version moves to the 2.19 series.
+- **Simpler parent UI.** The quiz page shows level configuration directly and keeps only AI
+  lesson sync, Manual import and Refresh in the question-bank header; AI generation moves to its
+  own page. Media resources now live in a resource library, while child-mode wallpaper and quiz
+  intro each get a full-screen setup page with single-column cards and inline preview.
+  Device-admin password actions are shorter and labelled Save.
+
+### Fixed
+
+- **Kids-mode wallpaper uploads.** Uploaded videos and images now stay in the resource library;
+  uploading, previewing, selecting and deleting no longer interfere with each other. Deleting a
+  local item also clears the wallpaper or quiz intro that referenced it, so a missing file can
+  no longer leave the TV on a broken configuration.
+
 ## [2.0.005] - 2026-11-22
 
 Copy a complete AI question prompt, and edit multi-source levels as one draft.

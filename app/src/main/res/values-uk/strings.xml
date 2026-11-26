@@ -185,9 +185,9 @@
     <string name="st_on">Увімк.</string>
     <string name="st_off">Вимк.</string>
     <string name="st_hidden_apps">Приховані застосунки</string>
-    <string name="st_hidden_apps_hint">Застосунки, приховані з головного екрана, зберігаються тут, щоб їх можна було повернути. Якщо задано батьківський PIN-код, спочатку його буде запитано.</string>
+    <string name="st_hidden_apps_hint">Застосунки, приховані з головного екрана, зберігаються тут, щоб їх можна було повернути. Якщо задано пароль адміністратора пристрою, спочатку його буде запитано.</string>
     <string name="st_home_lock">Закріпити екран</string>
-    <string name="st_home_lock_hint">Якщо ввімкнено, утримання OK або кнопка «Меню» на програмі не відкривають меню, і програми не можна випадково перемістити, сховати чи видалити. З батьківським PIN-кодом для вимкнення потрібен PIN.</string>
+    <string name="st_home_lock_hint">Якщо ввімкнено, утримання OK або кнопка «Меню» на програмі не відкривають меню, і програми не можна випадково перемістити, сховати чи видалити. З паролем адміністратора пристрою для вимкнення потрібен цей пароль.</string>
     <string name="home_locked_notice">Екран закріплено. Щоб упорядкувати програми, вимкніть «Закріпити екран» у розділі «Персоналізація».</string>
     <string name="st_hidden_none">Немає</string>
     <string name="st_hidden_count">%d</string>
@@ -205,7 +205,7 @@
     <string name="cc_inputs_list">Показувати у списку</string>
     <string name="cc_inputs_list_hint">Зніміть позначку з джерел, яких у телевізора немає або якими ви не користуєтеся. Вони зникнуть зі списку та з головного екрана.</string>
     <string name="cc_inputs_cec">Перемикати, коли пристрій вмикається</string>
-    <string name="cc_inputs_cec_hint">Коли приставка або консоль вмикається через HDMI-CEC (One Touch Play), телевізор перемикається на її джерело, як це робить його власний головний екран. Не кожен телевізор про це повідомляє; телевізори на Amlogic, як багато моделей Xiaomi, повідомляють.</string>
+    <string name="cc_inputs_cec_hint">Коли приставка або консоль вмикається через HDMI-CEC (One Touch Play), телевізор перемикається на її джерело, як це робить його власний головний екран. Не кожен телевізор про це повідомляє; телевізори на Amlogic, як багато моделей Xiaomi, повідомляють, а на телевізорах Whaley це працює, поки відкрито головний екран Aerial.</string>
     <string name="cc_inputs_pin">Показувати на головному екрані (будь-яка кількість)</string>
     <string name="cc_inputs_boot">Під час вмикання телевізора (одне)</string>
     <string name="cc_inputs_boot_none">Нічого, залишатися в PlanYourTV</string>
@@ -240,10 +240,10 @@
     <string name="cc_update_failed_signature">PlanYourTV на цьому телевізорі підписаний інакше, ніж офіційний, тому оновити його поверх неможливо.</string>
     <string name="cc_update_failed_older">Новішої версії на сайті ще немає. Повторіть спробу пізніше.</string>
     <string name="cc_self_compile">Зробити PlanYourTV плавнішим</string>
-    <string name="st_pin">Батьківський PIN-код</string>
+    <string name="st_pin">Пароль адміністратора пристрою</string>
     <string name="st_pin_off">Вимк.</string>
     <string name="st_pin_on">Увімк.</string>
-    <string name="st_pin_hint">Запитується перед відкриттям налаштувань телевізора та перед поверненням прихованих застосунків.</string>
+    <string name="st_pin_hint">Пароль адміністратора пристрою запитується перед відкриттям налаштувань телевізора та перед поверненням прихованих застосунків.</string>
     <string name="pin_enter">Введіть PIN-код</string>
     <string name="pin_enter_hint">Користуйтеся цифровими клавішами або клавіатурою нижче.</string>
     <string name="pin_create">Виберіть PIN-код</string>
@@ -265,6 +265,7 @@
     <string name="weather_thunder">Грози</string>
     <string name="weather_temperature">%1$d°</string>
     <string name="weather_high_low">Макс.: %1$d°  Мін.: %2$d°</string>
+    <string name="weather_hours_ago">%d год тому</string>
     <string name="st_columns">Програм у ряду</string>
     <string name="st_columns_hint">Скільки програм уміщується в ряд на головному екрані й у папках. Шість — більше видно одразу; чотири — більші, їх краще видно здалеку.</string>
     <string name="st_peek">Другий ряд</string>
@@ -299,7 +300,7 @@
 
     <!-- Kids and Elders mode (settings/Restricted) -->
     <string name="kids_title">Діти та літні</string>
-    <string name="kids_hint">На головному екрані лише вибрані застосунки, нічого не переставити. Щоб вийти, потрібен батьківський PIN; режим повернеться сам, коли ввімкнеться заставка або телевізор засне.</string>
+    <string name="kids_hint">На головному екрані лише вибрані застосунки, нічого не переставити. Щоб вийти, потрібен пароль адміністратора пристрою; режим повернеться сам, коли ввімкнеться заставка або телевізор засне.</string>
     <string name="kids_position">PlanYourTV допомагає керувати екранним часом дитини та виховувати самодисципліну. Увімкніть режим після розмови з дитиною.</string>
     <string name="kids_kind">Для кого</string>
     <string name="kids_kind_kids">Діти</string>
@@ -367,4 +368,12 @@
     <string name="about_license_hint">Aerial поширюється за ліцензією MIT. Гортайте текст стрілками вгору й вниз.</string>
     <string name="about_license_missing">Текст ліцензії недоступний.</string>
     <string name="about_hint">Назад — закрити</string>
+    <string name="a11y_delete">Видалити</string>
+    <string name="cc_about">Про Aerial</string>
+    <string name="cc_about_update">Оновлення</string>
+    <string name="cc_about_latest">Остання версія</string>
+    <string name="cc_about_version">Версія %1$s</string>
+    <string name="ss_sleep">Сон</string>
+    <string name="ss_sleep_hint">Без заставки: коли мине час, телевізор переходить у режим очікування, як від кнопки живлення. Багато телевізорів потім вмикаються лише кнопкою живлення.</string>
+    <string name="cc_update_to">Оновити до %1$s</string>
 </resources>

@@ -5,6 +5,7 @@ import app.orchard.tv.policy.FamilyHub
 import app.orchard.tv.policy.LocalPolicyRuntime
 import app.orchard.tv.policy.MemberSwitchAuth
 import app.orchard.tv.policy.PolicyModeCoordinator
+import app.orchard.tv.policy.SwitchProtectionSettings
 import com.planyourtv.policy.FamilyMember
 import com.planyourtv.policy.LocalRules
 import com.planyourtv.policy.LocalTimeWindow
@@ -26,9 +27,9 @@ import org.robolectric.RuntimeEnvironment
 import java.time.LocalDateTime
 
 /**
- * Switch protection is per member and off by default. A member that opts in must choose a
- * custom password; a member that stays open keeps the documented initial 123456 credential
- * until the parent turns protection on and sets a new one.
+ * Switch protection is device-wide and off by default. Adding a member always requires a
+ * custom 6-digit password, even while the switch is off; editing an existing member may keep
+ * its stored credential, including the initial 123456, until protection is turned on.
  */
 @RunWith(RobolectricTestRunner::class)
 class ParentMemberPinTest {
@@ -50,6 +51,7 @@ class ParentMemberPinTest {
     @Before
     fun setUp() {
         app = RuntimeEnvironment.getApplication()
+        SwitchProtectionSettings.debugResetForTest()
         assertTrue(TvStore.init(app))
         LocalPolicyRuntime.debugResetForTest()
         LocalPolicyRuntime.initialize(app)
@@ -59,6 +61,7 @@ class ParentMemberPinTest {
 
     @After
     fun tearDown() {
+        SwitchProtectionSettings.debugResetForTest()
         PolicyModeCoordinator.debugForceMode(PolicyMode.NONE)
         LocalPolicyRuntime.debugResetForTest()
     }
@@ -122,27 +125,14 @@ class ParentMemberPinTest {
     }
 
     @Test
-    fun webAddWithoutPinDefaultsToOpenSwitch() {
-        val name = uniqueName()
-        val outcome = addMember(null, name = name)
-
-        assertTrue(outcome.ok)
-        assertEquals("SUBJECT_ADDED", outcome.messageKey)
-        val added = memberNamed(name)
-        assertFalse(added.switchPinRequired)
-        assertTrue(added.switchPinInitial)
-        assertTrue(MemberPin.verify("123456", added.switchPinSalt, added.switchPinHash))
-    }
-
-    @Test
-    fun webAddWithProtectionRejectsMissingOrMalformedPin() {
+    fun webAddAlwaysRequiresASixDigitPin() {
         val before = FamilyHub.state.value.members.size
 
-        assertEquals("SUBJECT_PIN_REQUIRED", addMember(null, required = true).code)
-        assertEquals("SUBJECT_PIN_REQUIRED", addMember("", required = true).code)
-        assertEquals("SUBJECT_PIN_INVALID", addMember("12345", required = true).code)
-        assertEquals("SUBJECT_PIN_INVALID", addMember("12345a", required = true).code)
-        assertEquals("SUBJECT_PIN_WEAK", addMember("123456", required = true).code)
+        assertEquals("SUBJECT_PIN_REQUIRED", addMember(null).code)
+        assertEquals("SUBJECT_PIN_REQUIRED", addMember("").code)
+        assertEquals("SUBJECT_PIN_INVALID", addMember("12345").code)
+        assertEquals("SUBJECT_PIN_INVALID", addMember("12345a").code)
+        assertEquals("SUBJECT_PIN_WEAK", addMember("123456").code)
         assertEquals(before, FamilyHub.state.value.members.size)
     }
 
@@ -169,13 +159,15 @@ class ParentMemberPinTest {
         assertTrue(outcome.ok)
         val added = memberNamed(name)
         assertFalse(added.switchPinRequired)
+        assertFalse(added.switchPinInitial)
+        assertTrue(MemberPin.verify("246801", added.switchPinSalt, added.switchPinHash))
         assertEquals("boy", added.avatarPreset)
     }
 
     @Test
     fun enablingProtectionRequiresANewPin() {
         val name = uniqueName()
-        assertTrue(addMember(null, name = name).ok)
+        assertTrue(addMember("246811", name = name).ok)
         val member = memberNamed(name)
 
         val outcome = ParentCenterActions.updateMemberProfile(
@@ -189,7 +181,7 @@ class ParentMemberPinTest {
     @Test
     fun enablingProtectionRejectsTheInitialPin() {
         val name = uniqueName()
-        assertTrue(addMember(null, name = name).ok)
+        assertTrue(addMember("246811", name = name).ok)
         val member = memberNamed(name)
 
         val outcome = ParentCenterActions.updateMemberProfile(
@@ -203,7 +195,7 @@ class ParentMemberPinTest {
     @Test
     fun enablingProtectionWithCustomPinTurnsItOn() {
         val name = uniqueName()
-        assertTrue(addMember(null, name = name).ok)
+        assertTrue(addMember("246811", name = name).ok)
         val member = memberNamed(name)
 
         val outcome = ParentCenterActions.updateMemberProfile(

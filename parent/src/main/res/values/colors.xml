@@ -2,8 +2,8 @@
 <resources>
     <!-- The same blue tokens the Parent Center page uses. -->
     <color name="brand">#0B63E5</color>
-    <!-- Cream plate behind the parent app launcher artwork. -->
-    <color name="launcher_background">#FEFFEF</color>
+    <!-- Soft lavender-white plate behind the parent app launcher artwork. -->
+    <color name="launcher_background">#F1EFF8</color>
     <color name="brand_dark">#0A54C0</color>
     <!-- Soft brand plate for the selected device row and subtle accents. -->
     <color name="brand_soft">#E7F1FF</color>

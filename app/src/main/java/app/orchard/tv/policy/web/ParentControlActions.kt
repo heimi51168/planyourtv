@@ -301,7 +301,7 @@ object ParentControlActions {
             }
         }
         val minutes = body.optInt("minutes", -1)
-        if (!ManualSessionLimits.isValid(minutes)) {
+        if (!ManualSessionLimits.isValidWeb(minutes)) {
             return error(Action.START_MANUAL.name, requestId, "INVALID_DURATION")
         }
         val before = PolicyModeCoordinator.webManualStartStatus()
@@ -384,7 +384,7 @@ object ParentControlActions {
             .put("remainingSeconds", manual.remainingSeconds)
             .put("restRemainingSeconds", manual.restRemainingSeconds)
             .put("outsidePlan", manual.outsidePlan)
-            .put("minMinutes", ManualSessionLimits.MIN_MINUTES)
+            .put("minMinutes", ManualSessionLimits.WEB_MIN_MINUTES)
             .put("maxMinutes", ManualSessionLimits.MAX_MINUTES)
             .put("stepMinutes", ManualSessionLimits.STEP_MINUTES)
             .put("defaultMinutes", ManualSessionLimits.DEFAULT_MINUTES)

@@ -68,6 +68,7 @@ class PolicyStateCodecTest {
                 quizGranted = 1,
                 studyRewardGranted = 2,
                 directGranted = 3,
+                fruitGranted = 4,
             ),
         ),
     )
@@ -91,9 +92,24 @@ class PolicyStateCodecTest {
                 quizGranted = 1,
                 studyRewardGranted = 2,
                 directGranted = 3,
+                fruitGranted = 4,
             ),
             value.ledger.routeUsage,
         )
+    }
+
+    @Test
+    fun aV57RouteUsageWithoutFruitDecodesAsZeroFruit() {
+        val root = JSONObject(PolicyStateCodec.encodeRuntime(runtime()))
+        val payload = JSONObject(root.getString("payload"))
+        payload.getJSONObject("ledger").getJSONObject("routeUsage").remove("fruit")
+        root.put("payload", payload.toString()).put("crc", crc(payload))
+        val decoded = PolicyStateCodec.decodeRuntime(root.toString())
+
+        assertTrue(decoded is PolicySnapshotDecode.Success)
+        val usage = (decoded as PolicySnapshotDecode.Success).value.ledger.routeUsage
+        assertEquals(0, usage?.fruitGranted)
+        assertEquals(1, usage?.quizGranted)
     }
 
     @Test

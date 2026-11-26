@@ -5,6 +5,7 @@ import android.os.PowerManager
 import app.orchard.tv.policy.FamilyHub
 import app.orchard.tv.policy.LocalPolicyRuntime
 import app.orchard.tv.policy.PolicyModeCoordinator
+import app.orchard.tv.policy.SwitchProtectionSettings
 import app.orchard.tv.quiz.QuizAccess
 import com.planyourtv.policy.LocalRules
 import com.planyourtv.policy.LocalTimeWindow
@@ -18,6 +19,7 @@ import java.net.URL
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -59,6 +61,7 @@ class ParentWebAdminFamilyEditTest {
     @Before
     fun setUp() {
         app = RuntimeEnvironment.getApplication()
+        SwitchProtectionSettings.debugResetForTest()
         assertTrue(TvStore.init(app))
         LocalPolicyRuntime.debugResetForTest()
         shadowOf(app.getSystemService(PowerManager::class.java)).setIsInteractive(true)
@@ -67,6 +70,7 @@ class ParentWebAdminFamilyEditTest {
         LocalPolicyRuntime.setSource(PolicySource.LOCAL)
         PolicyModeCoordinator.debugForceMode(PolicyMode.LOCAL)
         ParentCenterActions.install(app)
+        SwitchProtectionSettings.install(app)
         ParentSensitiveAuth.resetForTest()
         ParentWebAccess.invalidate("test_setup")
         QuizAccess.invalidateWebSession("test_setup")
@@ -95,6 +99,7 @@ class ParentWebAdminFamilyEditTest {
     @After
     fun tearDown() {
         if (::server.isInitialized) server.stop()
+        SwitchProtectionSettings.debugResetForTest()
         ParentWebAccess.invalidate("test_teardown")
         QuizAccess.invalidateWebSession("test_teardown")
         PolicyModeCoordinator.debugForceMode(PolicyMode.NONE)
@@ -158,9 +163,9 @@ class ParentWebAdminFamilyEditTest {
         return (result as ParentSensitiveAuth.VerifyResult.Ok).token
     }
 
-    private fun rulesToken(): String {
+    private fun userEditToken(): String {
         val result = ParentSensitiveAuth.verify(
-            scopeValue = "RULES_EDIT",
+            scopeValue = "USER_EDIT",
             pin = pin,
             editorToken = editorToken,
         )
@@ -192,15 +197,75 @@ class ParentWebAdminFamilyEditTest {
     }
 
     @Test
-    fun aRulesProofIsNotAFamilyProof() {
-        val rules = rulesToken()
+    fun aUserEditProofIsNotAFamilyProof() {
+        val userEdit = userEditToken()
         val rejected = post(
             "/api/parent/subjects/add",
             """{"name":"$addedName"}""",
-            sensitiveToken = rules,
+            sensitiveToken = userEdit,
         )
         assertEquals(403, rejected.status)
         assertEquals("SENSITIVE_SCOPE", rejected.json.getString("error"))
+
+        val switchRejected = post(
+            "/api/parent/switch-protection/disable",
+            """{"required":false}""",
+            sensitiveToken = userEdit,
+        )
+        assertEquals(403, switchRejected.status)
+        assertEquals("SENSITIVE_SCOPE", switchRejected.json.getString("error"))
+    }
+
+    @Test
+    fun enablingSwitchProtectionNeedsNoFamilyProof() {
+        val saved = post("/api/parent/switch-protection", """{"required":true}""")
+        assertEquals(200, saved.status)
+        assertEquals("SWITCH_PROTECTION_SAVED", saved.json.getString("messageKey"))
+        assertTrue(
+            saved.json
+                .getJSONObject("snapshot")
+                .getJSONObject("switchProtection")
+                .getBoolean("required"),
+        )
+    }
+
+    @Test
+    fun unprotectedSwitchRouteCannotDisableProtection() {
+        val rejected = post("/api/parent/switch-protection", """{"required":false}""")
+        assertEquals(400, rejected.status)
+        assertEquals("SWITCH_PROTECTION_INVALID", rejected.json.getString("error"))
+        assertFalse(
+            rejected.json
+                .getJSONObject("snapshot")
+                .getJSONObject("switchProtection")
+                .getBoolean("required"),
+        )
+    }
+
+    @Test
+    fun disablingSwitchProtectionRequiresAFamilyProof() {
+        assertTrue(
+            post("/api/parent/switch-protection", """{"required":true}""").json
+                .getJSONObject("snapshot")
+                .getJSONObject("switchProtection")
+                .getBoolean("required"),
+        )
+
+        assertRequired(post("/api/parent/switch-protection/disable", """{"required":false}"""))
+
+        val saved = post(
+            "/api/parent/switch-protection/disable",
+            """{"required":false}""",
+            sensitiveToken = familyToken(),
+        )
+        assertEquals(200, saved.status)
+        assertEquals("SWITCH_PROTECTION_SAVED", saved.json.getString("messageKey"))
+        assertFalse(
+            saved.json
+                .getJSONObject("snapshot")
+                .getJSONObject("switchProtection")
+                .getBoolean("required"),
+        )
     }
 
     @Test
@@ -208,7 +273,7 @@ class ParentWebAdminFamilyEditTest {
         val token = familyToken()
         val added = post(
             "/api/parent/subjects/add",
-            """{"name":"$addedName","avatarPreset":"boy","switchPinRequired":false}""",
+            """{"name":"$addedName","avatarPreset":"boy","switchPin":"246812"}""",
             sensitiveToken = token,
         )
         assertEquals(200, added.status)

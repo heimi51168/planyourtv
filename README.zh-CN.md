@@ -17,7 +17,7 @@
 <img alt="Android TV 5.0+" src="https://img.shields.io/badge/Android%20TV-5.0%2B-3ddc84?style=flat-square&logo=android&logoColor=white">
 <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.x-7f52ff?style=flat-square&logo=kotlin&logoColor=white">
 <img alt="Jetpack Compose" src="https://img.shields.io/badge/Jetpack-Compose-4285f4?style=flat-square&logo=jetpackcompose&logoColor=white">
-<img alt="基于 Aerial 2.0" src="https://img.shields.io/badge/%E5%9F%BA%E4%BA%8E-Aerial%202.0-1f6feb?style=flat-square">
+<img alt="基于 Aerial 2.19" src="https://img.shields.io/badge/%E5%9F%BA%E4%BA%8E-Aerial%202.19-1f6feb?style=flat-square">
 
 </div>
 
@@ -27,7 +27,7 @@ PlanYourTV 是一个**桌面级儿童时间管理 App**：它替代电视自带�
 
 > 常见搜索：Android TV 儿童模式、小米电视儿童锁、TCL 电视时间管理、电视屏幕时间、儿童电视桌面、答题解锁电视、Aerial 儿童桌面。
 
-> **当前社区源码版本：`2.0.005`（versionCode 148005），基于 Aerial 2.0。** 小米电视 `standard` 已由本项目真机验证；其他机型和 `guard` 版本沿用 Aerial 上游的支持范围，本项目未逐一验证。
+> **当前社区源码版本：`2.19.002`（versionCode 165002），基于 Aerial 2.19。** 小米电视 `standard` 已由本项目真机验证；其他机型和 `guard` 版本沿用 Aerial 上游的支持范围，本项目未逐一验证。
 
 ## 项目速览
 
@@ -37,8 +37,8 @@ PlanYourTV 是一个**桌面级儿童时间管理 App**：它替代电视自带�
 | 类型 | Android TV 桌面 / 儿童时间管理 / 家长控制 |
 | 平台 | Android TV 5.0+（API 21+）；Android 4.x 不支持；不需要 root |
 | 包名 | `com.planyourtv.tv` |
-| 当前版本 | `2.0.005` / 148005 |
-| 上游基线 | [Aerial](https://github.com/pengchujin/aerial-tv) 2.0（MIT） |
+| 当前版本 | `2.19.002` / 165002 |
+| 上游基线 | [Aerial](https://github.com/pengchujin/aerial-tv) 2.19（MIT） |
 | 许可证 | MIT |
 | 下载 | [standard APK](https://planyourtv.me/download/planyourtv-standard.apk) · [guard APK](https://planyourtv.me/download/planyourtv-guard.apk) · [手机家长端（可选，Android 7.0+）](https://planyourtv.me/download/planyourtv-parent.apk) |
 | 数据 | 本地优先；不需要账号；本地模式不依赖服务器 |

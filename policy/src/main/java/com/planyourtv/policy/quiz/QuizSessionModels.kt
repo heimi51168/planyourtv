@@ -177,6 +177,11 @@ data class QuizItem(
     val answerKind: QuizAnswerKind = QuizAnswerKind.SINGLE,
     /** v7 renderer selector; old records decode as [QuizPresentation.CHOICE]. */
     val presentation: QuizPresentation = QuizPresentation.CHOICE,
+    /**
+     * Optional visual layer. Text fields remain canonical; a malformed visual
+     * is dropped on read instead of failing the question.
+     */
+    val visual: QuizVisual? = null,
 ) {
     val isMultipleChoice: Boolean
         get() = answerKind == QuizAnswerKind.MULTIPLE
@@ -581,6 +586,9 @@ object QuizSessionCodec {
             val cacheId = item.optString("cacheId", "").take(64)
             val sourceKind = item.optString("sourceKind", "").take(32)
             val sourceRef = item.optString("sourceRef", "").take(128)
+            // Visuals are lenient on read: an unknown or malformed visual only
+            // removes the picture, never the text question or the whole bank.
+            val visual = QuizVisualCodec.parseOrNull(item.optJSONObject("visual"))
             if (id == null || prompt == null || optionsArray == null ||
                 points == null || timeLimit == null
             ) {
@@ -742,6 +750,7 @@ object QuizSessionCodec {
                 answerIndices = if (answerKind == QuizAnswerKind.MULTIPLE) answerIndices else emptyList(),
                 answerKind = answerKind,
                 presentation = presentation,
+                visual = visual,
             )
         }
         return if (errors.isEmpty()) items else null
@@ -945,6 +954,10 @@ object QuizSessionCodec {
             if (item.optionOrder.isNotEmpty()) {
                 put("optionOrder", JSONArray(item.optionOrder))
             }
+        }
+        .apply {
+            // Text-only questions keep the exact legacy wire shape.
+            item.visual?.let { put("visual", QuizVisualCodec.encode(it)) }
         }
 
     private fun encodeRun(run: QuizRun): JSONObject = JSONObject()

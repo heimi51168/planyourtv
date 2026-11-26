@@ -39,6 +39,15 @@ data class RemotePolicy(
      */
     val sourceEntryVisible: Boolean? = null,
     val quizEntryVisible: Boolean? = null,
+    /**
+     * Device-level switch protection pushed by the garden backend (2026-11-25). It mirrors the
+     * TV local web V57「切换用户需要密码」+「电视免密切换时间区间」, but the password is the
+     * target garden member's login password (verified by the backend) instead of the local
+     * 6-digit TV PIN. `null` means the backend predates the projection: CLOUD mode then keeps
+     * its historical direct switch, and the phone UI is disabled because the TV has not
+     * reported the V57 capability. LOCAL mode never reads this node.
+     */
+    val switchProtection: SwitchProtection? = null,
 ) {
     /** Old backends carry a single rule set; the TV then runs explicit single-set mode. */
     val supportsRuleSets: Boolean

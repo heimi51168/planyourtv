@@ -500,6 +500,12 @@ class RemotePolicyCodecTest {
         // Absent = backend predates member projection: the TV must keep every local field.
         assertNull(RemotePolicyCodec.parse(policyJson)!!.memberScopedFields)
 
+        // An explicit JSON null is how the backend serializes "not projected for a member";
+        // like an absent key it must keep every local field, not invalidate the snapshot.
+        val explicitNull = JSONObject(policyJson.toString())
+            .put("memberScopedFields", JSONObject.NULL)
+        assertNull(RemotePolicyCodec.parse(explicitNull)!!.memberScopedFields)
+
         // An empty array is a real mask (no field projected) and must not be confused with
         // "legacy backend"; conflating them would widen a child's scope.
         val emptyMask = JSONObject(policyJson.toString())
@@ -522,10 +528,6 @@ class RemotePolicyCodecTest {
         val blank = JSONObject(policyJson.toString())
             .put("memberScopedFields", org.json.JSONArray().put("  "))
         assertNull(RemotePolicyCodec.parse(blank))
-
-        val explicitNull = JSONObject(policyJson.toString())
-            .put("memberScopedFields", JSONObject.NULL)
-        assertNull(RemotePolicyCodec.parse(explicitNull))
     }
 
     @Test
@@ -562,6 +564,15 @@ class RemotePolicyCodecTest {
         )!!.rules
         assertNull(restored.entertainmentDailyLimitFor(1))
         assertNull(restored.entertainmentDailyLimitFor(6))
+    }
+
+    @Test
+    fun explicitNullSessionCapUsesTheLocalDefault() {
+        // 设备级策略没有「单次娱乐上限」投影时后端会下发显式 null，不能整份作废。
+        val json = withRules(policyJson) { it.put("sessionCapMinutes", JSONObject.NULL) }
+        val policy = RemotePolicyCodec.parse(json)!!
+        assertTrue(policy.rulesUsable)
+        assertEquals(LocalRules.DEFAULTS.sessionCapMinutes, policy.rules.sessionCapMinutes)
     }
 
     @Test
@@ -718,5 +729,55 @@ class RemotePolicyCodecTest {
     fun emptyOrNullNodeIsIgnored() {
         assertNull(RemotePolicyCodec.parse(null))
         assertNull(RemotePolicyCodec.parse(JSONObject()))
+    }
+
+    @Test
+    fun explicitNullOptionalPackagesDoNotInvalidateTheSnapshot() {
+        // 后端 Jackson 默认把未投影的名单字段序列化成显式 null；旧 codec 会因此整份作废。
+        val json = withRules(policyJson) {
+            it.put("studyPackages", JSONObject.NULL)
+            it.put("unlimitedPackages", JSONObject.NULL)
+            it.put("studyEarnPackages", JSONObject.NULL)
+        }
+        val policy = RemotePolicyCodec.parse(json)!!
+        assertTrue(policy.rulesUsable)
+        assertEquals(emptySet<String>(), policy.rules.studyPackages)
+        assertEquals(emptySet<String>(), policy.rules.unlimitedPackages)
+        assertEquals(emptySet<String>(), policy.rules.studyEarnPackages)
+    }
+
+    @Test
+    fun explicitNullMemberMaskMeansLegacySnapshot() {
+        // 未按小果农投影时后端会输出 "memberScopedFields": null；它表示「没有 mask」，
+        // 不是脏数据——整份快照仍要可用，本地字段全部保留。
+        val manualRules = JSONObject(
+            """
+            {
+              "weekdayWindows": [{"startMinute": 1080, "endMinute": 1200}],
+              "weekendWindows": [{"startMinute": 540, "endMinute": 1200}],
+              "dailyLimitMinutes": 60,
+              "sessionLimitMinutes": 20,
+              "restMinutes": 0,
+              "sessionScreenOffBufferMinutes": 20,
+              "dayGroups": null,
+              "sessionCapMinutes": null,
+              "quizGateEnabled": null,
+              "studyEarnEnabled": null,
+              "directStartEnabled": null,
+              "quizDailyLimitCount": null,
+              "studyRewardDailyLimitCount": null,
+              "directDailyFreeCount": null,
+              "memberScopedFields": null
+            }
+            """.trimIndent(),
+        )
+        val json = withRules(policyJson) {
+            it.put("unlimitedPackages", JSONObject.NULL)
+            it.put("studyEarnPackages", JSONObject.NULL)
+        }.put("manualRules", manualRules)
+        val policy = RemotePolicyCodec.parse(json)!!
+        assertTrue(policy.rulesUsable)
+        assertNull(policy.memberScopedFields)
+        assertTrue(policy.ruleSets != null)
     }
 }

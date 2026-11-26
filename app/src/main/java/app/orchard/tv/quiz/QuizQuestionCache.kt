@@ -17,6 +17,7 @@ import com.planyourtv.policy.quiz.QuizPresetBank
 import com.planyourtv.policy.quiz.QuizSession
 import com.planyourtv.policy.quiz.QuizSessionCodec
 import com.planyourtv.policy.quiz.QuizTypeFilter
+import com.planyourtv.policy.quiz.QuizVisualCodec
 import org.json.JSONArray
 import java.security.MessageDigest
 import java.util.Random
@@ -446,6 +447,11 @@ object QuizQuestionCache {
     internal fun initForTest(context: Context, dbName: String): Boolean = initDb(context, dbName)
 
     private fun initDb(context: Context, dbName: String): Boolean = synchronized(lock) {
+        // The visual and speech stores are independent of the DB, but every
+        // consumer of the cache expects their local roots to be ready.
+        // Initializing them here keeps PolicyProduct's existing wiring untouched.
+        QuizVisualAssetStore.install(context.applicationContext)
+        QuizTtsCache.install(context.applicationContext)
         if (helper?.dbName == dbName) return true
         helper?.close()
         helper = null
@@ -3208,9 +3214,12 @@ object QuizQuestionCache {
             // stable so an upgrade never re-imports an existing bank.
             item.answerIndex.toString()
         }
+        val visualKey = item.visual?.let(QuizVisualCodec::canonicalKey)
         val canonical = item.prompt.trim().lowercase() + " " +
             item.options.joinToString(" ") { it.trim().lowercase() } + " " +
-            answerKey
+            answerKey +
+            // Text-only items keep the exact legacy canonical string.
+            (visualKey?.let { " $it" } ?: "")
         return MessageDigest.getInstance("SHA-256")
             .digest(canonical.toByteArray(Charsets.UTF_8))
             .joinToString("") { "%02x".format(it) }

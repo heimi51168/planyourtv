@@ -25,6 +25,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import app.orchard.tv.policy.FamilyHub
+import app.orchard.tv.policy.media.HostedMediaRoute
 import app.orchard.tv.policy.media.PolicyAudioEntry
 import app.orchard.tv.policy.media.PolicyVideoLibrary
 import app.orchard.tv.ui.theme.Motion
@@ -40,6 +41,9 @@ import kotlinx.coroutines.withContext
 internal fun rememberPolicyBackgroundAudio(): PolicyAudioEntry? {
     val context = LocalContext.current.applicationContext
     val family by FamilyHub.state.collectAsState()
+    // V50: the hosted route disables the local track in CLOUD and restores it on the way back,
+    // neither of which touches a preference key. Re-read when the route revision changes.
+    val hostedRevision by HostedMediaRoute.revision.collectAsState()
     var revision by remember(context) { mutableIntStateOf(0) }
     DisposableEffect(context) {
         val prefs = context.getSharedPreferences("quiz-intro", Context.MODE_PRIVATE)
@@ -52,7 +56,7 @@ internal fun rememberPolicyBackgroundAudio(): PolicyAudioEntry? {
     var entry by remember(context, family.activeUserId) {
         mutableStateOf<PolicyAudioEntry?>(null)
     }
-    LaunchedEffect(context, family.activeUserId, revision) {
+    LaunchedEffect(context, family.activeUserId, revision, hostedRevision) {
         entry = withContext(Dispatchers.IO) {
             runCatching { PolicyVideoLibrary.lockAudio(context) }.getOrNull()
         }

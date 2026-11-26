@@ -224,7 +224,12 @@ object QuizConfigDocumentValidator {
             if (level.subjects.any { it.isBlank() }) {
                 issues.issue("$prefix.subjects", "EMPTY_ITEM")
             }
-            if (level.scopeType != null && level.scopeType !in SCOPE_TYPES) {
+            val allowedScopeTypes = if (level.origin == QuizLevelOrigin.CLOUD) {
+                CLOUD_SCOPE_TYPES
+            } else {
+                LOCAL_SCOPE_TYPES
+            }
+            if (level.scopeType != null && level.scopeType !in allowedScopeTypes) {
                 issues.issue("$prefix.scopeType", "INVALID")
             }
             if (level.unitNos.any { it < 1 }) {
@@ -323,7 +328,10 @@ object QuizConfigDocumentValidator {
     }
 
     private const val LOCAL_DOCUMENT_PREFIX = "quizcfg:local:"
-    private val SCOPE_TYPES = setOf("UNIT", "MIDTERM", "FINAL", "REVIEW")
+    // TOPIC（奥数专题）只由云端题库下发；本地模式没有该关卡入口，
+    // 因此只在 CLOUD 关卡上放行，LOCAL 关卡与本地文档的校验口径保持不变。
+    private val LOCAL_SCOPE_TYPES = setOf("UNIT", "MIDTERM", "FINAL", "REVIEW")
+    private val CLOUD_SCOPE_TYPES = LOCAL_SCOPE_TYPES + "TOPIC"
     private val DIFFICULTIES = setOf("EASY", "MEDIUM", "HARD")
     private val ETAG_RE = Regex("^sha256:[0-9a-f]{64}$")
     private val UPDATED_AT_RE =

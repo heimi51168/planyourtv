@@ -148,6 +148,9 @@ class ParentControlActionsTest {
         .put("quizDailyLimitCount", 3)
         .put("studyRewardDailyLimitCount", 3)
         .put("directDailyFreeCount", 3)
+        // V6 adds the fruit switch and its own daily count.
+        .put("fruitExchangeEnabled", false)
+        .put("fruitExchangeDailyLimitCount", 3)
         .put("studyEarnStudyMinutes", 10)
         .put("studyEarnRewardMinutes", 5)
         .put("restMinutes", 5)
@@ -405,7 +408,7 @@ class ParentControlActionsTest {
         assertFalse(timer.getBoolean("outsidePlan"))
         assertTrue(status.getJSONObject("quiz").has("roundActive"))
         val manual = status.getJSONObject("manualStart")
-        assertTrue(manual.has("minMinutes"))
+        assertEquals(1, manual.getInt("minMinutes"))
         assertTrue(manual.getBoolean("requiresPin"))
         // V45: the timer sheet shows the configured scope, including the study reward only
         // while that route is enabled.
@@ -460,7 +463,7 @@ class ParentControlActionsTest {
         val invalid = handle(
             body("START_MANUAL", "manual-invalid-duration-1") {
                 put("pin", pin)
-                put("minutes", 7)
+                put("minutes", 0)
             },
         )
         assertFalse(invalid.ok)
@@ -557,9 +560,10 @@ class ParentControlActionsTest {
         assertEquals(600, json.getInt("sessionCapMinutes"))
         assertEquals(20, json.getInt("sessionLimitMinutes"))
         assertEquals(20, json.getInt("directSessionMinutes"))
-        assertEquals(1000, json.getInt("quizDailyLimitCount"))
-        assertEquals(1000, json.getInt("studyRewardDailyLimitCount"))
-        assertEquals(1000, json.getInt("directDailyFreeCount"))
+        assertEquals(-1, json.getInt("quizDailyLimitCount"))
+        assertEquals(-1, json.getInt("studyRewardDailyLimitCount"))
+        assertEquals(-1, json.getInt("directDailyFreeCount"))
+        assertEquals(-1, json.getInt("fruitExchangeDailyLimitCount"))
         val groups = json.getJSONArray("dayGroups")
         assertEquals(3, groups.length())
         val firstDays = groups.getJSONObject(0).getJSONArray("days")
@@ -743,11 +747,11 @@ class ParentControlActionsTest {
     fun snapshotPublishesTheSessionCapAndTodaysRouteCounts() {
         val snapshot = ParentCenterActions.snapshot(app)
         val rules = snapshot.getJSONObject("rules")
-        assertEquals(5, rules.getInt("rulesContractVersion"))
+        assertEquals(ParentCenterActions.RULES_CONTRACT_VERSION, rules.getInt("rulesContractVersion"))
         assertEquals(600, rules.getInt("sessionCapMinutes"))
         assertEquals(20, rules.getInt("directSessionMinutes"))
         assertEquals(20, rules.getInt("sessionLimitMinutes"))
-        assertEquals(1000, rules.getInt("directDailyFreeCount"))
+        assertEquals(-1, rules.getInt("directDailyFreeCount"))
 
         val usage = snapshot.getJSONObject("usage")
         assertEquals(600 * 60, usage.getInt("sessionCapSeconds"))
@@ -755,12 +759,12 @@ class ParentControlActionsTest {
         assertTrue(counts.getString("date").isNotEmpty())
         val quiz = counts.getJSONObject("quiz")
         assertEquals(0, quiz.getInt("used"))
-        assertEquals(1000, quiz.getInt("limit"))
-        assertEquals(1000, quiz.getInt("remaining"))
+        assertEquals(-1, quiz.getInt("limit"))
+        assertEquals(-1, quiz.getInt("remaining"))
         val direct = counts.getJSONObject("directFree")
         assertEquals(0, direct.getInt("used"))
-        assertEquals(1000, direct.getInt("remaining"))
-        assertEquals(1000, counts.getJSONObject("studyReward").getInt("remaining"))
+        assertEquals(-1, direct.getInt("remaining"))
+        assertEquals(-1, counts.getJSONObject("studyReward").getInt("remaining"))
     }
 
     @Test
