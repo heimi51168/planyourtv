@@ -219,7 +219,14 @@ class HomeGuardService : AccessibilityService() {
     private fun continuousForegroundCheck(): Boolean =
         Build.VERSION.SDK_INT <= Build.VERSION_CODES.M ||
             INVISIBLE_LAUNCHERS.any { it in stockHomes } ||
-            PolicyModeCoordinator.isEnabled()
+            PolicyModeCoordinator.isEnabled() ||
+            // The device-level lock (answerForeground's locked branch) is the only
+            // backstop for switches the accessibility events miss — MIUI's recents
+            // restores a single-task app with no TYPE_WINDOW_STATE_CHANGED the guard
+            // ever sees (reproduced: 云视听极光 from double-Home recents, 2026-11-16).
+            // isEnabled() is false while locked with no session, which used to stop
+            // this poller exactly when that backstop was the only defense left.
+            PolicyModeCoordinator.isLockScreen()
 
     private fun restartForegroundCheck() {
         handler.removeCallbacks(foregroundCheck)
@@ -246,6 +253,11 @@ class HomeGuardService : AccessibilityService() {
                 bringHome = { goHome() },
             )
             PolicyModeCoordinator.state.collect { state ->
+                // Entering the lock state must (re)start the usage poll: the loop
+                // exits itself when a session ends and nothing but screen-on used
+                // to bring it back, leaving a locked TV unwatched by the backstop.
+                // restartForegroundCheck is idempotent and re-gates on its own.
+                if (PolicyModeCoordinator.isLockScreen()) restartForegroundCheck()
                 val edge = relay.onState(state) ?: return@collect
                 Log.i(TAG, "policy: $edge; bringing the lock screen forward")
             }
