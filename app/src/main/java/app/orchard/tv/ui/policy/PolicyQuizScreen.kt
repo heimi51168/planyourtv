@@ -35,6 +35,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -109,11 +110,13 @@ import app.orchard.tv.ui.components.glassEdge
 import app.orchard.tv.ui.components.isSelect
 import app.orchard.tv.ui.components.liquidGlass
 import app.orchard.tv.ui.theme.Glyph
+import app.orchard.tv.ui.theme.LocalQuizTextMetrics
 import app.orchard.tv.ui.theme.LocalReducedMotion
 import app.orchard.tv.ui.theme.Motion
 import app.orchard.tv.ui.theme.GlyphIcon
 import app.orchard.tv.ui.theme.Palette
 import app.orchard.tv.ui.theme.Type
+import app.orchard.tv.ui.theme.quizTextMetrics
 import app.orchard.tv.ui.wallpaper.latestBringIntoView
 import app.orchard.tv.wallpaper.PhoneServer
 import com.planyourtv.policy.PolicyVoiceBus
@@ -239,6 +242,15 @@ fun PolicyQuizScreen(
         if (state.sessionState != "running" || feedbackOpen) confirmExit = false
     }
 
+    // The quiz typography is resolved once per round from the frozen session
+    // config and this TV's real pixel height; the rest of the app keeps Type.
+    val density = LocalDensity.current.density
+    val displayMetrics = context.resources.displayMetrics
+    val textConfig = state.session?.config ?: state.defaultChallengeConfig
+    val quizMetrics = remember(textConfig, displayMetrics.heightPixels, density) {
+        quizTextMetrics(textConfig, displayMetrics.heightPixels, density)
+    }
+    CompositionLocalProvider(LocalQuizTextMetrics provides quizMetrics) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -308,6 +320,7 @@ fun PolicyQuizScreen(
                 },
             )
         }
+    }
     }
 }
 
@@ -1871,6 +1884,7 @@ private fun QuizQuestionPage(
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val textMetrics = LocalQuizTextMetrics.current
     var submitting by remember(item.questionId) { mutableStateOf(false) }
     var remaining by remember(item.questionId, deadlineAt) {
         mutableLongStateOf(QuizChallenge.remainingSeconds())
@@ -1961,7 +1975,7 @@ private fun QuizQuestionPage(
             Column(horizontalAlignment = Alignment.End) {
                 BasicText(
                     stringResource(R.string.policy_quiz_time_left, remaining),
-                    style = Type.Title.copy(
+                    style = textMetrics.timer.copy(
                         color = when {
                             remaining <= 5 -> Palette.Red
                             remaining <= 10 -> Palette.Orange
@@ -2146,6 +2160,7 @@ private fun QuizFormatBanner(multiple: Boolean) {
 private fun QuizOptionMarker(multiple: Boolean, selected: Boolean, focused: Boolean) {
     val accent = if (multiple) Palette.Orange else Palette.Green
     val shape = if (multiple) RoundedCornerShape(5.dp) else CircleShape
+    val metrics = LocalQuizTextMetrics.current
     val edge = when {
         selected -> accent
         focused -> Palette.OnFocus
@@ -2153,7 +2168,7 @@ private fun QuizOptionMarker(multiple: Boolean, selected: Boolean, focused: Bool
     }
     Box(
         modifier = Modifier
-            .size(20.dp)
+            .size(metrics.markerSize)
             .clip(shape)
             .background(if (selected) accent else Color.Transparent)
             .border(1.5.dp, edge, shape),
@@ -2163,7 +2178,7 @@ private fun QuizOptionMarker(multiple: Boolean, selected: Boolean, focused: Bool
             if (multiple) {
                 BasicText(
                     "✓",
-                    style = Type.Caption.copy(
+                    style = Type.Headline.copy(
                         color = Palette.OnFocus,
                         fontWeight = FontWeight.W700,
                     ),
@@ -2199,10 +2214,11 @@ internal fun QuizOptionButton(
         focusedScale = 1.02f,
         onKey = onKey,
     ) { state ->
+        val metrics = LocalQuizTextMetrics.current
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 56.dp)
+                .heightIn(min = metrics.optionMinHeight)
                 .clip(RoundedCornerShape(13.dp))
                 .background(
                     when {
@@ -2222,7 +2238,7 @@ internal fun QuizOptionButton(
             Spacer(Modifier.width(10.dp))
             BasicText(
                 label,
-                style = Type.Body.copy(
+                style = metrics.option.copy(
                     color = if (state.focused) Palette.OnFocus else Palette.Label,
                 ),
                 modifier = Modifier.weight(1f),
@@ -2729,6 +2745,7 @@ private fun QuizFeedbackPage(
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val textMetrics = LocalQuizTextMetrics.current
     val scroll = rememberScrollState()
     var busy by remember(item.questionId, submission.answeredAt) { mutableStateOf(false) }
     var error by remember(item.questionId, submission.answeredAt) { mutableStateOf(false) }
@@ -2926,7 +2943,7 @@ private fun QuizFeedbackPage(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             FeedbackSection(stringResource(R.string.policy_quiz_review_question)) {
-                BasicText(item.prompt, style = Type.Headline)
+                BasicText(item.prompt, style = textMetrics.review)
             }
             // Mirror the question page: the answer lines keep the left of the
             // body and the figure sits to their right, so a short prompt no
@@ -2943,7 +2960,7 @@ private fun QuizFeedbackPage(
                     FeedbackSection(stringResource(R.string.policy_quiz_review_your_answer)) {
                         BasicText(
                             selectedText ?: stringResource(R.string.policy_quiz_review_unanswered),
-                            style = Type.Body.copy(
+                            style = textMetrics.review.copy(
                                 color = if (correct) QuizGold else QuizLoss,
                             ),
                         )
@@ -2954,7 +2971,7 @@ private fun QuizFeedbackPage(
                             // The correct option is information, not a score:
                             // keeping it neutral stops a failed question from
                             // reading as a green loss or a gold payout.
-                            style = Type.Body.copy(color = Palette.Label),
+                            style = textMetrics.review.copy(color = Palette.Label),
                         )
                     }
                 }
@@ -2972,7 +2989,7 @@ private fun QuizFeedbackPage(
                 FeedbackSection(stringResource(R.string.policy_quiz_review_solution)) {
                     BasicText(
                         item.explanation,
-                        style = Type.Body.copy(color = Palette.SecondaryLabel),
+                        style = textMetrics.review.copy(color = Palette.SecondaryLabel),
                     )
                 }
             }

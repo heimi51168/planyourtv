@@ -147,6 +147,14 @@ object QuizConfigDocumentCodec {
     private fun parseRules(root: JSONObject, prefix: String, issues: MutableList<QuizDocIssue>): QuizRules? {
         val questionCount = root.requiredInt("questionCount", prefix, issues)
         val timeLimitSec = root.requiredInt("timeLimitSec", prefix, issues)
+        // Optional for documents written before per-difficulty windows. The
+        // default window is the compatibility fallback for every difficulty.
+        val easyTimeLimitSec = root.optionalInt("easyTimeLimitSec", prefix, issues) ?: timeLimitSec ?: 60
+        val mediumTimeLimitSec = root.optionalInt("mediumTimeLimitSec", prefix, issues) ?: timeLimitSec ?: 60
+        val hardTimeLimitSec = root.optionalInt("hardTimeLimitSec", prefix, issues) ?: timeLimitSec ?: 60
+        val quizTextAuto = root.optionalBoolean("quizTextAuto", prefix, issues) ?: true
+        val quizTvSizeInch = root.optionalInt("quizTvSizeInch", prefix, issues) ?: 42
+        val quizTextScalePct = root.optionalInt("quizTextScalePct", prefix, issues) ?: 100
         val feedbackJson = root.requiredObject("feedback", prefix, issues)
         val feedback = feedbackJson?.let { parseFeedback(it, field(prefix, "feedback"), issues) }
         val shuffleOptions = root.requiredBoolean("shuffleOptions", prefix, issues)
@@ -159,6 +167,21 @@ object QuizConfigDocumentCodec {
         val subjects = subjectsJson?.let { stringArray(it, field(prefix, "subjects"), issues) } ?: emptyList()
         val legacyJson = root.optionalObject("legacy", prefix, issues)
         val legacy = legacyJson?.let { parseLegacy(it, field(prefix, "legacy"), issues) }
+        if (easyTimeLimitSec !in QUIZ_DOC_MIN_TIME_LIMIT_SEC..QUIZ_DOC_MAX_TIME_LIMIT_SEC) {
+            issues += QuizDocIssue(field(prefix, "easyTimeLimitSec"), "OUT_OF_RANGE")
+        }
+        if (mediumTimeLimitSec !in QUIZ_DOC_MIN_TIME_LIMIT_SEC..QUIZ_DOC_MAX_TIME_LIMIT_SEC) {
+            issues += QuizDocIssue(field(prefix, "mediumTimeLimitSec"), "OUT_OF_RANGE")
+        }
+        if (hardTimeLimitSec !in QUIZ_DOC_MIN_TIME_LIMIT_SEC..QUIZ_DOC_MAX_TIME_LIMIT_SEC) {
+            issues += QuizDocIssue(field(prefix, "hardTimeLimitSec"), "OUT_OF_RANGE")
+        }
+        if (quizTvSizeInch !in 24..100) {
+            issues += QuizDocIssue(field(prefix, "quizTvSizeInch"), "OUT_OF_RANGE")
+        }
+        if (quizTextScalePct !in 60..240) {
+            issues += QuizDocIssue(field(prefix, "quizTextScalePct"), "OUT_OF_RANGE")
+        }
         if (questionCount == null || timeLimitSec == null || feedback == null ||
             shuffleOptions == null || showPinyin == null || sourceOrder == null
         ) {
@@ -167,6 +190,12 @@ object QuizConfigDocumentCodec {
         return QuizRules(
             questionCount = questionCount,
             timeLimitSec = timeLimitSec,
+            easyTimeLimitSec = easyTimeLimitSec,
+            mediumTimeLimitSec = mediumTimeLimitSec,
+            hardTimeLimitSec = hardTimeLimitSec,
+            quizTextAuto = quizTextAuto,
+            quizTvSizeInch = quizTvSizeInch,
+            quizTextScalePct = quizTextScalePct,
             feedback = feedback,
             shuffleOptions = shuffleOptions,
             showPinyin = showPinyin,
@@ -434,6 +463,12 @@ object QuizConfigDocumentCodec {
         val out = copyObject(rules.extra)
         out.put("questionCount", rules.questionCount)
         out.put("timeLimitSec", rules.timeLimitSec)
+        out.put("easyTimeLimitSec", rules.easyTimeLimitSec)
+        out.put("mediumTimeLimitSec", rules.mediumTimeLimitSec)
+        out.put("hardTimeLimitSec", rules.hardTimeLimitSec)
+        out.put("quizTextAuto", rules.quizTextAuto)
+        out.put("quizTvSizeInch", rules.quizTvSizeInch)
+        out.put("quizTextScalePct", rules.quizTextScalePct)
         out.put("feedback", encodeFeedback(rules.feedback))
         out.put("shuffleOptions", rules.shuffleOptions)
         out.put("showPinyin", rules.showPinyin)
@@ -858,8 +893,9 @@ object QuizConfigDocumentCodec {
         "questionPolicy", "requirements", "levels", "extensions",
     )
     private val RULES_KEYS = setOf(
-        "questionCount", "timeLimitSec", "feedback", "shuffleOptions", "showPinyin",
-        "sourceOrder", "subjects", "legacy",
+        "questionCount", "timeLimitSec", "easyTimeLimitSec", "mediumTimeLimitSec",
+        "hardTimeLimitSec", "quizTextAuto", "quizTvSizeInch", "quizTextScalePct",
+        "feedback", "shuffleOptions", "showPinyin", "sourceOrder", "subjects", "legacy",
     )
     private val FEEDBACK_KEYS = setOf("extraHoldSec", "answerRevealSec", "autoNext")
     private val LEGACY_KEYS = setOf(

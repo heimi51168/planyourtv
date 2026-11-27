@@ -101,6 +101,15 @@ enum class QuizSessionStatus {
  */
 data class QuizConfig(
     val defaultTimeLimitSec: Int = 60,
+    /** Per-difficulty answer windows. The default is the unknown-difficulty fallback. */
+    val easyTimeLimitSec: Int = 60,
+    val mediumTimeLimitSec: Int = 90,
+    val hardTimeLimitSec: Int = 120,
+    /** Quiz text sizing; AUTO uses the TV's pixel height and [quizTvSizeInch]. */
+    val quizTextAuto: Boolean = true,
+    val quizTvSizeInch: Int = 42,
+    /** MANUAL only: percent of the 42-inch reference size, 60..240. */
+    val quizTextScalePct: Int = 100,
     /** Legacy field kept for schema v2/v3 sessions and for the binding report. */
     val minutesPerPoint: Int = 5,
     val minCorrectCount: Int = 1,
@@ -459,6 +468,15 @@ object QuizSessionCodec {
 
     private fun parseConfig(root: JSONObject, errors: MutableList<String>): QuizConfig? {
         val defaultTime = root.requiredInt("defaultTimeLimitSec", "config", errors)
+        // Older stored configs and cloud caches have one window only; fall back
+        // to it for every difficulty. The text fields are optional for the same
+        // reason and default to the 42-inch AUTO profile.
+        val easyTime = optionalInt(root, "easyTimeLimitSec", "config", errors) ?: defaultTime ?: 60
+        val mediumTime = optionalInt(root, "mediumTimeLimitSec", "config", errors) ?: defaultTime ?: 60
+        val hardTime = optionalInt(root, "hardTimeLimitSec", "config", errors) ?: defaultTime ?: 60
+        val quizTextAuto = root.optBoolean("quizTextAuto", true)
+        val quizTvSizeInch = root.optInt("quizTvSizeInch", 42)
+        val quizTextScalePct = root.optInt("quizTextScalePct", 100)
         val minutesPerPoint = root.requiredInt("minutesPerPoint", "config", errors)
         val minCorrect = root.requiredInt("minCorrectCount", "config", errors)
         val maxEarned = root.requiredInt("maxEarnedMinutes", "config", errors)
@@ -494,6 +512,11 @@ object QuizSessionCodec {
             return null
         }
         if (defaultTime !in TIME_LIMIT_RANGE) errors += "config.defaultTimeLimitSec: out of range"
+        if (easyTime !in TIME_LIMIT_RANGE) errors += "config.easyTimeLimitSec: out of range"
+        if (mediumTime !in TIME_LIMIT_RANGE) errors += "config.mediumTimeLimitSec: out of range"
+        if (hardTime !in TIME_LIMIT_RANGE) errors += "config.hardTimeLimitSec: out of range"
+        if (quizTvSizeInch !in 24..100) errors += "config.quizTvSizeInch: out of range"
+        if (quizTextScalePct !in 60..240) errors += "config.quizTextScalePct: out of range"
         if (minutesPerPoint !in 1..30) errors += "config.minutesPerPoint: out of range"
         if (minCorrect !in 1..QUIZ_MAX_ITEMS) errors += "config.minCorrectCount: out of range"
         if (maxEarned !in 1..QUIZ_MAX_EARNED_MINUTES) errors += "config.maxEarnedMinutes: out of range"
@@ -517,6 +540,12 @@ object QuizSessionCodec {
         }
         return QuizConfig(
             defaultTimeLimitSec = defaultTime,
+            easyTimeLimitSec = easyTime,
+            mediumTimeLimitSec = mediumTime,
+            hardTimeLimitSec = hardTime,
+            quizTextAuto = quizTextAuto,
+            quizTvSizeInch = quizTvSizeInch,
+            quizTextScalePct = quizTextScalePct,
             minutesPerPoint = minutesPerPoint,
             minCorrectCount = minCorrect,
             maxEarnedMinutes = maxEarned,
@@ -889,6 +918,12 @@ object QuizSessionCodec {
         .apply {
             if (!includeScoring) return@apply
             put("feedbackExtraHoldSec", config.feedbackExtraHoldSec)
+            put("easyTimeLimitSec", config.easyTimeLimitSec)
+            put("mediumTimeLimitSec", config.mediumTimeLimitSec)
+            put("hardTimeLimitSec", config.hardTimeLimitSec)
+            put("quizTextAuto", config.quizTextAuto)
+            put("quizTvSizeInch", config.quizTvSizeInch)
+            put("quizTextScalePct", config.quizTextScalePct)
             put("easyRewardMinutes", config.easyRewardMinutes)
             put("mediumRewardMinutes", config.mediumRewardMinutes)
             put("hardRewardMinutes", config.hardRewardMinutes)
@@ -1205,4 +1240,13 @@ object QuizSessionCodec {
     private val DAY_TYPES = setOf("WEEKDAY", "WEEKEND")
     /** QCD level ids are `cloud:<qbLevelId>`; QB built-in levels may be negative. */
     private val PREPARED_LEVEL_ID_RE = Regex("cloud:-?[0-9]{1,18}")
+}
+
+
+/** The answer window for one question, with unknown difficulties on the default. */
+fun QuizConfig.timeLimitSecFor(difficulty: String): Int = when (difficulty.trim().lowercase()) {
+    "easy" -> easyTimeLimitSec
+    "hard" -> hardTimeLimitSec
+    "medium" -> mediumTimeLimitSec
+    else -> defaultTimeLimitSec
 }

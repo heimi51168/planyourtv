@@ -7,6 +7,7 @@ import com.planyourtv.policy.quiz.QuizItem
 import com.planyourtv.policy.quiz.QuizSession
 import com.planyourtv.policy.quiz.QuizSessionStatus
 import com.planyourtv.policy.quiz.QuizVisual
+import com.planyourtv.policy.quiz.timeLimitSecFor
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -216,9 +217,10 @@ object CloudQuizPreparer {
         }
 
         // The member config owns the answer window. QB's per-question timer is
-        // the question's own default and must not override the parent setting.
-        val timeLimitSec = document.rules.timeLimitSec
+        // the question's own default and must not override the parent setting;
+        // each item uses the window for its difficulty.
         val items = visualItems.map {
+            val timeLimitSec = document.rules.timeLimitSecFor(it.difficulty)
             it.copy(timeLimitSec = timeLimitSec, recommendedTimeSec = timeLimitSec)
         }
         if (!QuizQuestionCache.replaceCloudSet(set.attemptUid, items, set.expiresAt, scope, nowMs)) {

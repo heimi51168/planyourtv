@@ -207,6 +207,12 @@ private fun QuizConfigDocument.cloudConfig(
     dayType: QuizDayType,
 ): QuizConfig = QuizConfig(
     defaultTimeLimitSec = rules.timeLimitSec,
+    easyTimeLimitSec = rules.easyTimeLimitSec,
+    mediumTimeLimitSec = rules.mediumTimeLimitSec,
+    hardTimeLimitSec = rules.hardTimeLimitSec,
+    quizTextAuto = rules.quizTextAuto,
+    quizTvSizeInch = rules.quizTvSizeInch,
+    quizTextScalePct = rules.quizTextScalePct,
     minutesPerPoint = rules.legacy?.minutesPerPoint ?: 5,
     minCorrectCount = rules.legacy?.minCorrectCount ?: 1,
     maxEarnedMinutes = (profile.maxEarnedSeconds / 60).coerceIn(1, 180),
