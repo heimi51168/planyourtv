@@ -24,6 +24,7 @@ import com.planyourtv.policy.quiz.QuizLevelPackage
 import com.planyourtv.policy.quiz.QuizRun
 import com.planyourtv.policy.quiz.QuizSession
 import com.planyourtv.policy.quiz.QuizSessionStatus
+import com.planyourtv.policy.quiz.timeLimitSecFor
 import com.planyourtv.policy.quiz.QuizSubmission
 import android.util.Log
 import kotlinx.coroutines.delay
@@ -363,8 +364,8 @@ object QuizChallenge {
                 cacheId = cached.cacheId,
                 sourceKind = cached.sourceKind,
                 sourceRef = cached.sourceRef.orEmpty(),
-                timeLimitSec = config.defaultTimeLimitSec,
-                recommendedTimeSec = config.defaultTimeLimitSec,
+                timeLimitSec = config.timeLimitSecFor(cached.question.difficulty),
+                recommendedTimeSec = config.timeLimitSecFor(cached.question.difficulty),
             )
         }
         val items = if (config.shuffleOptions) shuffleOptions(published) else published

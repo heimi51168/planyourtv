@@ -140,6 +140,87 @@
             </div>
 
             <div class="field">
+              <label class="field-label" for="easyTimeInput" data-i18n="settingsTimeEasy"></label>
+              <div class="settings-stepper">
+                <button id="easyTimeMinus" class="icon-btn" type="button"
+                        data-i18n-aria="timeDecrease">−</button>
+                <input id="easyTimeInput" type="number" inputmode="numeric"
+                       min="5" max="1800" step="5" value="60">
+                <span class="settings-stepper-unit" data-i18n="secondsUnit"></span>
+                <button id="easyTimePlus" class="icon-btn" type="button"
+                        data-i18n-aria="timeIncrease">+</button>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="mediumTimeInput" data-i18n="settingsTimeMedium"></label>
+              <div class="settings-stepper">
+                <button id="mediumTimeMinus" class="icon-btn" type="button"
+                        data-i18n-aria="timeDecrease">−</button>
+                <input id="mediumTimeInput" type="number" inputmode="numeric"
+                       min="5" max="1800" step="5" value="90">
+                <span class="settings-stepper-unit" data-i18n="secondsUnit"></span>
+                <button id="mediumTimePlus" class="icon-btn" type="button"
+                        data-i18n-aria="timeIncrease">+</button>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="hardTimeInput" data-i18n="settingsTimeHard"></label>
+              <div class="settings-stepper">
+                <button id="hardTimeMinus" class="icon-btn" type="button"
+                        data-i18n-aria="timeDecrease">−</button>
+                <input id="hardTimeInput" type="number" inputmode="numeric"
+                       min="5" max="1800" step="5" value="120">
+                <span class="settings-stepper-unit" data-i18n="secondsUnit"></span>
+                <button id="hardTimePlus" class="icon-btn" type="button"
+                        data-i18n-aria="timeIncrease">+</button>
+              </div>
+            </div>
+
+            <div class="field">
+              <span class="field-label" data-i18n="settingsTextTitle"></span>
+              <label class="toggle-row" for="quizTextAuto">
+                <span class="toggle-copy">
+                  <span class="toggle-title" data-i18n="settingsTextAuto"></span>
+                  <span class="toggle-hint" data-i18n="settingsTextAutoHint"></span>
+                </span>
+                <span class="switch">
+                  <input id="quizTextAuto" type="checkbox" checked>
+                  <span class="switch-track" aria-hidden="true"></span>
+                </span>
+              </label>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="tvSizeInput" data-i18n="settingsTvSize"></label>
+              <div class="settings-stepper">
+                <button id="tvSizeMinus" class="icon-btn" type="button"
+                        data-i18n-aria="tvSizeDecrease">−</button>
+                <input id="tvSizeInput" type="number" inputmode="numeric"
+                       min="24" max="100" step="1" value="42">
+                <span class="settings-stepper-unit" data-i18n="tvSizeUnit"></span>
+                <button id="tvSizePlus" class="icon-btn" type="button"
+                        data-i18n-aria="tvSizeIncrease">+</button>
+              </div>
+              <p id="tvSizeHint" class="hint" data-i18n="settingsTvSizeHint"></p>
+            </div>
+
+            <div id="quizTextScaleField" class="field hidden">
+              <label class="field-label" for="textScaleInput" data-i18n="settingsTextScale"></label>
+              <div class="settings-stepper">
+                <button id="textScaleMinus" class="icon-btn" type="button"
+                        data-i18n-aria="textScaleDecrease">−</button>
+                <input id="textScaleInput" type="number" inputmode="numeric"
+                       min="60" max="240" step="5" value="100">
+                <span class="settings-stepper-unit" data-i18n="textScaleUnit"></span>
+                <button id="textScalePlus" class="icon-btn" type="button"
+                        data-i18n-aria="textScaleIncrease">+</button>
+              </div>
+              <p class="hint" data-i18n="settingsTextScaleHint"></p>
+            </div>
+
+            <div class="field">
               <label class="field-label" for="feedbackHoldInput" data-i18n="settingsFeedbackHold"></label>
               <div class="settings-stepper">
                 <button id="feedbackHoldMinus" class="icon-btn" type="button"

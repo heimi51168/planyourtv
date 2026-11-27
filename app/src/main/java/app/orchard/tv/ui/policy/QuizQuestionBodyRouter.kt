@@ -41,6 +41,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import app.orchard.tv.ui.components.isSelect
 import app.orchard.tv.ui.theme.Palette
+import app.orchard.tv.ui.theme.LocalQuizTextMetrics
 import app.orchard.tv.ui.theme.Type
 import app.orchard.tv.ui.wallpaper.latestBringIntoView
 import com.planyourtv.policy.quiz.QuizItem
@@ -267,7 +268,7 @@ private fun QuizPromptCard(
         ) {
             BasicText(
                 item.prompt,
-                style = Type.Title,
+                style = LocalQuizTextMetrics.current.prompt,
                 modifier = Modifier.fillMaxWidth(),
             )
         }

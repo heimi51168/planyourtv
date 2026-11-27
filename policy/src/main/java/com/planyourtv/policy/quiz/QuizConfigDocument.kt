@@ -125,6 +125,15 @@ data class QuizLegacyRules(
 data class QuizRules(
     val questionCount: Int = 5,
     val timeLimitSec: Int = 60,
+    /** Per-difficulty answer windows; [timeLimitSec] is the unknown-difficulty fallback. */
+    val easyTimeLimitSec: Int = 60,
+    val mediumTimeLimitSec: Int = 90,
+    val hardTimeLimitSec: Int = 120,
+    /** Quiz text sizing. AUTO derives sp from screen pixels and the selected TV size. */
+    val quizTextAuto: Boolean = true,
+    val quizTvSizeInch: Int = 42,
+    /** MANUAL only: percent of the 42-inch reference size, 60..240. */
+    val quizTextScalePct: Int = 100,
     val feedback: QuizFeedbackRules = QuizFeedbackRules(),
     val shuffleOptions: Boolean = true,
     val showPinyin: Boolean = false,
@@ -264,3 +273,15 @@ data class QuizConfigDocument(
     val extensions: JSONObject = JSONObject(),
     val extraTopLevel: JSONObject = JSONObject(),
 )
+
+
+/**
+ * The answer window for one question. Unknown difficulties (including an empty
+ * legacy value) use the document's default so old banks keep their old timing.
+ */
+fun QuizRules.timeLimitSecFor(difficulty: String): Int = when (difficulty.trim().lowercase()) {
+    "easy" -> easyTimeLimitSec
+    "hard" -> hardTimeLimitSec
+    "medium" -> mediumTimeLimitSec
+    else -> timeLimitSec
+}

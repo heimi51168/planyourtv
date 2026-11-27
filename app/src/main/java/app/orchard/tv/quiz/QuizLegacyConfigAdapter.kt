@@ -44,6 +44,12 @@ object QuizLegacyConfigAdapter {
             rules = current.rules.copy(
                 questionCount = config.pullCount,
                 timeLimitSec = config.defaultTimeLimitSec,
+                easyTimeLimitSec = config.easyTimeLimitSec,
+                mediumTimeLimitSec = config.mediumTimeLimitSec,
+                hardTimeLimitSec = config.hardTimeLimitSec,
+                quizTextAuto = config.quizTextAuto,
+                quizTvSizeInch = config.quizTvSizeInch,
+                quizTextScalePct = config.quizTextScalePct,
                 feedback = currentFeedback.copy(
                     extraHoldSec = feedback.extraHoldSec ?: currentFeedback.extraHoldSec,
                     answerRevealSec = feedback.answerRevealSec ?: currentFeedback.answerRevealSec,

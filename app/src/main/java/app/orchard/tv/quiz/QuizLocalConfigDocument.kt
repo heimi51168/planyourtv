@@ -108,6 +108,12 @@ object QuizLocalConfigDocument {
             rules = QuizRules(
                 questionCount = config.pullCount,
                 timeLimitSec = config.defaultTimeLimitSec,
+                easyTimeLimitSec = config.easyTimeLimitSec,
+                mediumTimeLimitSec = config.mediumTimeLimitSec,
+                hardTimeLimitSec = config.hardTimeLimitSec,
+                quizTextAuto = config.quizTextAuto,
+                quizTvSizeInch = config.quizTvSizeInch,
+                quizTextScalePct = config.quizTextScalePct,
                 // The old answerDisplaySec was the total hold, so it still never
                 // maps onto the extra hold. New configs start from the product
                 // default (10 s); migrated legacy rules may carry their own value.
@@ -225,6 +231,12 @@ fun QuizConfigDocument.toLegacyConfig(): QuizConfig? {
     if (rules.questionCount !in QUIZ_MIN_LOCAL_PULL_COUNT..QUIZ_MAX_PULL_COUNT) return null
     return QuizConfig(
         defaultTimeLimitSec = rules.timeLimitSec,
+        easyTimeLimitSec = rules.easyTimeLimitSec,
+        mediumTimeLimitSec = rules.mediumTimeLimitSec,
+        hardTimeLimitSec = rules.hardTimeLimitSec,
+        quizTextAuto = rules.quizTextAuto,
+        quizTvSizeInch = rules.quizTvSizeInch,
+        quizTextScalePct = rules.quizTextScalePct,
         minutesPerPoint = rules.legacy?.minutesPerPoint ?: 5,
         minCorrectCount = rules.legacy?.minCorrectCount ?: 1,
         maxEarnedMinutes = (profile.maxEarnedSeconds / 60)

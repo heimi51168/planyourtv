@@ -66,6 +66,21 @@ object QuizConfigDocumentValidator {
         if (rules.timeLimitSec !in QUIZ_DOC_MIN_TIME_LIMIT_SEC..QUIZ_DOC_MAX_TIME_LIMIT_SEC) {
             issues.issue("rules.timeLimitSec", "OUT_OF_RANGE")
         }
+        if (rules.easyTimeLimitSec !in QUIZ_DOC_MIN_TIME_LIMIT_SEC..QUIZ_DOC_MAX_TIME_LIMIT_SEC) {
+            issues.issue("rules.easyTimeLimitSec", "OUT_OF_RANGE")
+        }
+        if (rules.mediumTimeLimitSec !in QUIZ_DOC_MIN_TIME_LIMIT_SEC..QUIZ_DOC_MAX_TIME_LIMIT_SEC) {
+            issues.issue("rules.mediumTimeLimitSec", "OUT_OF_RANGE")
+        }
+        if (rules.hardTimeLimitSec !in QUIZ_DOC_MIN_TIME_LIMIT_SEC..QUIZ_DOC_MAX_TIME_LIMIT_SEC) {
+            issues.issue("rules.hardTimeLimitSec", "OUT_OF_RANGE")
+        }
+        if (rules.quizTvSizeInch !in 24..100) {
+            issues.issue("rules.quizTvSizeInch", "OUT_OF_RANGE")
+        }
+        if (rules.quizTextScalePct !in 60..240) {
+            issues.issue("rules.quizTextScalePct", "OUT_OF_RANGE")
+        }
         if (rules.feedback.extraHoldSec !in 0..QUIZ_DOC_MAX_EXTRA_HOLD_SEC) {
             issues.issue("rules.feedback.extraHoldSec", "OUT_OF_RANGE")
         }

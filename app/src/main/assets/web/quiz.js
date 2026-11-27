@@ -5889,6 +5889,48 @@ difficulty — тек easy, medium немесе hard.
     },
   };
 
+  // V42: per-difficulty answer windows and TV-aware quiz text sizing.
+  const V42_TEXTS = {
+    zh: {
+      settingsCountdown: "默认答题时间（未知难度）",
+      settingsTimeEasy: "简单题答题时间",
+      settingsTimeMedium: "中等题答题时间",
+      settingsTimeHard: "困难题答题时间",
+      settingsTextTitle: "答题字号",
+      settingsTextAuto: "根据电视自动调整",
+      settingsTextAutoHint: "按电视分辨率和下方尺寸计算；关闭后使用手动缩放。",
+      settingsTvSize: "电视尺寸",
+      settingsTvSizeUnit: "英寸",
+      settingsTvSizeHint: "常用 32/42/43/50/55/65/75/85 英寸，也可选 24–100 任意整数。42 英寸约等于题干 38、选项 32。",
+      settingsTextScale: "手动字号缩放",
+      settingsTextScaleUnit: "%",
+      settingsTextScaleHint: "100% 为 42 英寸基准；范围 60%–240%，每档 5%。",
+      tvSizeDecrease: "减小电视尺寸",
+      tvSizeIncrease: "增大电视尺寸",
+      textScaleDecrease: "减小字号",
+      textScaleIncrease: "增大字号",
+    },
+    en: {
+      settingsCountdown: "Default answer time (unknown difficulty)",
+      settingsTimeEasy: "Easy answer time",
+      settingsTimeMedium: "Medium answer time",
+      settingsTimeHard: "Hard answer time",
+      settingsTextTitle: "Quiz text size",
+      settingsTextAuto: "Auto-fit to this TV",
+      settingsTextAutoHint: "Uses the TV resolution and the size below. Turn off to use manual scaling.",
+      settingsTvSize: "TV size",
+      settingsTvSizeUnit: "inch",
+      settingsTvSizeHint: "Common: 32/42/43/50/55/65/75/85 in; any integer 24–100 works. 42 in is about 38sp prompt and 32sp answers.",
+      settingsTextScale: "Manual text scale",
+      settingsTextScaleUnit: "%",
+      settingsTextScaleHint: "100% is the 42-inch reference; range 60%–240% in 5% steps.",
+      tvSizeDecrease: "Decrease TV size",
+      tvSizeIncrease: "Increase TV size",
+      textScaleDecrease: "Decrease text size",
+      textScaleIncrease: "Increase text size",
+    },
+  };
+
   const LANGS = ["zh", "en", "ru", "uk", "kk"];
   const LANGUAGE_LABELS = {
     zh: "中文",
@@ -5914,6 +5956,7 @@ difficulty — тек easy, medium немесе hard.
       V36_TEXTS[code],
       V37_TEXTS[code],
       V41_TEXTS[code],
+      V42_TEXTS[code],
     );
   }
 
@@ -5929,6 +5972,12 @@ difficulty — тек easy, medium немесе hard.
   const FEEDBACK_HOLD_DEFAULT_SEC = 10;
   const DEFAULT_CONFIG = {
     defaultTimeLimitSec: 60,
+    easyTimeLimitSec: 60,
+    mediumTimeLimitSec: 90,
+    hardTimeLimitSec: 120,
+    quizTextAuto: true,
+    quizTvSizeInch: 42,
+    quizTextScalePct: 100,
     minutesPerPoint: 5,
     minCorrectCount: 1,
     maxEarnedMinutes: 60,
@@ -5963,6 +6012,11 @@ difficulty — тек easy, medium немесе hard.
   const ANSWER_TIME_MIN_SEC = 5;
   const ANSWER_TIME_MAX_SEC = 30 * 60;
   const ANSWER_TIME_STEP_SEC = 5;
+  const TV_SIZE_MIN_INCH = 24;
+  const TV_SIZE_MAX_INCH = 100;
+  const TEXT_SCALE_MIN_PCT = 60;
+  const TEXT_SCALE_MAX_PCT = 240;
+  const TEXT_SCALE_STEP_PCT = 5;
   // Minimum stay on wrong/timeout feedback. Correct answers never wait.
   const FEEDBACK_HOLD_MIN_SEC = 0;
   const FEEDBACK_HOLD_MAX_SEC = Math.floor(2147483647 / 1000);
@@ -8014,6 +8068,26 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     );
   }
 
+  function configDifficultySeconds(config, key) {
+    return normalizeTimeLimit(config[key], configSeconds(config));
+  }
+
+  function configQuizTextAuto(config) {
+    return config.quizTextAuto !== false;
+  }
+
+  function configTvSize(config) {
+    const value = Number(config.quizTvSizeInch);
+    if (!Number.isInteger(value)) return DEFAULT_CONFIG.quizTvSizeInch;
+    return Math.min(TV_SIZE_MAX_INCH, Math.max(TV_SIZE_MIN_INCH, value));
+  }
+
+  function configTextScale(config) {
+    const value = Number(config.quizTextScalePct);
+    if (!Number.isInteger(value)) return DEFAULT_CONFIG.quizTextScalePct;
+    return Math.min(TEXT_SCALE_MAX_PCT, Math.max(TEXT_SCALE_MIN_PCT, value));
+  }
+
   function normalizeRoundCount(value, fallback) {
     if (value === null || value === undefined || String(value).trim() === "") return fallback;
     const number = Number(value);
@@ -8224,6 +8298,34 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       configFeedbackHold(config),
       FEEDBACK_HOLD_MIN_SEC, FEEDBACK_HOLD_MAX_SEC, FEEDBACK_HOLD_STEP_SEC,
     );
+    renderStepper(
+      "easyTime",
+      configDifficultySeconds(config, "easyTimeLimitSec"),
+      ANSWER_TIME_MIN_SEC, ANSWER_TIME_MAX_SEC, ANSWER_TIME_STEP_SEC,
+    );
+    renderStepper(
+      "mediumTime",
+      configDifficultySeconds(config, "mediumTimeLimitSec"),
+      ANSWER_TIME_MIN_SEC, ANSWER_TIME_MAX_SEC, ANSWER_TIME_STEP_SEC,
+    );
+    renderStepper(
+      "hardTime",
+      configDifficultySeconds(config, "hardTimeLimitSec"),
+      ANSWER_TIME_MIN_SEC, ANSWER_TIME_MAX_SEC, ANSWER_TIME_STEP_SEC,
+    );
+    renderStepper(
+      "tvSize",
+      configTvSize(config),
+      TV_SIZE_MIN_INCH, TV_SIZE_MAX_INCH, 1,
+    );
+    renderStepper(
+      "textScale",
+      configTextScale(config),
+      TEXT_SCALE_MIN_PCT, TEXT_SCALE_MAX_PCT, TEXT_SCALE_STEP_PCT,
+    );
+    const autoText = configQuizTextAuto(config);
+    $("quizTextAuto").checked = autoText;
+    $("quizTextScaleField").classList.toggle("hidden", autoText);
     // The unlock threshold is a settings stepper, not a chip row: it starts at
     // 0 and has no product-level upper limit.
     renderStepper(
@@ -15102,6 +15204,11 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     // while an input still has focus and its change event has not fired yet.
     const pull = normalizeRoundCount($("roundInput").value, configRoundCount(base));
     const time = normalizeTimeLimit($("timeInput").value, configSeconds(base));
+    const easyTime = normalizeTimeLimit($("easyTimeInput").value, configDifficultySeconds(base, "easyTimeLimitSec"));
+    const mediumTime = normalizeTimeLimit($("mediumTimeInput").value, configDifficultySeconds(base, "mediumTimeLimitSec"));
+    const hardTime = normalizeTimeLimit($("hardTimeInput").value, configDifficultySeconds(base, "hardTimeLimitSec"));
+    const tvSize = Number($("tvSizeInput").value);
+    const textScale = Number($("textScaleInput").value);
     const feedbackHold = normalizeFeedbackHold(
       $("feedbackHoldInput").value,
       configFeedbackHold(base),
@@ -15109,6 +15216,12 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     const scoring = readScoringPatch();
     return Object.assign({}, base, {
       defaultTimeLimitSec: time,
+      easyTimeLimitSec: easyTime,
+      mediumTimeLimitSec: mediumTime,
+      hardTimeLimitSec: hardTime,
+      quizTextAuto: $("quizTextAuto").checked,
+      quizTvSizeInch: Math.min(TV_SIZE_MAX_INCH, Math.max(TV_SIZE_MIN_INCH, Number.isInteger(tvSize) ? tvSize : configTvSize(base))),
+      quizTextScalePct: Math.min(TEXT_SCALE_MAX_PCT, Math.max(TEXT_SCALE_MIN_PCT, Number.isInteger(textScale) ? textScale : configTextScale(base))),
       pullCount: pull,
       // Legacy single-rate fields stay for cloud compatibility; local v5
       // rounds settle from the difficulty table below.
@@ -15480,6 +15593,35 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       () => configSeconds(currentConfig()),
       (value) => updateRuleConfig({ defaultTimeLimitSec: value }),
     );
+    bindStepper(
+      "easyTime", ANSWER_TIME_MIN_SEC, ANSWER_TIME_MAX_SEC, ANSWER_TIME_STEP_SEC,
+      () => configDifficultySeconds(currentConfig(), "easyTimeLimitSec"),
+      (value) => updateRuleConfig({ easyTimeLimitSec: value }),
+    );
+    bindStepper(
+      "mediumTime", ANSWER_TIME_MIN_SEC, ANSWER_TIME_MAX_SEC, ANSWER_TIME_STEP_SEC,
+      () => configDifficultySeconds(currentConfig(), "mediumTimeLimitSec"),
+      (value) => updateRuleConfig({ mediumTimeLimitSec: value }),
+    );
+    bindStepper(
+      "hardTime", ANSWER_TIME_MIN_SEC, ANSWER_TIME_MAX_SEC, ANSWER_TIME_STEP_SEC,
+      () => configDifficultySeconds(currentConfig(), "hardTimeLimitSec"),
+      (value) => updateRuleConfig({ hardTimeLimitSec: value }),
+    );
+    bindStepper(
+      "tvSize", TV_SIZE_MIN_INCH, TV_SIZE_MAX_INCH, 1,
+      () => configTvSize(currentConfig()),
+      (value) => updateRuleConfig({ quizTvSizeInch: value }),
+    );
+    bindStepper(
+      "textScale", TEXT_SCALE_MIN_PCT, TEXT_SCALE_MAX_PCT, TEXT_SCALE_STEP_PCT,
+      () => configTextScale(currentConfig()),
+      (value) => updateRuleConfig({ quizTextScalePct: value }),
+    );
+    $("quizTextAuto").addEventListener("change", () => {
+      updateRuleConfig({ quizTextAuto: $("quizTextAuto").checked });
+      $("quizTextScaleField").classList.toggle("hidden", $("quizTextAuto").checked);
+    });
     bindStepper(
       "feedbackHold",
       FEEDBACK_HOLD_MIN_SEC, FEEDBACK_HOLD_MAX_SEC, FEEDBACK_HOLD_STEP_SEC,
