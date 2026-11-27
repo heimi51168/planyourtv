@@ -2745,6 +2745,7 @@ private fun QuizFeedbackPage(
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val textMetrics = LocalQuizTextMetrics.current
     val scroll = rememberScrollState()
     var busy by remember(item.questionId, submission.answeredAt) { mutableStateOf(false) }
     var error by remember(item.questionId, submission.answeredAt) { mutableStateOf(false) }
@@ -2942,7 +2943,7 @@ private fun QuizFeedbackPage(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             FeedbackSection(stringResource(R.string.policy_quiz_review_question)) {
-                BasicText(item.prompt, style = Type.Headline)
+                BasicText(item.prompt, style = textMetrics.review)
             }
             // Mirror the question page: the answer lines keep the left of the
             // body and the figure sits to their right, so a short prompt no
@@ -2959,7 +2960,7 @@ private fun QuizFeedbackPage(
                     FeedbackSection(stringResource(R.string.policy_quiz_review_your_answer)) {
                         BasicText(
                             selectedText ?: stringResource(R.string.policy_quiz_review_unanswered),
-                            style = Type.Body.copy(
+                            style = textMetrics.review.copy(
                                 color = if (correct) QuizGold else QuizLoss,
                             ),
                         )
@@ -2970,7 +2971,7 @@ private fun QuizFeedbackPage(
                             // The correct option is information, not a score:
                             // keeping it neutral stops a failed question from
                             // reading as a green loss or a gold payout.
-                            style = Type.Body.copy(color = Palette.Label),
+                            style = textMetrics.review.copy(color = Palette.Label),
                         )
                     }
                 }
@@ -2988,7 +2989,7 @@ private fun QuizFeedbackPage(
                 FeedbackSection(stringResource(R.string.policy_quiz_review_solution)) {
                     BasicText(
                         item.explanation,
-                        style = Type.Body.copy(color = Palette.SecondaryLabel),
+                        style = textMetrics.review.copy(color = Palette.SecondaryLabel),
                     )
                 }
             }

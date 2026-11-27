@@ -8073,7 +8073,16 @@ let presetBank = { bankId: "", total: 0, available: 0 };
   }
 
   function configQuizTextAuto(config) {
-    return config.quizTextAuto !== false;
+    const value = config.quizTextAuto;
+    return !(value === false || value === 0 || value === "false");
+  }
+
+  function syncTextSizeControls(config) {
+    const auto = configQuizTextAuto(config);
+    const toggle = $("quizTextAuto");
+    if (toggle) toggle.checked = auto;
+    const field = $("quizTextScaleField");
+    if (field) field.classList.toggle("hidden", auto);
   }
 
   function configTvSize(config) {
@@ -8323,9 +8332,7 @@ let presetBank = { bankId: "", total: 0, available: 0 };
       configTextScale(config),
       TEXT_SCALE_MIN_PCT, TEXT_SCALE_MAX_PCT, TEXT_SCALE_STEP_PCT,
     );
-    const autoText = configQuizTextAuto(config);
-    $("quizTextAuto").checked = autoText;
-    $("quizTextScaleField").classList.toggle("hidden", autoText);
+    syncTextSizeControls(config);
     // The unlock threshold is a settings stepper, not a chip row: it starts at
     // 0 and has no product-level upper limit.
     renderStepper(
@@ -15620,7 +15627,7 @@ let presetBank = { bankId: "", total: 0, available: 0 };
     );
     $("quizTextAuto").addEventListener("change", () => {
       updateRuleConfig({ quizTextAuto: $("quizTextAuto").checked });
-      $("quizTextScaleField").classList.toggle("hidden", $("quizTextAuto").checked);
+      syncTextSizeControls(currentConfig());
     });
     bindStepper(
       "feedbackHold",
